@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#3a3a50">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>Main Street</title>
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="app">
+  <main id="stage">
+    <canvas id="view"></canvas>
+    <div id="hud">
+      <div>
+        <div id="cash">$0</div>
+        <div id="rate">$0/s</div>
+      </div>
+      <div id="stars" hidden></div>
+    </div>
+    <p id="loading">Loading</p>
+  </main>
+  <aside id="panel">
+    <button id="handle" type="button" aria-label="Collapse the sheet" aria-expanded="true"><span></span></button>
+    <div id="sheet">
+      <p id="hint" hidden></p>
+      <div id="away" hidden>
+        <span id="awaytext"></span>
+        <button id="awayok" type="button">OK</button>
+      </div>
+      <p id="warn" hidden>Could not save. Storage may be full or blocked.</p>
+      <div id="list-street" class="list"></div>
+      <div id="list-fleet" class="list" hidden></div>
+      <div id="list-town" class="list" hidden>
+        <h2 id="dname"></h2>
+        <div class="meter"><i id="dbar"></i></div>
+        <p id="dprog"></p>
+        <p id="starline"></p>
+        <div id="moves"></div>
+        <div id="ask" hidden>
+          <p id="asktext"></p>
+          <div class="pair">
+            <button id="askyes" type="button" class="wide go">Move on</button>
+            <button id="askno" type="button" class="wide">Stay</button>
+          </div>
+        </div>
+        <button id="snd" type="button" class="wide">Sound: on</button>
+        <p id="savenote">Your game is saved in this browser only. The home screen app keeps a separate save, so carry progress over with a save code.</p>
+        <div class="pair">
+          <button id="export" type="button" class="wide">Copy save code</button>
+          <button id="import" type="button" class="wide">Use save code</button>
+        </div>
+        <!-- TODO: testing switch, take it out before release -->
+        <button id="free" type="button" class="wide">Unlimited money: off</button>
+        <button id="reset" type="button" class="wide">Reset game</button>
+        <div id="sure" hidden>
+          <p>Erase your street, your stars and everything else, and start over?</p>
+          <div class="pair">
+            <button id="no" type="button" class="wide keep">Keep</button>
+            <button id="yes" type="button" class="wide erase">Erase</button>
+          </div>
+        </div>
+        <p id="credit"><a href="https://limezu.itch.io/">Art: LimeZu (https://limezu.itch.io/)</a></p>
+      </div>
+    </div>
+    <nav id="tabs">
+      <button type="button" data-tab="street" class="on">Street<i></i></button>
+      <button type="button" data-tab="fleet">Fleet<i></i></button>
+      <button type="button" data-tab="town">Town<i></i></button>
+    </nav>
+  </aside>
+</div>
+<script src="data.js"></script>
+<script src="beach.js"></script>
+<script src="garden.js"></script>
+<script src="camping.js"></script>
+<script src="game.js"></script>
+<script src="render.js"></script>
+<script src="ui.js"></script>
+</body>
+</html>
