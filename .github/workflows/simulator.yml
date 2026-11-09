@@ -1,0 +1,104 @@
+name: Simulator
+
+# Builds the app for an iPhone simulator, runs it, and keeps screenshots before and after a
+# reinstall so a save that survives an App Store update can be checked without an upload.
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    runs-on: macos-26
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - name: Select Xcode 26.6
+        run: sudo xcode-select -s /Applications/Xcode_26.6.app
+      # Pinned release, checked against its SHA-256.
+      - name: Install XcodeGen
+        env:
+          XCODEGEN_VERSION: 2.46.0
+          XCODEGEN_SHA256: 4d9e34b62172d645eed6457cac13fc222569974098ef4ee9c3368bedf0196806
+        run: |
+          set -euo pipefail
+          zip="$RUNNER_TEMP/xcodegen.zip"
+          curl -fsSL -o "$zip" "https://github.com/yonaskolb/XcodeGen/releases/download/$XCODEGEN_VERSION/xcodegen.zip"
+          hash=$(shasum -a 256 "$zip" | cut -d ' ' -f 1)
+          if [ "$hash" != "$XCODEGEN_SHA256" ]; then
+            echo "XcodeGen checksum mismatch: $hash"
+            exit 1
+          fi
+          unzip -q "$zip" -d "$RUNNER_TEMP/xcodegen-$XCODEGEN_VERSION"
+          echo "$RUNNER_TEMP/xcodegen-$XCODEGEN_VERSION/xcodegen/bin" >> "$GITHUB_PATH"
+      - name: Write the app's project
+        run: xcodegen generate --spec ios/project.yml
+      # The Pro models have the Dynamic Island, so the safe areas are real.
+      - name: Pick a simulator
+        run: |
+          udid=$(xcrun simctl list devices available -j | python3 -c '
+          import json, re, sys
+          best = None
+          for runtime, devices in json.load(sys.stdin)["devices"].items():
+              m = re.search(r"iOS-(\d+)-(\d+)", runtime)
+              if not m:
+                  continue
+              version = (int(m.group(1)), int(m.group(2)))
+              for d in devices:
+                  if re.fullmatch(r"iPhone \d+ Pro", d["name"]) and (best is None or version > best[0]):
+                      best = (version, d["udid"])
+          if best is None:
+              sys.exit("no iPhone Pro simulator available")
+          print(best[1])
+          ')
+          echo "UDID=$udid" >> "$GITHUB_ENV"
+          echo "Using $udid"
+      - name: Build
+        run: |
+          set -o pipefail
+          xcodebuild build \
+            -project ios/MainStreet.xcodeproj \
+            -scheme MainStreet \
+            -configuration Debug \
+            -destination "platform=iOS Simulator,id=$UDID" \
+            -derivedDataPath "$RUNNER_TEMP/build" \
+            CODE_SIGNING_ALLOWED=NO
+      - name: Boot
+        run: |
+          xcrun simctl boot "$UDID"
+          xcrun simctl bootstatus "$UDID" -b
+      - name: First run
+        run: |
+          set -euo pipefail
+          mkdir -p out
+          app="$RUNNER_TEMP/build/Build/Products/Debug-iphonesimulator/MainStreet.app"
+          xcrun simctl install "$UDID" "$app"
+          echo "first install: $(xcrun simctl get_app_container "$UDID" com.aytutuna.mainstreet app)" | tee -a out/storage.txt
+          xcrun simctl launch "$UDID" com.aytutuna.mainstreet
+          sleep 20
+          xcrun simctl io "$UDID" screenshot out/first.png
+          sleep 10
+          xcrun simctl terminate "$UDID" com.aytutuna.mainstreet
+      - name: Reinstall and run again
+        run: |
+          set -euo pipefail
+          app="$RUNNER_TEMP/build/Build/Products/Debug-iphonesimulator/MainStreet.app"
+          xcrun simctl install "$UDID" "$app"
+          echo "second install: $(xcrun simctl get_app_container "$UDID" com.aytutuna.mainstreet app)" | tee -a out/storage.txt
+          xcrun simctl launch "$UDID" com.aytutuna.mainstreet
+          sleep 20
+          xcrun simctl io "$UDID" screenshot out/second.png
+      - name: List the saved data
+        if: always()
+        run: |
+          mkdir -p out
+          data=$(xcrun simctl get_app_container "$UDID" com.aytutuna.mainstreet data)
+          echo "data container: $data" >> out/storage.txt
+          find "$data/Library" -ipath '*localstorage*' -exec ls -lR {} + >> out/storage.txt 2>&1 || true
+          cat out/storage.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: simulator
+          path: out
