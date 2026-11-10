@@ -325,21 +325,8 @@ function item(id) {
   for (var i = 0; i < ITEMS.length; i++) if (ITEMS[i].id === id) return ITEMS[i];
 }
 
-// TODO: testing switch, take it out before release
-// on unless the player turned it off, which is remembered on its own so old saves start with it on
-var FREE_KEY = 'mainstreet.free';
+// TODO: unlimited money while testing, set to false before release
 var free = true;
-try {
-  free = localStorage.getItem(FREE_KEY) !== 'off';
-} catch (e) {}
-
-function setFree(on) {
-  free = on;
-  try {
-    if (on) localStorage.removeItem(FREE_KEY);
-    else localStorage.setItem(FREE_KEY, 'off');
-  } catch (e) {}
-}
 
 function canBuy(it) {
   if (!it.show() || it.done() || (it.busy && it.busy())) return false;

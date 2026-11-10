@@ -1,4 +1,4 @@
-var CACHE = 'mainstreet-fcdca8ec';
+var CACHE = 'mainstreet-cba82a55';
 var FILES = [
   './',
   'index.html',

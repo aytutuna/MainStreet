@@ -517,12 +517,6 @@ function start() {
   if (nativeApp()) set($('savenote'), 'Your game is saved on this phone. Move it to another phone with a save code.');
   $('export').addEventListener('click', copySave);
   $('import').addEventListener('click', useSave);
-  $('free').textContent = 'Unlimited money: ' + (free ? 'on' : 'off');
-  $('free').addEventListener('click', function () {
-    setFree(!free);
-    $('free').textContent = 'Unlimited money: ' + (free ? 'on' : 'off');
-    refresh();
-  });
   $('askno').addEventListener('click', function () {
     $('ask').hidden = true;
     els.moves.hidden = false;
