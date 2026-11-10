@@ -1,4 +1,4 @@
-// scatter behind the street: wet sand and sea rocks from a fixed seed, so the same beach is baked every time
+// back sand is a short list of groups; the sea gets rocks and buoys from a fixed seed, so the same beach is baked every time
 function shore(w) {
   var seed = 5;
   var list = [{ t: 3, x: 0, y: 174, w: w, h: 16 }];
@@ -6,13 +6,38 @@ function shore(w) {
     seed = (seed * 1103515245 + 12345) & 0x7fffffff;
     return (seed >> 8) % n;
   };
-  var land = ['b_sprout', 'b_sprout2', 'b_bed_r', 'b_bed_b', 'b_palm', 'b_dune'];
-  for (var x = 8; x < w; x += 70 + rnd(60)) {
-    var n = land[rnd(land.length)];
-    list.push({ n: n, x: x, y: n === 'b_dune' ? 150 + rnd(16) : n === 'b_palm' ? 120 + rnd(40) : 100 + rnd(60) });
-  }
-  var sea = ['b_rock', 'b_rock2', 'b_rock3', 'b_arch', 'b_buoy_g', 'b_buoy_o', 'b_buoy_r', 'b_gull', 'b_gull2'];
-  for (x = 20; x < w; x += 40 + rnd(60)) {
+  var at = function (n, x, y) {
+    list.push({ n: n, x: x, y: y });
+  };
+  var shade = function (x) {
+    at('b_umb_l', x, 124);
+    at('b_bed_r', x - 36, 110);
+    at('b_bed_b', x + 52, 110);
+  };
+  var grove = function (x) {
+    at('b_palm', x, 122);
+    at('b_sprout2', x - 50, 100);
+    at('b_sprout', x + 60, 98);
+  };
+  var towels = function (x) {
+    at('b_tw_y', x, 104);
+    at('b_tw_g', x + 36, 98);
+  };
+  shade(60);
+  grove(230);
+  towels(372);
+  at('b_gull', 480, 108);
+  shade(570);
+  grove(780);
+  at('b_tw_y', 880, 104);
+  at('b_gull2', 940, 112);
+  grove(1500);
+  shade(1640);
+  at('b_gull', 1722, 100);
+  towels(1750);
+  grove(1880);
+  var sea = ['b_rock', 'b_rock2', 'b_rock3', 'b_arch', 'b_buoy_g', 'b_buoy_o', 'b_buoy_r'];
+  for (var x = 20; x < w; x += 40 + rnd(60)) {
     list.push({ n: sea[rnd(sea.length)], x: x, y: 204 + rnd(250) });
   }
   return list;
@@ -21,19 +46,21 @@ function shore(w) {
 DISTRICTS.push({
   id: 'beach',
   name: 'Beach',
+  lamps: [812, 936, 1584, 1800],
+  hydrants: [24, 505, 1296],
   k: 1.5,
   ground: {
     sheet: 'b_tiles', base: 0, walk: 2, verge: 4,
     band: { tile: 1, from: 190, to: 640, edge: '#c8f2f6' },
     end: ['b_palm', 'b_sprout', 'b_palm', 'b_sprout2']
   },
-  deco: shore(2300),
+  deco: shore(1960),
   sprites: COMMON.concat([
-    'b_anchor', 'b_arch', 'b_ball', 'b_bar1', 'b_bar2', 'b_barr', 'b_bed_b', 'b_bed_r', 'b_bucket',
+    'b_anchor', 'b_arch', 'b_bar1', 'b_bar2', 'b_barr', 'b_bed_b', 'b_bed_r', 'b_bucket',
     'b_buoy_g', 'b_buoy_o', 'b_buoy_r', 'b_chair', 'b_court', 'b_cs1', 'b_cs1f', 'b_cs2', 'b_cs3', 'b_ct1',
-    'b_ct2', 'b_deck1', 'b_deck2', 'b_dj', 'b_dune', 'b_gull', 'b_gull2', 'b_hole', 'b_lguard', 'b_lh0',
+    'b_ct2', 'b_deck1', 'b_deck2', 'b_dj', 'b_gull', 'b_gull2', 'b_lguard', 'b_lh0',
     'b_lh1', 'b_lh3', 'b_lh_lamp', 'b_lh_open', 'b_logo', 'b_menu', 'b_net', 'b_palm', 'b_pole', 'b_price',
-    'b_rig1', 'b_rig2', 'b_rock', 'b_rock2', 'b_rock3', 'b_score', 'b_scount', 'b_shell', 'b_ship', 'b_sign',
+    'b_rig1', 'b_rig2', 'b_rock', 'b_rock2', 'b_rock3', 'b_score', 'b_shell', 'b_ship', 'b_sign',
     'b_spk', 'b_sprout', 'b_sprout2', 'b_stairs', 'b_star', 'b_star2', 'b_stool', 'b_table', 'b_table2',
     'b_table3', 'b_tiles', 'b_toy_ball', 'b_toy_ring', 'b_tw_b', 'b_tw_g', 'b_tw_m', 'b_tw_y', 'b_umb_b',
     'b_umb_g', 'b_umb_l', 'b_umb_y', 'b_umc_b', 'b_umc_g', 'b_umc_l', 'b_umc_y', 'dpad', 'flagpole',
@@ -51,19 +78,19 @@ DISTRICTS.push({
         { add: 'a menu board', say: 'Menu board!' },
         { add: 'a palm tree', say: 'Palm tree!' },
         { add: 'a second counter', say: 'Second counter!' },
-        { add: 'an orange buoy', say: 'Buoy!' },
+        { add: 'a barrel table', say: 'Barrel table!' },
         { add: 'a direction sign', say: 'Signpost!' }
       ],
       parts: [
         { n: 'b_palm', at: 4, x: 0, y: 4 },
+        { n: 'b_pole', at: 7, x: 100, y: 40 },
         { n: 'b_bar1', at: 0, to: 0, x: 40, y: 0 },
         { n: 'b_bar2', at: 1, x: 40, y: 0 },
-        { n: 'b_stool', at: 2, x: 48, y: -14 },
-        { n: 'b_stool', at: 2, x: 72, y: -14 },
-        { n: 'b_menu', at: 3, x: 2, y: -8 },
+        { n: 'b_stool', at: 2, x: 48, y: -3 },
+        { n: 'b_stool', at: 2, x: 72, y: -3 },
+        { n: 'b_menu', at: 3, x: 2, y: -2 },
         { n: 'b_bar2', at: 5, x: 88, y: 0 },
-        { n: 'b_buoy_o', at: 6, x: 22, y: -14 },
-        { n: 'b_pole', at: 7, x: 104, y: -14 }
+        { n: 'b_table2', at: 6, x: 116, y: -2 }
       ]
     },
     {
@@ -87,15 +114,15 @@ DISTRICTS.push({
         { n: 'b_tw_y', at: 4, x: 96, y: 10 },
         { n: 'b_tw_g', at: 6, x: 148, y: -4 },
         { n: 'b_umb_y', at: 3, x: 66, y: 24 },
-        { n: 'b_price', at: 0, x: 4, y: -4 },
+        { n: 'b_price', at: 0, x: 4, y: -2 },
         { n: 'b_umc_b', at: 0, to: 0, x: 24, y: 0 },
         { n: 'b_umb_b', at: 1, x: 8, y: 0 },
         { n: 'b_umb_g', at: 5, x: 120, y: 0 },
-        { n: 'b_umc_l', at: 7, x: 184, y: 0 },
+        { n: 'b_umc_l', at: 7, x: 172, y: 0 },
         { n: 'b_umc_y', at: 7, x: 200, y: 0 },
         { n: 'b_umc_g', at: 7, x: 216, y: 0 },
-        { n: 'b_toy_ball', at: 8, x: 80, y: -16 },
-        { n: 'b_toy_ring', at: 8, x: 104, y: -14 }
+        { n: 'b_toy_ball', at: 8, x: 80, y: -2 },
+        { n: 'b_toy_ring', at: 8, x: 104, y: -5 }
       ]
     },
     {
@@ -113,19 +140,19 @@ DISTRICTS.push({
         { add: 'shells, starfish and a beach plant', say: 'Shells!' }
       ],
       parts: [
-        { n: 'b_ct1', at: 6, x: 44, y: 22 },
-        { n: 'b_ct2', at: 6, x: 90, y: 24 },
-        { n: 'b_hole', at: 0, to: 1, x: 58, y: 0 },
-        { n: 'b_price', at: 0, x: 8, y: -6 },
+        { n: 'b_ct1', at: 0, to: 1, x: 62, y: 0 },
+        { n: 'b_ct1', at: 6, x: 70, y: 34 },
+        { n: 'b_ct2', at: 6, x: 18, y: 30 },
+        { n: 'b_price', at: 0, to: 3, x: 8, y: -2 },
         { n: 'b_cs1', at: 2, to: 2, x: 58, y: 0 },
         { n: 'b_cs1f', at: 3, x: 58, y: 0 },
         { n: 'b_cs2', at: 4, x: 4, y: -2 },
         { n: 'b_cs3', at: 5, x: 96, y: -2 },
-        { n: 'b_bucket', at: 1, x: 52, y: -12 },
-        { n: 'b_sprout', at: 7, x: 100, y: -22 },
-        { n: 'b_star', at: 7, x: 30, y: -12 },
-        { n: 'b_shell', at: 7, x: 128, y: -14 },
-        { n: 'b_star2', at: 7, x: 82, y: -14 }
+        { n: 'b_bucket', at: 1, x: 44, y: -1 },
+        { n: 'b_sprout', at: 7, x: 100, y: 0 },
+        { n: 'b_star', at: 7, x: 30, y: -5 },
+        { n: 'b_shell', at: 7, x: 128, y: -4 },
+        { n: 'b_star2', at: 7, x: 82, y: -5 }
       ]
     },
     {
@@ -143,21 +170,21 @@ DISTRICTS.push({
         { add: 'a palm and a menu board', say: 'Palm!' }
       ],
       parts: [
-        { n: 'b_palm', at: 7, x: 168, y: 14 },
-        { n: 'b_scount', at: 0, to: 0, x: 40, y: 0 },
+        { n: 'b_palm', at: 7, x: 150, y: 44 },
+        { n: 'b_bar1', at: 0, to: 0, x: 40, y: 0 },
         { n: 'b_ship', at: 1, x: 8, y: 0 },
-        { n: 'b_anchor', at: 5, x: 124, y: 0 },
+        { n: 'b_anchor', at: 5, x: 88, y: 4 },
         { n: 'b_table', at: 2, to: 3, x: 148, y: 8 },
-        { n: 'b_table', at: 2, to: 3, x: 184, y: 0 },
+        { n: 'b_table', at: 2, to: 3, x: 172, y: 0 },
         { n: 'b_table', at: 2, to: 3, x: 212, y: 10 },
         { n: 'b_table2', at: 4, x: 148, y: 8 },
-        { n: 'b_table3', at: 4, x: 184, y: 0 },
+        { n: 'b_table3', at: 4, x: 172, y: 0 },
         { n: 'b_table2', at: 4, x: 212, y: 10 },
-        { n: 'b_chair', at: 3, x: 134, y: -12 },
-        { n: 'b_chair', at: 3, x: 168, y: -8 },
+        { n: 'b_chair', at: 3, x: 134, y: -4 },
+        { n: 'b_chair', at: 3, x: 168, y: -4 },
         { n: 'b_chair', at: 3, x: 198, y: 2 },
-        { n: 'b_logo', at: 6, x: 36, y: 68 },
-        { n: 'b_menu', at: 7, x: 112, y: -14 }
+        { n: 'b_logo', at: 6, x: 36, y: 56 },
+        { n: 'b_menu', at: 7, x: 112, y: -2 }
       ]
     },
     {
@@ -167,24 +194,24 @@ DISTRICTS.push({
       up: 66000, grow: 1.8,
       rungs: [
         { add: 'a net', say: 'Net!' },
-        { add: 'a ball', say: 'Ball!' },
-        { add: 'a score board', say: 'Score board!' },
+        { add: 'a beach ball', say: 'Ball!' },
+        { add: 'a rules board', say: 'Rules board!' },
         { add: 'towels for the players', say: 'Towels!' },
         { add: 'an umbrella for the crowd', say: 'Umbrella!' },
         { add: 'a lifeguard chair', say: 'Lifeguard!' },
         { add: 'palms at both ends', say: 'Palms!' }
       ],
       parts: [
-        { n: 'b_palm', at: 7, x: 0, y: 40 },
-        { n: 'b_palm', at: 7, x: 240, y: 34 },
-        { n: 'b_court', at: 0, x: 64, y: -8 },
-        { n: 'b_net', at: 1, x: 64, y: 28 },
-        { n: 'b_ball', at: 2, x: 128, y: 20 },
-        { n: 'b_score', at: 3, x: 232, y: -4 },
-        { n: 'b_tw_b', at: 4, x: 236, y: -14 },
-        { n: 'b_tw_m', at: 4, x: 268, y: -10 },
-        { n: 'b_umb_l', at: 5, x: 254, y: 0 },
-        { n: 'b_lguard', at: 6, x: 8, y: -6 }
+        { n: 'b_palm', at: 7, x: 0, y: 56 },
+        { n: 'b_palm', at: 7, x: 240, y: 82 },
+        { n: 'b_court', at: 0, x: 64, y: 4 },
+        { n: 'b_net', at: 1, x: 64, y: 40 },
+        { n: 'b_toy_ball', at: 2, x: 116, y: 30 },
+        { n: 'b_score', at: 3, x: 224, y: -2 },
+        { n: 'b_umb_l', at: 5, x: 254, y: 16 },
+        { n: 'b_tw_b', at: 4, x: 242, y: 0 },
+        { n: 'b_tw_m', at: 4, x: 270, y: 2 },
+        { n: 'b_lguard', at: 6, x: 8, y: 0 }
       ]
     },
     {
@@ -193,33 +220,32 @@ DISTRICTS.push({
       pay: 2400, gain: 0.4, hold: 8,
       up: 500000, grow: 1.8,
       unlocks: ['drones', 'heli'],
+      pad: { n: 'dpad', x: 172, y: 0 },
       rungs: [
         { add: 'stairs', say: 'Stairs!' },
         { add: 'loudspeakers', say: 'Loudspeakers!' },
         { add: 'a DJ set', say: 'DJ set!' },
         { add: 'crowd barriers', say: 'Barriers!' },
         { add: 'a lighting rig', say: 'Lights!' },
-        { add: 'a drone landing pad', say: 'Landing pad!' },
+        { add: 'a helicopter pad', say: 'Pad!' },
         { add: 'a bigger stage', say: 'Bigger stage!' },
-        { add: 'a taller rig', say: 'Taller rig!' }
+        { add: 'a wider rig', say: 'Wider rig!' }
       ],
       parts: [
-        { n: 'dpad', at: 6, x: 172, y: 0 },
         { n: 'b_deck1', at: 0, to: 6, x: 0, y: 0 },
         { n: 'b_deck2', at: 7, x: 0, y: 0 },
+        { n: 'dpad', at: 6, x: 172, y: 0 },
         { n: 'b_rig1', at: 5, to: 6, x: 8, y: 70 },
         { n: 'b_rig1', at: 7, to: 7, x: 40, y: 70 },
         { n: 'b_rig2', at: 8, x: 8, y: 70 },
-        { n: 'b_stairs', at: 1, x: 48, y: -10 },
+        { n: 'b_stairs', at: 1, x: 48, y: -2 },
         { n: 'b_spk', at: 2, x: 2, y: 40 },
         { n: 'b_spk', at: 2, x: 78, y: 40 },
         { n: 'b_dj', at: 3, x: 40, y: 8 },
-        { n: 'b_barr', at: 4, x: 0, y: -12 },
-        { n: 'b_barr', at: 4, x: 32, y: -12 },
-        { n: 'b_barr', at: 4, x: 64, y: -12 },
-        { n: 'b_barr', at: 4, x: 96, y: -12 },
-        { n: 'b_barr', at: 7, x: 128, y: -12 },
-        { n: 'b_barr', at: 7, x: 160, y: -12 },
+        { n: 'b_barr', at: 4, x: 16, y: -2 },
+        { n: 'b_barr', at: 4, x: 80, y: -2 },
+        { n: 'b_barr', at: 7, x: 112, y: -2 },
+        { n: 'b_barr', at: 7, x: 144, y: -2 },
         { n: 'b_spk', at: 7, x: 142, y: 40 }
       ]
     },
@@ -231,7 +257,7 @@ DISTRICTS.push({
       capstone: true,
       rungs: [
         { add: 'an open door', say: 'Door!' },
-        { add: 'the tower', say: 'Tower!' },
+        { add: 'a glass dome', say: 'Glass dome!' },
         { add: 'a lamp on the top deck', say: 'Lamp!' },
         { add: 'a red roof and glass', say: 'Red roof!' },
         { add: 'an entrance sign', say: 'Sign!' },
@@ -244,10 +270,10 @@ DISTRICTS.push({
         { n: 'b_lh_lamp', at: 3, to: 3, x: 88, y: 186 },
         { n: 'b_lh3', at: 4, x: 56, y: 0 },
         { n: 'b_lh_open', at: 1, x: 88, y: 14 },
-        { n: 'b_sign', at: 5, x: 0, y: -10 },
-        { n: 'flagpole', at: 6, x: 44, y: -6 },
-        { n: 'flagpole', at: 6, x: 152, y: -6 },
-        { n: 'helipad', at: 7, x: 184, y: 0 }
+        { n: 'b_sign', at: 5, x: 2, y: -2 },
+        { n: 'flagpole', at: 6, x: 66, y: 0 },
+        { n: 'flagpole', at: 6, x: 140, y: 0 },
+        { n: 'helipad', at: 7, x: 172, y: 0 }
       ]
     }
   ]
