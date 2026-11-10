@@ -1,40 +1,51 @@
 (function () {
   var PINES = ['c_pine1', 'c_pine2', 'c_pine3', 'c_pine4', 'c_pine5', 'c_pine6'];
-  var SHORE = 175;
+  // far enough back that both helipads stand on grass
+  var SHORE = 272;
+  // each spot is either clear of every lot or fully behind a building's roof
+  var SCATTER = [['c_stump', 361, 65], ['c_shroom', 241, 62], ['c_shroom', 566, 60], ['c_stump', 700, 60], ['c_rock1', 868, 62], ['c_rock2', 990, 60], ['c_stump', 1290, 60], ['c_rock2', 1434, 60]];
 
-  // dense pines in rows from the lake shore down to the street, a few oaks and rocks, dirt clearings
+  // dense pines in rows from the lake shore down to the street, a few oaks, rocks and stumps in clear ground
   function forest(w) {
-    var seed = 11;
+    var seed = 13;
     var rnd = function (n) {
       seed = (seed * 1664525 + 1013904223) % 4294967296;
       return Math.floor(seed / 4294967296 * n);
     };
-    var out = [
-      { t: 1, x: 0, y: SHORE - 12, w: w, h: 12 },
-      { t: 1, x: 0, y: 78, w: w, h: 14 }
-    ];
-    for (var x = 120; x < w - 120; x += 90 + rnd(110)) {
-      out.push({ t: 4, x: x, y: 14 + rnd(40), w: 48 + rnd(48), h: 32 + rnd(24) });
-    }
+    var rows = [162, 134];
+    var clear = [[840, 984], [1056, 1372]];
     var items = [];
-    for (var row = 0; row < 4; row++) {
-      var y = SHORE - 10 - row * 22;
-      for (x = -20 + rnd(30); x < w; x += 22 + rnd(18)) {
-        var big = rnd(9) === 0;
-        items.push({ n: big ? ['c_oak1', 'c_oak2', 'c_maple'][rnd(3)] : PINES[rnd(PINES.length)], x: x, y: y - rnd(8) });
+    for (var row = 0; row < 2; row++) {
+      var x = 3 + rnd(28);
+      while (x < w - 60) {
+        // oaks only stand in the back row, so the front row never hides most of a tree
+        var big = row === 0 && rnd(7) === 0;
+        var n = big ? ['c_oak1', 'c_oak2', 'c_maple'][rnd(3)] : PINES[rnd(PINES.length)];
+        var wd = big ? 60 : 32;
+        var y = rows[row] + rnd(5);
+        // the helipad pads and the lodge wing stand in clearings
+        var cut = clear.some(function (c) {
+          return x + wd > c[0] && x < c[1];
+        });
+        if (!cut) items.push({ n: n, x: x, y: y, w: wd });
+        x += wd + 7 + rnd(row ? 22 : 10);
       }
     }
-    for (x = 40; x < w; x += 70 + rnd(90)) {
-      items.push({ n: ['c_rock1', 'c_rock2', 'c_shroom', 'c_stump'][rnd(4)], x: x, y: 20 + rnd(60) });
-    }
+    SCATTER.forEach(function (p) {
+      items.push({ n: p[0], x: p[1], y: p[2] });
+    });
     for (x = 60; x < w; x += 200 + rnd(160)) {
-      items.push({ n: 'c_float', x: x, y: 210 + rnd(120) });
+      items.push({ n: 'c_float', x: x, y: SHORE + 30 + rnd(100) });
     }
     for (x = 150; x < w; x += 260 + rnd(200)) {
-      items.push({ n: rnd(2) ? 'c_buoy1' : 'c_buoy2', x: x, y: 190 + rnd(100) });
+      var by = SHORE + 28 + rnd(12);
+      var under = items.some(function (t) {
+        return t.w === 60 && x + 16 > t.x && x < t.x + 60;
+      });
+      if (!under) items.push({ n: 'c_buoy1', x: x, y: by });
     }
     items.sort(function (a, b) { return b.y - a.y; });
-    return out.concat(items);
+    return items;
   }
 
   DISTRICTS.push({
@@ -46,14 +57,14 @@
       band: { tile: 2, from: SHORE, to: 640, edge: '#6e4a32' },
       end: ['c_pine3', 'c_oak1', 'c_pine4', 'c_pine1']
     },
-    deco: forest(2000),
+    deco: forest(1768),
     sprites: COMMON.concat(['c_tiles', 'c_pine1', 'c_pine2', 'c_pine3', 'c_pine4', 'c_pine5', 'c_pine6', 'c_oak1', 'c_oak2', 'c_maple',
-      'c_rock1', 'c_rock2', 'c_shroom', 'c_stump', 'c_float', 'c_buoy1', 'c_buoy2',
+      'c_rock1', 'c_rock2', 'c_shroom', 'c_stump', 'c_float', 'c_buoy1',
       'c_ring', 'c_fire', 'c_log', 'c_marsh', 'c_pot', 'c_bbq1', 'c_bbq2', 'c_btab', 'c_btab4', 'c_lantern',
       'c_tent1', 'c_tent2', 'c_tent3', 'c_tarp1', 'c_tarp2', 'c_tarp3', 'c_bag1', 'c_bag2', 'c_bag4', 'c_pack', 'c_chair1', 'c_chair2', 'c_ttab',
       'c_cove', 'c_deck', 'c_pole1', 'c_spot', 'c_fcrate', 'c_barrel', 'c_pcrate', 'c_lbuoy',
-      'c_s1', 'c_s2', 'c_s5', 'c_s6', 'c_logs', 'c_m1', 'c_m2', 'c_m5', 'c_m8', 'c_b1', 'c_b5', 'dpad',
-      'c_b3', 'c_b7', 'c_sign1', 'c_sign2', 'flagpole', 'helipad']),
+      'c_s1', 'c_s2', 'c_s5', 'c_s6', 'c_logs', 'c_m1', 'c_m2', 'c_m5', 'c_m8', 'c_b5', 'dpad',
+      'c_lodge', 'c_lodge2', 'c_wind', 'c_sign1', 'c_sign2', 'flagpole', 'helipad']),
     lots: [
       {
         id: 'fire', name: 'Campfire cookout', w: 148,
@@ -73,18 +84,18 @@
         ],
         parts: [
           { n: 'c_ring', at: 0, to: 0, x: 52, y: 0 },
-          { n: 'c_stump', at: 0, to: 1, x: 24, y: -2 },
+          { n: 'c_stump', at: 0, to: 1, x: 24, y: 0 },
           { n: 'c_fire', at: 1, to: 3, x: 52, y: 0 },
-          { n: 'c_log', at: 2, x: 2, y: -6 },
-          { n: 'c_pot', at: 4, x: 43, y: 0 },
-          { n: 'c_marsh', at: 3, x: 66, y: -6 },
-          { n: 'c_bbq1', at: 5, to: 5, x: 82, y: -4 },
-          { n: 'c_bbq2', at: 6, x: 82, y: -4 },
-          { n: 'c_btab', at: 7, to: 8, x: 102, y: -6 },
-          { n: 'c_btab4', at: 9, x: 100, y: -6 },
-          { n: 'c_lantern', at: 8, x: 8, y: 6 },
-          { n: 'c_lantern', at: 8, x: 108, y: 17, to: 8 },
-          { n: 'c_lantern', at: 9, x: 112, y: 22 }
+          { n: 'c_log', at: 2, x: 2, y: 0 },
+          { n: 'c_pot', at: 4, x: 42, y: 0 },
+          { n: 'c_marsh', at: 3, x: 72, y: 0 },
+          { n: 'c_bbq1', at: 5, to: 5, x: 82, y: 0 },
+          { n: 'c_bbq2', at: 6, x: 82, y: 0 },
+          { n: 'c_btab', at: 7, to: 8, x: 102, y: 0 },
+          { n: 'c_btab4', at: 9, x: 100, y: 0 },
+          { n: 'c_lantern', at: 8, x: 8, y: 12 },
+          { n: 'c_lantern', at: 8, x: 108, y: 23, to: 8 },
+          { n: 'c_lantern', at: 9, x: 112, y: 28 }
         ]
       },
       {
@@ -104,21 +115,21 @@
           { add: 'a lantern at every tent', say: 'Lanterns!' }
         ],
         parts: [
-          { n: 'c_tarp1', at: 0, to: 0, x: 8, y: -2 },
-          { n: 'c_tent1', at: 1, x: 4, y: 0 },
-          { n: 'c_tarp2', at: 2, to: 2, x: 84, y: -2 },
-          { n: 'c_tent2', at: 3, x: 80, y: 0 },
-          { n: 'c_tarp3', at: 4, to: 4, x: 164, y: -2 },
-          { n: 'c_tent3', at: 5, x: 160, y: 0 },
-          { n: 'c_bag1', at: 6, x: 68, y: -14 },
-          { n: 'c_bag2', at: 6, x: 146, y: -14 },
-          { n: 'c_bag4', at: 6, x: 212, y: -14 },
-          { n: 'c_pack', at: 7, x: 24, y: -16 },
-          { n: 'c_chair1', at: 7, x: 108, y: -16 },
-          { n: 'c_chair2', at: 7, x: 186, y: -16 },
-          { n: 'c_lantern', at: 8, x: 52, y: -12 },
-          { n: 'c_lantern', at: 8, x: 132, y: -12 },
-          { n: 'c_lantern', at: 8, x: 210, y: -12 }
+          { n: 'c_tarp1', at: 0, to: 0, x: 8, y: 14 },
+          { n: 'c_tent1', at: 1, x: 4, y: 16 },
+          { n: 'c_tarp2', at: 2, to: 2, x: 84, y: 14 },
+          { n: 'c_tent2', at: 3, x: 80, y: 16 },
+          { n: 'c_tarp3', at: 4, to: 4, x: 164, y: 14 },
+          { n: 'c_tent3', at: 5, x: 160, y: 16 },
+          { n: 'c_bag1', at: 6, x: 64, y: 0 },
+          { n: 'c_bag2', at: 6, x: 144, y: 0 },
+          { n: 'c_bag4', at: 6, x: 212, y: 0 },
+          { n: 'c_pack', at: 7, x: 24, y: 0 },
+          { n: 'c_chair1', at: 7, x: 100, y: 0 },
+          { n: 'c_chair2', at: 7, x: 176, y: 0 },
+          { n: 'c_lantern', at: 8, x: 48, y: 0 },
+          { n: 'c_lantern', at: 8, x: 128, y: 0 },
+          { n: 'c_lantern', at: 8, x: 196, y: 0 }
         ]
       },
       {
@@ -131,28 +142,28 @@
           { add: 'a fishing platform with rods', say: 'Fishing spot!' },
           { add: 'mooring posts', say: 'Mooring posts!' },
           { add: 'a barrel and a crate on the jetty', say: 'Barrel and crate!' },
-          { add: 'a crate of fish at the jetty head', say: 'Fish crate!' },
+          { add: 'a crate of fish on the jetty', say: 'Fish crate!' },
           { add: 'a life buoy', say: 'Life buoy!' },
           { add: 'buoys on the water', say: 'Buoys!' },
           { add: 'a second jetty', say: 'Second jetty!' }
         ],
         parts: [
-          { n: 'c_cove', at: 0, x: 0, y: -24 },
-          { n: 'c_deck', at: 0, x: 40, y: -22 },
-          { n: 'c_deck', at: 0, x: 40, y: -6 },
-          { n: 'c_deck', at: 1, x: 40, y: 10 },
-          { n: 'c_spot', at: 2, x: 40, y: 26 },
-          { n: 'c_pole1', at: 3, x: 26, y: -8 },
-          { n: 'c_pole1', at: 3, x: 70, y: -8 },
-          { n: 'c_barrel', at: 4, x: 44, y: 12 },
-          { n: 'c_pcrate', at: 4, x: 58, y: 16 },
-          { n: 'c_fcrate', at: 5, x: 41, y: -20 },
-          { n: 'c_lbuoy', at: 6, x: 84, y: -4 },
-          { n: 'c_buoy1', at: 7, x: 14, y: 30 },
-          { n: 'c_buoy2', at: 7, x: 100, y: 36 },
-          { n: 'c_deck', at: 8, x: 100, y: -22 },
-          { n: 'c_deck', at: 8, x: 100, y: -6 },
-          { n: 'c_pole1', at: 8, x: 118, y: 6 }
+          { n: 'c_cove', at: 0, x: 0, y: 0 },
+          { n: 'c_pole1', at: 3, x: 24, y: 16 },
+          { n: 'c_pole1', at: 3, x: 72, y: 16 },
+          { n: 'c_pole1', at: 8, x: 84, y: 18 },
+          { n: 'c_deck', at: 0, x: 40, y: 0 },
+          { n: 'c_deck', at: 0, x: 40, y: 16 },
+          { n: 'c_deck', at: 1, x: 40, y: 32 },
+          { n: 'c_spot', at: 2, x: 40, y: 32 },
+          { n: 'c_barrel', at: 4, x: 44, y: 36 },
+          { n: 'c_pcrate', at: 4, x: 56, y: 40 },
+          { n: 'c_fcrate', at: 5, x: 41, y: 0 },
+          { n: 'c_lbuoy', at: 6, x: 108, y: 44 },
+          { n: 'c_buoy1', at: 7, x: 14, y: 54 },
+          { n: 'c_buoy1', at: 7, x: 112, y: 64 },
+          { n: 'c_deck', at: 8, x: 100, y: 0 },
+          { n: 'c_deck', at: 8, x: 100, y: 16 }
         ]
       },
       {
@@ -170,16 +181,16 @@
           { add: 'a table with drinks', say: 'Drinks table!' }
         ],
         parts: [
-          { n: 'c_s1', at: 0, to: 0, x: 8, y: 4 },
-          { n: 'c_s5', at: 1, x: 8, y: -26 },
+          { n: 'c_s1', at: 0, to: 0, x: 8, y: 30 },
+          { n: 'c_s5', at: 1, x: 8, y: 0 },
           { n: 'c_logs', at: 2, x: 106, y: 0 },
-          { n: 'c_s2', at: 3, to: 3, x: 124, y: 4 },
-          { n: 'c_s6', at: 4, x: 124, y: -26 },
-          { n: 'c_chair1', at: 5, x: 20, y: -22 },
-          { n: 'c_chair2', at: 5, x: 190, y: -22 },
-          { n: 'c_lantern', at: 6, x: 14, y: 30 },
-          { n: 'c_lantern', at: 6, x: 196, y: 30 },
-          { n: 'c_ttab', at: 7, x: 214, y: -22 }
+          { n: 'c_s2', at: 3, to: 3, x: 124, y: 30 },
+          { n: 'c_s6', at: 4, x: 124, y: 0 },
+          { n: 'c_chair1', at: 5, x: 20, y: 0 },
+          { n: 'c_chair2', at: 5, x: 190, y: 0 },
+          { n: 'c_lantern', at: 6, x: 30, y: 56 },
+          { n: 'c_lantern', at: 6, x: 174, y: 56 },
+          { n: 'c_ttab', at: 7, x: 206, y: 0 }
         ]
       },
       {
@@ -188,27 +199,29 @@
         pay: 2600, gain: 0.4, hold: 6,
         up: 1080000, grow: 1.7,
         unlocks: ['drones', 'heli'],
+        pad: { n: 'helipad', x: 92, y: 126 },
         rungs: [
           { add: 'a deck on the cabin', say: 'Deck!' },
           { add: 'a bigger cabin', say: 'Bigger cabin!' },
-          { add: 'a deck on the bigger cabin', say: 'Big deck!' },
+          { add: 'a stack of firewood', say: 'Firewood!' },
           { add: 'a second medium cabin', say: 'Second cabin!' },
           { add: 'a deck on the second cabin', say: 'Second deck!' },
           { add: 'a drone pad on the roof', say: 'Drone pad!' },
-          { add: 'a stack of firewood', say: 'Firewood!' },
+          { add: 'camp chairs by the decks', say: 'Camp chairs!' },
           { add: 'lanterns on the cabin walls', say: 'Lanterns!' }
         ],
         parts: [
-          { n: 'c_m1', at: 0, to: 0, x: 4, y: 4 },
-          { n: 'c_m5', at: 1, to: 1, x: 4, y: -26 },
-          { n: 'c_b1', at: 2, to: 2, x: 4, y: 4 },
-          { n: 'c_b5', at: 3, x: 4, y: -26 },
-          { n: 'c_m2', at: 4, to: 4, x: 172, y: 4 },
-          { n: 'c_m8', at: 5, x: 172, y: -26 },
-          { n: 'dpad', at: 6, x: 50, y: 50 },
-          { n: 'c_logs', at: 7, x: 266, y: -16 },
-          { n: 'c_lantern', at: 8, x: 60, y: 30 },
-          { n: 'c_lantern', at: 8, x: 230, y: 30 }
+          { n: 'c_m1', at: 0, to: 0, x: 4, y: 30 },
+          { n: 'c_m5', at: 1, to: 1, x: 4, y: 0 },
+          { n: 'c_b5', at: 2, x: 4, y: 0 },
+          { n: 'c_logs', at: 3, x: 282, y: 4 },
+          { n: 'c_m2', at: 4, to: 4, x: 172, y: 30 },
+          { n: 'c_m8', at: 5, x: 172, y: 1 },
+          { n: 'dpad', at: 6, x: 50, y: 72 },
+          { n: 'c_chair1', at: 7, x: 164, y: 0 },
+          { n: 'c_chair2', at: 7, x: 280, y: 0 },
+          { n: 'c_lantern', at: 8, x: 56, y: 56 },
+          { n: 'c_lantern', at: 8, x: 230, y: 56 }
         ]
       },
       {
@@ -218,27 +231,27 @@
         up: 6000000, grow: 1.8,
         capstone: true,
         rungs: [
-          { add: 'a wooden deck at the lodge door', say: 'Lodge deck!' },
-          { add: 'a bonfire by the lodge', say: 'Bonfire!' },
+          { add: 'a wooden porch deck at the lodge door', say: 'Lodge deck!' },
+          { add: 'a fire pit by the lodge', say: 'Fire pit!' },
           { add: 'a flagpole by the entrance', say: 'Flag!' },
-          { add: 'a second lodge wing behind', say: 'Rear wing!' },
-          { add: 'a dining table by the signboard', say: 'Dining table!' },
+          { add: 'a wind pump behind the signboard', say: 'Wind pump!' },
+          { add: 'a dining table under the signboard', say: 'Dining table!' },
           { add: 'lanterns on the lodge wall', say: 'Lanterns!' },
-          { add: 'a signboard with badges', say: 'Bigger sign!' },
+          { add: 'badges on the signboard', say: 'Sign badges!' },
           { add: 'a helicopter pad behind the lodge', say: 'Helipad!' }
         ],
         parts: [
-          { n: 'c_b1', at: 4, x: 16, y: 62 },
-          { n: 'c_b3', at: 0, to: 0, x: 140, y: 4 },
-          { n: 'c_b7', at: 1, x: 140, y: -26 },
-          { n: 'c_fire', at: 2, x: 108, y: -6 },
-          { n: 'flagpole', at: 3, x: 124, y: -6 },
-          { n: 'c_btab4', at: 5, x: 24, y: -10 },
-          { n: 'c_lantern', at: 6, x: 160, y: 36 },
-          { n: 'c_lantern', at: 6, x: 270, y: 36 },
-          { n: 'c_sign1', at: 0, to: 6, x: 4, y: -6 },
-          { n: 'c_sign2', at: 7, x: 4, y: -6 },
-          { n: 'helipad', at: 8, x: 170, y: 100 }
+          { n: 'c_wind', at: 4, x: 22, y: 76 },
+          { n: 'c_lodge', at: 0, to: 0, x: 98, y: 0 },
+          { n: 'c_lodge2', at: 1, x: 98, y: 0 },
+          { n: 'c_fire', at: 2, x: 108, y: 0 },
+          { n: 'flagpole', at: 3, x: 76, y: 0 },
+          { n: 'c_btab4', at: 5, x: 24, y: 0 },
+          { n: 'c_lantern', at: 6, x: 126, y: 20 },
+          { n: 'c_lantern', at: 6, x: 268, y: 20 },
+          { n: 'c_sign1', at: 0, to: 6, x: 4, y: 8 },
+          { n: 'c_sign2', at: 7, x: 4, y: 8 },
+          { n: 'helipad', at: 8, x: 184, y: 172 }
         ]
       }
     ]
