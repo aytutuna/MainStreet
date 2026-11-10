@@ -5,8 +5,8 @@ var LANE_UP = 68;
 var LANE_DOWN = 106;
 var GH = 640;
 var ROAD = 1;
-var DS = 2;
 var HUD_H = 56;
+var BIRD_D = 18;
 
 var INK = '#3a3a50';
 var KERB = '#8b8bab';
@@ -15,7 +15,8 @@ var AMBER = '#f8d239';
 var GREEN = '#64b63b';
 var RED = '#e63f38';
 var SLATE = '#565972';
-var FLAME = [0, 4, 8, 12, 15];
+var FLAME = [0, 7, 15, 15, 15];
+var CRUISE = 120;
 
 var IMG = {};
 var canvas;
@@ -107,6 +108,16 @@ function outlined(s, x, y, col, k) {
   text(s, x, y, col, k);
 }
 
+// a one pixel ring all round, so the text reads on sand and grass alike
+function ringed(s, x, y, col, k) {
+  for (var dy = -1; dy <= 1; dy++) {
+    for (var dx = -1; dx <= 1; dx++) {
+      if (dx || dy) text(s, x + dx, y + dy, INK, k);
+    }
+  }
+  text(s, x, y, col, k);
+}
+
 function textW(s, k) {
   return (s.length * 4 - 1) * k;
 }
@@ -119,7 +130,8 @@ function glyphK(px) {
 function setView(cssW, cssH, dpr) {
   var d = cssW * dpr;
   DPR = dpr;
-  SC = Math.max(1, Math.round(d / 288));
+  // a wide short stage has to zoom out too, or a monitor shows one cart and a huge road
+  SC = Math.max(1, Math.min(Math.round(d / 288), Math.round(cssH * dpr / 400)));
   VW = Math.ceil(d / SC);
   VH = Math.ceil(cssH * dpr / SC);
   if (!ctx || canvas.width !== VW || canvas.height !== VH) {
@@ -268,16 +280,43 @@ function buildBack() {
   var c = back.getContext('2d');
   c.imageSmoothingEnabled = false;
   var b = GH - BASE_H;
-  var tile = function (sheet, i, x0, y0, x1, y1) {
+  // vary mirrors whole tiles sideways by position, so a tuft does not repeat on a 16 pixel lattice; rows stay whole for striped lawns
+  var tile = function (sheet, i, x0, y0, x1, y1, vary) {
     for (var y = y0; y < y1; y += 16) {
       for (var x = x0; x < x1; x += 16) {
         var w = Math.min(16, x1 - x);
         var h = Math.min(16, y1 - y);
-        c.drawImage(IMG[sheet], i * 16, 0, w, h, x, y, w, h);
+        if (vary && w === 16 && h === 16) {
+          var v = ((((x >> 4) * 73856093) ^ ((y >> 4) * 19349663)) >>> 7) & 1;
+          c.save();
+          c.translate(x + (v ? 16 : 0), y);
+          c.scale(v ? -1 : 1, 1);
+          c.drawImage(IMG[sheet], i * 16, 0, 16, 16, 0, 0, 16, 16);
+          c.restore();
+        } else {
+          c.drawImage(IMG[sheet], i * 16, 0, w, h, x, y, w, h);
+        }
       }
     }
   };
-  tile(g.sheet, g.base, 0, 0, gw, b);
+  tile(g.sheet, g.base, 0, 0, gw, b, true);
+  // soft light and dark patches break up the flat colour; their own generator keeps the game's seed untouched
+  var ps = 3;
+  var pr = function (n) {
+    ps = (ps * 1103515245 + 12345) & 0x7fffffff;
+    return (ps >> 8) % n;
+  };
+  for (var k = 0; k < gw * b / 6000; k++) {
+    var qx = pr(gw);
+    var qy = pr(b);
+    var rw = 12 + pr(30);
+    var rh = 4 + pr(10);
+    c.fillStyle = k % 2 ? 'rgba(16,48,24,0.07)' : 'rgba(255,255,190,0.05)';
+    for (var dy = -rh; dy <= rh; dy++) {
+      var hw = Math.round(rw * Math.sqrt(1 - dy * dy / (rh * rh + 1)));
+      c.fillRect(qx - hw, qy + dy, hw * 2, 1);
+    }
+  }
   if (g.band) {
     var top = Math.max(0, b - g.band.to);
     var bot = b - g.band.from;
@@ -299,7 +338,7 @@ function buildBack() {
   });
   tile(g.sheet, g.walk, 0, b, gw, b + WALK_H);
   tile('tiles', ROAD, 0, b + WALK_H, gw, b + 110);
-  tile(g.sheet, g.verge, 0, b + 110, gw, GH);
+  tile(g.sheet, g.verge, 0, b + 110, gw, GH, g.verge === g.base);
   c.fillStyle = KERB;
   c.fillRect(0, b + WALK_H - 2, gw, 2);
   c.fillRect(0, b + 110, gw, 2);
@@ -308,7 +347,6 @@ function buildBack() {
   c.fillRect(0, b + 109, gw, 1);
   c.fillStyle = LINE;
   for (var x = 4; x < gw; x += 32) c.fillRect(x, b + 70, 16, 2);
-  for (x = 44; x < gw; x += 560) c.drawImage(IMG.hydrant, x, b + 22 - 32);
 }
 
 function enter() {
@@ -319,16 +357,35 @@ function enter() {
   popT = [];
   heli = null;
   lanes = [{ dir: -1, y: LANE_DOWN, cars: [], wait: 1 }, { dir: 1, y: LANE_UP, cars: [], wait: 4 }];
-  birds = [];
-  for (var i = 0; i < 2; i++) birds.push({ x: 60 + i * 130, y: 12 + i * 5, v: 0, t: i, wait: i + 1, dir: 1 });
   walkers = [];
-  sel = 0;
-  cam.x = 0;
-  cam.y = 0;
-  cam.vx = cam.vy = 0;
-  cam.go = false;
   buildBack();
   fillWalkers(true);
+  birds = [];
+  for (var i = 0; i < 2; i++) {
+    var b = { x: 0, h: 0, st: 3, v: 0, t: i, wait: 0.5 + i, dir: 1, tx: 0, fx: 0, away: false };
+    var at = birdSpot(-1, 0, b);
+    if (at >= 0) {
+      b.x = at;
+      b.st = 0;
+    }
+    birds.push(b);
+  }
+  sel = 0;
+  cam.vx = cam.vy = 0;
+  cam.go = false;
+  camHome();
+}
+
+// the first screen shows the tallest building in it whole when the view is tall enough
+function camHome() {
+  var top = 0;
+  for (var i = 0; i <= lastVisible(); i++) {
+    var l = D.lots[i];
+    if (l.x < VW && l.x + l.w > 0) top = Math.max(top, lotTop(i));
+  }
+  cam.x = 0;
+  cam.y = Math.max(0, top + BASE_H + HUD_H - VH);
+  camClamp();
 }
 
 function img(n, x, y) {
@@ -365,11 +422,9 @@ function drawFire(x, y, size) {
   var mid = x + 8;
   glow(mid, top - 4, 5 + size, '#f2b22b', 0.1);
   glow(mid, top - 4, 3 + (size >> 1), '#f2b22b', 0.12);
-  if (size >= 4) {
-    ctx.drawImage(IMG.fire, ((f + 2) % 6) * 16, 22 - h, 16, h, x - 5, top - h, 16, h);
-    ctx.drawImage(IMG.fire, ((f + 4) % 6) * 16, 22 - h, 16, h, x + 5, top - h, 16, h);
-  }
-  ctx.drawImage(IMG.fire, f * 16, 22 - h, 16, h, x, top - h, 16, h);
+  var twin = size >= 3;
+  if (twin) ctx.drawImage(IMG.fire, ((f + 3) % 6) * 16, 22 - h, 16, h, x + 2, top - h, 16, h);
+  ctx.drawImage(IMG.fire, f * 16, 22 - h, 16, h, twin ? x - 2 : x, top - h, 16, h);
   if (size >= 3) {
     ctx.fillStyle = AMBER;
     for (var k = 0; k < 3; k++) {
@@ -406,12 +461,17 @@ function drawSmoke(dt) {
     }
     var x = Math.round(s.x + s.vx * s.t - cx);
     var y = Math.round(by - s.h - s.t * (s.big ? 18 : 10));
-    var n = s.big ? 4 : s.t > 0.45 ? 7 : 5;
-    var h = n >> 1;
-    ctx.globalAlpha = (s.big ? 0.8 : 0.9) * (1 - s.t / life);
+    var rad = (s.big ? 2 : s.t > 0.45 ? 4 : 3) + s.t * 2;
+    var a = (s.big ? 0.6 : 0.5) * (1 - s.t / life);
     ctx.fillStyle = '#d8d0e0';
-    ctx.fillRect(x - h + 1, y - h, n - 2, n);
-    ctx.fillRect(x - h, y - h + 1, n, n - 2);
+    ctx.globalAlpha = a * 0.5;
+    ctx.beginPath();
+    ctx.arc(x, y, rad + 1.5, 0, 6.3);
+    ctx.fill();
+    ctx.globalAlpha = a;
+    ctx.beginPath();
+    ctx.arc(x, y, rad * 0.65, 0, 6.3);
+    ctx.fill();
     ctx.globalAlpha = 1;
   }
 }
@@ -451,7 +511,7 @@ function drawFloats(dt) {
       floats.splice(i, 1);
       continue;
     }
-    var k = f.say ? glyphK(14) : glyphK(11);
+    var k = Math.max(2, f.say ? glyphK(14) : glyphK(11));
     var w = textW(f.s, k);
     if (w > VW - 8) {
       k = Math.max(1, k - 1);
@@ -462,7 +522,7 @@ function drawFloats(dt) {
     var y = Math.round(by - f.h - f.t * (f.say ? 14 : 18));
     y = Math.max(HUD_H, y);
     if (f.t > life - 0.4) ctx.globalAlpha = (life - f.t) / 0.4;
-    outlined(f.s, x, y, f.say ? '#f8f8f8' : AMBER, k);
+    ringed(f.s, x, y, f.say ? '#f8f8f8' : AMBER, k);
     ctx.globalAlpha = 1;
   }
 }
@@ -487,7 +547,7 @@ function spot(id, lvl) {
     }
     return { x: l.x + l.w / 2, h: Math.min(lotTop(i), 120) / 2 };
   }
-  if (id === 'drones' && T.drones.length) return { x: T.drones[T.drones.length - 1].x, h: 44 };
+  if (id === 'drones' && T.drones.length) return { x: T.drones[T.drones.length - 1].x, h: CRUISE };
   if (id === 'heli' && heli) return { x: heli.x, h: heli.h + 28 };
   var tk = T.trucks[T.trucks.length - 1];
   return { x: tk ? tk.x : cam.x + VW / 2, h: 36 - LANE_DOWN };
@@ -534,9 +594,9 @@ function popMoney(i, dt) {
   popT[i] = (popT[i] || 0) + dt;
   if (popT[i] < (i === sel ? 1.2 : 3) || s.acc < 1) return;
   var l = D.lots[i];
-  var h = Math.min(lotTop(i), 110) + 6;
+  var h = lotTop(i) + 6;
   var mid = l.x + l.w / 2;
-  if (mid < cx + 12 || mid > cx + VW - 12 || by - h < HUD_H || by - h > VH) {
+  if (mid < cx + 12 || mid > cx + VW - 12 || by - h > VH) {
     s.acc = 0;
     popT[i] = 0;
     return;
@@ -563,16 +623,27 @@ function drawLot(i, dt) {
     bar(Math.round(x + l.w / 2 - 32), by - site.height - 12, 64, s.t / l.build, SLATE, GREEN);
     return;
   }
-  var dry = l.hold > 0 && s.stock <= 0;
   l.parts.forEach(function (p) {
-    if (!shown(p, s.lvl)) return;
-    var n = dry && IMG[p.n + '_shut'] ? p.n + '_shut' : p.n;
-    var py = by - p.y;
-    img(n, x + p.x, py - IMG[n].height);
-    if (l.fx) FX[l.fx].draw(l, s, p, Math.round(x + p.x), py);
+    if (p.y >= 0 && shown(p, s.lvl)) drawPart(l, s, p);
   });
   var hub = hubPad();
-  if (hub && hub.lot === l) img('helipad', x + (l.w - IMG.helipad.width) / 2, by - hub.h - 20 - IMG.helipad.height);
+  if (hub && hub.lot === l) img(hub.n, hub.px - cx, by - hub.y - IMG[hub.n].height);
+}
+
+// parts below the base line stand on the pavement, so they are sorted in with the walkers
+function drawPart(l, s, p) {
+  var n = l.hold > 0 && s.stock <= 0 && IMG[p.n + '_shut'] ? p.n + '_shut' : p.n;
+  var py = by - p.y;
+  var x = l.x - cx;
+  img(n, x + p.x, py - IMG[n].height);
+  if (l.fx) FX[l.fx].draw(l, s, p, Math.round(x + p.x), py);
+}
+
+function addParts(l, s, add) {
+  if (s.st !== 2) return;
+  l.parts.forEach(function (p) {
+    if (p.y < 0 && shown(p, s.lvl)) add(by - p.y, function () { drawPart(l, s, p); });
+  });
 }
 
 function drawStock(i) {
@@ -582,8 +653,14 @@ function drawStock(i) {
   var x = Math.round(l.x + l.w / 2 - cx);
   var r = s.stock / l.hold;
   var p = S.heli ? 1 : Math.min(1, r);
-  bar(x - 20, by + 4, 40, p, SLATE, r > 0.5 ? GREEN : r > 0.2 ? AMBER : RED);
-  if (s.stock > 0) return;
+  bar(x - 20, by + 14, 40, p, SLATE, r > 0.5 ? GREEN : r > 0.2 ? AMBER : RED);
+}
+
+function drawAlert(i) {
+  var l = D.lots[i];
+  var s = S.lots[i];
+  if (s.st !== 2 || l.hold === 0 || s.stock > 0) return;
+  var x = Math.round(l.x + l.w / 2 - cx);
   var bob = Math.round(Math.sin(clock * 6) * 2);
   var y = by - 14 + bob;
   ctx.fillStyle = INK;
@@ -609,10 +686,20 @@ function drawMarker() {
 function drawEnd() {
   var e = endX();
   var n = 0;
+  var lamps = lampX();
+  var gaps = D.ground.gap || [];
   for (var x = e + 20; x < worldW() + 300; x += 44) {
     var im = IMG[D.ground.end[n++ % D.ground.end.length]];
-    var px = x + ((x * 7) % 13) - cx;
-    if (px > -50 && px < VW) ctx.drawImage(im, px, by - im.height + 6 + ((x * 3) % 17));
+    var wx = x + ((x * 7) % 13);
+    var px = wx - cx;
+    if (px < -50 || px > VW) continue;
+    // bases stay on the lawn, clear of lamps and of the district's paved spans
+    var bad = lamps.some(function (lx) {
+      return lx - 4 < wx + im.width && lx + 32 > wx;
+    }) || gaps.some(function (g) {
+      return g[0] < wx + im.width && g[1] > wx;
+    });
+    if (!bad) ctx.drawImage(im, px, by - im.height - 2 - ((x * 3) % 17));
   }
 }
 
@@ -632,17 +719,20 @@ function fillWalkers(spread) {
   }).length;
   if (cur < want) {
     var end = openEnd();
-    walkers.push({
+    var w0 = {
       skin: 1 + ((rnd() * 5) | 0),
       x: spread ? rnd() * end : -16,
       off: 8 + ((rnd() * 18) | 0),
+      o0: 0,
       dir: 1,
       tx: -1,
       wait: 0,
       t: rnd() * 5,
       v: 13 + rnd() * 9,
       leave: false
-    });
+    };
+    w0.o0 = w0.off;
+    walkers.push(w0);
   } else if (cur > want) {
     for (i = walkers.length - 1; i >= 0; i--) {
       if (!walkers[i].leave) {
@@ -671,6 +761,39 @@ function pickTarget() {
   return list.length ? list[0][0] : -1;
 }
 
+// pavement depths where a walker at world x would stand inside a hydrant or the feet of a part
+function walkBlocked(x, d) {
+  var hs = hydrantX();
+  for (var i = 0; i < hs.length; i++) {
+    if (x > hs[i] - 8 && x < hs[i] + 24 && d > 12 && d < 25) return true;
+  }
+  for (i = 0; i <= lastVisible(); i++) {
+    var l = D.lots[i];
+    if (!isOpen(i) || x < l.x - 8 || x > l.x + l.w + 8) continue;
+    for (var j = 0; j < l.parts.length; j++) {
+      var p = l.parts[j];
+      if (p.y >= 0 || !shown(p, S.lots[i].lvl)) continue;
+      var px = l.x + p.x;
+      if (x > px - 8 && x < px + IMG[p.n].width + 8 && d > -p.y - 10 && d < -p.y + 3) return true;
+    }
+  }
+  return false;
+}
+
+// a walker steps to another depth while a prop is in its way
+function dodge(w, dt) {
+  var want = w.o0;
+  var ahead = w.x + w.dir * 14;
+  if (walkBlocked(w.x, want) || walkBlocked(ahead, want)) {
+    var best = -1;
+    for (var d = 8; d <= 26; d++) {
+      if (!walkBlocked(w.x, d) && !walkBlocked(ahead, d) && (best < 0 || Math.abs(d - want) < Math.abs(best - want))) best = d;
+    }
+    if (best >= 0) want = best;
+  }
+  w.off += Math.max(-14 * dt, Math.min(14 * dt, want - w.off));
+}
+
 function updateWalkers(dt) {
   walkTimer += dt;
   if (walkTimer > 0.8) {
@@ -680,6 +803,7 @@ function updateWalkers(dt) {
   for (var i = walkers.length - 1; i >= 0; i--) {
     var w = walkers[i];
     w.t += dt;
+    dodge(w, dt);
     var open = w.lot >= 0 && w.lot !== undefined && isOpen(w.lot);
     if (w.wait > 0) {
       var dry = open && D.lots[w.lot].hold > 0 && S.lots[w.lot].stock <= 0;
@@ -709,7 +833,7 @@ function updateWalkers(dt) {
 
 function carPic(ln) {
   var open = openCount();
-  if (open >= 4 && rnd() < 0.2) return { bus: true, w: 112, f: (rnd() * 6) | 0 };
+  if (ln.dir < 0 && !T.trucks.length && open >= 4 && rnd() < 0.2) return { bus: true, w: 112, f: (rnd() * 6) | 0 };
   var c = 1 + ((rnd() * 8) | 0);
   var n = 'car_' + (ln.dir > 0 ? 'r' : 'l') + c;
   return { pic: n, w: IMG[n].width };
@@ -718,14 +842,16 @@ function carPic(ln) {
 function updateCars(dt) {
   lanes.forEach(function (ln) {
     ln.wait -= dt;
-    if (ln.wait <= 0) {
+    // the lower lane belongs to the trucks once they are hired, so cars there fade out instead of being driven over
+    var cede = ln.dir < 0 && T.trucks.length > 0;
+    if (ln.wait <= 0 && !cede) {
       var x0 = ln.dir < 0 ? cam.x + VW + 100 : cam.x - 100;
       var clear = ln.cars.every(function (c) {
         return Math.abs(c.x - x0) > 150;
       });
-      if (clear && ln.dir < 0) {
+      if (clear) {
         clear = T.trucks.every(function (tk) {
-          return Math.abs(tk.x - x0) > 200;
+          return Math.abs(tk.x - x0) > 260;
         });
       }
       if (clear) {
@@ -753,36 +879,144 @@ function updateCars(dt) {
           ahead(tk.x, 62);
         });
       }
+      // a truck is wider and taller than the lane beside it, so a car it is about to pass fades out first
+      var near = ln.dir > 0 && T.trucks.some(function (tk) {
+        return Math.abs(tk.x - o.x) < o.w / 2 + 180;
+      });
+      if (cede || near) {
+        o.fade = (o.fade || 0) + dt;
+        if (o.fade > 0.6) {
+          ln.cars.splice(i, 1);
+          continue;
+        }
+      }
       if (!blocked) o.x += ln.dir * o.v * dt;
       if (Math.abs(o.x - (cam.x + VW / 2)) > VW / 2 + 320) ln.cars.splice(i, 1);
     }
   });
 }
 
+// where a standing bird would touch something: street furniture, parts on the pavement, stock bars and walkers
+function birdClear(x, me) {
+  var x0 = x - 12;
+  var x1 = x + 12;
+  var lo = -BIRD_D - 1;
+  var hi = -BIRD_D + 15;
+  var i;
+  var ls = lampX();
+  for (i = 0; i < ls.length; i++) if (x1 > ls[i] + 2 && x0 < ls[i] + 14) return false;
+  ls = hydrantX();
+  for (i = 0; i < ls.length; i++) if (x1 > ls[i] - 2 && x0 < ls[i] + 18) return false;
+  for (i = 0; i <= lastVisible(); i++) {
+    var l = D.lots[i];
+    if (!isOpen(i) || x1 < l.x - 4 || x0 > l.x + l.w + 4) continue;
+    if (l.hold > 0 && Math.abs(x - (l.x + l.w / 2)) < 26) return false;
+    for (var j = 0; j < l.parts.length; j++) {
+      var p = l.parts[j];
+      var im = IMG[p.n];
+      if (p.y >= hi || p.y + im.height <= lo || !shown(p, S.lots[i].lvl)) continue;
+      if (x1 > l.x + p.x - 2 && x0 < l.x + p.x + im.width + 2) return false;
+    }
+  }
+  for (i = 0; i < walkers.length; i++) if (!walkers[i].leave && Math.abs(walkers[i].x - x) < 28) return false;
+  for (i = 0; i < birds.length; i++) if (birds[i] !== me && birds[i].st < 2 && Math.abs(birds[i].x - x) < 30) return false;
+  return true;
+}
+
+// a clear spot at least far from the given x, or -1 when the street has none
+function birdSpot(from, far, me) {
+  var lo = 16;
+  var hi = endX() - 16;
+  for (var k = 0; k < 60; k++) {
+    var x = Math.round(lo + rnd() * (hi - lo));
+    if (Math.abs(x - from) >= far && birdClear(x, me)) return x;
+  }
+  return -1;
+}
+
+function birdFly(p) {
+  var at = birdSpot(p.x, 80, p);
+  p.st = 2;
+  p.fx = p.x;
+  p.h = 0;
+  p.away = at < 0;
+  p.tx = at >= 0 ? at : p.x + (rnd() < 0.5 ? -1 : 1) * (VW + 120);
+  p.dir = p.tx > p.x ? 1 : -1;
+}
+
 function updateBirds(dt) {
-  var e = Math.max(120, openEnd());
   birds.forEach(function (p) {
     p.t += dt;
+    if (p.st === 3) {
+      p.wait -= dt;
+      if (p.wait > 0) return;
+      var at = birdSpot(-1, 0, p);
+      if (at < 0) {
+        p.wait = 2;
+        return;
+      }
+      // it comes back in flight from beside the view
+      p.x = rnd() < 0.5 ? cam.x - 40 : cam.x + VW + 40;
+      p.fx = p.x;
+      p.tx = at;
+      p.dir = at > p.x ? 1 : -1;
+      p.away = false;
+      p.h = 0;
+      p.st = 2;
+      return;
+    }
+    if (p.st === 2) {
+      var dx = p.tx - p.x;
+      var step = 70 * dt;
+      if (Math.abs(dx) <= step) {
+        p.x = p.tx;
+        if (p.away) {
+          p.st = 3;
+          p.wait = 4 + rnd() * 4;
+        } else {
+          p.st = 0;
+          p.h = 0;
+          p.v = 0;
+          p.wait = 2 + rnd() * 2;
+        }
+        return;
+      }
+      p.x += (dx > 0 ? 1 : -1) * step;
+      var run = Math.max(1, Math.abs(p.tx - p.fx));
+      var u = Math.min(1, Math.abs(p.x - p.fx) / run);
+      p.h = p.away ? Math.min(90, p.h + 45 * dt) : Math.min(26, run * 0.4) * Math.sin(Math.PI * u);
+      return;
+    }
+    if (!birdClear(p.x, p)) {
+      birdFly(p);
+      return;
+    }
     p.wait -= dt;
     if (p.wait <= 0) {
       p.v = rnd() < 0.5 ? 0 : (rnd() < 0.5 ? -9 : 9);
       if (p.v) p.dir = p.v > 0 ? 1 : -1;
       p.wait = 1.5 + rnd() * 3;
     }
-    p.x = Math.max(8, Math.min(e - 24, p.x + p.v * dt));
+    if (p.v) {
+      var nx = p.x + p.v * dt;
+      if (nx >= 16 && nx <= endX() - 16 && birdClear(nx, p)) p.x = nx;
+      else p.v = 0;
+    }
   });
 }
 
 function drawWalker(w) {
   var f = w.wait > 0 ? 0 : Math.floor(w.t * 8) % 6;
   var col = ((w.dir < 0 ? 6 : 0) + f) * 16;
-  ctx.drawImage(IMG['walk' + w.skin], col, 0, 16, 32, Math.round(w.x - 8 - cx), by + w.off - 32, 16, 32);
+  ctx.drawImage(IMG['walk' + w.skin], col, 0, 16, 32, Math.round(w.x - 8 - cx), Math.round(by + w.off) - 32, 16, 32);
 }
 
 function drawCar(ln, c) {
   var x = Math.round(c.x - c.w / 2 - cx);
+  if (c.fade) ctx.globalAlpha = Math.max(0, 1 - c.fade / 0.6);
   if (c.bus) ctx.drawImage(IMG[ln.dir > 0 ? 'bus_r' : 'bus_l'], c.f * 112, 0, 112, 64, x, by + ln.y - 64, 112, 64);
   else img(c.pic, x, by + ln.y - 48);
+  ctx.globalAlpha = 1;
 }
 
 function truckSheet() {
@@ -805,13 +1039,13 @@ function drawTruck(tk, dt) {
   ctx.drawImage(truckSheet(), f * 134, 0, 134, 75, x, y, 134, 75);
   if (l >= 6) {
     var on = Math.floor(clock * 4) % 2;
-    glow(x + 105, y + 10, 7, on ? RED : AMBER, 0.25);
+    glow(x + 28, y + 8, 7, on ? RED : AMBER, 0.25);
     ctx.fillStyle = INK;
-    ctx.fillRect(x + 101, y + 12, 8, 2);
+    ctx.fillRect(x + 24, y + 10, 8, 2);
     ctx.fillStyle = on ? RED : AMBER;
-    ctx.fillRect(x + 102, y + 9, 6, 3);
+    ctx.fillRect(x + 25, y + 7, 6, 3);
     ctx.fillStyle = on ? '#ff8575' : '#fff59a';
-    ctx.fillRect(x + 103, y + 9, 4, 1);
+    ctx.fillRect(x + 26, y + 7, 4, 1);
   }
   tk.puff = (tk.puff || 0) - dt;
   if (l >= 1 && moving && tk.puff <= 0 && cam.x < tk.x && tk.x < cam.x + VW + 200) {
@@ -833,19 +1067,15 @@ function drawParcels(tk) {
 
 function drawDrone(d, k) {
   var go = d.to >= 0 ? d.t / DRONE_TRIP : 0;
-  var h = 44 - Math.max(0, (go - 0.8) * 5) * 22 + Math.sin(clock * 3 + k) * 3;
-  var x = Math.round(d.x - 18 * DS - cx);
-  var y = Math.round(by - h - 20 * DS);
-  ctx.globalAlpha = 0.25;
-  ctx.fillStyle = INK;
-  ctx.fillRect(Math.round(d.x - cx) - 10, by + 22, 20, 3);
-  ctx.globalAlpha = 1;
+  var h = CRUISE - Math.max(0, (go - 0.8) * 5) * (CRUISE - 24) + Math.sin(clock * 3 + k) * 3;
+  var x = Math.round(d.x - 18 - cx);
+  var y = Math.round(by - h - 20);
   if (d.to >= 0 && go < 0.8) {
     ctx.fillStyle = INK;
-    ctx.fillRect(Math.round(d.x - cx), y + 18 * DS, 1, 4);
-    ctx.drawImage(IMG.dparcel, Math.round(d.x - cx) - 5, y + 18 * DS + 4);
+    ctx.fillRect(Math.round(d.x - cx), y + 18, 1, 4);
+    ctx.drawImage(IMG.dparcel, Math.round(d.x - cx) - 5, y + 22);
   }
-  ctx.drawImage(IMG.drone, (Math.floor(clock * 12 + k) % 6) * 36, 0, 36, 20, x, y, 36 * DS, 20 * DS);
+  ctx.drawImage(IMG.drone, (Math.floor(clock * 12 + k) % 6) * 36, 0, 36, 20, x, y, 36, 20);
 }
 
 function lotPad() {
@@ -859,12 +1089,15 @@ function lotPad() {
   return null;
 }
 
-// buying the helicopter puts a pad on the roof of the lot that unlocks it until a lot upgrade builds a better one
+// buying the helicopter lays a pad for it until a lot upgrade builds a better one: the lot's pad entry
+// (sprite and place on the lot) when it has one, else a helipad at the roof top of the lot that unlocks the helicopter
 function hubPad() {
   if (!S.heli || lotPad()) return null;
   for (var i = 0; i < D.lots.length; i++) {
     var l = D.lots[i];
-    if (isOpen(i) && l.unlocks && l.unlocks.indexOf('heli') >= 0) return { x: l.x + l.w / 2, h: lotTop(i) - 50, lot: l };
+    if (!isOpen(i) || !l.unlocks || l.unlocks.indexOf('heli') < 0) continue;
+    var q = l.pad || { n: 'helipad', x: (l.w - IMG.helipad.width) / 2, y: Math.max(0, lotTop(i) - IMG.helipad.height) };
+    return { x: l.x + q.x + IMG[q.n].width / 2, h: q.y + 20, lot: l, n: q.n, px: l.x + q.x, y: q.y };
   }
   return null;
 }
@@ -904,7 +1137,7 @@ function updateHeli(dt) {
     if (i < 0) return;
     var l = D.lots[i];
     heli.tx = l.x + 16 + rnd() * (l.w - 32);
-    heli.th = 120 + rnd() * 40;
+    heli.th = Math.min(250, Math.max(120, lotTop(i) + 24)) + rnd() * 16;
     heli.home = false;
     return;
   }
@@ -915,15 +1148,20 @@ function updateHeli(dt) {
 }
 
 function drawHeli() {
-  var x = Math.round(heli.x - 40 - cx);
-  var y = Math.round(by - heli.h - 56);
-  var air = heli.h > 40;
-  if (air) {
-    ctx.globalAlpha = 0.22;
+  var pad = padSpot();
+  var landed = pad && heli.home && Math.abs(heli.x - pad.x) < 3 && Math.abs(heli.h - pad.h) < 3;
+  if (!landed) {
+    // small and faint, and smaller the higher it flies, so it reads as in the air
+    var sw = Math.max(9, 22 - heli.h / 14);
+    ctx.globalAlpha = 0.2;
     ctx.fillStyle = INK;
-    ctx.fillRect(x + 18, by + 22, 44, 4);
+    ctx.beginPath();
+    ctx.ellipse(Math.round(heli.x - cx), by + 18, sw, sw / 3.5, 0, 0, 6.3);
+    ctx.fill();
     ctx.globalAlpha = 1;
   }
+  var x = Math.round(heli.x - 40 - cx);
+  var y = Math.round(by - heli.h - 56);
   var im = IMG[Math.floor(clock * 14) % 2 ? 'heli1' : 'heli2'];
   if (heli.dir > 0) {
     ctx.save();
@@ -936,10 +1174,13 @@ function drawHeli() {
   }
 }
 
+// street furniture comes from the district: D.lamps and D.hydrants are the left edges of the sprites
 function lampX() {
-  var list = [];
-  for (var x = 8; x < worldW() + 200; x += 264) list.push(x);
-  return list;
+  return D.lamps || [];
+}
+
+function hydrantX() {
+  return D.hydrants || [];
 }
 
 function animate(dt) {
@@ -969,31 +1210,34 @@ function draw(dt) {
 
   drawEnd();
   var last = lastVisible();
+  var objs = [];
+  var add = function (y, f) {
+    objs.push({ y: y, f: f, k: objs.length });
+  };
   for (var i = 0; i <= last; i++) {
     var l = D.lots[i];
     if (l.x + l.w < cx || l.x > cx + VW) continue;
     drawLot(i, dt);
+    drawStock(i);
+    addParts(l, S.lots[i], add);
   }
 
-  var objs = [];
-  var add = function (y, f) {
-    objs.push({ y: y, f: f });
-  };
   walkers.forEach(function (w) {
     if (w.x > cx - 20 && w.x < cx + VW + 20) add(by + w.off, function () { drawWalker(w); });
   });
-  lampX().forEach(function (x, k) {
+  lampX().forEach(function (x) {
     if (x < cx - 40 || x > cx + VW) return;
-    add(by + 26, function () {
-      img('lamp', x - cx, by + 26 - 64);
-      if (k === 0) ctx.drawImage(IMG.crow, (Math.floor(clock * 4) % 6) * 32, 0, 32, 32, x - cx - 4, by + 26 - 74, 32, 32);
-    });
+    add(by + 26, function () { img('lamp', x - cx, by + 26 - 64); });
+  });
+  hydrantX().forEach(function (x) {
+    if (x < cx - 20 || x > cx + VW) return;
+    add(by + 22, function () { img('hydrant', x - cx, by + 22 - 32); });
   });
   birds.forEach(function (p) {
-    if (p.x < cx - 20 || p.x > cx + VW) return;
-    add(by + p.y, function () {
+    if (p.st > 0 || p.x < cx - 20 || p.x > cx + VW) return;
+    add(by + BIRD_D, function () {
       var f = Math.floor(p.t * (p.v ? 6 : 2)) % 6;
-      ctx.drawImage(IMG.bird, ((p.dir > 0 ? 0 : 6) + f) * 32, 0, 32, 16, Math.round(p.x - 16 - cx), by + p.y - 16, 32, 16);
+      ctx.drawImage(IMG.bird, ((p.dir > 0 ? 0 : 6) + f) * 32, 0, 32, 16, Math.round(p.x - 16 - cx), by + BIRD_D - 16, 32, 16);
     });
   });
   lanes.forEach(function (ln) {
@@ -1005,10 +1249,15 @@ function draw(dt) {
     add(by + LANE_DOWN + 1, function () { drawTruck(tk, dt); });
   });
   objs.sort(function (a, b) {
-    return a.y - b.y;
+    return a.y - b.y || a.k - b.k;
   });
   objs.forEach(function (o) {
     o.f();
+  });
+  birds.forEach(function (p) {
+    if (p.st !== 2 || p.x < cx - 40 || p.x > cx + VW + 40) return;
+    var f = Math.floor(p.t * 14) % 6;
+    ctx.drawImage(IMG.bird_fly, ((p.dir > 0 ? 0 : 6) + f) * 32, 0, 32, 32, Math.round(p.x - 16 - cx), Math.round(by + BIRD_D - p.h - 26), 32, 32);
   });
 
   T.trucks.forEach(drawParcels);
@@ -1018,7 +1267,7 @@ function draw(dt) {
     l = D.lots[i];
     if (S.lots[i].st === 2) popMoney(i, dt);
     if (l.x + l.w < cx || l.x > cx + VW) continue;
-    drawStock(i);
+    drawAlert(i);
   }
   if (sel <= last) drawMarker();
   T.drones.forEach(function (d, k) {
@@ -1050,6 +1299,6 @@ function lotAt(lx, ly) {
 
 function addFloat(i, n) {
   var l = D.lots[i];
-  floats.push({ s: '+$' + short(Math.floor(n)), x: l.x + l.w / 2 + Math.round(rnd() * 16 - 8), h: Math.min(lotTop(i), 110) + 6, t: 0 });
+  floats.push({ s: '+$' + short(Math.floor(n)), x: l.x + l.w / 2 + Math.round(rnd() * 16 - 8), h: lotTop(i) + 6, t: 0 });
   sparks.push({ x: l.x + l.w / 2, h: Math.min(lotTop(i), 100) / 2, t: 0 });
 }

@@ -180,7 +180,7 @@ function hintText() {
   if (S.stars) return '';
   if (S.lots[0].lvl === 0 && !tapped) return 'Tap the ' + D.lots[0].name.toLowerCase() + ' to restock it and earn.';
   if (S.lots[0].lvl === 0) return 'Buy the first upgrade below. Every purchase changes the street.';
-  if (S.lots[1] && S.lots[1].st === 0) return 'Save up for the ' + D.lots[1].name.toLowerCase() + ', then buy it from its row.';
+  if (S.lots[1] && S.lots[1].st === 0) return free ? 'Buy the ' + D.lots[1].name.toLowerCase() + ' from its row.' : 'Save up for the ' + D.lots[1].name.toLowerCase() + ', then buy it from its row.';
   return '';
 }
 
@@ -407,6 +407,18 @@ function tapAt(e) {
   else refresh();
 }
 
+// the wheel pans the street sideways, with shift it pans up and down; the ease in camGo smooths the notches
+function wheel(e) {
+  if (e.ctrlKey) return;
+  e.preventDefault();
+  var k = e.deltaMode === 1 ? 24 : e.deltaMode === 2 ? 400 : 1;
+  var d = (Math.abs(e.deltaX) > Math.abs(e.deltaY) ? e.deltaX : e.deltaY) * k * 1.5 * DPR / SC;
+  var x = cam.go ? cam.tx : cam.x;
+  var y = cam.go ? cam.ty : cam.y;
+  if (e.shiftKey) camGo(x, y - d);
+  else camGo(x + d, y);
+}
+
 function down(e) {
   // a primary pointer replaces one whose end was never delivered
   if (ptr && !e.isPrimary) return;
@@ -421,7 +433,10 @@ function drag(e) {
   if (!ptr || e.pointerId !== ptr.id) return;
   var dx = e.clientX - ptr.x;
   var dy = e.clientY - ptr.y;
-  if (!ptr.pan && Math.hypot(dx, dy) > 10) ptr.pan = true;
+  if (!ptr.pan && Math.hypot(dx, dy) > (e.pointerType === 'mouse' ? 5 : 10)) {
+    ptr.pan = true;
+    canvas.classList.add('drag');
+  }
   if (!ptr.pan) return;
   var k = SC / DPR;
   cam.x = ptr.cx - dx / k;
@@ -435,6 +450,7 @@ function up(e) {
   if (!ptr || e.pointerId !== ptr.id) return;
   var p = ptr;
   ptr = null;
+  canvas.classList.remove('drag');
   if (e.type === 'pointercancel') return;
   if (!p.pan) {
     // a press that only stopped a gliding street is not a tap
@@ -476,6 +492,7 @@ function start() {
   canvas.addEventListener('pointermove', drag);
   canvas.addEventListener('pointerup', up);
   canvas.addEventListener('pointercancel', up);
+  canvas.addEventListener('wheel', wheel, { passive: false });
   document.addEventListener('pointerup', wake);
   document.addEventListener('click', wake);
   $('handle').addEventListener('click', function () {
@@ -500,8 +517,9 @@ function start() {
   if (nativeApp()) set($('savenote'), 'Your game is saved on this phone. Move it to another phone with a save code.');
   $('export').addEventListener('click', copySave);
   $('import').addEventListener('click', useSave);
+  $('free').textContent = 'Unlimited money: ' + (free ? 'on' : 'off');
   $('free').addEventListener('click', function () {
-    free = !free;
+    setFree(!free);
     $('free').textContent = 'Unlimited money: ' + (free ? 'on' : 'off');
     refresh();
   });

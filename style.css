@@ -53,6 +53,11 @@ button {
   bottom: 0;
   image-rendering: pixelated;
   touch-action: none;
+  cursor: grab;
+}
+
+#view.drag {
+  cursor: grabbing;
 }
 
 #hud {
@@ -468,5 +473,12 @@ a:focus-visible {
 
   #panel.collapsed .note {
     display: block;
+  }
+}
+
+@media (min-width: 1800px) and (min-height: 1000px) {
+  #panel,
+  #hud {
+    zoom: 1.3;
   }
 }
