@@ -34,13 +34,9 @@ targets:
         buildPhase: resources
       - path: ../data.js
         buildPhase: resources
-      - path: ../beach.js
+      - path: ../map.js
         buildPhase: resources
-      - path: ../garden.js
-        buildPhase: resources
-      - path: ../camping.js
-        buildPhase: resources
-      - path: ../game.js
+      - path: ../sim.js
         buildPhase: resources
       - path: ../render.js
         buildPhase: resources
