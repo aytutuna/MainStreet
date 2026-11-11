@@ -1,439 +1,229 @@
-var FLEET = {
-  trucks: [
-    { cost: 350, add: 'a delivery truck', say: 'Truck hired!' },
-    { cost: 2800, add: 'a second truck', say: 'Second truck!' },
-    { cost: 14000, add: 'a third truck', say: 'Third truck!' }
-  ],
-  speed: {
-    up: 3000,
-    grow: 1.8,
-    rungs: [
-      { add: 'exhaust puffs', say: 'Exhaust!' },
-      { add: 'a painted stripe', say: 'Stripe!' },
-      { add: 'a roof rack with parcels', say: 'Roof rack!' },
-      { add: 'speed lines', say: 'Speed lines!' },
-      { add: 'new red paint', say: 'Red paint!' },
-      { add: 'a flashing beacon', say: 'Beacon!' }
-    ]
-  },
-  drones: [
-    { cost: 150000, add: 'a delivery drone', say: 'Drone!' },
-    { cost: 350000, add: 'a second drone', say: 'Second drone!' },
-    { cost: 700000, add: 'a third drone', say: 'Third drone!' },
-    { cost: 1200000, add: 'a fourth drone', say: 'Fourth drone!' },
-    { cost: 2000000, add: 'a fifth drone', say: 'Fifth drone!' }
-  ],
-  heli: { add: 'a helicopter and its helipad', say: 'Helicopter!' }
-};
-
-// one stack of storeys: roofs and storeys come first, the ground floor last so its sign overlaps the storey above
-// adds[k] is the level at which storey k + 1 appears; the ground wall is 48 high and every storey adds 64
-function stack(x, ground, mids, roof, adds, from) {
-  var p = [];
-  for (var k = 0; k <= adds.length; k++) {
-    p.push({ n: roof, at: k ? adds[k - 1] : from, to: k < adds.length ? adds[k] - 1 : undefined, x: x, y: 48 + 64 * k });
-  }
-  adds.forEach(function (at, k) {
-    p.push({ n: mids[k], at: at, x: x, y: 48 + 64 * k });
-  });
-  p.push({ n: ground, at: from, x: x, y: 0 });
-  return p;
+// first level cost, then each level costs mult times the one before
+function scale(first, mult) {
+  var out = [];
+  for (var i = 0; i < 5; i++) out.push(Math.round(first * Math.pow(mult, i)));
+  return out;
 }
 
-// sprites every district needs: ground tiles, lot sites, street life and the fleet
-var COMMON = ['tiles', 'forsale', 'site136_0', 'site136_1', 'site136_2', 'site148_0', 'site148_1', 'site148_2',
-  'site232_0', 'site232_1', 'site232_2', 'site304_0', 'site304_1', 'site304_2',
-  'lamp', 'hydrant', 'bird', 'bird_fly', 'walk1', 'walk2', 'walk3', 'walk4', 'walk5', 'bus_l', 'bus_r',
-  'car_l1', 'car_l2', 'car_l3', 'car_l4', 'car_l5', 'car_l6', 'car_l7', 'car_l8',
-  'car_r1', 'car_r2', 'car_r3', 'car_r4', 'car_r5', 'car_r6', 'car_r7', 'car_r8',
-  'truck', 'truck2', 'truck3', 'truck5', 'parcel1', 'parcel2', 'parcel3', 'drone', 'dparcel', 'heli1', 'heli2'];
+var BUILD_TIME = [8, 14, 22, 30, 40];
 
-// the ground behind the street: a path along the back with spurs to the pavement, a lawn in front of it with
-// bushes and a few trees, and behind it ponds, bench groups, fenced gardens and tree clusters, then thin rows of trees.
-// Everything is placed beside the paths, never on them, and from a fixed seed so the same ground is baked every time
-function backyard(w, lots) {
-  var seed = 7;
-  var edges = [];
-  var mids = [];
-  var at = 0;
-  lots.forEach(function (lw) {
-    edges.push(at - 12, at + 12);
-    mids.push(at + lw / 2);
-    at += lw;
-  });
-  var list = [];
-  var rnd = function (n) {
-    seed = (seed * 1103515245 + 12345) & 0x7fffffff;
-    return (seed >> 8) % n;
-  };
-  var trees = ['tree_a', 'tree_b', 'tree_c'];
-  var beds = ['bedp', 'bedr', 'bedp'];
-  var wide = { tree_a: 48, tree_b: 32, tree_c: 32, bedp: 32, bedr: 32, bloom1: 16, bloom2: 16, bush: 16, bench: 48, pond: 48, picket: 16 };
-  var spurs = [216, 464, 726, 1012, 1297, 1620, 1868];
-  // a group goes in only when it clears the spurs and does not straddle the side of a building, which would leave a sliver showing
-  var put = function (items) {
-    var x0 = 1e9;
-    var x1 = -1e9;
-    items.forEach(function (it) {
-      x0 = Math.min(x0, it.x);
-      x1 = Math.max(x1, it.x + wide[it.n] * (it.rep || 1));
-    });
-    var ok = spurs.every(function (sx) {
-      return items.every(function (it) {
-        return it.y >= 136 || it.x + wide[it.n] * (it.rep || 1) < sx - 6 || it.x > sx + 22;
-      });
-    }) && edges.every(function (e) {
-      return x1 < e - 3 || x0 > e + 3;
-    }) && mids.every(function (m) {
-      // the for sale sign hides low things in the middle of a lot
-      return items.every(function (it) {
-        return it.y > 60 || it.x + wide[it.n] < m - 24 || it.x > m + 24;
-      });
-    });
-    if (ok) items.forEach(function (it) {
-      list.push(it);
-    });
-    return ok;
-  };
-  list.push({ t: 3, x: 0, y: 136, w: w, h: 16 });
-  spurs.forEach(function (sx) {
-    list.push({ t: 3, x: sx, y: 0, w: 16, h: 136 });
-  });
-  for (var x = 28; x < w - 190; x += 150 + rnd(40)) {
-    var kind = rnd(100);
-    var r = [rnd(24), rnd(3), rnd(3), rnd(3), rnd(2), rnd(4), rnd(12), rnd(12), rnd(2), rnd(10), rnd(20), rnd(20)];
-    var make = function (xx) {
-      var g;
-      if (kind < 22) {
-        var py = 190 + r[0];
-        return [{ n: 'pond', x: xx, y: py }, { n: 'bush', x: xx - 20, y: py + 4 }, { n: 'bush', x: xx + 54, y: py + 10 },
-          { n: trees[r[1]], x: xx + 8, y: py + 62 }];
-      }
-      if (kind < 46) {
-        return [{ n: 'bench', x: xx, y: 153 }, { n: r[4] ? 'bedr' : beds[r[1]], x: xx + 52, y: 154 }];
-      }
-      if (kind < 70) {
-        var rep = 5 + r[5];
-        var fw = rep * 16;
-        g = [{ n: 'picket', x: xx, y: 184, rep: rep }, { n: 'picket', x: xx, y: 238, rep: rep }];
-        for (var k = 0; k < 4; k++) {
-          g.push({ n: 'picket', x: xx, y: 196 + k * 12 });
-          g.push({ n: 'picket', x: xx + fw - 16, y: 196 + k * 12 });
-        }
-        // beds in two rows inside the fence
-        for (var row = 0; row < 2; row++) {
-          for (var bx = xx + 20, bi = row + r[8]; bx + 32 <= xx + fw - 14; bx += 36, bi++) {
-            g.push({ n: beds[bi % 3], x: bx, y: 200 + row * 18 });
-          }
-        }
-        return g;
-      }
-      return [{ n: trees[r[1]], x: xx, y: 196 + r[10] }, { n: trees[r[2]], x: xx + 56, y: 230 + r[11] }, { n: 'bush', x: xx + 30, y: 172 }];
-    };
-    // a group that hits a building side or a spur slides along until it fits
-    for (var sh = 0; sh < 4 && !put(make(x + sh * 30)); sh++);
-  }
-  // the lawn between the pavement and the path
-  for (x = 20; x < w - 60; x += 40 + rnd(40)) {
-    var q = rnd(100);
-    if (q < 30) put([{ n: 'tree_c', x: x, y: 80 + rnd(44) }]);
-    else if (q < 60) put([{ n: 'bush', x: x, y: 24 + rnd(96) }]);
-    else if (q < 80) put([{ n: 'bloom1', x: x, y: 30 + rnd(90) }]);
-    else put([{ n: 'bloom2', x: x, y: 30 + rnd(90) }]);
-  }
-  put([{ n: 'tree_a', x: 496, y: 204 }, { n: 'tree_c', x: 548, y: 220 }, { n: 'bush', x: 530, y: 188 }]);
-  put([{ n: 'tree_b', x: 620, y: 218 }, { n: 'tree_c', x: 656, y: 200 }, { n: 'bush', x: 646, y: 186 }, { n: 'bush', x: 696, y: 190 }]);
-  for (var row = 0; row < 5; row++) {
-    for (x = 8 + row * 17; x < 1700; x += 62) {
-      if (rnd(100) < 40) continue;
-      put([{ n: trees[rnd(3)], x: x + rnd(24), y: 258 + row * 44 + rnd(8) }]);
-    }
-  }
-  return list;
+// want is units a resident asks for per minute
+var GOODS = [
+  { id: 'wheat', name: 'Wheat', price: 4, want: 0 },
+  { id: 'eggs', name: 'Eggs', price: 8, want: 0.1 },
+  { id: 'milk', name: 'Milk', price: 8, want: 0.08 },
+  { id: 'veg', name: 'Vegetables', price: 6, want: 0.1 },
+  { id: 'fruit', name: 'Fruit', price: 8, want: 0.08 },
+  { id: 'fish', name: 'Fish', price: 10, want: 0.08 },
+  { id: 'bread', name: 'Bread', price: 25, want: 0.2 },
+  { id: 'pastry', name: 'Pastry', price: 55, want: 0.08 },
+  { id: 'icecream', name: 'Ice cream', price: 36, want: 0.06 },
+  { id: 'meal', name: 'Meal', price: 45, want: 0.08 }
+];
+
+var AREAS = [
+  { id: 'village', name: 'Village', unlock: 0 },
+  { id: 'farm', name: 'Farm valley', unlock: 25 },
+  { id: 'beach', name: 'Beach', unlock: 75 },
+  { id: 'downtown', name: 'Downtown', unlock: 175 }
+];
+
+// Arrays are indexed by level - 1. size is the kind of lot. wants hold before level n + 1 is offered; reach and radius
+// are in tiles; rate is per minute; serve and shelf are what a shop sells and holds.
+var BUILDINGS = [
+  { id: 'cottage', name: 'Cottage', size: 'small', areas: ['village'],
+    wants: [[], ['sell:bread'], ['cover:park,playground'], ['foods:3'], ['cover:school']],
+    cap: [3, 4, 6, 8, 10], workers: [0, 0, 0, 0, 0], cost: scale(80, 2), build: BUILD_TIME },
+  { id: 'farmhouse', name: 'Farmhouse', size: 'small', areas: ['farm'],
+    wants: [[], ['sell:bread'], ['cover:park,playground'], ['foods:3'], ['cover:school']],
+    cap: [4, 6, 8, 10, 12], workers: [0, 0, 0, 0, 0], cost: scale(700, 2), build: BUILD_TIME },
+  { id: 'villa', name: 'Villa', size: 'medium', areas: ['beach'],
+    wants: [[], ['sell:bread', 'sell:veg'], ['sell:icecream'], ['sell:meal', 'cover:clinic'], ['happy:80']],
+    cap: [6, 9, 12, 15, 18], workers: [0, 0, 0, 0, 0], cost: scale(1200, 2), build: BUILD_TIME },
+  { id: 'condo', name: 'Condo tower', size: 'large', areas: ['downtown'],
+    wants: [[], ['shop:supermarket'], ['shop:cafe', 'cover:police'], ['cover:fire'], ['happy:85', 'town:office']],
+    cap: [10, 14, 20, 28, 36], workers: [0, 0, 0, 0, 0], cost: scale(6000, 2), build: BUILD_TIME },
+
+  { id: 'wheat', name: 'Wheat field', size: 'farmland', areas: ['village', 'farm'], makes: 'wheat',
+    rate: [8, 14, 24, 38, 54], workers: [1, 1, 2, 2, 3], cost: scale(30, 2), build: BUILD_TIME },
+  { id: 'veg', name: 'Vegetable patch', size: 'farmland', areas: ['village', 'farm'], makes: 'veg',
+    rate: [7, 12, 20, 32, 46], workers: [1, 1, 2, 2, 3], cost: scale(40, 2), build: BUILD_TIME },
+  { id: 'orchard', name: 'Orchard', size: 'farmland', areas: ['farm'], makes: 'fruit',
+    rate: [7, 12, 20, 32, 46], workers: [1, 2, 2, 3, 3], cost: scale(700, 2), build: BUILD_TIME },
+  { id: 'coop', name: 'Chicken coop', size: 'farmland', areas: ['village', 'farm'], makes: 'eggs',
+    rate: [7, 12, 20, 32, 46], workers: [1, 1, 2, 2, 3], cost: scale(50, 2), build: BUILD_TIME },
+  { id: 'barn', name: 'Dairy barn', size: 'farmland', areas: ['farm'], makes: 'milk',
+    rate: [8, 14, 24, 38, 54], workers: [2, 2, 3, 3, 4], cost: scale(800, 2), build: BUILD_TIME },
+  { id: 'pier', name: 'Fishing pier', size: 'shore', areas: ['beach'], makes: 'fish',
+    rate: [8, 14, 24, 38, 54], workers: [2, 2, 3, 3, 4], cost: scale(1500, 2), build: BUILD_TIME },
+
+  { id: 'market', name: 'Market', size: 'small', areas: ['village', 'farm', 'beach', 'downtown'],
+    sells: ['eggs', 'veg', 'fruit'], reach: [31, 40, 50, 54, 58], serve: [10, 16, 24, 34, 48], shelf: [6, 9, 14, 20, 30],
+    workers: [1, 1, 2, 2, 3], cost: scale(80, 2), build: BUILD_TIME },
+  { id: 'bakery', name: 'Bakery', size: 'small', areas: ['village', 'farm', 'beach', 'downtown'],
+    needs: ['wheat', 'eggs'], makes: 'bread', sells: ['bread'], rate: [10, 16, 26, 38, 54],
+    reach: [31, 40, 50, 54, 58], serve: [10, 16, 24, 34, 48], shelf: [6, 9, 14, 20, 30],
+    workers: [2, 2, 3, 3, 4], cost: scale(70, 2), build: BUILD_TIME },
+  { id: 'cafe', name: 'Cafe', size: 'small', areas: ['village', 'beach', 'downtown'],
+    needs: ['milk', 'bread'], makes: 'pastry', sells: ['pastry'], rate: [6, 10, 17, 27, 40],
+    reach: [31, 40, 50, 54, 58], serve: [8, 12, 18, 26, 36], shelf: [6, 9, 14, 20, 30],
+    workers: [2, 2, 3, 3, 4], cost: scale(500, 2), build: BUILD_TIME },
+  { id: 'icecream', name: 'Ice cream parlour', size: 'small', areas: ['beach', 'downtown'],
+    needs: ['milk', 'fruit'], makes: 'icecream', sells: ['icecream'], rate: [6, 10, 17, 27, 40],
+    reach: [31, 40, 50, 54, 58], serve: [8, 12, 18, 26, 36], shelf: [6, 9, 14, 20, 30],
+    workers: [2, 2, 3, 3, 4], cost: scale(1500, 2), build: BUILD_TIME },
+  { id: 'restaurant', name: 'Restaurant', size: 'medium', areas: ['beach', 'downtown'],
+    needs: ['fish', 'veg'], makes: 'meal', sells: ['meal'], rate: [6, 10, 17, 27, 40],
+    reach: [31, 40, 50, 54, 58], serve: [8, 12, 18, 26, 36], shelf: [6, 9, 14, 20, 30],
+    workers: [3, 3, 4, 4, 5], cost: scale(2200, 2), build: BUILD_TIME },
+
+  { id: 'supermarket', name: 'Supermarket', size: 'large', areas: ['downtown'],
+    sells: ['eggs', 'milk', 'veg', 'fish', 'bread'], reach: [48, 53, 57, 63, 68], serve: [24, 40, 64, 96, 140], shelf: [10, 16, 24, 36, 50],
+    workers: [3, 4, 5, 6, 8], cost: scale(8000, 2), build: BUILD_TIME },
+  { id: 'hotel', name: 'Hotel', size: 'large', areas: ['downtown'],
+    tourists: [1, 1.5, 2.5, 4, 6], workers: [2, 3, 4, 5, 6], cost: scale(10000, 2), build: BUILD_TIME },
+  { id: 'office', name: 'Office', size: 'large', areas: ['downtown'],
+    pay: [14, 18, 23, 29, 36], workers: [4, 6, 9, 12, 16], cost: scale(12000, 2), build: BUILD_TIME },
+
+  { id: 'park', name: 'Park', size: 'small', areas: ['village', 'farm', 'beach', 'downtown'],
+    bonus: [8, 9, 10, 11, 12], radius: [25, 31, 37, 42, 46], workers: [1, 1, 1, 2, 2],
+    cost: scale(100, 2), build: BUILD_TIME },
+  { id: 'playground', name: 'Playground', size: 'small', areas: ['village', 'farm', 'beach', 'downtown'],
+    bonus: [8, 9, 10, 11, 12], radius: [25, 31, 37, 42, 46], workers: [1, 1, 1, 2, 2],
+    cost: scale(120, 2), build: BUILD_TIME },
+  { id: 'school', name: 'School', size: 'medium', areas: ['village', 'farm', 'beach', 'downtown'],
+    bonus: [10, 11, 12, 13, 14], radius: [25, 31, 37, 42, 46], workers: [2, 2, 3, 3, 4], workforce: 0.1,
+    cost: scale(250, 2), build: BUILD_TIME },
+  { id: 'clinic', name: 'Clinic', size: 'medium', areas: ['village', 'farm', 'beach', 'downtown'],
+    bonus: [10, 11, 12, 13, 14], radius: [25, 31, 37, 42, 46], workers: [2, 3, 3, 4, 4],
+    cost: scale(350, 2), build: BUILD_TIME },
+  { id: 'police', name: 'Police station', size: 'medium', areas: ['village', 'farm', 'beach', 'downtown'],
+    bonus: [10, 11, 12, 13, 14], radius: [25, 31, 37, 42, 46], workers: [2, 2, 3, 3, 4],
+    cost: scale(300, 2), build: BUILD_TIME },
+  { id: 'fire', name: 'Fire station', size: 'medium', areas: ['village', 'farm', 'beach', 'downtown'],
+    bonus: [10, 11, 12, 13, 14], radius: [25, 31, 37, 42, 46], workers: [2, 2, 3, 3, 4],
+    cost: scale(300, 2), build: BUILD_TIME },
+
+  { id: 'depot', name: 'Depot', size: 'medium', areas: ['village', 'farm', 'beach', 'downtown'],
+    trucks: [2, 3, 4, 5, 6], workers: [1, 2, 2, 3, 3], cost: scale(300, 2), build: BUILD_TIME },
+  { id: 'warehouse', name: 'Warehouse', size: 'fixed', spot: 'f-warehouse', areas: ['farm'],
+    store: [60, 140, 260, 420, 640], workers: [1, 2, 2, 3, 3], cost: scale(800, 2), build: BUILD_TIME },
+  { id: 'train', name: 'Train station', size: 'fixed', spot: 'd-train', areas: ['downtown'],
+    export: [6, 10, 16, 24, 36], train: [8, 12, 18, 26, 36], workers: [2, 3, 4, 5, 6],
+    cost: scale(15000, 2), build: BUILD_TIME }
+];
+
+// x, y is the footprint's top-left tile; lots face south onto the street below. Buildings rise above the footprint,
+// so a row sits as far below the one behind it as its tallest building needs.
+var SIZES = { small: [10, 7], medium: [16, 11], large: [18, 10], farmland: [15, 9], shore: [8, 20] };
+
+function lot(id, kind, area, x, y) {
+  return { id: id, kind: kind, area: area, x: x, y: y, w: SIZES[kind][0], h: SIZES[kind][1] };
 }
 
-var DISTRICTS = [{
-  id: 'downtown',
-  name: 'Downtown',
-  k: 1,
-  ground: { sheet: 'tiles', base: 0, walk: 2, verge: 0, end: ['tree_a', 'tree_b', 'tree_c'] },
-  lamps: [455, 1004, 1602, 1866],
-  hydrants: [-2, 1640],
-  deco: backyard(2000, [232, 232, 136, 136, 148, 136, 136, 148, 304]),
-  sprites: COMMON.concat(['tree_a', 'tree_b', 'tree_c', 'pond', 'picket', 'bedp', 'bedr', 'bush', 'bloom1', 'bloom2',
-    'fire', 'stand_shut', 'stand_umb_shut',
-    'stand', 'stand_umb', 'bbq1', 'bbq2', 'bbq3', 'sign', 'ftable', 'ctable1', 'ctable2', 'chair', 'dessert',
-    'msmall', 'mmed', 'mbig', 'crates', 'barrels', 'flowerbox', 'gtable', 'fruit', 'flowers',
-    'icetruck', 'kiosk', 'menu', 'conesign', 'parasol', 'icecap', 'bed', 'rail', 'ic_g', 'mf5', 'rf3',
-    'bk_g', 'mf1', 'mf4', 'rf1', 'hwtent', 'candy', 'rp3', 'rp9', 'rp12', 'dcart',
-    'chouse', 'tent', 'ctable', 'hw', 'hwsign', 'hwtent2', 'air1', 'stock1', 'stock2', 'stock3', 'box', 'ramp',
-    'gy_g', 'mf7', 'mf10', 'rf5', 'gymsign', 'weights', 'bench', 'shrub', 'cloth', 'jcart', 'neon',
-    'c44', 'c45', 'c46', 'c440', 'cex', 'pool',
-    'post', 'mboxr', 'mboxb', 'mtruck', 'pkgs', 'pkg', 'flagpole', 'dpad',
-    'mall', 'light', 'mdoor', 'fnt1', 'fnt2', 'msign', 'msign2', 'helipad']),
-  lots: [
-    {
-      id: 'stand', name: 'Hot dog stand', w: 232,
-      cost: 0, build: 0,
-      pay: 1, gain: 0.5, hold: 20,
-      up: 15, grow: 1.55,
-      fx: 'stand',
-      rungs: [
-        { add: 'a lit grill', say: 'Grill lit!' },
-        { add: 'a bigger flame', say: 'Bigger flame!' },
-        { add: 'a roaring flame', say: 'Roaring flame!' },
-        { add: 'smoke from the grill', say: 'Smoke!' },
-        { add: 'a parasol over the cart', say: 'Parasol!' },
-        { add: 'a better red barbecue', say: 'Better barbecue!' },
-        { add: 'a second grill', say: 'Second grill!' },
-        { add: 'a menu board', say: 'Menu board!' },
-        { add: 'a food table', say: 'Food table!' },
-        { add: 'a table and chair for customers', say: 'Customers!' },
-        { add: 'a second customer table', say: 'Second table!' },
-        { add: 'a dessert cart', say: 'Dessert cart!' }
-      ],
-      parts: [
-        { n: 'stand', at: 0, to: 4, x: 86, y: 0 },
-        { n: 'stand_umb', at: 5, x: 86, y: 0 },
-        { n: 'bbq1', at: 0, to: 5, x: 70, y: 0 },
-        { n: 'bbq2', at: 6, x: 70, y: 0 },
-        { n: 'bbq3', at: 7, x: 54, y: 0 },
-        { n: 'sign', at: 8, x: 186, y: 0 },
-        { n: 'ftable', at: 9, x: 204, y: 0 },
-        { n: 'ctable1', at: 10, x: 98, y: -24 },
-        { n: 'chair', at: 10, x: 114, y: -24 },
-        { n: 'ctable2', at: 11, x: 170, y: -24 },
-        { n: 'chair', at: 11, x: 154, y: -24 },
-        { n: 'dessert', at: 12, x: 4, y: 0 }
-      ]
-    },
-    {
-      id: 'market', name: 'Market', w: 232,
-      cost: 80, build: 20,
-      pay: 6, gain: 0.4, hold: 20,
-      up: 50, grow: 1.7,
-      unlocks: ['trucks'],
-      rungs: [
-        { add: 'a crate by the window', say: 'Crate!' },
-        { add: 'barrels of goods', say: 'Barrels!' },
-        { add: 'a flower box', say: 'Flower box!' },
-        { add: 'a table of boxes', say: 'Boxes!' },
-        { add: 'a fruit and veg cart', say: 'Fruit cart!' },
-        { add: 'a flower cart in place of the fruit', say: 'Flower cart!' },
-        { add: 'more crates', say: 'More crates!' },
-        { add: 'a taller market building', say: 'Taller market!' },
-        { add: 'a second floor, a big market', say: 'Big market!' }
-      ],
-      parts: [
-        { n: 'msmall', at: 0, to: 7, x: 52, y: 0 },
-        { n: 'mmed', at: 8, to: 8, x: 36, y: 0 },
-        { n: 'mbig', at: 9, x: 36, y: 0 },
-        { n: 'crates', at: 1, x: 48, y: -20 },
-        { n: 'barrels', at: 2, x: 114, y: -20 },
-        { n: 'flowerbox', at: 3, x: 154, y: -22 },
-        { n: 'gtable', at: 4, x: 178, y: -28 },
-        { n: 'fruit', at: 5, to: 5, x: 0, y: -26 },
-        { n: 'flowers', at: 6, x: 0, y: -26 },
-        { n: 'crates', at: 7, x: 80, y: -20 },
-        { n: 'air1', at: 3, to: 7, x: 62, y: 76 },
-        { n: 'air1', at: 3, to: 7, x: 94, y: 76 },
-        { n: 'air1', at: 8, to: 8, x: 46, y: 84 },
-        { n: 'air1', at: 8, to: 8, x: 78, y: 84 },
-        { n: 'air1', at: 9, x: 46, y: 104 },
-        { n: 'air1', at: 9, x: 78, y: 104 },
-        { n: 'rp12', at: 9, x: 54, y: 140 }
-      ]
-    },
-    {
-      id: 'ice', name: 'Ice cream', w: 136,
-      cost: 700, build: 30,
-      pay: 7, gain: 0.4, hold: 22,
-      up: 420, grow: 1.8,
-      rungs: [
-        { add: 'a menu board', say: 'Menu board!' },
-        { add: 'a giant cone kiosk in place of the truck', say: 'Kiosk!' },
-        { add: 'a cone sign', say: 'Cone sign!' },
-        { add: 'parasol tables', say: 'Parasols!' },
-        { add: 'a proper ice cream shop', say: 'Ice cream shop!' },
-        { add: 'a second storey', say: 'Second storey!' },
-        { add: 'a giant cone on the roof', say: 'Giant cone!' },
-        { add: 'flower beds and a queue rail', say: 'Flower beds!' }
-      ],
-      parts: stack(12, 'ic_g', ['mf5'], 'rf3', [6], 5).concat([
-        { n: 'icetruck', at: 0, to: 1, x: 12, y: 0 },
-        { n: 'kiosk', at: 2, to: 4, x: 12, y: 0 },
-        { n: 'menu', at: 1, x: 4, y: -8 },
-        { n: 'conesign', at: 3, x: 120, y: -4 },
-        { n: 'parasol', at: 4, x: 18, y: -16 },
-        { n: 'parasol', at: 4, x: 72, y: -16 },
-        { n: 'icecap', at: 7, x: 12, y: 126 },
-        { n: 'rail', at: 8, x: 44, y: -26 },
-        { n: 'bed', at: 8, x: 8, y: -26 },
-        { n: 'bed', at: 8, x: 84, y: -26 }
-      ])
-    },
-    {
-      id: 'bakery', name: 'Bakery', w: 136,
-      cost: 3500, build: 40,
-      pay: 23, gain: 0.4, hold: 24,
-      up: 2100, grow: 1.8,
-      rungs: [
-        { add: 'a striped awning', say: 'Awning!' },
-        { add: 'a sweets cart', say: 'Sweets cart!' },
-        { add: 'a second storey', say: 'Second storey!' },
-        { add: 'a third storey', say: 'Third storey!' },
-        { add: 'a chimney and roof vents', say: 'Chimney!' },
-        { add: 'a rooftop garden', say: 'Roof garden!' },
-        { add: 'a billboard', say: 'Billboard!' },
-        { add: 'a delivery cart', say: 'Delivery cart!' }
-      ],
-      parts: stack(12, 'bk_g', ['mf1', 'mf4'], 'rf1', [3, 4], 0).concat([
-        { n: 'hwtent', at: 1, x: 4, y: 8 },
-        { n: 'candy', at: 2, x: 2, y: -8 },
-        { n: 'rp9', at: 5, x: 64, y: 202 },
-        { n: 'rp3', at: 5, x: 30, y: 200 },
-        { n: 'bed', at: 6, x: 20, y: 194 },
-        { n: 'bed', at: 6, x: 68, y: 194 },
-        { n: 'rp12', at: 7, x: 28, y: 218 },
-        { n: 'dcart', at: 8, x: 48, y: -8 }
-      ])
-    },
-    {
-      id: 'hardware', name: 'Hardware store', w: 148,
-      cost: 17500, build: 50,
-      pay: 78, gain: 0.4, hold: 24,
-      up: 10500, grow: 1.8,
-      rungs: [
-        { add: 'a table of boxes by the tent', say: 'Boxes out!' },
-        { add: 'a proper hardware store', say: 'Hardware store!' },
-        { add: 'a roof sign', say: 'Roof sign!' },
-        { add: 'window awnings', say: 'Awnings!' },
-        { add: 'air units on the roof', say: 'Air units!' },
-        { add: 'stacked stock outside', say: 'Stacked stock!' },
-        { add: 'a second row of stock', say: 'More stock!' },
-        { add: 'a loading ramp', say: 'Loading ramp!' }
-      ],
-      parts: [
-        { n: 'chouse', at: 0, to: 1, x: 34, y: 0 },
-        { n: 'tent', at: 0, to: 1, x: 34, y: 46 },
-        { n: 'ctable', at: 1, to: 1, x: 100, y: -6 },
-        { n: 'hw', at: 2, x: 10, y: 0 },
-        { n: 'hwsign', at: 3, x: 10, y: 40 },
-        { n: 'hwtent2', at: 4, x: 10, y: 12 },
-        { n: 'air1', at: 5, x: 14, y: 104 },
-        { n: 'air1', at: 5, x: 46, y: 104 },
-        { n: 'stock1', at: 6, x: 0, y: -6 },
-        { n: 'stock2', at: 6, x: 116, y: -6 },
-        { n: 'stock3', at: 7, x: 24, y: -14 },
-        { n: 'box', at: 7, x: 92, y: -14 },
-        { n: 'ramp', at: 8, x: 50, y: -12 }
-      ]
-    },
-    {
-      id: 'gym', name: 'Gym', w: 136,
-      cost: 88000, build: 60,
-      pay: 260, gain: 0.4, hold: 20,
-      up: 53000, grow: 1.8,
-      rungs: [
-        { add: 'a sign over the door', say: 'Gym sign!' },
-        { add: 'a rack of weights outside', say: 'Weights!' },
-        { add: 'a second storey', say: 'Second storey!' },
-        { add: 'a third storey', say: 'Third storey!' },
-        { add: 'a roof terrace', say: 'Roof terrace!' },
-        { add: 'an awning cloth', say: 'Awning cloth!' },
-        { add: 'a juice bar outside', say: 'Juice bar!' },
-        { add: 'a neon sign', say: 'Neon sign!' }
-      ],
-      parts: stack(12, 'gy_g', ['mf7', 'mf10'], 'rf5', [3, 4], 0).concat([
-        { n: 'gymsign', at: 1, x: 86, y: 14 },
-        { n: 'weights', at: 2, x: 0, y: -6 },
-        { n: 'bench', at: 5, x: 20, y: 204 },
-        { n: 'shrub', at: 5, x: 64, y: 200 },
-        { n: 'cloth', at: 6, x: 44, y: 76 },
-        { n: 'jcart', at: 7, x: 4, y: -14 },
-        { n: 'neon', at: 8, x: 6, y: 18 }
-      ])
-    },
-    {
-      id: 'flats', name: 'Flats', w: 136,
-      cost: 440000, build: 70,
-      pay: 860, gain: 0.4, hold: 0,
-      up: 264000, grow: 1.8,
-      rungs: [
-        { add: 'a taller block', say: 'Taller block!' },
-        { add: 'a fire escape tower', say: 'Fire escapes!' },
-        { add: 'a round corner tower', say: 'Corner tower!' },
-        { add: 'a four storey block', say: 'Four storeys!' },
-        { add: 'planters by the door', say: 'Planters!' },
-        { add: 'a rooftop pool', say: 'Rooftop pool!' }
-      ],
-      parts: [
-        { n: 'c44', at: 0, to: 0, x: 20, y: 0 },
-        { n: 'c45', at: 1, to: 1, x: 20, y: 0 },
-        { n: 'cex', at: 2, to: 2, x: 27, y: 0 },
-        { n: 'c440', at: 3, to: 3, x: 20, y: 0 },
-        { n: 'c46', at: 4, x: 12, y: 0 },
-        { n: 'shrub', at: 5, x: 12, y: -8 },
-        { n: 'shrub', at: 5, x: 88, y: -8 },
-        { n: 'pool', at: 6, x: 40, y: 224 }
-      ]
-    },
-    {
-      id: 'post', name: 'Post office', w: 148,
-      cost: 2200000, build: 80,
-      pay: 3100, gain: 0.4, hold: 8,
-      up: 1320000, grow: 1.8,
-      unlocks: ['drones', 'heli'],
-      pad: { n: 'dpad', x: 22, y: 108 },
-      rungs: [
-        { add: 'a row of mailboxes', say: 'Mailboxes!' },
-        { add: 'a mail truck', say: 'Mail truck!' },
-        { add: 'stacked parcels', say: 'Parcels!' },
-        { add: 'a flagpole out front', say: 'Flag!' },
-        { add: 'a drone landing pad', say: 'Landing pad!' },
-        { add: 'an air unit on the roof', say: 'Air unit!' }
-      ],
-      parts: [
-        { n: 'post', at: 0, x: 10, y: 0 },
-        { n: 'mboxr', at: 1, x: 12, y: -2 },
-        { n: 'mboxb', at: 1, x: 28, y: -2 },
-        { n: 'mboxr', at: 1, x: 44, y: -2 },
-        { n: 'mtruck', at: 2, x: 84, y: -8 },
-        { n: 'pkgs', at: 3, x: 56, y: -8 },
-        { n: 'pkg', at: 3, x: 64, y: -2 },
-        { n: 'flagpole', at: 4, x: 0, y: -6 },
-        { n: 'dpad', at: 5, x: 22, y: 108 },
-        { n: 'air1', at: 6, x: 92, y: 112 }
-      ]
-    },
-    {
-      id: 'mall', name: 'Mall', w: 304,
-      cost: 11000000, build: 120,
-      pay: 9600, gain: 0.4, hold: 8,
-      up: 6600000, grow: 1.8,
-      capstone: true,
-      rungs: [
-        { add: 'glass doors', say: 'Glass doors!' },
-        { add: 'a fountain', say: 'Fountain!' },
-        { add: 'flags at the corners', say: 'Flags!' },
-        { add: 'a second fountain', say: 'Second fountain!' },
-        { add: 'a big sign', say: 'Big sign!' },
-        { add: 'a helipad on the roof', say: 'Helipad!' }
-      ],
-      parts: [
-        { n: 'mall', at: 0, x: 8, y: 0 },
-        { n: 'stock1', at: 0, to: 0, x: 8, y: -8 },
-        { n: 'stock3', at: 0, to: 0, x: 40, y: -8 },
-        { n: 'light', at: 0, to: 0, x: 236, y: -8 },
-        { n: 'mdoor', at: 1, x: 146, y: 0 },
-        { n: 'fnt1', at: 2, x: 100, y: -4 },
-        { n: 'flagpole', at: 3, x: 0, y: -6 },
-        { n: 'flagpole', at: 3, x: 286, y: -6 },
-        { n: 'fnt2', at: 4, x: 220, y: -4 },
-        { n: 'msign', at: 5, x: 122, y: 50 },
-        { n: 'msign2', at: 5, x: 186, y: 50 },
-        { n: 'helipad', at: 6, x: 92, y: 80 }
-      ]
-    }
-  ]
-}];
+var PLOTS = [
+  lot('v-fd1', 'farmland', 'village', 44, 191),
+  lot('v-fd2', 'farmland', 'village', 69, 191),
+  lot('v-sc1', 'small', 'village', 49, 179),
+  lot('v-sc2', 'small', 'village', 69, 179),
+  lot('v-sc3', 'small', 'village', 38, 179),
+  lot('v-sc4', 'small', 'village', 80, 179),
+  lot('v-fd3', 'farmland', 'village', 27, 191),
+  lot('v-sb1', 'small', 'village', 69, 160),
+  lot('v-sc5', 'small', 'village', 27, 179),
+  lot('v-sc6', 'small', 'village', 91, 179),
+  lot('v-mb1', 'medium', 'village', 43, 156),
+  lot('v-sb2', 'small', 'village', 32, 160),
+  lot('v-mb2', 'medium', 'village', 82, 156),
+  lot('v-sc7', 'small', 'village', 16, 179),
+  lot('v-sc8', 'small', 'village', 102, 179),
+  lot('v-sb3', 'small', 'village', 21, 160),
+  lot('v-sb4', 'small', 'village', 101, 160),
+  lot('v-sc9', 'small', 'village', 5, 179),
+  lot('v-sc10', 'small', 'village', 113, 179),
+  lot('v-sa1', 'small', 'village', 49, 135),
+  lot('v-sa2', 'small', 'village', 69, 135),
+  lot('v-sa3', 'small', 'village', 38, 135),
+  lot('v-sa4', 'small', 'village', 80, 135),
+  lot('v-mb3', 'medium', 'village', 4, 156),
+  lot('v-sa5', 'small', 'village', 27, 135),
+  lot('v-sa6', 'small', 'village', 91, 135),
+  lot('v-sa7', 'small', 'village', 16, 135),
+  lot('v-sa8', 'small', 'village', 102, 135),
+  lot('v-sa9', 'small', 'village', 5, 135),
+  lot('v-sa10', 'small', 'village', 113, 135),
+  lot('f-sa1', 'small', 'farm', 49, 218),
+  lot('f-sa2', 'small', 'farm', 69, 218),
+  lot('f-sa3', 'small', 'farm', 37, 218),
+  lot('f-sa4', 'small', 'farm', 81, 218),
+  lot('f-fb1', 'farmland', 'farm', 44, 235),
+  lot('f-fb2', 'farmland', 'farm', 69, 235),
+  lot('f-fb3', 'farmland', 'farm', 27, 235),
+  lot('f-fb4', 'farmland', 'farm', 86, 235),
+  lot('f-ma1', 'medium', 'farm', 19, 214),
+  lot('f-ma2', 'medium', 'farm', 93, 214),
+  lot('f-sc1', 'small', 'farm', 49, 256),
+  lot('f-sc2', 'small', 'farm', 69, 256),
+  lot('f-fc1', 'farmland', 'farm', 80, 254),
+  lot('f-sc3', 'small', 'farm', 37, 256),
+  lot('f-fb5', 'farmland', 'farm', 10, 235),
+  lot('f-fb6', 'farmland', 'farm', 103, 235),
+  lot('f-fc2', 'farmland', 'farm', 20, 254),
+  lot('f-fa1', 'farmland', 'farm', 2, 216),
+  lot('f-fc3', 'farmland', 'farm', 95, 254),
+  lot('f-fc4', 'farmland', 'farm', 4, 254),
+  lot('f-fc5', 'farmland', 'farm', 110, 254),
+  lot('b-sa1', 'small', 'beach', 49, 279),
+  lot('b-sa2', 'small', 'beach', 69, 279),
+  lot('b-sa3', 'small', 'beach', 38, 279),
+  lot('b-sa4', 'small', 'beach', 80, 279),
+  lot('b-sb1', 'small', 'beach', 49, 304),
+  lot('b-sb2', 'small', 'beach', 69, 304),
+  lot('b-sb3', 'small', 'beach', 38, 304),
+  lot('b-sb4', 'small', 'beach', 80, 304),
+  lot('b-ma1', 'medium', 'beach', 21, 275),
+  lot('b-ma2', 'medium', 'beach', 91, 275),
+  lot('b-mb1', 'medium', 'beach', 21, 300),
+  lot('b-mb2', 'medium', 'beach', 91, 300),
+  lot('b-ma3', 'medium', 'beach', 4, 275),
+  lot('b-ma4', 'medium', 'beach', 108, 275),
+  lot('b-mb3', 'medium', 'beach', 4, 300),
+  lot('b-mb4', 'medium', 'beach', 108, 300),
+  lot('d-lb1', 'large', 'downtown', 41, 42),
+  lot('d-lb2', 'large', 'downtown', 69, 42),
+  lot('d-mc1', 'medium', 'downtown', 43, 66),
+  lot('d-mc2', 'medium', 'downtown', 69, 66),
+  lot('d-sa1', 'small', 'downtown', 39, 18),
+  lot('d-sa2', 'small', 'downtown', 79, 18),
+  lot('d-lb3', 'large', 'downtown', 22, 42),
+  lot('d-lb4', 'large', 'downtown', 88, 42),
+  lot('d-mc3', 'medium', 'downtown', 24, 66),
+  lot('d-mc4', 'medium', 'downtown', 88, 66),
+  lot('d-sa3', 'small', 'downtown', 27, 18),
+  lot('d-sa4', 'small', 'downtown', 91, 18),
+  lot('d-sa5', 'small', 'downtown', 15, 18),
+  lot('d-sa6', 'small', 'downtown', 103, 18),
+  lot('d-lb5', 'large', 'downtown', 3, 42),
+  lot('d-lb6', 'large', 'downtown', 107, 42),
+  lot('d-ld1', 'large', 'downtown', 41, 94),
+  lot('d-ld2', 'large', 'downtown', 69, 94),
+  lot('d-mc5', 'medium', 'downtown', 5, 66),
+  lot('d-mc6', 'medium', 'downtown', 107, 66),
+  lot('d-sa7', 'small', 'downtown', 3, 18),
+  lot('d-sa8', 'small', 'downtown', 115, 18),
+  lot('d-ld3', 'large', 'downtown', 22, 94),
+  lot('d-md1', 'medium', 'downtown', 90, 93),
+  lot('d-se1', 'small', 'downtown', 49, 116),
+  lot('d-se2', 'small', 'downtown', 69, 116),
+  lot('d-ld4', 'large', 'downtown', 3, 94),
+  lot('d-md2', 'medium', 'downtown', 109, 93),
+  lot('d-se3', 'small', 'downtown', 36, 116),
+  lot('d-se4', 'small', 'downtown', 82, 116),
+  lot('d-se5', 'small', 'downtown', 23, 116),
+  lot('d-se6', 'small', 'downtown', 95, 116),
+  lot('d-se7', 'small', 'downtown', 10, 116),
+  { id: 'f-warehouse', kind: 'fixed', area: 'farm', x: 111, y: 217, w: 14, h: 8 },
+  { id: 'd-train', kind: 'fixed', area: 'downtown', x: 52, y: 3, w: 24, h: 7 },
+  lot('b-pier1', 'shore', 'beach', 24, 321),
+  lot('b-pier2', 'shore', 'beach', 96, 321)
+];
