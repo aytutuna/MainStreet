@@ -36,15 +36,7 @@ targets:
         buildPhase: resources
       - path: ../sim.js
         buildPhase: resources
-      - path: ../town3d.js
-        buildPhase: resources
-      - path: ../city.js
-        buildPhase: resources
-      - path: ../plan.js
-        buildPhase: resources
-      - path: ../life.js
-        buildPhase: resources
-      - path: ../school3d.js
+      - path: ../mall.js
         buildPhase: resources
       - path: ../ui.js
         buildPhase: resources
