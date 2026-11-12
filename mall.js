@@ -215,7 +215,7 @@ function modelList() {
     'roads/light-curved', 'roads/construction-fence', 'roads/construction-light', 'roads/construction-barrier', 'roads/construction-cone',
     'roads/dumpster', 'roads/road-sign-street', 'car/taxi', 'car/delivery', 'car/tractor-shovel', 'car/box', 'car/truck-flat',
     'nature/tree_oak', 'nature/tree_default', 'nature/tree_fat', 'nature/tree_detailed', 'nature/tree_pineRoundC', 'nature/plant_bush',
-    'nature/plant_bushLarge', 'nature/flower_redA', 'nature/flower_yellowA', 'nature/flower_purpleA', 'sub/building-type-a',
+    'nature/plant_bushLarge', 'food/bag', 'nature/flower_redA', 'nature/flower_yellowA', 'nature/flower_purpleA', 'sub/building-type-a',
     'sub/building-type-c', 'sub/building-type-e', 'sub/building-type-h', 'sub/building-type-k', 'sub/tree-large'].forEach(add);
   Object.keys(SHOPS).forEach(function (id) {
     var c = SHOPS[id];
@@ -227,6 +227,39 @@ function modelList() {
   CARS.forEach(add);
   add('arcade/character-gamer');
   return Object.keys(seen);
+}
+
+// a day lasts eight minutes: five of daylight, a dusk, two of night and a dawn. Only the light changes, so the shadows
+// stay put and need no redraw
+var DAY = 480;
+var hemi;
+var skyDay = new THREE.Color(0xa9d8ee);
+var skyNight = new THREE.Color(0x27335c);
+var hemiDay = new THREE.Color(0xffffff);
+var hemiNight = new THREE.Color(0x8fa0d8);
+var lampOn = new THREE.Color(0xffe2a0);
+var dayT = 60;
+
+function daylight() {
+  var t = dayT % DAY;
+  if (t < 300) return 1;
+  if (t < 340) return 1 - (t - 300) / 40;
+  if (t < 440) return 0;
+  return (t - 440) / 40;
+}
+
+function dayStep(dt) {
+  dayT += dt;
+  var l = daylight();
+  var k = l * l * (3 - 2 * l);
+  sun.intensity = 0.35 + 1.65 * k;
+  hemi.intensity = 1.3 + 1.1 * k;
+  hemi.color.copy(hemiNight).lerp(hemiDay, k);
+  scene.background.copy(skyNight).lerp(skyDay, k);
+  scene.fog.color.copy(scene.background);
+  bulbMat.emissive.copy(lampOn).multiplyScalar(1 - k);
+  poolMat.opacity = 0.5 * (1 - k);
+  poolMat.visible = k < 0.98;
 }
 
 function sceneUp() {
@@ -241,7 +274,8 @@ function sceneUp() {
   scene.background = new THREE.Color(0xa9d8ee);
   scene.fog = new THREE.Fog(0xa9d8ee, 90, 200);
   cam = new THREE.PerspectiveCamera(40, 1, 1, 400);
-  scene.add(new THREE.HemisphereLight(0xffffff, 0xb4bedc, 2.4));
+  hemi = new THREE.HemisphereLight(0xffffff, 0xb4bedc, 2.4);
+  scene.add(hemi);
   sun = new THREE.DirectionalLight(0xfff3dc, 2.0);
   sun.position.set(-12, 30, 10);
   sun.target.position.set(0, 0, -6);
@@ -500,16 +534,48 @@ function Batch() {
     g.deleteAttribute('uv');
     put(g, mat, (x0 + x1) / 2, (y || 0) - (h || 0.02) / 2, (z0 + z1) / 2, 0);
   };
+  this.bulb = function (x, y, z) {
+    put(bulbGeo, bulbMat, x, y, z, 0);
+  };
+  this.pool = function (x, z) {
+    put(poolGeo, poolMat, x, 0.07, z, 0);
+  };
   this.group = function (shadow) {
     var g = new THREE.Group();
     Object.keys(sets).forEach(function (k) {
       var o = new THREE.Mesh(mergeGeometries(sets[k].list, false), sets[k].mat);
-      o.castShadow = shadow !== false;
+      o.castShadow = shadow !== false && sets[k].mat !== poolMat && sets[k].mat !== bulbMat;
       o.receiveShadow = true;
       g.add(o);
     });
     return g;
   };
+}
+
+var bulbMat = new THREE.MeshLambertMaterial({ color: 0xfff3d0, emissive: 0x000000 });
+var bulbGeo = new THREE.SphereGeometry(0.09, 8, 6);
+function fade() {
+  var c = document.createElement('canvas');
+  c.width = c.height = 64;
+  var x = c.getContext('2d');
+  var g = x.createRadialGradient(32, 32, 0, 32, 32, 32);
+  g.addColorStop(0, 'rgba(255,255,255,1)');
+  g.addColorStop(1, 'rgba(255,255,255,0)');
+  x.fillStyle = g;
+  x.fillRect(0, 0, 64, 64);
+  return new THREE.CanvasTexture(c);
+}
+var poolMat = new THREE.MeshBasicMaterial({ color: 0xffc870, map: fade(), transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
+var poolGeo = new THREE.PlaneGeometry(2.8, 2.8).rotateX(-Math.PI / 2);
+poolGeo.deleteAttribute('normal');
+var LAMP = { 'roads/light-curved': [1.9, -0.55], 'roads/light-square': [1.72, -0.58] };
+
+// a street lamp, and the bulb under the end of its arm
+function lamp(b, ref, x, z, rot) {
+  b.add(ref, x, z, rot);
+  var l = LAMP[ref];
+  b.bulb(x + l[1] * Math.sin(rot), l[0], z + l[1] * Math.cos(rot));
+  b.pool(x + l[1] * Math.sin(rot), z + l[1] * Math.cos(rot));
 }
 
 var MAT = {};
@@ -873,12 +939,62 @@ function buildHall() {
   var hall = { items: [], shown: -1 };
   HALL_ITEMS.forEach(function (it) {
     var m = mesh(it[1], it[2], it[3], it[4]);
+    var l = LAMP[it[1]];
+    if (l) {
+      var bulb = new THREE.Mesh(bulbGeo, bulbMat);
+      bulb.position.set(0, l[0], l[1]);
+      m.add(bulb);
+      var pool = new THREE.Mesh(poolGeo, poolMat);
+      pool.position.set(0, 0.035, l[1]);
+      m.add(pool);
+    }
     m.visible = false;
     root.add(m);
     hall.items.push({ g: m, lv: it[0] });
   });
   places.hall = hall;
   addPick('hall', 0, (FRONT + BACK) / 2, EDGE * 2, FRONT - BACK);
+  buildDoors();
+}
+
+// glass doors that slide apart when someone comes near; a fixed pane either side, a rail across the top
+var glass = new THREE.MeshLambertMaterial({ color: 0xbfe6f2, transparent: true, opacity: 0.38, depthWrite: false });
+var doors = { open: 0, panes: [] };
+function buildDoors() {
+  var rail = new THREE.Mesh(new THREE.BoxGeometry(SIDE * 2, 0.08, 0.16), flat(0x50566a));
+  rail.position.set(0, 0.96, FRONT);
+  root.add(rail);
+  var pane = new THREE.BoxGeometry(0.72, 0.9, 0.03);
+  var edge = new THREE.BoxGeometry(0.03, 0.9, 0.05);
+  [-1, 1].forEach(function (sd) {
+    var fixed = new THREE.Mesh(pane, glass);
+    fixed.position.set(sd * 1.08, 0.47, FRONT + 0.05);
+    root.add(fixed);
+    var g = new THREE.Group();
+    var p = new THREE.Mesh(pane, glass);
+    g.add(p);
+    [-0.35, 0.35].forEach(function (ex) {
+      var e = new THREE.Mesh(edge, flat(0x8d93a6));
+      e.position.x = ex;
+      g.add(e);
+    });
+    g.position.set(sd * 0.36, 0.47, FRONT - 0.05);
+    root.add(g);
+    doors.panes.push({ g: g, sd: sd });
+  });
+}
+
+function doorsStep(dt) {
+  var near = false;
+  for (var i = 0; i < people.length && !near; i++) {
+    var p = people[i].f.obj.position;
+    if (people[i].path && Math.abs(p.x) < 1.6 && Math.abs(p.z - FRONT) < 1.4) near = true;
+  }
+  var want = near ? 1 : 0;
+  if (want === doors.open) return;
+  doors.open = want > doors.open ? Math.min(1, doors.open + dt * 2.5) : Math.max(0, doors.open - dt * 1.5);
+  var e = doors.open * doors.open * (3 - 2 * doors.open);
+  doors.panes.forEach(function (d) { d.g.position.x = d.sd * (0.36 + e * 0.7); });
 }
 
 function addPick(id, x, z, w, d) {
@@ -919,7 +1035,7 @@ function buildOutside() {
   b.slab(flat(PAVE), -60, 60, 13.5, 14.4, 0, 0.02);
   b.slab(flat(ASPHALT), -60, 60, 10.5, 13.5, 0, 0.015);
   for (var x = -60; x <= 60; x += 3) b.add(Math.abs(x) < 1 ? 'roads/road-crossing' : 'roads/road-straight', x, 12, 0, 0.002);
-  for (var lx = -48; lx <= 48; lx += 8) b.add('roads/light-curved', lx + 4, 14.15, 0);
+  for (var lx = -48; lx <= 48; lx += 8) lamp(b, 'roads/light-curved', lx + 4, 14.15, 0);
   // across the street
   var houses = ['sub/building-type-a', 'sub/building-type-c', 'sub/building-type-e', 'sub/building-type-h', 'sub/building-type-k'];
   for (var hx = -30, hi = 0; hx <= 30; hx += 6, hi++) {
@@ -1009,7 +1125,7 @@ function buildLot() {
   // zebra stripes where the walkway crosses the aisle
   for (var zl = 1; zl <= 4; zl++) for (var zs = -1.2; zs < 1.3; zs += 0.5) lv[zl].slab(paint, zs - 0.16, zs + 0.16, 6.1, 7.5, 0.024, 0.008);
   [[1, -5.7, 3.9], [1, 5.7, 3.9], [3, -9.9, 3.9], [3, 9.9, 3.9], [4, -5.7, 9.8], [4, 5.7, 9.8]].forEach(function (p) {
-    for (var u = p[0]; u <= 4; u++) lv[u].add('roads/light-square', p[1], p[2], p[2] < 5 ? Math.PI : 0);
+    for (var u = p[0]; u <= 4; u++) lamp(lv[u], 'roads/light-square', p[1], p[2], p[2] < 5 ? Math.PI : 0);
   });
   [4].forEach(function (u) {
     lv[u].add('sub/planter', -1.9, 4.35, 0);
@@ -1036,7 +1152,7 @@ function buildTaxi() {
   }
   for (var w = 3; w <= 4; w++) {
     lv[w].add('furn/bench', 4.1, 9.95, Math.PI);
-    lv[w].add('roads/light-curved', 3.3, 9.85, Math.PI);
+    lamp(lv[w], 'roads/light-curved', 3.3, 9.85, Math.PI);
   }
   lv[4].add('sub/planter', 7.8, 9.95, 0);
   lv[4].add('nature/flower_purpleA', 7.6, 9.95, 0, 0.18);
@@ -1408,8 +1524,46 @@ function wantPeople() {
 var walkT = 1;
 var passT = 0;
 
+// a coin that jumps off the counter when a shopper pays
+var pops = [];
+var coinGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.03, 14);
+var coinMat = new THREE.MeshLambertMaterial({ color: 0xffd23a, emissive: 0x6a4a00 });
+var tillAt = 0;
+
+function paid(s, now) {
+  var c = s.stack.position;
+  var m = new THREE.Mesh(coinGeo, coinMat);
+  m.rotation.x = Math.PI / 2;
+  m.position.set(c.x, c.y + 0.1, c.z);
+  root.add(m);
+  pops.push({ m: m, t0: now, y: c.y + 0.1 });
+  if (focus.dist < 30 && now - tillAt > 1500 && window.sfx) {
+    tillAt = now;
+    sfx('till');
+  }
+}
+
+function popsStep(now) {
+  for (var i = pops.length - 1; i >= 0; i--) {
+    var p = pops[i];
+    var u = (now - p.t0) / 900;
+    if (u >= 1) {
+      root.remove(p.m);
+      pops.splice(i, 1);
+      continue;
+    }
+    p.m.position.y = p.y + Math.sin(u * Math.PI * 0.8) * 0.55;
+    p.m.rotation.z = u * 9;
+    p.m.scale.setScalar(1 - u * u * 0.8);
+  }
+}
+
 function person(i) {
   var f = figure(FOLK[i % FOLK.length], 'walk');
+  var bag = mesh('food/bag', -0.24, 0.02, 0.3, 0.03);
+  bag.traverse(function (o) { o.castShadow = false; });
+  bag.visible = false;
+  f.obj.add(bag);
   var blob = new THREE.Mesh(blobGeo, blobMat);
   blob.rotation.x = -Math.PI / 2;
   blob.position.y = 0.035;
@@ -1417,7 +1571,7 @@ function person(i) {
   f.obj.traverse(function (o) { if (o.isMesh && o !== blob) o.castShadow = false; });
   f.obj.visible = false;
   root.add(f.obj);
-  return { f: f, path: null, i: 0, wait: 0, speed: 1.05 + (i % 5) * 0.08 };
+  return { f: f, bag: bag, path: null, i: 0, wait: 0, speed: 1.05 + (i % 5) * 0.08 };
 }
 
 function idlePerson() {
@@ -1467,6 +1621,7 @@ function shopRoute(s, pts) {
   at(it.at[0], 0.95);
   at(COUNTER[0] + 0.75, 0.95);
   at(COUNTER[0] + 0.75, COUNTER[1], 1.2, 'idle', faceRot(s, 'k'));
+  pts[pts.length - 1].pay = s;
   at(3.3, 0.9);
   pts.push({ x: -lane + jx * 0.3, z: s.cz + 0.5 });
   pts.push({ x: -lane * 0.6, z: BACK - 0.3 });
@@ -1487,6 +1642,7 @@ function start(p, pts, extra) {
   for (var k in extra) p[k] = extra[k];
   p.f.obj.position.set(pts[0].x, 0, pts[0].z);
   p.f.obj.visible = true;
+  p.bag.visible = false;
   act(p.f, 'walk', 0);
 }
 
@@ -1567,6 +1723,10 @@ function crowdStep(dt) {
         p.wait = q.wait;
         if (q.face !== undefined) o.rotation.y = q.face;
         act(p.f, q.act || 'idle', 0.2);
+      }
+      if (q.pay) {
+        p.bag.visible = !q.pay.cfg.play;
+        paid(q.pay, performance.now());
       }
       p.i++;
       if (p.i >= p.path.length) {
@@ -1832,8 +1992,11 @@ function draw(now) {
     clamp();
     place();
   }
+  dayStep(dt);
   trafficStep(dt);
   crowdStep(dt);
+  doorsStep(dt);
+  popsStep(now);
   var near = focus.dist < 50;
   order.forEach(function (id) {
     var s = shops[id];
