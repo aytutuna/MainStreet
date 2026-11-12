@@ -65,7 +65,6 @@ small {
   width: 100%;
   height: 100%;
   touch-action: none;
-  image-rendering: pixelated;
 }
 
 #top {
@@ -174,7 +173,7 @@ small {
   pointer-events: auto;
   flex: 1;
   min-width: 0;
-  height: 48px;
+  height: 60px;
   border: 2px solid var(--ink);
   border-radius: 12px;
   background: var(--paper);
@@ -192,15 +191,13 @@ small {
   font-size: 11px;
   font-weight: 800;
   line-height: 1.1;
-  max-height: 24px;
+  max-height: 25px;
   overflow: hidden;
-  padding-right: 24px;
 }
 
 .chip em {
-  position: absolute;
-  right: 5px;
-  top: 4px;
+  order: 1;
+  align-self: flex-end;
   font-style: normal;
   font-size: 10px;
   font-weight: 800;
@@ -208,6 +205,7 @@ small {
 }
 
 .chip i {
+  order: 2;
   display: block;
   height: 6px;
   border-radius: 3px;
@@ -231,7 +229,6 @@ small {
 
 .chip.done em {
   color: #7a4a10;
-  right: 4px;
   background: var(--gold);
   border-radius: 8px;
   padding: 1px 5px;
@@ -949,4 +946,163 @@ small {
 .offer .btn img {
   width: 18px;
   height: 18px;
+}
+
+#tags {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.tag {
+  position: absolute;
+  left: 0;
+  top: 0;
+  min-width: 82px;
+  padding: 3px 8px 4px;
+  border-radius: 8px;
+  background: rgba(20, 20, 30, 0.82);
+  color: #fff;
+  font-size: 11px;
+  font-weight: bold;
+  text-align: center;
+  white-space: nowrap;
+  pointer-events: auto;
+  transform-origin: 50% 100%;
+}
+
+.tag.buy {
+  background: rgba(20, 20, 30, 0.7);
+  color: #ffe9a8;
+}
+
+.tag.lock {
+  background: rgba(20, 20, 30, 0.45);
+  color: #b4b4c4;
+}
+
+.tag.ready {
+  background: #f0c040;
+  color: #2a1c10;
+  box-shadow: 0 0 0 1.5px #fff;
+}
+
+.tag i {
+  display: none;
+  height: 5px;
+  margin-top: 3px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.25);
+  overflow: hidden;
+}
+
+.tag.own i {
+  display: block;
+}
+
+.tag u {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: #5fd35a;
+}
+
+.tag u.full {
+  background: #ffd84a;
+}
+
+.coin {
+  position: absolute;
+  left: 0;
+  top: 0;
+  padding: 4px 10px;
+  border: 2px solid #2a1c10;
+  border-radius: 14px;
+  background: #ffd84a;
+  color: #2a1c10;
+  font-size: 12px;
+  font-weight: bold;
+  pointer-events: auto;
+}
+
+#arrow {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 26px;
+  height: 32px;
+  pointer-events: none;
+}
+
+#arrow svg {
+  width: 100%;
+  height: 100%;
+}
+
+#arrow path {
+  fill: #ffd84a;
+  stroke: #2a1c10;
+  stroke-width: 2;
+  stroke-linejoin: round;
+}
+
+#turn {
+  position: absolute;
+  right: 10px;
+  top: 100%;
+  margin-top: 6px;
+  display: flex;
+  gap: 6px;
+}
+
+#turn button {
+  width: 34px;
+  height: 34px;
+  border: 0;
+  border-radius: 17px;
+  background: rgba(20, 20, 30, 0.7);
+  color: #fff;
+  font-size: 18px;
+  line-height: 1;
+}
+
+#loading {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #a9d8ee;
+  transition: opacity 0.4s;
+}
+
+#loading.done {
+  opacity: 0;
+  pointer-events: none;
+}
+
+#loading .box {
+  width: 200px;
+  text-align: center;
+  font-size: 22px;
+  color: #2a3a52;
+}
+
+#loading i {
+  display: block;
+  height: 8px;
+  margin-top: 14px;
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.6);
+  overflow: hidden;
+}
+
+#loading u {
+  display: block;
+  height: 100%;
+  width: 0;
+  background: #4f9a40;
+  transition: width 0.15s;
 }

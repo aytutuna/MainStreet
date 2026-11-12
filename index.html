@@ -11,10 +11,12 @@
 <link rel="icon" href="icons/icon-192.png">
 <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
 <link rel="stylesheet" href="style.css">
+<script type="importmap">{"imports":{"three":"./vendor/three/build/three.module.min.js","three/addons/":"./vendor/three/examples/jsm/"}}</script>
 </head>
 <body>
 <div id="app">
   <canvas id="view"></canvas>
+  <div id="tags"></div>
   <div id="top">
     <div id="bar">
       <div id="cash" class="pill"><img class="ico" src="assets/coin.png" alt=""><div><b id="cash-n"></b><span id="rate"></span></div></div>
@@ -23,6 +25,7 @@
       <button type="button" id="gear" class="pill" aria-label="Menu"><i></i><i></i><i></i></button>
     </div>
     <div id="goals"></div>
+    <div id="turn"><button type="button" id="turn-l" aria-label="Rotate left">&#8634;</button><button type="button" id="turn-r" aria-label="Rotate right">&#8635;</button></div>
     <div id="side">
       <button type="button" id="swap" class="pill sm" hidden>School</button>
       <span id="x2" class="pill sm" hidden></span>
@@ -90,6 +93,7 @@
       <button type="button" id="sell-x" class="btn alt">Not now</button>
     </div>
   </div>
+  <div id="loading"><div class="box"><b>Main Street</b><i><u id="load-bar"></u></i></div></div>
   <div id="menu" class="veil" hidden>
     <div class="box">
       <h2 id="m-title">Menu</h2>
@@ -102,15 +106,14 @@
         <button type="button" id="t-goals" class="btn alt">Finish goals</button>
       </div>
       <button type="button" id="m-reset" class="btn alt">Reset town</button>
-      <p class="credit">Art: LimeZu (https://limezu.itch.io/)</p>
+      <p class="credit">Models: Kenney (www.kenney.nl)<br>Icons: LimeZu (https://limezu.itch.io/)</p>
       <button type="button" id="m-ok" class="btn">Close</button>
     </div>
   </div>
 </div>
 <script src="data.js"></script>
-<script src="map.js"></script>
 <script src="sim.js"></script>
-<script src="render.js"></script>
-<script src="ui.js"></script>
+<script type="module" src="town3d.js"></script>
+<script src="ui.js" defer></script>
 </body>
 </html>
