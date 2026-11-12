@@ -1,4 +1,4 @@
-var CACHE = 'mainstreet-9623a84f';
+var CACHE = 'mainstreet-6e662a88';
 var FILES = [
   './',
   'data.js',
@@ -69,6 +69,8 @@ var FILES = [
   'assets/models/food/License.txt',
   'assets/models/food/Textures/colormap.png',
   'assets/models/food/apple.glb',
+  'assets/models/food/bag-flat.glb',
+  'assets/models/food/bag.glb',
   'assets/models/food/cake.glb',
   'assets/models/food/candy-bar.glb',
   'assets/models/food/cookie-chocolate.glb',
