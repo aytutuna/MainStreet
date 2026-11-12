@@ -1,229 +1,302 @@
-// first level cost, then each level costs mult times the one before
-function scale(first, mult) {
-  var out = [];
-  for (var i = 0; i < 5; i++) out.push(Math.round(first * Math.pow(mult, i)));
-  return out;
+// Projects and their steps: [name, cost, income per second]. Steps are bought in this order across all projects.
+var PROJECTS = [
+  { id: 'homes', name: 'Homes', steps: [
+    ['Mark the lots', 9, 1], ['Cottage 1', 22, 2], ['Cottage 2', 53, 2], ['Cottage 3', 92, 2], ['Cottage 4', 140, 2],
+    ['Cottage 5', 190, 2], ['Cottage 6', 260, 2], ['Front gardens', 330, 1], ['Garden extras', 380, 1],
+    ['Hedges, trees and lamps', 440, 1], ['Bigger homes, row 1', 510, 3], ['Bigger homes, row 2', 640, 3],
+    ['Bigger homes, row 3', 780, 3]
+  ] },
+  { id: 'main', name: 'Main Street', steps: [
+    ['Pavement and lots', 1000, 2], ['Bakery', 1100, 4], ['Cafe', 1200, 4], ['Market', 1400, 5],
+    ['Ice cream', 1500, 5], ['Restaurant', 1700, 6], ['Corner store 1', 1900, 6], ['Corner store 2', 2100, 6],
+    ['Corner store 3', 2400, 7], ['Bigger shops, row 1', 2600, 6], ['Bigger shops, row 2', 2900, 6],
+    ['Bigger shops, row 3', 3100, 6], ['Bigger shops, row 4', 3400, 6], ['Grand shops, row 1', 3700, 8],
+    ['Grand shops, row 2', 4000, 8], ['Grand shops, row 3', 4400, 8], ['Grand shops, row 4', 4800, 8],
+    ['Benches and lamps', 5200, 3]
+  ] },
+  { id: 'class1', name: 'Classroom 1', room: 1, steps: [
+    ['Chalkboard', 8300, 3], ['Teacher desk', 9100, 3], ['Front desks', 10000, 4], ['Back desks', 11000, 4],
+    ['Chairs', 12000, 4], ['Students', 13000, 6], ['Wall decor', 14000, 3], ['Globe and shelf', 15000, 3]
+  ] },
+  { id: 'class2', name: 'Classroom 2', room: 1, steps: [
+    ['Chalkboard', 10000, 4], ['Teacher desk', 11000, 4], ['Front desks', 12000, 5], ['Back desks', 13000, 5],
+    ['Chairs', 15000, 5], ['Students', 16000, 7], ['Wall decor', 17000, 4], ['Globe and shelf', 18000, 4]
+  ] },
+  { id: 'rest', name: 'Restrooms', room: 1, steps: [
+    ['Toilets', 13000, 6], ['Stall doors', 15000, 6], ['Sinks', 17000, 7], ['Bins', 19000, 6], ['Floor mat', 22000, 6]
+  ] },
+  { id: 'lib', name: 'Library', room: 1, steps: [
+    ['Wall shelves', 15000, 8], ['Reading tables', 17000, 8], ['Chairs', 19000, 8], ['Low bookcases', 21000, 8],
+    ['Globe', 23000, 7], ['Readers', 26000, 10]
+  ] },
+  { id: 'cafe', name: 'Cafeteria', room: 1, steps: [
+    ['Serving counter', 18000, 10], ['Table 1', 20000, 10], ['Table 2', 22000, 10], ['Chairs', 25000, 10],
+    ['Appliances', 27000, 11], ['Students', 29000, 13], ['Cook', 32000, 12]
+  ] },
+  { id: 'yard', name: 'Playground', room: 1, steps: [
+    ['Path and fence', 23000, 12], ['Swings', 25000, 12], ['Slide', 28000, 12], ['Monkey bars', 31000, 12],
+    ['Bench and tree', 34000, 12], ['Play frame', 37000, 14], ['Kids', 41000, 18]
+  ] }
+];
+
+var TW = 24; // town width in 16 px tiles
+var TH = 222;
+// first row of each street; the street is a sidewalk, three lanes of asphalt and a sidewalk
+var STREETS = [12, 28, 54, 82, 110, 138, 166, 183, 200, 217];
+
+// land that is fenced off until its project starts: rows of [x, y, w, h] in tiles
+var LANDS = {
+  hosp: { name: 'Hospital', sub: 'Coming soon', rects: [[0, 1, 24, 11]], view: 'clinic_3' },
+  park: { name: 'Park', sub: 'Opens after the School', rects: [[0, 17, 24, 11]], view: 'park_5' },
+  school: { name: 'School', sub: 'Opens after Main Street', rects: [[0, 33, 24, 21]], till: 'class1', view: 'school_1' },
+  main: { name: 'Main Street', sub: 'Opens after Homes', rects: [[0, 59, 24, 23], [0, 87, 24, 23], [0, 115, 24, 23],
+    [0, 143, 24, 23]], till: 'main', at: 143 },
+  homes: { name: 'Homes', sub: 'Tap Next to start', rects: [[0, 171, 24, 12], [0, 188, 24, 12], [0, 205, 24, 12]],
+    till: 'homes', at: 205, view: 'lot_home' }
+};
+
+// which project a tap at a given row belongs to
+var BLOCKS = [[1, 12, 'hosp'], [17, 28, 'park'], [33, 54, 'school'], [59, 171, 'main'], [171, 222, 'homes']];
+
+var PIECES = [];
+// a piece stands with the bottom centre of its sprite at (x, y) tiles. spr maps a step of its project to a sprite;
+// '-' hides it. z 0 is ground, drawn before everything else
+function pc(key, x, y, spr, z) {
+  PIECES.push({ k: key, x: x, y: y, s: spr, z: z === 0 ? 0 : 1 });
 }
 
-var BUILD_TIME = [8, 14, 22, 30, 40];
+var SHOPS = ['bakery', 'cafe', 'market', 'icecream', 'restaurant', 'stora', 'storb', 'storc'];
+var SHOP_LV = { cafe: [1, 4, 5], icecream: [3, 3, 5], restaurant: [1, 3, 3] };
+var HOME_STYLES = ['house_y', 'house_g', 'house_b'];
 
-// want is units a resident asks for per minute
-var GOODS = [
-  { id: 'wheat', name: 'Wheat', price: 4, want: 0 },
-  { id: 'eggs', name: 'Eggs', price: 8, want: 0.1 },
-  { id: 'milk', name: 'Milk', price: 8, want: 0.08 },
-  { id: 'veg', name: 'Vegetables', price: 6, want: 0.1 },
-  { id: 'fruit', name: 'Fruit', price: 8, want: 0.08 },
-  { id: 'fish', name: 'Fish', price: 10, want: 0.08 },
-  { id: 'bread', name: 'Bread', price: 25, want: 0.2 },
-  { id: 'pastry', name: 'Pastry', price: 55, want: 0.08 },
-  { id: 'icecream', name: 'Ice cream', price: 36, want: 0.06 },
-  { id: 'meal', name: 'Meal', price: 45, want: 0.08 }
-];
+// homes: three rows of two fenced lots, 11 x 12 tiles each, built from the south. A cottage comes with its fence,
+// gate, shed and vegetable beds; the farm houses that replace them have their door at a different place, so the gate moves
+(function () {
+  var rows = [217, 200, 183];
+  for (var r = 0; r < 3; r++) {
+    var n = rows[r];
+    for (var c = 0; c < 2; c++) {
+      var L = r * 2 + c;
+      var x0 = 0.5 + c * 12;
+      var s = 2 + L;
+      var up = 11 + r;
+      var px = function (v) { return x0 + v / 16; };
+      var py = function (v) { return n - 12 + v / 16; };
+      var at = function (step, spr, x, y) {
+        var o = {};
+        o[step] = spr;
+        pc('homes', px(x), py(y), o);
+      };
+      var ground = { 1: 'lot_home' };
+      ground[s] = 'lawn';
+      pc('homes', x0 + 5.5, n, ground, 0);
+      var cot = {};
+      var farm = {};
+      var fen = {};
+      cot[s] = HOME_STYLES[L % 3];
+      cot[up] = '-';
+      farm[up] = c ? 'farm_b' : 'farm_a';
+      fen[s] = 'lot_fence_c';
+      fen[up] = c ? 'lot_fence_b' : 'lot_fence_a';
+      pc('homes', x0 + 5, n, cot);
+      pc('homes', x0 + (c ? 6 : 5.8125), n, farm);
+      pc('homes', x0 + 5.5, n, fen);
+      at(s, c ? 'shed_r' : 'shed', c ? 146 : 30, 84);
+      for (var i = 0; i < 4; i++) {
+        at(s, 'sprout', (c ? 58 : 78) + i * 16, 78);
+        at(s, 'sprout', (c ? 58 : 78) + i * 16, 66);
+      }
+      for (var b = 0; b < 2; b++) {
+        at(s, 'gbush', 14, 110 + b * 36);
+        at(s, 'gbush', 162, 110 + b * 36);
+      }
+      for (var f = 0; f < 3; f++) {
+        at(8, 'poppy', 46 - f * 8, 172);
+        at(8, 'sunflower', 130 + f * 8, 172);
+      }
+      at(8, 'fbush', c ? 22 : 154, 150);
+      at(9, 'crate', c ? 38 : 138, 74);
+      at(9, 'birdhouse', c ? 150 : 24, 66);
+      at(9, 'can', c ? 134 : 42, 150);
+    }
+    // the gap between the lots is a hedge row
+    for (var h = 0; h < 4; h++) pc('homes', 12, n - 2 - h * 3, { 10: 'fbush' });
+    for (var x = 6; x <= 18; x += 6) pc('homes', x, n + 5, { 10: 'lamp' });
+    for (var t = 3; t <= 21; t += 6) pc('homes', t, n + 5, { 10: 'tree' });
+  }
+})();
 
-var AREAS = [
-  { id: 'village', name: 'Village', unlock: 0 },
-  { id: 'farm', name: 'Farm valley', unlock: 25 },
-  { id: 'beach', name: 'Beach', unlock: 75 },
-  { id: 'downtown', name: 'Downtown', unlock: 175 }
-];
+// main street: four rows of two shops built from the south. Each lot is 23 tiles deep: a hedge, then the car park, then
+// the paved forecourt the shops stand on, all on one building line. The car park gets shallower as the shops grow
+// taller, so no paving is left over behind a low shop. Street lamps and benches stand on the far kerb
+var CAR_DEPTH = [[12, 6, 6], [9, 9, 6], [9, 6, 6], [12, 12, 9]];
+(function () {
+  var rows = [166, 138, 110, 82];
+  var cars = ['car_01', 'car_03', 'car_05', 'car_10'];
+  // taken bays in each row of bays, by the shop they come with (left shop, right shop)
+  var taken = [[[1, 4], [7, 10]], [[3, 5], [8, 9]], [[0, 2], [6, 10]], [[2, 4], [7, 9]]];
+  for (var r = 0; r < 4; r++) {
+    var n = rows[r];
+    var top = n - 23;
+    var from = [1, 10 + r, 14 + r];
+    pc('main', 12, n, { 1: 'plaza' }, 0);
+    for (var x = 0; x < 24; x++) pc('main', x + 0.5, top + 1, { 1: 'bush' });
+    pc('main', 1, n, { 1: 'tree' });
+    pc('main', 23, n, { 1: 'tree' });
+    for (var c = 0; c < 2; c++) {
+      var s = r * 2 + c;
+      var name = SHOPS[s];
+      var lv = SHOP_LV[name] || [1, 3, 5];
+      var o = { 1: 'lot_shop' };
+      o[2 + s] = name + '_' + lv[0];
+      o[10 + r] = name + '_' + lv[1];
+      o[14 + r] = name + '_' + lv[2];
+      pc('main', c ? 17 : 7, n, o);
+    }
+    for (var st = 0; st < 3; st++) {
+      var depth = CAR_DEPTH[r][st];
+      var to = from[st + 1] || 99;
+      var park = {};
+      park[from[st]] = 'carpark_' + depth;
+      park[to] = '-';
+      pc('main', 12, top + 1 + depth, park, 0);
+      for (var i = 0; i < depth / 3; i++) {
+        for (var side = 0; side < 2; side++) {
+          taken[i % 4][side].forEach(function (k, j) {
+            var o2 = {};
+            o2[Math.max(from[st], 2 + r * 2 + side)] = cars[(r + i + j + side) % 4];
+            o2[to] = '-';
+            pc('main', 0, 0, o2);
+            var q = PIECES[PIECES.length - 1];
+            q.car = 1;
+            q.x = 1.5 + 2 * k;
+            q.y = top + 1 + 2.375 + 3 * i;
+          });
+        }
+      }
+    }
+    for (var l = 6; l <= 18; l += 12) pc('main', l, n + 5, { 18: 'lamp' });
+    pc('main', 12, n + 5, { 18: 'bench' });
+    for (var t = 3; t <= 21; t += 6) pc('main', t, n + 5, { 18: 'tree' });
+  }
+})();
 
-// Arrays are indexed by level - 1. size is the kind of lot. wants hold before level n + 1 is offered; reach and radius
-// are in tiles; rate is per minute; serve and shelf are what a shop sells and holds.
-var BUILDINGS = [
-  { id: 'cottage', name: 'Cottage', size: 'small', areas: ['village'],
-    wants: [[], ['sell:bread'], ['cover:park,playground'], ['foods:3'], ['cover:school']],
-    cap: [3, 4, 6, 8, 10], workers: [0, 0, 0, 0, 0], cost: scale(80, 2), build: BUILD_TIME },
-  { id: 'farmhouse', name: 'Farmhouse', size: 'small', areas: ['farm'],
-    wants: [[], ['sell:bread'], ['cover:park,playground'], ['foods:3'], ['cover:school']],
-    cap: [4, 6, 8, 10, 12], workers: [0, 0, 0, 0, 0], cost: scale(700, 2), build: BUILD_TIME },
-  { id: 'villa', name: 'Villa', size: 'medium', areas: ['beach'],
-    wants: [[], ['sell:bread', 'sell:veg'], ['sell:icecream'], ['sell:meal', 'cover:clinic'], ['happy:80']],
-    cap: [6, 9, 12, 15, 18], workers: [0, 0, 0, 0, 0], cost: scale(1200, 2), build: BUILD_TIME },
-  { id: 'condo', name: 'Condo tower', size: 'large', areas: ['downtown'],
-    wants: [[], ['shop:supermarket'], ['shop:cafe', 'cover:police'], ['cover:fire'], ['happy:85', 'town:office']],
-    cap: [10, 14, 20, 28, 36], workers: [0, 0, 0, 0, 0], cost: scale(6000, 2), build: BUILD_TIME },
+// school: the stage is 0 until the first room starts, then 1 plus the rooms finished
+(function () {
+  var st = { 1: 'con_16x11', 2: 'school_1', 3: 'school_2', 4: 'school_3', 5: 'school_3', 6: 'school_4', 7: 'school_5' };
+  pc('sch', 12, 54, st);
+  pc('sch', 12, 43, { 2: 'con_14x8', 4: '-' });
+  pc('sch', 12, 41, { 1: 'court' }, 0);
+  for (var i = 0; i < 2; i++) {
+    pc('sch', 2, 43 + i * 4, { 1: 'tree' });
+    pc('sch', 22, 43 + i * 4, { 1: 'tree' });
+    pc('sch', 0.7, 44 + i * 4, { 1: 'bush' });
+    pc('sch', 23.3, 44 + i * 4, { 1: 'bush' });
+  }
+  pc('sch', 2.2, 53, { 1: 'bench', 6: 'toy_bars' });
+  pc('sch', 21.8, 53, { 1: 'bench', 6: 'toy_slide' });
+  for (var x = 6; x <= 18; x += 6) {
+    pc('sch', x, 33, { 1: 'lamp' });
+    pc('sch', x, 59, { 1: 'lamp' });
+  }
+  for (var t = 3; t <= 21; t += 6) {
+    pc('sch', t, 33, { 1: 'tree' });
+    pc('sch', t, 59, { 1: 'tree' });
+  }
+})();
 
-  { id: 'wheat', name: 'Wheat field', size: 'farmland', areas: ['village', 'farm'], makes: 'wheat',
-    rate: [8, 14, 24, 38, 54], workers: [1, 1, 2, 2, 3], cost: scale(30, 2), build: BUILD_TIME },
-  { id: 'veg', name: 'Vegetable patch', size: 'farmland', areas: ['village', 'farm'], makes: 'veg',
-    rate: [7, 12, 20, 32, 46], workers: [1, 1, 2, 2, 3], cost: scale(40, 2), build: BUILD_TIME },
-  { id: 'orchard', name: 'Orchard', size: 'farmland', areas: ['farm'], makes: 'fruit',
-    rate: [7, 12, 20, 32, 46], workers: [1, 2, 2, 3, 3], cost: scale(700, 2), build: BUILD_TIME },
-  { id: 'coop', name: 'Chicken coop', size: 'farmland', areas: ['village', 'farm'], makes: 'eggs',
-    rate: [7, 12, 20, 32, 46], workers: [1, 1, 2, 2, 3], cost: scale(50, 2), build: BUILD_TIME },
-  { id: 'barn', name: 'Dairy barn', size: 'farmland', areas: ['farm'], makes: 'milk',
-    rate: [8, 14, 24, 38, 54], workers: [2, 2, 3, 3, 4], cost: scale(800, 2), build: BUILD_TIME },
-  { id: 'pier', name: 'Fishing pier', size: 'shore', areas: ['beach'], makes: 'fish',
-    rate: [8, 14, 24, 38, 54], workers: [2, 2, 3, 3, 4], cost: scale(1500, 2), build: BUILD_TIME },
-
-  { id: 'market', name: 'Market', size: 'small', areas: ['village', 'farm', 'beach', 'downtown'],
-    sells: ['eggs', 'veg', 'fruit'], reach: [31, 40, 50, 54, 58], serve: [10, 16, 24, 34, 48], shelf: [6, 9, 14, 20, 30],
-    workers: [1, 1, 2, 2, 3], cost: scale(80, 2), build: BUILD_TIME },
-  { id: 'bakery', name: 'Bakery', size: 'small', areas: ['village', 'farm', 'beach', 'downtown'],
-    needs: ['wheat', 'eggs'], makes: 'bread', sells: ['bread'], rate: [10, 16, 26, 38, 54],
-    reach: [31, 40, 50, 54, 58], serve: [10, 16, 24, 34, 48], shelf: [6, 9, 14, 20, 30],
-    workers: [2, 2, 3, 3, 4], cost: scale(70, 2), build: BUILD_TIME },
-  { id: 'cafe', name: 'Cafe', size: 'small', areas: ['village', 'beach', 'downtown'],
-    needs: ['milk', 'bread'], makes: 'pastry', sells: ['pastry'], rate: [6, 10, 17, 27, 40],
-    reach: [31, 40, 50, 54, 58], serve: [8, 12, 18, 26, 36], shelf: [6, 9, 14, 20, 30],
-    workers: [2, 2, 3, 3, 4], cost: scale(500, 2), build: BUILD_TIME },
-  { id: 'icecream', name: 'Ice cream parlour', size: 'small', areas: ['beach', 'downtown'],
-    needs: ['milk', 'fruit'], makes: 'icecream', sells: ['icecream'], rate: [6, 10, 17, 27, 40],
-    reach: [31, 40, 50, 54, 58], serve: [8, 12, 18, 26, 36], shelf: [6, 9, 14, 20, 30],
-    workers: [2, 2, 3, 3, 4], cost: scale(1500, 2), build: BUILD_TIME },
-  { id: 'restaurant', name: 'Restaurant', size: 'medium', areas: ['beach', 'downtown'],
-    needs: ['fish', 'veg'], makes: 'meal', sells: ['meal'], rate: [6, 10, 17, 27, 40],
-    reach: [31, 40, 50, 54, 58], serve: [8, 12, 18, 26, 36], shelf: [6, 9, 14, 20, 30],
-    workers: [3, 3, 4, 4, 5], cost: scale(2200, 2), build: BUILD_TIME },
-
-  { id: 'supermarket', name: 'Supermarket', size: 'large', areas: ['downtown'],
-    sells: ['eggs', 'milk', 'veg', 'fish', 'bread'], reach: [48, 53, 57, 63, 68], serve: [24, 40, 64, 96, 140], shelf: [10, 16, 24, 36, 50],
-    workers: [3, 4, 5, 6, 8], cost: scale(8000, 2), build: BUILD_TIME },
-  { id: 'hotel', name: 'Hotel', size: 'large', areas: ['downtown'],
-    tourists: [1, 1.5, 2.5, 4, 6], workers: [2, 3, 4, 5, 6], cost: scale(10000, 2), build: BUILD_TIME },
-  { id: 'office', name: 'Office', size: 'large', areas: ['downtown'],
-    pay: [14, 18, 23, 29, 36], workers: [4, 6, 9, 12, 16], cost: scale(12000, 2), build: BUILD_TIME },
-
-  { id: 'park', name: 'Park', size: 'small', areas: ['village', 'farm', 'beach', 'downtown'],
-    bonus: [8, 9, 10, 11, 12], radius: [25, 31, 37, 42, 46], workers: [1, 1, 1, 2, 2],
-    cost: scale(100, 2), build: BUILD_TIME },
-  { id: 'playground', name: 'Playground', size: 'small', areas: ['village', 'farm', 'beach', 'downtown'],
-    bonus: [8, 9, 10, 11, 12], radius: [25, 31, 37, 42, 46], workers: [1, 1, 1, 2, 2],
-    cost: scale(120, 2), build: BUILD_TIME },
-  { id: 'school', name: 'School', size: 'medium', areas: ['village', 'farm', 'beach', 'downtown'],
-    bonus: [10, 11, 12, 13, 14], radius: [25, 31, 37, 42, 46], workers: [2, 2, 3, 3, 4], workforce: 0.1,
-    cost: scale(250, 2), build: BUILD_TIME },
-  { id: 'clinic', name: 'Clinic', size: 'medium', areas: ['village', 'farm', 'beach', 'downtown'],
-    bonus: [10, 11, 12, 13, 14], radius: [25, 31, 37, 42, 46], workers: [2, 3, 3, 4, 4],
-    cost: scale(350, 2), build: BUILD_TIME },
-  { id: 'police', name: 'Police station', size: 'medium', areas: ['village', 'farm', 'beach', 'downtown'],
-    bonus: [10, 11, 12, 13, 14], radius: [25, 31, 37, 42, 46], workers: [2, 2, 3, 3, 4],
-    cost: scale(300, 2), build: BUILD_TIME },
-  { id: 'fire', name: 'Fire station', size: 'medium', areas: ['village', 'farm', 'beach', 'downtown'],
-    bonus: [10, 11, 12, 13, 14], radius: [25, 31, 37, 42, 46], workers: [2, 2, 3, 3, 4],
-    cost: scale(300, 2), build: BUILD_TIME },
-
-  { id: 'depot', name: 'Depot', size: 'medium', areas: ['village', 'farm', 'beach', 'downtown'],
-    trucks: [2, 3, 4, 5, 6], workers: [1, 2, 2, 3, 3], cost: scale(300, 2), build: BUILD_TIME },
-  { id: 'warehouse', name: 'Warehouse', size: 'fixed', spot: 'f-warehouse', areas: ['farm'],
-    store: [60, 140, 260, 420, 640], workers: [1, 2, 2, 3, 3], cost: scale(800, 2), build: BUILD_TIME },
-  { id: 'train', name: 'Train station', size: 'fixed', spot: 'd-train', areas: ['downtown'],
-    export: [6, 10, 16, 24, 36], train: [8, 12, 18, 26, 36], workers: [2, 3, 4, 5, 6],
-    cost: scale(15000, 2), build: BUILD_TIME }
-];
-
-// x, y is the footprint's top-left tile; lots face south onto the street below. Buildings rise above the footprint,
-// so a row sits as far below the one behind it as its tallest building needs.
-var SIZES = { small: [10, 7], medium: [16, 11], large: [18, 10], farmland: [15, 9], shore: [8, 20] };
-
-function lot(id, kind, area, x, y) {
-  return { id: id, kind: kind, area: area, x: x, y: y, w: SIZES[kind][0], h: SIZES[kind][1] };
+// school inside, in 32 px tiles from the top left of the building
+var SW = 12;
+var SH = 52;
+// floor [x, y, w, h], floor tile, row of the door in the hallway wall
+var ROOMS = {
+  hall: { name: 'Hallway', floor: [1, 2, 2, 36], tile: 'f_hall' },
+  class1: { name: 'Classroom 1', floor: [4, 2, 7, 6], tile: 'f_class', door: 5 },
+  class2: { name: 'Classroom 2', floor: [4, 10, 7, 6], tile: 'f_class', door: 13 },
+  rest: { name: 'Restrooms', floor: [4, 18, 7, 4], tile: 'f_rest', door: 20 },
+  lib: { name: 'Library', floor: [4, 24, 7, 6], tile: 'f_lib', door: 27 },
+  cafe: { name: 'Cafeteria', floor: [4, 32, 7, 6], tile: 'f_cafe', door: 35 },
+  yard: { name: 'Playground', floor: [0, 40, 12, 12] }
+};
+var INSIDE = [];
+// room, step, sprite, x, y, options. A piece stands on tile (x, y), centred over the tiles it spans.
+// wall: hangs on the wall; flat: lies on the floor; lift: raised from the floor; kid, adult: a person and the way they face
+function it(room, step, spr, x, y, o) {
+  var p = o || {};
+  p.r = room;
+  p.s = step;
+  p.spr = spr;
+  p.x = x;
+  p.y = y;
+  INSIDE.push(p);
 }
+function pupil(room, step, x, y, d, k) {
+  it(room, step, 'kid_' + (k % 8 + 1), x, y, { person: 1, d: d, sit: 1 });
+}
+(function () {
+  function classroom(id, y0, off) {
+    it(id, 1, 'board', 6.5, y0 - 1, { span: 2, wall: 1 });
+    it(id, 2, 'tdesk', 6.5, y0 + 1, { span: 2 });
+    it(id, 2, 'adult_' + (3 + off % 3), 7, y0, { person: 1, d: 'down' });
+    var cols = [5, 6, 8, 9];
+    [y0 + 2, y0 + 4].forEach(function (y, r) {
+      cols.forEach(function (c) { it(id, 3 + r, 'desk', c, y); });
+    });
+    [y0 + 3, y0 + 5].forEach(function (y) {
+      cols.forEach(function (c) { it(id, 5, 'chair', c, y); });
+    });
+    var k = off;
+    [y0 + 3, y0 + 5].forEach(function (y) {
+      cols.forEach(function (c) { pupil(id, 6, c, y, 'up', k++); });
+    });
+    it(id, 7, 'map', 4, y0 - 1, { span: 2, wall: 1, lift: 8 });
+    it(id, 7, 'poster', 9, y0 - 1, { span: 2, wall: 1, lift: 8 });
+    it(id, 8, 'bookcase', 4, y0 + 1, { span: 2 });
+    it(id, 8, 'globe', 4.5, y0 + 1, { span: 1, lift: 52 });
+  }
+  classroom('class1', 2, 0);
+  classroom('class2', 10, 3);
 
-var PLOTS = [
-  lot('v-fd1', 'farmland', 'village', 44, 191),
-  lot('v-fd2', 'farmland', 'village', 69, 191),
-  lot('v-sc1', 'small', 'village', 49, 179),
-  lot('v-sc2', 'small', 'village', 69, 179),
-  lot('v-sc3', 'small', 'village', 38, 179),
-  lot('v-sc4', 'small', 'village', 80, 179),
-  lot('v-fd3', 'farmland', 'village', 27, 191),
-  lot('v-sb1', 'small', 'village', 69, 160),
-  lot('v-sc5', 'small', 'village', 27, 179),
-  lot('v-sc6', 'small', 'village', 91, 179),
-  lot('v-mb1', 'medium', 'village', 43, 156),
-  lot('v-sb2', 'small', 'village', 32, 160),
-  lot('v-mb2', 'medium', 'village', 82, 156),
-  lot('v-sc7', 'small', 'village', 16, 179),
-  lot('v-sc8', 'small', 'village', 102, 179),
-  lot('v-sb3', 'small', 'village', 21, 160),
-  lot('v-sb4', 'small', 'village', 101, 160),
-  lot('v-sc9', 'small', 'village', 5, 179),
-  lot('v-sc10', 'small', 'village', 113, 179),
-  lot('v-sa1', 'small', 'village', 49, 135),
-  lot('v-sa2', 'small', 'village', 69, 135),
-  lot('v-sa3', 'small', 'village', 38, 135),
-  lot('v-sa4', 'small', 'village', 80, 135),
-  lot('v-mb3', 'medium', 'village', 4, 156),
-  lot('v-sa5', 'small', 'village', 27, 135),
-  lot('v-sa6', 'small', 'village', 91, 135),
-  lot('v-sa7', 'small', 'village', 16, 135),
-  lot('v-sa8', 'small', 'village', 102, 135),
-  lot('v-sa9', 'small', 'village', 5, 135),
-  lot('v-sa10', 'small', 'village', 113, 135),
-  lot('f-sa1', 'small', 'farm', 49, 218),
-  lot('f-sa2', 'small', 'farm', 69, 218),
-  lot('f-sa3', 'small', 'farm', 37, 218),
-  lot('f-sa4', 'small', 'farm', 81, 218),
-  lot('f-fb1', 'farmland', 'farm', 44, 235),
-  lot('f-fb2', 'farmland', 'farm', 69, 235),
-  lot('f-fb3', 'farmland', 'farm', 27, 235),
-  lot('f-fb4', 'farmland', 'farm', 86, 235),
-  lot('f-ma1', 'medium', 'farm', 19, 214),
-  lot('f-ma2', 'medium', 'farm', 93, 214),
-  lot('f-sc1', 'small', 'farm', 49, 256),
-  lot('f-sc2', 'small', 'farm', 69, 256),
-  lot('f-fc1', 'farmland', 'farm', 80, 254),
-  lot('f-sc3', 'small', 'farm', 37, 256),
-  lot('f-fb5', 'farmland', 'farm', 10, 235),
-  lot('f-fb6', 'farmland', 'farm', 103, 235),
-  lot('f-fc2', 'farmland', 'farm', 20, 254),
-  lot('f-fa1', 'farmland', 'farm', 2, 216),
-  lot('f-fc3', 'farmland', 'farm', 95, 254),
-  lot('f-fc4', 'farmland', 'farm', 4, 254),
-  lot('f-fc5', 'farmland', 'farm', 110, 254),
-  lot('b-sa1', 'small', 'beach', 49, 279),
-  lot('b-sa2', 'small', 'beach', 69, 279),
-  lot('b-sa3', 'small', 'beach', 38, 279),
-  lot('b-sa4', 'small', 'beach', 80, 279),
-  lot('b-sb1', 'small', 'beach', 49, 304),
-  lot('b-sb2', 'small', 'beach', 69, 304),
-  lot('b-sb3', 'small', 'beach', 38, 304),
-  lot('b-sb4', 'small', 'beach', 80, 304),
-  lot('b-ma1', 'medium', 'beach', 21, 275),
-  lot('b-ma2', 'medium', 'beach', 91, 275),
-  lot('b-mb1', 'medium', 'beach', 21, 300),
-  lot('b-mb2', 'medium', 'beach', 91, 300),
-  lot('b-ma3', 'medium', 'beach', 4, 275),
-  lot('b-ma4', 'medium', 'beach', 108, 275),
-  lot('b-mb3', 'medium', 'beach', 4, 300),
-  lot('b-mb4', 'medium', 'beach', 108, 300),
-  lot('d-lb1', 'large', 'downtown', 41, 42),
-  lot('d-lb2', 'large', 'downtown', 69, 42),
-  lot('d-mc1', 'medium', 'downtown', 43, 66),
-  lot('d-mc2', 'medium', 'downtown', 69, 66),
-  lot('d-sa1', 'small', 'downtown', 39, 18),
-  lot('d-sa2', 'small', 'downtown', 79, 18),
-  lot('d-lb3', 'large', 'downtown', 22, 42),
-  lot('d-lb4', 'large', 'downtown', 88, 42),
-  lot('d-mc3', 'medium', 'downtown', 24, 66),
-  lot('d-mc4', 'medium', 'downtown', 88, 66),
-  lot('d-sa3', 'small', 'downtown', 27, 18),
-  lot('d-sa4', 'small', 'downtown', 91, 18),
-  lot('d-sa5', 'small', 'downtown', 15, 18),
-  lot('d-sa6', 'small', 'downtown', 103, 18),
-  lot('d-lb5', 'large', 'downtown', 3, 42),
-  lot('d-lb6', 'large', 'downtown', 107, 42),
-  lot('d-ld1', 'large', 'downtown', 41, 94),
-  lot('d-ld2', 'large', 'downtown', 69, 94),
-  lot('d-mc5', 'medium', 'downtown', 5, 66),
-  lot('d-mc6', 'medium', 'downtown', 107, 66),
-  lot('d-sa7', 'small', 'downtown', 3, 18),
-  lot('d-sa8', 'small', 'downtown', 115, 18),
-  lot('d-ld3', 'large', 'downtown', 22, 94),
-  lot('d-md1', 'medium', 'downtown', 90, 93),
-  lot('d-se1', 'small', 'downtown', 49, 116),
-  lot('d-se2', 'small', 'downtown', 69, 116),
-  lot('d-ld4', 'large', 'downtown', 3, 94),
-  lot('d-md2', 'medium', 'downtown', 109, 93),
-  lot('d-se3', 'small', 'downtown', 36, 116),
-  lot('d-se4', 'small', 'downtown', 82, 116),
-  lot('d-se5', 'small', 'downtown', 23, 116),
-  lot('d-se6', 'small', 'downtown', 95, 116),
-  lot('d-se7', 'small', 'downtown', 10, 116),
-  { id: 'f-warehouse', kind: 'fixed', area: 'farm', x: 111, y: 217, w: 14, h: 8 },
-  { id: 'd-train', kind: 'fixed', area: 'downtown', x: 52, y: 3, w: 24, h: 7 },
-  lot('b-pier1', 'shore', 'beach', 24, 321),
-  lot('b-pier2', 'shore', 'beach', 96, 321)
-];
+  [5, 7, 9].forEach(function (x) { it('rest', 1, 'toilet', x, 18); });
+  [4, 6, 8, 10].forEach(function (x) { it('rest', 2, 'stall_post', x, 18, { span: 1, lift: -8 }); });
+  [5, 7, 9].forEach(function (x) { it('rest', 2, 'stall_front', x, 18, { span: 1, lift: -8 }); });
+  [5, 8].forEach(function (x) { it('rest', 3, 'sink', x, 21, { span: 2 }); });
+  [4, 10].forEach(function (x) { it('rest', 4, 'bin', x, 21); });
+  it('rest', 5, 'mat', 6.5, 20, { span: 2, flat: 1 });
+
+  [4.5, 6.5, 8.5].forEach(function (x) { it('lib', 1, 'wshelf', x, 24, { span: 2 }); });
+  [5, 8].forEach(function (x) { it('lib', 2, 'tdesk', x, 27, { span: 2 }); });
+  [5, 6, 8, 9].forEach(function (x) { it('lib', 3, 'rchair', x, 26); });
+  [4.5, 6.5, 8.5].forEach(function (x) { it('lib', 4, 'bookcase', x, 29, { span: 2 }); });
+  it('lib', 5, 'globe', 6.5, 29, { span: 2, lift: 52 });
+  pupil('lib', 6, 5, 26, 'down', 1);
+  pupil('lib', 6, 9, 26, 'down', 2);
+
+  [4.5, 6.5, 8.5].forEach(function (x) { it('cafe', 1, 'counter', x, 32, { span: 2 }); });
+  [4, 8].forEach(function (x, i) { it('cafe', 2 + i, 'table', x, 35, { span: 3 }); });
+  [4, 5, 6, 8, 9, 10].forEach(function (x) {
+    it('cafe', 4, 'chair_n', x, 33);
+    it('cafe', 4, 'chair_s', x, 36);
+  });
+  it('cafe', 5, 'fridge', 10, 32);
+  it('cafe', 5, 'coffee', 4, 32, { lift: 26 });
+  [4, 6, 8, 10].forEach(function (x, i) {
+    pupil('cafe', 6, x, 33, 'down', 2 + i);
+    pupil('cafe', 6, x, 36, 'up', 5 + i);
+  });
+  it('cafe', 7, 'adult_2', 7, 32, { person: 1, d: 'down' });
+
+  it('hall', 1, 'doormat', 1, 37, { span: 2, flat: 1 });
+  [1, 2].forEach(function (x) { it('hall', 2, 'locker', x, 2); });
+
+  it('yard', 2, 'toy3', 8, 44, { span: 2 });
+  it('yard', 3, 'toy1', 4, 44, { span: 3 });
+  it('yard', 4, 'toy4', 4, 48, { span: 3 });
+  it('yard', 5, 'ybench', 4, 50, { span: 2 });
+  it('yard', 5, 'oak', 8, 50, { span: 2 });
+  it('yard', 6, 'toy7', 8, 47, { span: 2 });
+})();
+// stage of the hallway pieces: 1 plus the rooms finished (counted like the school outside)
+INSIDE.forEach(function (p) {
+  if (p.r === 'hall') p.r = 'sch';
+});
