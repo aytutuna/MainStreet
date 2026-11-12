@@ -6,27 +6,19 @@ var MAX_AWAY = 8 * 3600;
 var START_CASH = 60;
 var BASE = 1;
 
-var STEPS = [];
 var PROJ = {};
 PROJECTS.forEach(function (p) {
-  p.first = STEPS.length;
-  p.steps.forEach(function (s, i) {
-    STEPS.push({ p: p.id, i: i, name: s[0], cost: s[1], inc: s[2] });
-  });
-  p.end = STEPS.length;
   PROJ[p.id] = p;
 });
 
 var S = fresh();
 
 function fresh() {
-  return { v: 4, cash: START_CASH, k: 0, ts: Date.now(), snd: 1 };
+  return { v: 4, cash: START_CASH, n: {}, ts: Date.now() };
 }
 
-// steps bought in a project
 function got(id) {
-  var p = PROJ[id];
-  return Math.max(0, Math.min(S.k, p.end) - p.first);
+  return Math.min(S.n[id] || 0, PROJ[id].steps.length);
 }
 
 function total(id) {
@@ -48,18 +40,28 @@ function counter(key) {
   return f;
 }
 
+function projectInc(p) {
+  var sum = 0;
+  for (var i = 0; i < got(p.id); i++) sum += p.steps[i][2];
+  return sum * (done(p.id) ? 2 : 1);
+}
+
 function rate() {
   var r = BASE;
-  PROJECTS.forEach(function (p) {
-    var sum = 0;
-    for (var i = p.first; i < Math.min(S.k, p.end); i++) sum += STEPS[i].inc;
-    r += sum * (done(p.id) ? 2 : 1);
-  });
+  PROJECTS.forEach(function (p) { r += projectInc(p); });
   return r;
 }
 
 function upNext() {
-  return S.k < STEPS.length ? STEPS[S.k] : null;
+  for (var i = 0; i < PROJECTS.length; i++) {
+    var p = PROJECTS[i];
+    var n = got(p.id);
+    if (n < p.steps.length) {
+      var s = p.steps[n];
+      return { p: p.id, i: n, name: s[0], cost: s[1], inc: s[2] };
+    }
+  }
+  return null;
 }
 
 function canBuy() {
@@ -67,7 +69,6 @@ function canBuy() {
   return !!n && (free || S.cash >= n.cost);
 }
 
-// seconds until the next step is affordable
 function waitFor() {
   var n = upNext();
   if (!n || free || S.cash >= n.cost) return 0;
@@ -79,9 +80,8 @@ function buy() {
   var n = upNext();
   if (!n || !canBuy()) return null;
   if (!free) S.cash -= n.cost;
-  S.k++;
-  var fin = done(n.p);
-  return { step: n, fin: fin, end: S.k >= STEPS.length };
+  S.n[n.p] = got(n.p) + 1;
+  return { step: n, fin: done(n.p), end: !upNext() };
 }
 
 function tick(dt) {
@@ -113,14 +113,17 @@ function save() {
 }
 
 function validate(o) {
-  if (!o || typeof o !== 'object' || o.v !== 4) return null;
-  if (!isFinite(o.cash) || !isFinite(o.k) || !isFinite(o.ts)) return null;
-  var k = Math.floor(o.k);
-  if (k < 0 || k > STEPS.length) return null;
-  return { v: 4, cash: Math.max(0, o.cash), k: k, ts: o.ts, snd: o.snd === 0 ? 0 : 1 };
+  if (!o || typeof o !== 'object' || o.v !== 4 || !o.n || typeof o.n !== 'object') return null;
+  if (!isFinite(o.cash) || !isFinite(o.ts)) return null;
+  var n = {};
+  PROJECTS.forEach(function (p) {
+    var v = Math.floor(o.n[p.id]);
+    if (v > 0) n[p.id] = Math.min(v, p.steps.length);
+  });
+  return { v: 4, cash: Math.max(0, o.cash), n: n, ts: o.ts };
 }
 
-// loads the save and returns the away summary, or null
+// returns the away summary when the save is old enough, else null
 function load() {
   var gone = null;
   try {
