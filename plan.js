@@ -614,7 +614,7 @@ export function planTown(lib) {
     var cx = -15.5;
     var cz = 7.5;
     var R0 = 3.5 + 0.62;
-    for (var a = 112; a <= 248; a += 19) {
+    for (var a = 112; a <= 248; a += 27) {
       var rad = a * Math.PI / 180;
       var ref = POOL.house[Math.floor(rng() * POOL.house.length)];
       var m = lib.model(ref);
@@ -677,7 +677,7 @@ export function planTown(lib) {
     R.w8 = lotsAlong('x', 21, -16, -2, 'N', [{ fill: 'house' }], house);
     // the crescent and the court
     arcHouses();
-    R.ct = lotsAlong('z', -18, 17.5, 23.5, 'E', [{ fill: 'house' }], house);
+    R.ct = lotsAlong('z', -18, 19, 21, 'E', [{ fill: 'house' }], house);
     return R;
   }
 
