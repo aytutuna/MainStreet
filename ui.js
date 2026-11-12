@@ -1,24 +1,36 @@
 var SND_KEY = 'mainstreet.snd';
+var MODE_KEY = 'mainstreet.mode';
 var SND = {
   buy: ['triangle', 0.07, 0.16, [523, 784]],
   coin: ['square', 0.05, 0.1, [880, 1175]],
-  done: ['triangle', 0.1, 0.25, [523, 659, 784, 1047]]
+  done: ['triangle', 0.1, 0.25, [523, 659, 784, 1047]],
+  mile: ['triangle', 0.08, 0.22, [523, 659, 784, 1047, 1319, 1568]],
+  unlock: ['triangle', 0.09, 0.2, [392, 523, 659, 784]]
 };
 var ac = null;
 var snd = true;
 var cardId = null;
+var cardRow = null;
 var lastTick = 0;
 var shown = {};
 var insets = [0, 0];
+var mode = 1;
+var rows = {};
+var bestOpt = null;
+var bestAt = 0;
+var sheetOpen = false;
+var lastPay = {};
+var bq = [];
+var bqBusy = false;
+var testTaps = 0;
+var chips = [];
 
 function $(id) {
   return document.getElementById(id);
 }
 
 function money(v) {
-  if (v >= 1e9) return '$' + (v / 1e9).toFixed(2).replace(/\.?0+$/, '') + 'B';
-  if (v >= 1e6) return '$' + (v / 1e6).toFixed(2).replace(/\.?0+$/, '') + 'M';
-  return '$' + Math.floor(v).toLocaleString('en-US');
+  return '$' + short(v);
 }
 
 function wake() {
@@ -55,164 +67,511 @@ function buzz() {
   }
 }
 
-function lower(s) {
-  return s.charAt(0).toLowerCase() + s.slice(1);
+function secs(v) {
+  if (v < 10) return (Math.round(v * 10) / 10) + 's';
+  if (v < 60) return Math.round(v) + 's';
+  var m = Math.floor(v / 60);
+  return m + 'm' + (Math.round(v % 60) ? ' ' + Math.round(v % 60) + 's' : '');
+}
+
+function clock2(v) {
+  var m = Math.floor(v / 60);
+  var s = Math.floor(v % 60);
+  return m + ':' + (s < 10 ? '0' : '') + s;
 }
 
 function fitInsets() {
-  var top = $('top').offsetHeight + 6;
-  var bot = $('bottom').offsetHeight + 6;
+  var top = $('goals').getBoundingClientRect().bottom + 6;
+  var bot = innerHeight - (sheetOpen ? $('sheet').getBoundingClientRect().top : $('bottom').getBoundingClientRect().top) + 6;
   if (top !== insets[0] || bot !== insets[1]) {
     insets = [top, bot];
     View.inset(top, bot);
   }
 }
 
-// writes to the page only when a value changed
-function put(key, el, prop, value) {
-  if (shown[key] === value) return false;
-  shown[key] = value;
+// writes to the page only when a value changed; c is the cache of one element or one group
+function set(c, key, el, prop, value) {
+  if (c[key] === value) return false;
+  c[key] = value;
   el[prop] = value;
   return true;
 }
 
-function updateNext() {
-  var n = upNext();
-  var b = $('next');
-  var moved = put('nextHidden', b, 'hidden', !n);
-  if (n) {
-    var ok = canBuy();
-    var html = 'Next: ' + PROJ[n.p].name + ', ' + lower(n.name);
-    if (!ok) html += '<small>' + Math.ceil(waitFor()) + ' s to go</small>';
-    moved = put('nextHtml', $('next-txt'), 'innerHTML', html) || moved;
-    put('nextCost', $('next-cost'), 'textContent', money(n.cost));
-    if (shown.wait !== !ok) {
-      shown.wait = !ok;
-      b.classList.toggle('wait', !ok);
+function flag(c, key, el, name, on) {
+  on = !!on;
+  if (c[key] === on) return;
+  c[key] = on;
+  el.classList.toggle(name, on);
+}
+
+// ---- juice
+
+function popAt(text, x, y, cls) {
+  var d = document.createElement('div');
+  d.className = 'pop ' + (cls || '');
+  d.textContent = text;
+  d.style.left = x + 'px';
+  d.style.top = y + 'px';
+  $('fly').appendChild(d);
+  var a = d.animate([{ transform: 'translate(-50%, 0) scale(0.6)', opacity: 0 }, { transform: 'translate(-50%, -14px) scale(1.15)', opacity: 1, offset: 0.2 },
+    { transform: 'translate(-50%, -52px) scale(1)', opacity: 0 }], { duration: 1100, easing: 'ease-out' });
+  a.onfinish = function () { d.remove(); };
+}
+
+function flyIcons(src, x, y, n, targetId) {
+  var ar = $('app').getBoundingClientRect();
+  var to = $(targetId).getBoundingClientRect();
+  var tx = to.left - ar.left + 26;
+  var ty = to.top - ar.top + to.height / 2;
+  for (var i = 0; i < n; i++) {
+    var d = document.createElement('img');
+    d.src = src;
+    d.className = 'fc';
+    d.style.left = x - 10 + 'px';
+    d.style.top = y - 10 + 'px';
+    $('fly').appendChild(d);
+    var sx = (Math.random() - 0.5) * 50;
+    var a = d.animate([{ transform: 'translate(0, 0) scale(1)', opacity: 1 }, { transform: 'translate(' + sx + 'px, -24px) scale(1.2)', opacity: 1, offset: 0.25 },
+      { transform: 'translate(' + (tx - x + 10) + 'px, ' + (ty - y + 10) + 'px) scale(0.6)', opacity: 0.4 }],
+    { duration: 650 + i * 40, delay: i * 45, easing: 'cubic-bezier(.4,0,.7,.7)', fill: 'backwards' });
+    a.onfinish = function (e) { e.target.effect.target.remove(); };
+  }
+  setTimeout(function () { bumpEl(targetId === 'gems' ? 'gem-n' : 'cash-n'); }, 560);
+}
+
+function flyCoins(x, y, n) {
+  flyIcons('assets/coin.png', x, y, n, 'cash');
+}
+
+function flyGems(x, y, n) {
+  flyIcons('assets/ui_gem.png', x, y, n, 'gems');
+}
+
+function bumpEl(id) {
+  var e = $(id);
+  e.classList.remove('bump');
+  void e.offsetWidth;
+  e.classList.add('bump');
+}
+
+function centerOf(el) {
+  var r = el.getBoundingClientRect();
+  var a = $('app').getBoundingClientRect();
+  return { x: r.left - a.left + r.width / 2, y: r.top - a.top + r.height / 2 };
+}
+
+// milestone and unlock banners wait for each other and for the camera
+function banner(html, delay, big) {
+  if (bq.length > 2) bq.shift();
+  bq.push({ h: html, d: delay || 0, big: big });
+  if (!bqBusy) nextBanner();
+}
+
+function nextBanner() {
+  var q = bq.shift();
+  if (!q) {
+    bqBusy = false;
+    return;
+  }
+  bqBusy = true;
+  setTimeout(function () {
+    var b = $('banner');
+    b.innerHTML = q.h;
+    b.hidden = false;
+    b.style.animation = 'none';
+    void b.offsetWidth;
+    b.style.animation = '';
+    if (q.big) View.confetti();
+    setTimeout(function () {
+      b.hidden = true;
+      nextBanner();
+    }, 2000);
+  }, q.d * 1000);
+}
+
+// ---- rows: one per business, in the Businesses list and in the card of a tapped building
+
+function amount(id) {
+  return mode === 0 ? Math.max(1, maxBuy(id)) : mode;
+}
+
+function msText(l) {
+  var m = nextMs(l);
+  if (!m) return 'All milestones reached';
+  return 'Level ' + m.lv + ': income x' + m.mul + (m.spd ? ', twice as fast' : '');
+}
+
+function makeRow(id) {
+  var b = BZ[id];
+  var el = document.createElement('div');
+  el.className = 'biz';
+  el.innerHTML = '<img class="ic" src="assets/' + (b ? b.ic : 'park_5') + '.png" alt="">' +
+    '<div class="mid"><div class="l1"><b></b><span></span></div><div class="pr"><i></i><em></em></div><div class="l3"></div></div>' +
+    '<div class="btns"><button type="button" class="up"></button><button type="button" class="mg"></button></div>';
+  var r = { id: id, el: el, k: {}, nm: el.querySelector('b'), lv: el.querySelector('.l1 span'), bar: el.querySelector('.pr'),
+    fill: el.querySelector('.pr i'), bt: el.querySelector('.pr em'), ms: el.querySelector('.l3'), up: el.querySelector('.up'), mg: el.querySelector('.mg') };
+  r.nm.textContent = b ? b.name : 'Park';
+  el.querySelector('.ic').addEventListener('click', function () { focusBiz(id); });
+  r.up.addEventListener('click', function () { upgrade(id); });
+  r.mg.addEventListener('click', function () { hireManager(id); });
+  r.bar.addEventListener('click', function () { collectBiz(id, centerOf(r.bar)); });
+  return r;
+}
+
+function upRow(r) {
+  var id = r.id;
+  var k = r.k;
+  var hl = bestOpt && bestOpt.id === id;
+  flag(k, 'best', r.el, 'best', hl);
+  if (id === 'park') {
+    var c = parkCost();
+    var open = has(PARK.after);
+    flag(k, 'lock', r.el, 'lock', !open);
+    set(k, 'lv', r.lv, 'textContent', S.park ? 'Lv ' + S.park + '/' + PARK.cost.length : '');
+    flag(k, 'nobar', r.el, 'nobar', true);
+    set(k, 'ms', r.ms, 'textContent', open ? 'Each level: income of everything +' + Math.round(PARK.boost * 100) + '%' : 'Unlock ' + BZ[PARK.after].name + ' first');
+    set(k, 'up', r.up, 'innerHTML', c ? (S.park ? 'Upgrade' : 'Build') + '<small>' + money(c) + '</small>' : 'Done<small>all levels</small>');
+    set(k, 'upd', r.up, 'disabled', !c || S.cash < c);
+    flag(k, 'uphl', r.up, 'hl', hl);
+    flag(k, 'nomg', r.el, 'nomg', true);
+    return;
+  }
+  var e = S.b[id];
+  flag(k, 'lock', r.el, 'lock', !e && !avail(id));
+  flag(k, 'new', r.el, 'new', !e);
+  flag(k, 'nobar', r.el, 'nobar', !e);
+  flag(k, 'nomg', r.el, 'nomg', !e);
+  if (!e) {
+    var u = cost(id, 1);
+    set(k, 'lv', r.lv, 'textContent', '');
+    set(k, 'ms', r.ms, 'textContent', avail(id) ? 'Earns ' + money(revAt(id, 1)) + ' every ' + secs(BZ[id].cy) : 'Unlock ' + BIZ[BZ[id].i - 1].name + ' first');
+    set(k, 'up', r.up, 'innerHTML', 'Unlock<small>' + money(u) + '</small>');
+    set(k, 'upd', r.up, 'disabled', !avail(id) || S.cash < u);
+    flag(k, 'uphl', r.up, 'hl', hl);
+    return;
+  }
+  var n = amount(id);
+  var cc = cost(id, n);
+  set(k, 'lv', r.lv, 'textContent', 'Lv ' + e.l);
+  set(k, 'ms', r.ms, 'textContent', msText(e.l));
+  set(k, 'up', r.up, 'innerHTML', 'Level up' + (n > 1 ? ' x' + n : '') + '<small>' + money(cc) + '</small>');
+  set(k, 'upd', r.up, 'disabled', S.cash < cc);
+  flag(k, 'uphl', r.up, 'hl', hl && bestOpt.k === 'lv');
+  flag(k, 'rd', r.el, 'rd', e.w > 0);
+  flag(k, 'auto', r.el, 'auto', !!e.m);
+  r.fill.style.width = (e.w > 0 ? 100 : Math.min(100, e.t / cycleAt(id, e.l) * 100)) + '%';
+  set(k, 'bt', r.bt, 'textContent', e.w > 0 ? 'Collect ' + money(e.w) : money(rev(id)) + ' / ' + secs(cycle(id)));
+  if (e.m) set(k, 'mg', r.mg, 'innerHTML', '<img src="assets/ui_boss.png" alt="">Manager');
+  else set(k, 'mg', r.mg, 'innerHTML', 'Manager<small>' + money(BZ[id].m) + '</small>');
+  set(k, 'mgd', r.mg, 'disabled', !!e.m || S.cash < BZ[id].m);
+  flag(k, 'mghl', r.mg, 'hl', hl && bestOpt.k === 'mgr');
+}
+
+function buildList() {
+  var list = $('list');
+  BIZ.forEach(function (b) {
+    rows[b.id] = makeRow(b.id);
+    list.appendChild(rows[b.id].el);
+    if (b.id === PARK.after) {
+      rows.park = makeRow('park');
+      list.appendChild(rows.park.el);
     }
-    put('nextFill', $('next-fill').style, 'width', (ok ? 0 : Math.min(100, S.cash / n.cost * 100)) + '%');
-    if (cardId) put('goOff', $('card-go'), 'disabled', !ok);
-  }
-  if (moved) fitInsets();
+  });
 }
 
-function updateHud() {
-  put('cash', $('cash-n'), 'textContent', free ? '∞' : money(S.cash));
-  put('rate', $('rate'), 'textContent', '+' + money(rate()) + '/s');
-  var sw = $('swap');
-  put('swapHidden', sw, 'hidden', got('class1') === 0);
-  put('swapText', sw, 'textContent', View.view() === 'town' ? 'School' : 'Town');
+function openSheet() {
+  closeCard();
+  sheetOpen = true;
+  $('app').classList.add('sheet-open');
+  $('sheet').hidden = false;
+  $('list').scrollTop = 0;
+  var o = bestOpt && rows[bestOpt.id];
+  if (o) $('list').scrollTop = Math.max(0, o.el.offsetTop - 70);
+  fitInsets();
 }
 
-// the card for a project, a locked block or the whole school
+function closeSheet() {
+  sheetOpen = false;
+  $('app').classList.remove('sheet-open');
+  $('sheet').hidden = true;
+  fitInsets();
+}
+
+function setMode(m) {
+  mode = m;
+  try {
+    localStorage.setItem(MODE_KEY, String(m));
+  } catch (e) {}
+  [].forEach.call(document.querySelectorAll('#modes button'), function (b) { b.classList.toggle('on', +b.dataset.m === m); });
+}
+
 function showCard(id) {
+  closeSheet();
   cardId = id;
-  var proj = PROJ[id];
-  var land = LANDS[id];
-  var name = proj ? proj.name : land.name;
-  var n = 0;
-  var m = 1;
-  var inc = 0;
-  var before = '';
-  var cur = upNext();
-  var here = false;
-  if (id === 'school') {
-    m = 0;
-    PROJECTS.forEach(function (p) {
-      if (!p.room) return;
-      n += got(p.id);
-      m += total(p.id);
-      inc += projectInc(p);
-    });
-    before = 'Main Street';
-    here = !!cur && !!PROJ[cur.p].room;
-  } else if (proj) {
-    n = got(id);
-    m = total(id);
-    inc = projectInc(proj);
-    before = PROJECTS[PROJECTS.indexOf(proj) - 1] ? PROJECTS[PROJECTS.indexOf(proj) - 1].name : '';
-    here = !!cur && cur.p === id;
-  }
-  var info;
-  if (!proj && id !== 'school') info = land.sub + '.';
-  else if (n === m) info = n + ' of ' + m + ', done. +' + money(inc) + '/s';
-  else if (n > 0 || here) info = n + ' of ' + m + '. +' + money(inc) + '/s';
-  else info = 'Opens after ' + before + '.';
-  $('card-name').textContent = name;
-  $('card-bar').style.width = (n / m * 100) + '%';
-  $('card-info').textContent = info;
-  var go = $('card-go');
-  go.hidden = !here;
-  if (here) {
-    go.textContent = 'Upgrade: ' + lower(cur.name) + '  ' + money(cur.cost);
-    go.disabled = !canBuy();
-  }
+  if (cardRow) cardRow.el.remove();
+  cardRow = makeRow(id);
+  $('card-row').appendChild(cardRow.el);
+  upRow(cardRow);
   $('card').hidden = false;
+  $('app').classList.add('card-open');
   fitInsets();
 }
 
 function closeCard() {
   cardId = null;
+  if (cardRow) cardRow.el.remove();
+  cardRow = null;
   $('card').hidden = true;
+  $('app').classList.remove('card-open');
   fitInsets();
 }
 
-function press() {
-  wake();
-  var res = buy();
-  if (!res) return;
-  var t = View.stepped(res, performance.now());
-  View.populate();
-  sfx('buy');
-  buzz();
-  save();
-  updateHud();
-  updateNext();
-  if (cardId) showCard(cardId);
-  if (res.fin) setTimeout(function () { celebrate(res); }, t * 1000 + 700);
+function focusBiz(id) {
+  var sp = View.spot(id);
+  View.go(sp.v, sp.y, sp.x);
 }
 
-function celebrate(res) {
-  View.confetti();
-  sfx('done');
-  var b = $('banner');
-  b.innerHTML = PROJ[res.step.p].name + ' done!<small>Its income doubles</small>';
-  if (res.end) b.innerHTML = 'The School is done!<small>Its income doubles</small>';
-  b.hidden = false;
-  b.style.animation = 'none';
-  void b.offsetWidth;
-  b.style.animation = '';
-  setTimeout(function () {
-    b.hidden = true;
-    if (res.end) $('end').hidden = false;
-  }, 2600);
+// ---- actions
+
+function afterBuy(res) {
+  var t = View.event(res, performance.now());
+  var ms = res.ms || [];
+  var name = res.id === 'park' ? 'Park' : BZ[res.id].name;
+  if (ms.length) {
+    var m = ms[ms.length - 1];
+    sfx('mile');
+    banner('<b>' + name + ' level ' + m.lv + '!</b><small>Income x' + m.mul + (m.spd ? ', twice as fast' : '') + (res.gems ? '  +' + res.gems + ' gems' : '') + '</small>', t + 0.3, m.lv >= 25);
+    if (res.gems) flyGems(innerWidth / 2, innerHeight * 0.3, Math.min(6, res.gems));
+  } else if (res.unlock) {
+    sfx('unlock');
+    banner('<b>New: ' + name + '</b><small>Costs ' + money(BZ[res.id].c0) + ', earns while you play</small>', t + 0.3, true);
+  } else if (res.park) {
+    sfx('mile');
+    banner('<b>Park level ' + S.park + '</b><small>All income +' + Math.round(PARK.boost * 100) + '%</small>', t + 0.3, S.park === PARK.cost.length);
+  } else sfx('buy');
+  buzz();
+  nudge();
 }
+
+// after anything that changes the money or what can be bought
+function nudge() {
+  updateBest();
+  View.populate();
+  save();
+}
+
+function upgrade(id) {
+  wake();
+  var res;
+  if (id === 'park') res = buyPark() ? { id: 'park', park: true } : null;
+  else res = buy(id, has(id) ? amount(id) : 1);
+  if (res) afterBuy(res);
+}
+
+function hireManager(id) {
+  wake();
+  if (!hire(id)) return;
+  View.event({ id: id }, performance.now());
+  sfx('done');
+  buzz();
+  banner('<b>' + BZ[id].name + ' manager hired</b><small>It runs by itself now, also while you are away</small>', 0);
+  nudge();
+}
+
+function collectBiz(id, at) {
+  wake();
+  var v = collect(id);
+  if (!v) return;
+  popAt('+' + money(v), at.x, at.y - 10, 'big');
+  flyCoins(at.x, at.y, Math.min(8, 3 + Math.floor(Math.log10(Math.max(10, v)))));
+  sfx('coin');
+  buzz();
+  nudge();
+}
+
+function pressBest() {
+  wake();
+  var o = best();
+  if (!o || o.cost > S.cash) return;
+  var res = doOption(o);
+  if (!res) return;
+  if (res.mgr) {
+    View.event({ id: res.id }, performance.now());
+    sfx('done');
+    buzz();
+    banner('<b>' + BZ[res.id].name + ' manager hired</b><small>It runs by itself now, also while you are away</small>', 0);
+    nudge();
+  } else afterBuy(res);
+}
+
+function claimGoalAt(i, el) {
+  var g = claimGoal(i);
+  if (!g) return;
+  var c = centerOf(el);
+  popAt('+' + g.gems + ' gems', c.x, c.y + 20, 'gem');
+  flyGems(c.x, c.y + 10, Math.min(8, g.gems));
+  if (g.x2) banner('<b>Goal done</b><small>Income x2 for ' + g.x2 + ' min</small>', 0);
+  sfx('done');
+  buzz();
+  nudge();
+  updateGoals();
+}
+
+function onPayout(id, v) {
+  var t = performance.now();
+  if (t - (lastPay[id] || 0) < 900) return;
+  lastPay[id] = t;
+  var p = View.screenOf(id);
+  if (p && p.y > 40 && p.y < innerHeight - 100) popAt('+' + money(v), p.x, p.y, 'small');
+}
+
+// ---- hud
+
+function updateHud() {
+  set(shown, 'cash', $('cash-n'), 'textContent', money(S.cash));
+  set(shown, 'rate', $('rate'), 'textContent', '+' + money(rate()) + '/s');
+  set(shown, 'gems', $('gem-n'), 'textContent', String(S.gems));
+  set(shown, 'stars', $('star-n'), 'textContent', String(S.stars));
+  var x = $('x2');
+  set(shown, 'x2h', x, 'hidden', !(S.x2 > 0));
+  if (S.x2 > 0) set(shown, 'x2t', x, 'textContent', 'x2  ' + clock2(S.x2));
+  var sw = $('swap');
+  set(shown, 'swapH', sw, 'hidden', !has('school'));
+  set(shown, 'swapT', sw, 'textContent', View.view() === 'town' ? 'School' : 'Town');
+}
+
+function updateBest() {
+  bestOpt = best();
+  View.setBest(bestOpt ? bestOpt.id : null);
+}
+
+function bestText(o) {
+  var name = o.id === 'park' ? 'Park' : BZ[o.id].name;
+  var l = lv(o.id);
+  if (o.k === 'mgr') return ['Hire ' + name + ' manager', 'Collects and restarts by itself'];
+  if (o.k === 'park') return [S.park ? 'Park level ' + (S.park + 1) : 'Build the Park', 'All income +' + Math.round(PARK.boost * 100) + '%'];
+  if (!l) return ['Unlock ' + name, 'A new business for the town'];
+  if (o.n > 1) return [name + ': ' + o.n + ' levels', 'Reaches the level ' + o.ms + ' milestone'];
+  return ['Level up ' + name, 'Lv ' + l + ' to ' + (l + 1) + ',  +' + money(o.gain) + '/s'];
+}
+
+function paintBest() {
+  var o = bestOpt;
+  var b = $('best');
+  set(shown, 'bestH', b, 'hidden', !o);
+  if (!o) return;
+  var ok = S.cash >= o.cost;
+  var t = bestText(o);
+  var wait = ok ? '' : '  -  ' + secs(Math.max(1, (o.cost - S.cash) / Math.max(rate(), 1e-9))) + ' to go';
+  set(shown, 'bestT', $('best-txt'), 'innerHTML', '<b>' + t[0] + '</b><small>' + t[1] + wait + '</small>');
+  set(shown, 'bestC', $('best-cost'), 'textContent', money(o.cost));
+  flag(shown, 'bestW', b, 'wait', !ok);
+  set(shown, 'bestD', b, 'disabled', !ok);
+  $('best-fill').style.width = (ok ? 0 : Math.min(100, S.cash / o.cost * 100)) + '%';
+}
+
+function buildGoals() {
+  for (var i = 0; i < 3; i++) {
+    var c = document.createElement('button');
+    c.type = 'button';
+    c.className = 'chip';
+    c.innerHTML = '<span></span><i><u></u></i><em></em>';
+    c.addEventListener('click', function () {
+      if (this.dataset.i !== '' && this.classList.contains('done')) claimGoalAt(+this.dataset.i, this);
+    });
+    chips.push({ el: c, k: {}, t: c.querySelector('span'), bar: c.querySelector('u'), tag: c.querySelector('em') });
+    $('goals').appendChild(c);
+  }
+}
+
+function updateGoals() {
+  var gs = goals();
+  chips.forEach(function (c, i) {
+    var g = gs[i];
+    set(c.k, 'h', c.el, 'hidden', !g);
+    if (!g) return;
+    c.el.dataset.i = g.i;
+    set(c.k, 't', c.t, 'textContent', g.t);
+    flag(c.k, 'd', c.el, 'done', g.done);
+    c.bar.style.width = (g.v / g.n * 100) + '%';
+    set(c.k, 'g', c.tag, 'textContent', g.done ? 'Claim +' + g.gems : '+' + g.gems);
+  });
+  var cd = daily().can;
+  set(shown, 'dd', $('daily-dot'), 'hidden', !cd);
+  set(shown, 'sd', $('sell-dot'), 'hidden', stars() < 10);
+}
+
+function updateOpen() {
+  if (sheetOpen) BIZ.forEach(function (b) { upRow(rows[b.id]); });
+  if (sheetOpen) upRow(rows.park);
+  if (cardRow) upRow(cardRow);
+  if (!$('boost').hidden) paintBoost();
+}
+
+// ---- screens
 
 function showAway(a) {
+  if (a.gain <= 0 && !a.ready) return false;
   var m = Math.round(a.secs / 60);
   var t = m >= 60 ? Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + (m % 60) + ' min' : '') : m + ' min';
-  $('away-txt').textContent = 'You were away for ' + t + ' and the town earned ' + money(a.gain) + '.';
+  var txt = 'You were away for ' + t + '.';
+  if (a.gain > 0) txt += ' Your managers earned <b>' + money(a.gain) + '</b>.';
+  if (a.ready) txt += ' ' + a.ready + (a.ready === 1 ? ' business has' : ' businesses have') + ' cash waiting.';
+  $('away-txt').innerHTML = txt;
+  $('away-ok').textContent = a.gain > 0 ? 'Collect ' + money(a.gain) : 'OK';
   $('away').hidden = false;
+  return true;
 }
 
-function schoolRoom() {
-  var n = upNext();
-  return n && PROJ[n.p].room ? n.p : 'class1';
+function dayText(d) {
+  var p = [];
+  if (d.cash) p.push(d.cash + ' min of income');
+  if (d.gems) p.push(d.gems + ' gems');
+  if (d.x2) p.push('x2 for ' + d.x2 + ' min');
+  return p.join(', ');
 }
 
-function onTap(h) {
-  wake();
-  if (h.kind === 'coin') {
-    View.float(h.x, h.y - 10, '+' + money(collect()), performance.now());
-    sfx('coin');
-  } else if (h.kind === 'none') {
-    closeCard();
-  } else if (h.kind === 'block' && h.id === 'school' && got('class1') > 0) {
-    closeCard();
-    View.go('school', View.roomY(schoolRoom()));
-  } else {
-    showCard(h.id);
-  }
+function openDaily() {
+  var info = daily();
+  var done = info.can ? info.idx : (S.day.n % 7 === 0 && S.day.n > 0 ? 7 : S.day.n % 7);
+  var box = $('days');
+  box.innerHTML = '';
+  DAILY.forEach(function (d, i) {
+    var c = document.createElement('div');
+    c.className = 'day' + (i < done ? ' done' : '') + (info.can && i === info.idx ? ' today' : '') + (i === 6 ? ' last' : '');
+    var ic = d.gems && d.x2 ? 'ui_gift' : d.gems ? 'ui_gem' : d.x2 ? 'ui_bolt' : 'coin';
+    c.innerHTML = '<b>Day ' + (i + 1) + '</b><img src="assets/' + ic + '.png" alt=""><span>' + dayText(d) + '</span>';
+    box.appendChild(c);
+  });
+  $('daily-txt').textContent = info.can ? 'Day ' + (info.idx + 1) + ' of 7. Come back every day to keep the streak.' : 'Claimed for today. Come back tomorrow to keep the streak.';
+  $('daily-ok').hidden = !info.can;
+  $('daily-x').textContent = info.can ? 'Later' : 'Close';
+  $('daily').hidden = false;
+}
+
+function paintBoost() {
+  $('boost-gems').textContent = 'You have ' + S.gems + ' gems.';
+  $('x2-txt').textContent = S.x2 > 0 ? 'Active: ' + clock2(S.x2) + ' left. Buying adds 30 min.' : 'All income x2 for 30 minutes.';
+  $('b-x2').innerHTML = '<img src="assets/ui_gem.png" alt="">' + X2_COST;
+  $('b-x2').disabled = S.gems < X2_COST;
+  var v = Math.min(rate() * WARP_SECS, Math.max(S.run, 100));
+  $('warp-txt').textContent = 'Get ' + money(v) + ' now, up to 1 hour of income.';
+  $('b-warp').innerHTML = '<img src="assets/ui_gem.png" alt="">' + WARP_COST;
+  $('b-warp').disabled = S.gems < WARP_COST;
+}
+
+function openSell() {
+  var n = stars();
+  var now = 1 + STAR_BONUS * S.stars;
+  var then = 1 + STAR_BONUS * (S.stars + n);
+  $('sell-txt').innerHTML = n >= 1 ?
+    'Selling now gives <b>' + n + ' Town stars</b>. Each star adds ' + Math.round(STAR_BONUS * 100) + '% to all income, forever. Your income goes from x' + now.toFixed(2) + ' to x' + then.toFixed(2) + '.' +
+    (n < 10 ? ' Waiting for about 10 stars makes the sale worth more.' : '') :
+    'You need to earn about ' + money(STAR_DIV) + ' in this run to get the first star. So far: ' + money(S.run) + '.';
+  $('sell-keep').textContent = 'You keep: stars, gems, goals and boosts. Everything else starts again: cash, businesses, managers and the Park.';
+  $('sell-ok').textContent = n >= 1 ? 'Sell for ' + n + ' stars' : 'Not yet';
+  $('sell-ok').disabled = n < 1;
+  $('sell').hidden = false;
 }
 
 function setSound() {
@@ -224,15 +583,95 @@ function flash(id, text, old) {
   setTimeout(function () { $(id).textContent = old; }, 1500);
 }
 
+function afterLoad() {
+  closeCard();
+  closeSheet();
+  View.refresh();
+  View.focusNow();
+  updateBest();
+  updateGoals();
+}
+
+function schoolRoom() {
+  var o = bestOpt;
+  var p = o && PLACE[o.id];
+  return p && p.room ? p.room : 'class1';
+}
+
 function wire() {
-  $('next').addEventListener('click', press);
-  $('card-go').addEventListener('click', press);
+  $('best').addEventListener('click', pressBest);
   $('card-x').addEventListener('click', closeCard);
+  $('t-biz').addEventListener('click', openSheet);
+  $('sheet-x').addEventListener('click', closeSheet);
+  [].forEach.call(document.querySelectorAll('#modes button'), function (b) {
+    b.addEventListener('click', function () { setMode(+b.dataset.m); });
+  });
+  $('t-boost').addEventListener('click', function () {
+    paintBoost();
+    $('boost').hidden = false;
+  });
+  $('boost-x').addEventListener('click', function () { $('boost').hidden = true; });
+  $('b-x2').addEventListener('click', function () {
+    if (!buyX2()) return;
+    sfx('done');
+    banner('<b>Double income</b><small>Active for ' + clock2(S.x2) + '</small>', 0);
+    nudge();
+  });
+  $('b-warp').addEventListener('click', function () {
+    var v = warp();
+    if (!v) return;
+    var c = centerOf($('b-warp'));
+    popAt('+' + money(v), c.x, c.y, 'big');
+    flyCoins(c.x, c.y, 8);
+    sfx('mile');
+    nudge();
+  });
+  $('t-daily').addEventListener('click', openDaily);
+  $('daily-x').addEventListener('click', function () { $('daily').hidden = true; });
+  $('daily-ok').addEventListener('click', function () {
+    var c = centerOf($('daily-ok'));
+    var r = claimDaily();
+    if (!r) return;
+    if (r.cash) {
+      popAt('+' + money(r.cash), c.x, c.y, 'big');
+      flyCoins(c.x, c.y, 8);
+    }
+    if (r.gems) flyGems(c.x, c.y, Math.min(8, r.gems));
+    sfx('done');
+    $('daily').hidden = true;
+    nudge();
+    updateGoals();
+  });
+  $('t-sell').addEventListener('click', openSell);
+  $('sell-x').addEventListener('click', function () {
+    $('sell').hidden = true;
+    $('sell-ok').dataset.armed = '';
+  });
+  $('sell-ok').addEventListener('click', function () {
+    var b = $('sell-ok');
+    if (!b.dataset.armed) {
+      b.dataset.armed = '1';
+      b.textContent = 'Tap again to sell';
+      setTimeout(function () {
+        b.dataset.armed = '';
+        if (!$('sell').hidden) openSell();
+      }, 3000);
+      return;
+    }
+    b.dataset.armed = '';
+    var n = sell();
+    $('sell').hidden = true;
+    if (!n) return;
+    afterLoad();
+    sfx('mile');
+    banner('<b>Town sold</b><small>+' + n + ' Town stars, income x' + (1 + STAR_BONUS * S.stars).toFixed(2) + '</small>', 0.2, true);
+    nudge();
+  });
   $('swap').addEventListener('click', function () {
     closeCard();
     if (View.view() === 'town') View.go('school', View.roomY(schoolRoom()));
     else {
-      var b = View.blockAt('school');
+      var b = View.spot('school');
       View.go('town', b.y, b.x);
     }
   });
@@ -266,9 +705,7 @@ function wire() {
     var ok = importCode($('m-code').value);
     flash('m-load', ok ? 'Loaded' : 'Not a code', 'Load code');
     if (!ok) return;
-    View.refresh();
-    View.focusNow();
-    closeCard();
+    afterLoad();
     $('menu').hidden = true;
   });
   var armed = false;
@@ -284,15 +721,46 @@ function wire() {
     }
     armed = false;
     reset();
-    View.refresh();
-    View.focusNow();
-    closeCard();
+    speed = 1;
+    afterLoad();
     $('m-reset').textContent = 'Reset town';
     $('menu').hidden = true;
-    $('end').hidden = true;
+    maybeDaily();
   });
-  $('away-ok').addEventListener('click', function () { $('away').hidden = true; });
-  $('end-ok').addEventListener('click', function () { $('end').hidden = true; });
+  // the test menu: five taps on the title
+  $('m-title').addEventListener('click', function () {
+    if (++testTaps >= 5) $('test').hidden = false;
+  });
+  [].forEach.call(document.querySelectorAll('#t-speed button'), function (b) {
+    b.addEventListener('click', function () {
+      speed = +b.dataset.s;
+      paintSpeed();
+    });
+  });
+  $('t-hour').addEventListener('click', function () {
+    testIncome(1);
+    nudge();
+  });
+  $('t-gems').addEventListener('click', function () {
+    S.gems += 100;
+    nudge();
+  });
+  $('t-goals').addEventListener('click', function () {
+    finishGoals();
+    updateGoals();
+  });
+  $('away-ok').addEventListener('click', function () {
+    var c = centerOf($('away-ok'));
+    var v = claimAway();
+    $('away').hidden = true;
+    if (v > 0) {
+      popAt('+' + money(v), c.x, c.y, 'big');
+      flyCoins(c.x, c.y, 10);
+      sfx('mile');
+    }
+    nudge();
+    maybeDaily();
+  });
   document.addEventListener('pointerup', wake);
   window.addEventListener('resize', fitInsets);
   var hiddenAt = 0;
@@ -306,32 +774,64 @@ function wire() {
     var sec = (Date.now() - hiddenAt) / 1000;
     hiddenAt = 0;
     lastTick = performance.now();
-    if (sec > 60) showAway(away(sec));
+    if (sec > 60 && showAway(away(sec))) updateBest();
   });
+}
+
+function paintSpeed() {
+  [].forEach.call(document.querySelectorAll('#t-speed button'), function (b) { b.classList.toggle('on', +b.dataset.s === speed); });
+}
+
+function onTap(h) {
+  wake();
+  if (h.kind === 'coin') collectBiz(h.id, { x: h.x, y: h.y });
+  else if (h.kind === 'biz') showCard(h.id);
+  else closeCard();
+}
+
+function maybeDaily() {
+  if (daily().can && $('away').hidden) openDaily();
 }
 
 function loop(t) {
   requestAnimationFrame(loop);
   tick(Math.min(1, (t - lastTick) / 1000));
   lastTick = t;
+  if (t - bestAt > 250) {
+    bestAt = t;
+    updateBest();
+    updateGoals();
+    fitInsets();
+  }
   View.draw(t);
   updateHud();
-  updateNext();
+  paintBest();
+  updateOpen();
 }
 
 function start() {
   try {
     snd = localStorage.getItem(SND_KEY) !== '0';
+    var m = localStorage.getItem(MODE_KEY);
+    if (m !== null && [0, 1, 10, 100].indexOf(+m) >= 0) mode = +m;
   } catch (e) {}
   var gone = load();
   View.init($('view'), onTap);
+  buildList();
+  buildGoals();
+  setMode(mode);
+  paintSpeed();
   wire();
+  onPay = onPayout;
   var wait = setInterval(function () {
     if (!View.ready()) return;
     clearInterval(wait);
     View.refresh();
+    updateBest();
     View.focusNow();
-    if (gone) showAway(gone);
+    updateGoals();
+    var shownAway = gone ? showAway(gone) : false;
+    if (!shownAway) maybeDaily();
     lastTick = performance.now();
     requestAnimationFrame(loop);
     setInterval(save, 5000);

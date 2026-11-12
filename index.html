@@ -16,45 +16,91 @@
 <div id="app">
   <canvas id="view"></canvas>
   <div id="top">
-    <button type="button" id="swap" class="pill" hidden>Town</button>
-    <div id="cash" class="pill"><img class="ico" src="assets/coin.png" alt=""><b id="cash-n"></b><span id="rate"></span></div>
-    <button type="button" id="gear" class="pill" aria-label="Menu"><i></i><i></i><i></i></button>
+    <div id="bar">
+      <div id="cash" class="pill"><img class="ico" src="assets/coin.png" alt=""><div><b id="cash-n"></b><span id="rate"></span></div></div>
+      <div id="gems" class="pill sm"><img class="ico" src="assets/ui_gem.png" alt=""><b id="gem-n"></b></div>
+      <div id="stars" class="pill sm"><img class="ico" src="assets/ui_star.png" alt=""><b id="star-n"></b></div>
+      <button type="button" id="gear" class="pill" aria-label="Menu"><i></i><i></i><i></i></button>
+    </div>
+    <div id="goals"></div>
+    <div id="side">
+      <button type="button" id="swap" class="pill sm" hidden>School</button>
+      <span id="x2" class="pill sm" hidden></span>
+    </div>
   </div>
+  <div id="fly"></div>
   <div id="bottom">
     <div id="card" hidden>
       <button type="button" id="card-x" aria-label="Close">x</button>
-      <h2 id="card-name"></h2>
-      <div class="bar"><i id="card-bar"></i></div>
-      <p id="card-info"></p>
-      <button type="button" id="card-go" class="btn"></button>
+      <div id="card-row"></div>
     </div>
-    <button type="button" id="next" class="btn">
-      <i id="next-fill"></i>
-      <span id="next-txt"></span>
-      <span id="next-cost"></span>
+    <button type="button" id="best" class="btn">
+      <i id="best-fill"></i>
+      <span id="best-txt"></span>
+      <span id="best-cost"></span>
     </button>
+    <div id="tabs">
+      <button type="button" id="t-biz"><img src="assets/ui_goal.png" alt="">Businesses</button>
+      <button type="button" id="t-boost"><img src="assets/ui_bolt.png" alt="">Boosts</button>
+      <button type="button" id="t-daily"><img src="assets/ui_gift.png" alt=""><u id="daily-dot" hidden></u>Daily</button>
+      <button type="button" id="t-sell"><img src="assets/ui_star.png" alt=""><u id="sell-dot" hidden></u>Stars</button>
+    </div>
+  </div>
+  <div id="sheet" hidden>
+    <div id="sheet-head">
+      <b>Businesses</b>
+      <div id="modes"><button type="button" data-m="1">x1</button><button type="button" data-m="10">x10</button><button type="button" data-m="100">x100</button><button type="button" data-m="0">Max</button></div>
+      <button type="button" id="sheet-x" aria-label="Close">x</button>
+    </div>
+    <div id="list"></div>
   </div>
   <div id="banner" hidden></div>
   <div id="away" class="veil" hidden>
     <div class="box">
       <h2>While you were away</h2>
       <p id="away-txt"></p>
-      <button type="button" id="away-ok" class="btn">OK</button>
+      <button type="button" id="away-ok" class="btn">Collect</button>
     </div>
   </div>
-  <div id="end" class="veil" hidden>
+  <div id="daily" class="veil" hidden>
+    <div class="box wide">
+      <h2>Daily reward</h2>
+      <p id="daily-txt"></p>
+      <div id="days"></div>
+      <button type="button" id="daily-ok" class="btn">Claim</button>
+      <button type="button" id="daily-x" class="btn alt">Close</button>
+    </div>
+  </div>
+  <div id="boost" class="veil" hidden>
     <div class="box">
-      <h2>The town is done for now</h2>
-      <p>More places are coming.</p>
-      <button type="button" id="end-ok" class="btn">Keep looking around</button>
+      <h2>Boosts</h2>
+      <p id="boost-gems"></p>
+      <div class="offer"><img src="assets/ui_bolt.png" alt=""><div><b>Double income</b><span id="x2-txt"></span></div><button type="button" id="b-x2" class="btn"></button></div>
+      <div class="offer"><img src="assets/ui_warp.png" alt=""><div><b>Time warp</b><span id="warp-txt"></span></div><button type="button" id="b-warp" class="btn"></button></div>
+      <p class="small">Gems come from goals, milestones and the daily reward.</p>
+      <button type="button" id="boost-x" class="btn alt">Close</button>
+    </div>
+  </div>
+  <div id="sell" class="veil" hidden>
+    <div class="box">
+      <h2>Sell the town</h2>
+      <p id="sell-txt"></p>
+      <p class="small" id="sell-keep"></p>
+      <button type="button" id="sell-ok" class="btn"></button>
+      <button type="button" id="sell-x" class="btn alt">Not now</button>
     </div>
   </div>
   <div id="menu" class="veil" hidden>
     <div class="box">
-      <h2>Menu</h2>
+      <h2 id="m-title">Menu</h2>
       <button type="button" id="m-snd" class="btn alt"></button>
       <button type="button" id="m-copy" class="btn alt">Copy code</button>
       <div class="row"><input id="m-code" type="text" placeholder="Paste a code" autocomplete="off" autocapitalize="off" spellcheck="false"><button type="button" id="m-load" class="btn alt">Load code</button></div>
+      <div id="test" hidden>
+        <div class="row" id="t-speed"><button type="button" data-s="1" class="btn alt">x1</button><button type="button" data-s="10" class="btn alt">x10</button><button type="button" data-s="100" class="btn alt">x100</button></div>
+        <div class="row"><button type="button" id="t-hour" class="btn alt">+1 h income</button><button type="button" id="t-gems" class="btn alt">+100 gems</button></div>
+        <button type="button" id="t-goals" class="btn alt">Finish goals</button>
+      </div>
       <button type="button" id="m-reset" class="btn alt">Reset town</button>
       <p class="credit">Art: LimeZu (https://limezu.itch.io/)</p>
       <button type="button" id="m-ok" class="btn">Close</button>
