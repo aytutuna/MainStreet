@@ -37,8 +37,17 @@ final class GameViewController: UIViewController, WKNavigationDelegate, WKUIDele
 
     override func viewDidLoad() {
         super.viewDidLoad()
+        loadGame()
+    }
+
+    private func loadGame() {
         let dir = Bundle.main.bundleURL
         webView.loadFileURL(dir.appendingPathComponent("index.html"), allowingReadAccessTo: dir)
+    }
+
+    // iOS can kill the web process in the background, which leaves a blank page
+    func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
+        loadGame()
     }
 
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
