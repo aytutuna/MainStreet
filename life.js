@@ -499,19 +499,26 @@ export function Life(scene, lib, town) {
   blobs.renderOrder = 1;
   scene.add(blobs);
   var dummy = new THREE.Object3D();
+  // only what stands on a street that is built yet is seen, and no more cars than the town has grown to
+  var open = function () { return true; };
+  var carCap = cars.length;
   function shade() {
     var n = 0;
     cars.forEach(function (c) {
+      var on = c.id < carCap && open(c.x, c.z);
+      c.obj.visible = on;
       dummy.position.set(c.x, 0.03, c.z);
       dummy.rotation.y = Math.atan2(c.hx, c.hz);
-      dummy.scale.set(0.5, 1, 0.84);
+      dummy.scale.set(on ? 0.5 : 0, 1, on ? 0.84 : 0);
       dummy.updateMatrix();
       blobs.setMatrixAt(n++, dummy.matrix);
     });
     folk.forEach(function (w) {
+      var on = !hidden && open(w.x, w.z);
+      w.obj.visible = on;
       dummy.position.set(w.x, 0.03, w.z);
       dummy.rotation.y = 0;
-      dummy.scale.set(0.2, 1, 0.2);
+      dummy.scale.set(on ? 0.2 : 0, 1, on ? 0.2 : 0);
       dummy.updateMatrix();
       blobs.setMatrixAt(n++, dummy.matrix);
     });
@@ -525,6 +532,11 @@ export function Life(scene, lib, town) {
       w.obj.visible = !v;
       w.onRoad = false;
     });
+  };
+  this.vis = function (fn, cap) {
+    open = fn;
+    carCap = cap;
+    lights.forEach(function (l) { l.ns.visible = l.ew.visible = fn(l.ns.position.x, l.ns.position.z); });
   };
   this.update = update;
   this.reset = reset;
