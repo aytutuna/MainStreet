@@ -2,31 +2,43 @@ var View = (function () {
   var BASE = 'assets/';
   var IT = 64; // space under the top bar
   var IB = 118; // space over the Next button
+  var CHUNK = 256;
   var GRASS = '#47975a';
+  var PLANT = '#58a862';
   var WALK = '#dad4cb';
+  var SEAM = '#cdc6bc';
   var CURB = '#a09a92';
   var ASPHALT = '#534f52';
+  var LINE = '#ece8d6';
+  var HEDGE = '#3c8449';
   var DIRT = '#b08c5a';
-  var CAR_DIR = { east: 1, west: 2 };
+  var COLORS = [null, WALK, CURB, ASPHALT, LINE, PLANT, CURB, ASPHALT];
   var FACE = { right: 0, up: 6, left: 12, down: 18 };
   var IMG = {};
-  var PROC = { plaza: 1, court: 1 };
+  var PROC = { court: 1 };
   var cv;
   var ctx;
   var cw = 0;
   var ch = 0;
   var dpr = 1;
-  var z = 1;
+  var zt = 1; // town zoom, css px per art px
+  var zs = 1; // school zoom
+  var zmin = 0.2;
+  var zmax = 2;
+  var zfocus = 1;
   var view = 'town';
-  var cam = { y: 0, from: 0, to: 0, t0: 0, dur: 0, q: [], fade: 0, fadeT: 0 };
+  var cam = { x: 0, y: 0, from: null, q: [], cur: null, fade: 0 };
   var cnt = {};
-  var townBG;
   var schoolBG;
+  var chunks = {};
+  var queue = [];
+  var pat = {};
   var landCv = {};
   var sorted;
   var fx = { puffs: [], floats: [], coins: [], conf: [] };
   var people = [];
   var cars = [];
+  var routes = [];
   var coinAt = 0;
   var last = 0;
   var loaded = 0;
@@ -34,7 +46,11 @@ var View = (function () {
   var ready = false;
   var rng = 7;
   var onTap = function () {};
+  var ptr = {};
   var drag = null;
+  var pinch = null;
+  var stretch = [];
+  var tmp = { x: 0, y: 0, dx: 0, dy: 0 };
 
   function rand() {
     rng = (rng * 16807) % 2147483647;
@@ -52,13 +68,23 @@ var View = (function () {
 
   function load(name) {
     if (IMG[name] || PROC[name] || name === '-') return;
+    if (name.indexOf(':') > 0) {
+      var p = name.split(':');
+      load(p[0]);
+      stretch.push([name, p[0], +p[1]]);
+      IMG[name] = 1;
+      return;
+    }
     wanted++;
     var i = new Image();
     i.onload = function () {
       loaded++;
       if (loaded === wanted) init2();
     };
-    i.onerror = i.onload;
+    i.onerror = function () {
+      IMG[name] = mk(1, 1);
+      i.onload();
+    };
     i.src = BASE + name + '.png';
     IMG[name] = i;
   }
@@ -69,7 +95,7 @@ var View = (function () {
     });
     INSIDE.forEach(function (p) { load(p.spr); });
     ['lockfence', 'coin', 'park_5', 'clinic_3', 'f_class', 'f_rest', 'f_lib', 'f_cafe', 'f_hall', 'f_path', 'wall', 'wall_v',
-      'yfence', 'adult_2', 'adult_3', 'adult_4', 'adult_5', 'adult_6', 'adult_8'].forEach(load);
+      'yfence', 'adult_2', 'adult_3', 'adult_4', 'adult_5', 'adult_6', 'adult_8', 'car_01', 'car_03', 'car_05', 'car_10'].forEach(load);
     for (var i = 1; i <= 8; i++) load('kid_' + i);
   }
 
@@ -85,30 +111,20 @@ var View = (function () {
     }
   }
 
-  function grid(g, w, h, col) {
-    g.strokeStyle = col;
-    g.lineWidth = 1;
-    g.beginPath();
-    for (var x = 0; x <= w; x += 16) {
-      g.moveTo(x + 0.5, 0);
-      g.lineTo(x + 0.5, h);
-    }
-    for (var y = 0; y <= h; y += 16) {
-      g.moveTo(0, y + 0.5);
-      g.lineTo(w, y + 0.5);
-    }
-    g.stroke();
+
+  // a lot sprite is 11 tiles wide and 12 deep; a deeper lot repeats its middle row
+  function tall(src, h) {
+    var c = mk(176, h * 16);
+    var g = c.getContext('2d');
+    g.drawImage(src, 0, 0, 176, 80, 0, 0, 176, 80);
+    for (var y = 80; y < h * 16 - 96; y += 16) g.drawImage(src, 0, 80, 176, 16, 0, y, 176, 16);
+    g.drawImage(src, 0, 96, 176, 96, 0, h * 16 - 96, 176, 96);
+    return c;
   }
 
   function init2() {
-    var p = mk(384, 352);
-    var g = p.getContext('2d');
-    g.fillStyle = WALK;
-    g.fillRect(0, 0, 384, 352);
-    grid(g, 384, 352, '#cdc6bc');
-    IMG.plaza = p;
     var c = mk(144, 112);
-    g = c.getContext('2d');
+    var g = c.getContext('2d');
     g.fillStyle = '#4d7aa8';
     g.fillRect(0, 0, 144, 112);
     g.strokeStyle = '#e8eef5';
@@ -123,33 +139,135 @@ var View = (function () {
     g.stroke();
     frame(g, 9, 7);
     IMG.court = c;
-    buildTown();
+    stretch.forEach(function (s) { IMG[s[0]] = tall(IMG[s[1]], s[2]); });
+    pat.walk = tile('walk');
+    pat.hedge = tile('hedge');
+    routes = CAR_ROUTES.map(function (r) { return route(r); });
     buildSchool();
-    ready = true;
     sync(false, 0);
     seed();
-    view = 'town';
-    focusNow();
+    for (var cy = 0; cy * CHUNK < TH * 16; cy++) {
+      for (var cx = 0; cx * CHUNK < TW * 16; cx++) queue.push([cx, cy]);
+    }
+    bake(function () {
+      ready = true;
+      view = 'town';
+      focusNow();
+    });
   }
 
-  function buildTown() {
-    townBG = mk(TW * 16, TH * 16);
-    var g = townBG.getContext('2d');
-    g.fillStyle = GRASS;
-    g.fillRect(0, 0, TW * 16, TH * 16);
-    var W = TW * 16;
-    STREETS.forEach(function (n) {
+  function hex(s) {
+    return [parseInt(s.substr(1, 2), 16), parseInt(s.substr(3, 2), 16), parseInt(s.substr(5, 2), 16)];
+  }
+
+  function tile(kind) {
+    var c = mk(16, 16);
+    var g = c.getContext('2d');
+    if (kind === 'walk') {
       g.fillStyle = WALK;
-      g.fillRect(0, n * 16, W, 16);
-      g.fillRect(0, (n + 4) * 16, W, 16);
-      g.fillStyle = ASPHALT;
-      g.fillRect(0, (n + 1) * 16, W, 48);
-      g.fillStyle = CURB;
-      g.fillRect(0, (n + 1) * 16, W, 2);
-      g.fillRect(0, (n + 4) * 16 - 2, W, 2);
-      g.fillStyle = '#ece8d6';
-      for (var x = 8; x < W; x += 32) g.fillRect(x, (n + 2.5) * 16 - 1, 16, 2);
+      g.fillRect(0, 0, 16, 16);
+      g.fillStyle = SEAM;
+      g.fillRect(0, 0, 16, 1);
+      g.fillRect(0, 0, 1, 16);
+    } else {
+      g.fillStyle = HEDGE;
+      g.fillRect(0, 0, 16, 16);
+      for (var i = 0; i < 16; i++) {
+        for (var j = 0; j < 16; j++) {
+          var h = (i * 5 + j * 3) % 8;
+          if (h === 0) {
+            g.fillStyle = '#58a45a';
+            g.fillRect(i, j, 2, 1);
+          } else if (h === 4 && (i + j) % 2 === 0) {
+            g.fillStyle = '#2d6a3b';
+            g.fillRect(i, j, 1, 2);
+          }
+        }
+      }
+    }
+    return g.createPattern(c, 'repeat');
+  }
+
+  // a 256 px square of the ground, with one extra pixel so scaled squares never leave a seam
+  function buildChunk(cx, cy) {
+    var S = CHUNK + 1;
+    var c = mk(S, S);
+    var g = c.getContext('2d');
+    var x0 = cx * CHUNK;
+    var y0 = cy * CHUNK;
+    g.fillStyle = GRASS;
+    g.fillRect(0, 0, S, S);
+    g.save();
+    g.translate(-x0, -y0);
+    ZONES.forEach(function (z) {
+      var zx = z[1] * 16;
+      var zy = z[2] * 16;
+      var zw = z[3] * 16;
+      var zh = z[4] * 16;
+      if (z[0] === 'lawn' || zx > x0 + S || zx + zw < x0 || zy > y0 + S || zy + zh < y0) return;
+      g.fillStyle = z[0] === 'plaza' ? pat.walk : z[0] === 'hedge' ? pat.hedge : ASPHALT;
+      g.fillRect(zx, zy, zw, zh);
+      if (z[0] === 'park') {
+        g.fillStyle = LINE;
+        [3, 6].forEach(function (r) {
+          for (var x = 0; x <= z[3]; x += 2) g.fillRect(zx + x * 16, zy + r * 16 + 1, 1, 46);
+        });
+      }
     });
+    g.restore();
+    var rs = ROADS.filter(function (r) { return r.b[2] * 16 > x0 && r.b[0] * 16 < x0 + S && r.b[3] * 16 > y0 && r.b[1] * 16 < y0 + S; });
+    var ov = function (x0, y0, x1, y1) {
+      return OVER.some(function (o) {
+        return o.k === 'disc' ? o.x + o.r > x0 && o.x - o.r < x1 && o.y + o.r > y0 && o.y - o.r < y1 :
+          o.x + o.w > x0 && o.x < x1 && o.y + o.h > y0 && o.y < y1;
+      });
+    };
+    // only the 16 px tiles that a road or an overlay can reach are looked at pixel by pixel
+    var id = g.getImageData(0, 0, S, S);
+    var d = id.data;
+    var cols = COLORS.map(function (k) { return k ? hex(k) : null; });
+    var seam = hex(SEAM);
+    var touched = false;
+    for (var ty = 0; ty <= 16; ty++) {
+      for (var tx = 0; tx <= 16; tx++) {
+        var tcx = cx * 16 + tx + 0.5;
+        var tcy = cy * 16 + ty + 0.5;
+        var act = ov(tcx - 1, tcy - 1, tcx + 1, tcy + 1);
+        for (var q = 0; q < rs.length && !act; q++) {
+          if (tcx < rs[q].b[0] || tcx > rs[q].b[2] || tcy < rs[q].b[1] || tcy > rs[q].b[3]) continue;
+          near(rs[q], tcx, tcy);
+          act = near_d <= rs[q].w / 2 + rs[q].sw + 0.72;
+        }
+        if (!act) continue;
+        touched = true;
+        for (var py = ty * 16; py < Math.min(S, ty * 16 + 16); py++) {
+          for (var px = tx * 16; px < Math.min(S, tx * 16 + 16); px++) {
+            var wx = x0 + px;
+            var wy = y0 + py;
+            var k = groundAt((wx + 0.5) / 16, (wy + 0.5) / 16, rs);
+            if (!k) continue;
+            var col = k === 1 && (wx % 16 === 0 || wy % 16 === 0) ? seam : cols[k];
+            var o = (py * S + px) * 4;
+            d[o] = col[0];
+            d[o + 1] = col[1];
+            d[o + 2] = col[2];
+          }
+        }
+      }
+    }
+    if (touched) g.putImageData(id, 0, 0);
+    return c;
+  }
+
+  // the whole ground is built before the game starts, a few squares per turn so the page stays alive
+  function bake(done) {
+    var t0 = performance.now();
+    while (queue.length && performance.now() - t0 < 10) {
+      var q = queue.shift();
+      chunks[q[0] + ',' + q[1]] = buildChunk(q[0], q[1]);
+    }
+    if (queue.length) setTimeout(bake, 0, done);
+    else done();
   }
 
   function buildSchool() {
@@ -219,20 +337,13 @@ var View = (function () {
     });
   }
 
-  function pick(spr, c) {
-    var best = -1;
-    for (var k in spr) if (+k <= c && +k > best) best = +k;
-    var s = best < 0 ? null : spr[best];
-    return s === '-' ? null : s;
-  }
-
-  // updates what every piece shows; returns the pieces that changed when animating
   function sync(animate, now, delay) {
     PROJECTS.forEach(function (p) { cnt[p.id] = got(p.id); });
     cnt.sch = counter('sch');
+    cnt.town = 1;
     var changed = [];
     PIECES.forEach(function (p) {
-      var n = pick(p.s, cnt[p.k]);
+      var n = pickAt(p.s, cnt[p.k]);
       if (n !== p.cur) {
         if (animate && n) {
           p.t0 = now + (delay || 0);
@@ -259,6 +370,10 @@ var View = (function () {
     return l.till ? got(l.till) === 0 : true;
   }
 
+  function zoom() {
+    return view === 'town' ? zt : zs;
+  }
+
   function resize() {
     var r = cv.getBoundingClientRect();
     dpr = window.devicePixelRatio || 1;
@@ -266,56 +381,69 @@ var View = (function () {
     ch = r.height;
     cv.width = Math.round(cw * dpr);
     cv.height = Math.round(ch * dpr);
-    z = cw / 384;
+    zs = cw / 384;
+    zfocus = zs * 1.1;
+    zmax = zfocus * 2;
+    zmin = Math.min(cw / (TW * 16), (ch - IT - IB) / (TH * 16));
+    zt = Math.max(zmin, Math.min(zmax, zt === 1 ? zfocus : zt));
     clamp();
   }
 
-  function worldH() {
-    return view === 'town' ? TH * 16 : SH * 32;
-  }
-
+  // keep the map on screen; when its whole width or height fits, it sits in the middle
   function clamp() {
+    var z = zoom();
+    var ww = view === 'town' ? TW * 16 : SW * 32;
+    var wh = view === 'town' ? TH * 16 : SH * 32;
+    var vw = cw / z;
+    var room = (ch - IT - IB) / z;
+    cam.x = ww <= vw ? (ww - vw) / 2 : Math.max(0, Math.min(ww - vw, cam.x));
     var lo = -IT / z;
-    var hi = worldH() - (ch - IB) / z;
-    cam.y = Math.max(lo, Math.min(hi, cam.y));
+    cam.y = wh <= room ? lo + (wh - room) / 2 : Math.max(lo, Math.min(wh - (ch - IB) / z, cam.y));
   }
 
-  function centerOn(wy) {
-    var y = wy - ((IT + ch - IB) / 2) / z;
-    return Math.max(-IT / z, Math.min(worldH() - (ch - IB) / z, y));
+  function centerOn(wx, wy, z) {
+    cam.x = wx - cw / 2 / z;
+    cam.y = wy - (IT + (ch - IT - IB) / 2) / z;
+  }
+
+  function centerOf() {
+    var z = zoom();
+    return { x: cam.x + cw / 2 / z, y: cam.y + (IT + (ch - IT - IB) / 2) / z, z: z };
+  }
+
+  function blockAt(id) {
+    var l = LANDS[id];
+    if (l && l.at) {
+      var r = l.rects[l.at];
+      return { x: (r[0] + r[2] / 2) * 16, y: (r[1] + r[3] / 2) * 16 };
+    }
+    var x = 0;
+    var y = 0;
+    var n = 0;
+    BLOCKS.forEach(function (b) {
+      if (b[4] !== id) return;
+      x += b[0] + b[2] / 2;
+      y += b[1] + b[3] / 2;
+      n++;
+    });
+    return { x: x / n * 16, y: y / n * 16 };
   }
 
   function focusNow() {
-    var y;
     var n = upNext();
+    cam.cur = null;
+    cam.q = [];
+    cam.fade = 0;
     if (n && PROJ[n.p].room) {
       view = 'school';
-      y = roomY(n.p);
+      centerOn(192, roomY(n.p), zs);
     } else {
       view = 'town';
-      y = n ? blockY(n.p) : 44 * 16;
+      zt = Math.max(zmin, Math.min(zmax, zfocus));
+      var b = blockAt(n ? n.p : 'school');
+      centerOn(b.x, b.y, zt);
     }
-    cam.y = centerOn(y);
     clamp();
-  }
-
-  function blockY(id) {
-    var l = LANDS[id];
-    if (l) {
-      var a = l.rects[0];
-      var b = l.rects[l.rects.length - 1];
-      return (a[1] + b[1] + b[3]) / 2 * 16;
-    }
-    var key = id === 'homes' ? 'homes' : 'main';
-    var sum = 0;
-    var n = 0;
-    PIECES.forEach(function (p) {
-      if (p.k === key && p.z) {
-        sum += p.y;
-        n++;
-      }
-    });
-    return sum / n * 16;
   }
 
   function roomY(id) {
@@ -327,28 +455,34 @@ var View = (function () {
     return u < 0.5 ? 2 * u * u : 1 - Math.pow(-2 * u + 2, 2) / 2;
   }
 
-  // queue a camera move; returns how long it takes in seconds
-  function go(v, wy) {
+  function go(v, wy, wx) {
     var t = 0;
     cam.q = [];
-    var pan = function (y, d) {
-      cam.q.push({ t: 'pan', y: y, d: d });
-      t += d;
-    };
-    var d = function (y0, y1) {
-      return Math.max(0.35, Math.min(1.1, Math.abs(y0 - y1) / 1100));
-    };
-    if (v === view) {
-      pan(centerOn(wy), d(cam.y, centerOn(wy)));
-    } else if (v === 'school') {
-      pan(centerOn(44 * 16), d(cam.y, centerOn(44 * 16)));
-      cam.q.push({ t: 'view', v: v, y: centerOn(wy) });
-      t += 0.5;
-    } else {
-      cam.q.push({ t: 'view', v: v, y: centerOn(wy) });
-      t += 0.5;
-    }
     cam.cur = null;
+    cam.fade = 0;
+    var x = wx === undefined ? 192 : wx;
+    var c = centerOf();
+    if (v === 'town') {
+      var zz = view === 'town' ? Math.max(zt, zfocus) : zfocus;
+      if (view === 'town') {
+        var d = Math.max(0.45, Math.min(1.4, Math.hypot(c.x - x, c.y - wy) / 1200 + Math.abs(Math.log(zz / zt)) * 0.5));
+        cam.q.push({ t: 'pan', x: x, y: wy, z: zz, d: d });
+        t = d;
+      } else {
+        cam.q.push({ t: 'view', v: v, x: x, y: wy, z: zz });
+        t = 0.5;
+      }
+    } else if (view === 'school') {
+      var d1 = Math.max(0.35, Math.min(1.1, Math.abs(c.y - wy) / 1100));
+      cam.q.push({ t: 'pan', x: 192, y: wy, z: zs, d: d1 });
+      t = d1;
+    } else {
+      var b = blockAt('school');
+      var d2 = Math.max(0.5, Math.min(1.4, Math.hypot(c.x - b.x, c.y - b.y) / 1200 + Math.abs(Math.log(zfocus / zt)) * 0.5));
+      cam.q.push({ t: 'pan', x: b.x, y: b.y, z: Math.max(zt, zfocus), d: d2 });
+      cam.q.push({ t: 'view', v: v, x: 192, y: wy, z: zs });
+      t = d2 + 0.5;
+    }
     return t;
   }
 
@@ -357,10 +491,8 @@ var View = (function () {
       var a = cam.q.shift();
       cam.cur = a;
       a.t0 = now;
-      if (a.t === 'pan') {
-        cam.from = cam.y;
-        cam.to = a.y;
-      } else {
+      if (a.t === 'pan') cam.from = centerOf();
+      else {
         a.d = 0.5;
         a.sw = false;
       }
@@ -369,13 +501,18 @@ var View = (function () {
     if (!c) return;
     var u = Math.min(1, (now - c.t0) / 1000 / c.d);
     if (c.t === 'pan') {
-      cam.y = cam.from + (cam.to - cam.from) * ease(u);
+      var e = ease(u);
+      var z = cam.from.z * Math.pow(c.z / cam.from.z, e);
+      if (view === 'town') zt = z;
+      centerOn(cam.from.x + (c.x - cam.from.x) * e, cam.from.y + (c.y - cam.from.y) * e, z);
+      clamp();
     } else {
       cam.fade = u < 0.5 ? u * 2 : (1 - u) * 2;
       if (u >= 0.5 && !c.sw) {
         c.sw = true;
         view = c.v;
-        cam.y = c.y;
+        if (view === 'town') zt = c.z;
+        centerOn(c.x, c.y, zoom());
         clamp();
       }
     }
@@ -399,7 +536,6 @@ var View = (function () {
     return { x: x / list.length * scale, y: y / list.length * scale };
   }
 
-  // a step was just bought: move the camera, then drop the new pieces in
   function stepped(res, now) {
     var step = res.step;
     var room = !!PROJ[step.p].room;
@@ -409,9 +545,11 @@ var View = (function () {
       return room ? p.r === step.p : p.k === step.p;
     });
     var focus;
-    if (mine.length) focus = mean(mine, room ? 32 : 16);
-    else focus = { x: 192, y: room ? roomY(step.p) : blockY(step.p) };
-    var t = go(v, focus.y);
+    if (mine.length) {
+      focus = mean(mine, room ? 32 : 16);
+      if (!room) focus.y -= 40;
+    } else focus = room ? { x: 192, y: roomY(step.p) } : blockAt(step.p);
+    var t = go(v, focus.y, focus.x);
     changed.forEach(function (p) {
       p.t0 = now + t * 1000 + 80;
     });
@@ -440,14 +578,12 @@ var View = (function () {
   function sprite(p, now) {
     var im = IMG[p.cur];
     if (!im) return;
-    var w = im.width;
-    var h = im.height;
-    var x = p.x * 16 - w / 2;
-    var y = p.y * 16 - h;
-    if (p.car) {
-      ctx.drawImage(im, 0, 0, 80, 80, p.x * 16 - 20, p.y * 16 - 35.5, 40, 40);
+    if (p.car !== undefined) {
+      car(im, p.car, p.x * 16, p.y * 16);
       return;
     }
+    var x = p.x * 16 - im.width / 2;
+    var y = p.y * 16 - im.height;
     var u = p.t0 ? (now - p.t0) / 1000 : 9;
     if (u < 0) return;
     var a = 1;
@@ -461,12 +597,24 @@ var View = (function () {
     ctx.globalAlpha = 1;
   }
 
+  // a car from its sheet (frames: down, west, east, up), centred on (x, y)
+  function car(im, f, x, y) {
+    ctx.drawImage(im, f * 80, 0, 80, 80, Math.round(x - 20), Math.round(y - (f === 1 || f === 2 ? 22 : 21)), 40, 40);
+  }
+
   function person(sheet, face, fr, walk, x, feet, k) {
     var im = IMG[sheet];
     if (!im) return;
     var sx = (FACE[face] + fr) * 32;
     var sy = walk ? 64 : 0;
     ctx.drawImage(im, sx, sy, 32, 64, Math.round(x - 16 * k), Math.round(feet - 64 * k), 32 * k, 64 * k);
+  }
+
+  // a pupil at a desk: head and shoulders only, the legs are under the desk
+  function seated(sheet, face, fr, x, feet) {
+    var im = IMG[sheet];
+    if (!im) return;
+    ctx.drawImage(im, (FACE[face] + fr) * 32, 24, 32, 28, Math.round(x - 16), Math.round(feet - 33), 32, 28);
   }
 
   function sign(l, rect) {
@@ -510,13 +658,14 @@ var View = (function () {
     var v = LANDS[id].view;
     if (v === 'lot_home') {
       g.globalAlpha = 0.55;
-      g.drawImage(IMG.lot_home, 8, 0);
-      g.drawImage(IMG.lot_home, 200, 0);
+      LOTS.forEach(function (l) {
+        g.drawImage(IMG['lot_home:' + (l[2] - l[1])], (l[0] - r[0]) * 16, (l[1] - r[1]) * 16);
+      });
       g.globalAlpha = 1;
     } else if (v && i === 0) {
       g.globalAlpha = 0.4;
       var im = IMG[v];
-      var at = v === 'park_5' ? [96, 288] : [192];
+      var at = v === 'park_5' ? [120, 368, 616] : [c.width / 2];
       at.forEach(function (cx) {
         g.drawImage(im, Math.round(cx - im.width / 2), c.height - 24 - im.height);
       });
@@ -528,42 +677,57 @@ var View = (function () {
   }
 
   function drawTown(now) {
-    var y0 = Math.max(0, Math.floor(cam.y));
-    var vh = Math.min(TH * 16 - y0, Math.ceil(ch / z) + 2);
-    var top = cam.y - 40;
-    var bot = cam.y + ch / z + 240;
-    if (vh > 0) ctx.drawImage(townBG, 0, y0, TW * 16, vh, 0, y0, TW * 16, vh);
+    var z = zt;
+    var vx0 = cam.x;
+    var vx1 = cam.x + cw / z;
+    var vy0 = cam.y;
+    var vy1 = cam.y + ch / z;
+    var cx0 = Math.max(0, Math.floor(vx0 / CHUNK));
+    var cx1 = Math.min(Math.floor((TW * 16 - 1) / CHUNK), Math.floor(vx1 / CHUNK));
+    var cy0 = Math.max(0, Math.floor(vy0 / CHUNK));
+    var cy1 = Math.min(Math.floor((TH * 16 - 1) / CHUNK), Math.floor(vy1 / CHUNK));
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(0, 0, TW * 16, TH * 16);
+    ctx.clip();
+    for (var cy = cy0; cy <= cy1; cy++) {
+      for (var cx = cx0; cx <= cx1; cx++) {
+        ctx.drawImage(chunks[cx + ',' + cy], cx * CHUNK, cy * CHUNK);
+      }
+    }
+    ctx.restore();
+    var top = vy0 - 40;
+    var left = vx0 - 200;
+    var right = vx1 + 200;
     var id;
     for (id in LANDS) {
       if (!locked(id)) continue;
       LANDS[id].rects.forEach(function (r, i) {
-        if (r[1] * 16 > bot || (r[1] + r[3]) * 16 < top) return;
+        if (r[1] * 16 > vy1 || (r[1] + r[3]) * 16 < vy0 || r[0] * 16 > vx1 || (r[0] + r[2]) * 16 < vx0) return;
         ctx.drawImage(landCanvas(id, i), r[0] * 16, r[1] * 16);
       });
     }
-    PIECES.forEach(function (p) {
-      if (p.z === 0 && p.cur && p.y * 16 > top && p.y * 16 - 200 < bot) {
-        var im = IMG[p.cur];
-        ctx.drawImage(im, Math.round(p.x * 16 - im.width / 2), Math.round(p.y * 16 - im.height));
-      }
-    });
     var items = [];
     PIECES.forEach(function (p) {
-      if (p.z && p.cur && p.y * 16 > top && p.y * 16 - 340 < bot) items.push({ y: p.y * 16, p: p });
+      var px = p.x * 16;
+      var py = p.y * 16;
+      if (!p.cur || py < top || py - 340 > vy1 || px < left || px > right) return;
+      if (p.z === 0) {
+        var im = IMG[p.cur];
+        ctx.drawImage(im, Math.round(px - im.width / 2), Math.round(py - im.height));
+      } else items.push({ y: py, p: p });
     });
     cars.forEach(function (c) {
-      if (c.y > top && c.y < bot + 30) items.push({ y: c.y + 6, c: c });
+      if (c.y > top && c.y < vy1 + 40 && c.x > left && c.x < right) items.push({ y: c.y + 8, c: c });
     });
     people.forEach(function (w) {
-      if (!w.inside && w.y > top && w.y < bot + 30) items.push({ y: w.y, w: w });
+      if (!w.inside && w.y > top && w.y < vy1 + 40 && w.x > left && w.x < right) items.push({ y: w.y, w: w });
     });
     items.sort(function (a, b) { return a.y - b.y; });
     items.forEach(function (it2) {
       if (it2.p) sprite(it2.p, now);
-      else if (it2.c) {
-        var c = it2.c;
-        ctx.drawImage(IMG[c.sheet], c.dir * 80, 0, 80, 80, Math.round(c.x - 20), Math.round(c.y - 22), 40, 40);
-      } else {
+      else if (it2.c) car(IMG[it2.c.sheet], it2.c.f, it2.c.x, it2.c.y);
+      else {
         var w = it2.w;
         person(w.sheet, w.face, Math.floor(now / 130 + w.ph) % 6, true, w.x, w.y, 0.5);
       }
@@ -571,11 +735,8 @@ var View = (function () {
     for (id in LANDS) {
       if (!locked(id)) continue;
       var l = LANDS[id];
-      var rect = l.rects[0];
-      if (l.at) {
-        for (var i = 0; i < l.rects.length; i++) if (l.rects[i][1] === l.at) rect = l.rects[i];
-      }
-      if (rect[1] * 16 < bot && (rect[1] + rect[3]) * 16 > top) sign(l, rect);
+      var rect = l.rects[l.at || 0];
+      if (rect[1] * 16 < vy1 && (rect[1] + rect[3]) * 16 > vy0) sign(l, rect);
     }
   }
 
@@ -593,6 +754,7 @@ var View = (function () {
   }
 
   function drawSchool(now) {
+    var z = zs;
     var y0 = Math.max(0, Math.floor(cam.y));
     var vh = Math.min(SH * 32 - y0, Math.ceil(ch / z) + 2);
     if (vh > 0) ctx.drawImage(schoolBG, 0, y0, SW * 32, vh, 0, y0, SW * 32, vh);
@@ -638,7 +800,8 @@ var View = (function () {
       }
       if (p.person) {
         var fr = Math.floor(now / 330 + p.x * 1.7 + p.y) % 6;
-        person(p.spr, p.d, fr, false, p.x * 32 + 16, (p.y + 1) * 32 + 3 - drop, 1);
+        if (p.sit) seated(p.spr, p.d, fr, p.x * 32 + 16, (p.y + 1) * 32 + 3 - drop);
+        else person(p.spr, p.d, fr, false, p.x * 32 + 16, (p.y + 1) * 32 + 3 - drop, 1);
       } else {
         var im = IMG[p.spr];
         var span = p.span || Math.max(1, Math.round(im.width / 32));
@@ -664,6 +827,7 @@ var View = (function () {
   }
 
   function effects(now) {
+    fx.coins = fx.coins.filter(function (c) { return now - c.t0 < 11800; });
     fx.puffs = fx.puffs.filter(function (p) { return now - p.t0 < 700; });
     fx.puffs.forEach(function (p) {
       var u = (now - p.t0) / 700;
@@ -729,53 +893,115 @@ var View = (function () {
     fx.coins.push({ x: s.x, y: s.y, t0: now, v: view });
   }
 
-  // residents and cars move on the streets that have something built next to them
-  function activeStreets() {
-    var a = [];
-    STREETS.forEach(function (n) {
-      var on = n >= 183 ? cnt.homes >= 2 : n >= 82 ? cnt.main >= 2 : n === 54 || n === 28 ? cnt.sch >= 1 : false;
-      if (on) a.push(n);
-    });
-    return a;
+  // a route in px: the waypoints smoothed so that a turn is a curve, with the running length at every point
+  function route(r) {
+    var pts = r.p.map(function (q) { return [q[0] * 16, q[1] * 16]; });
+    for (var k = 0; k < 2; k++) {
+      var out = [pts[0]];
+      for (var i = 0; i < pts.length - 1; i++) {
+        var a = pts[i];
+        var b = pts[i + 1];
+        out.push([a[0] * 0.75 + b[0] * 0.25, a[1] * 0.75 + b[1] * 0.25], [a[0] * 0.25 + b[0] * 0.75, a[1] * 0.25 + b[1] * 0.75]);
+      }
+      out.push(pts[pts.length - 1]);
+      pts = out;
+    }
+    var len = [0];
+    for (var j = 1; j < pts.length; j++) len.push(len[j - 1] + Math.hypot(pts[j][0] - pts[j - 1][0], pts[j][1] - pts[j - 1][1]));
+    return { n: r.n, pts: pts, len: len, total: len[len.length - 1] };
+  }
+
+  function along(r, s, o) {
+    var i = 1;
+    while (i < r.len.length - 1 && r.len[i] < s) i++;
+    var u = (s - r.len[i - 1]) / ((r.len[i] - r.len[i - 1]) || 1);
+    var a = r.pts[i - 1];
+    var b = r.pts[i];
+    o.x = a[0] + (b[0] - a[0]) * u;
+    o.y = a[1] + (b[1] - a[1]) * u;
+  }
+
+  function place(c) {
+    along(c.r, c.s, tmp);
+    c.x = tmp.x;
+    c.y = tmp.y;
+    along(c.r, Math.min(c.r.total, c.s + 10), tmp);
+    c.hx = tmp.x - c.x;
+    c.hy = tmp.y - c.y;
+    c.f = Math.abs(c.hx) > Math.abs(c.hy) ? (c.hx > 0 ? 2 : 1) : c.hy > 0 ? 0 : 3;
+  }
+
+  function walker(p, dt) {
+    var L = p.line;
+    var len = Math.hypot(L[2] - L[0], L[3] - L[1]);
+    p.t += p.dir * p.sp * dt / 16 / len;
+    if (p.t > 1) {
+      p.t = 1;
+      p.dir = -1;
+    } else if (p.t < 0) {
+      p.t = 0;
+      p.dir = 1;
+    }
+    p.x = (L[0] + (L[2] - L[0]) * p.t) * 16;
+    p.y = (L[1] + (L[3] - L[1]) * p.t) * 16;
+    var dx = (L[2] - L[0]) * p.dir;
+    var dy = (L[3] - L[1]) * p.dir;
+    p.face = Math.abs(dx) > Math.abs(dy) ? (dx > 0 ? 'right' : 'left') : dy > 0 ? 'down' : 'up';
   }
 
   function populate() {
-    var st = activeStreets();
-    var want = Math.min(18, Math.floor(cnt.homes * 0.7 + cnt.main * 0.5 + cnt.sch));
-    var tw = people.filter(function (p) { return !p.inside; });
-    while (st.length && tw.length < want) {
-      var n = st[Math.floor(rand() * st.length)];
-      var east = rand() < 0.5;
-      var w = { sheet: rand() < 0.3 ? 'adult_' + [3, 4, 5, 6, 8][Math.floor(rand() * 5)] : 'kid_' + (1 + Math.floor(rand() * 8)),
-        x: rand() * 384, y: (rand() < 0.5 ? n : n + 4) * 16 + 14, sp: 12 + rand() * 10, face: east ? 'right' : 'left',
-        ph: rand() * 6 };
-      people.push(w);
-      tw.push(w);
+    var want = Math.min(10, Math.floor(cnt.homes * 0.5 + cnt.main * 0.4 + cnt.sch * 1.5));
+    var live = people.filter(function (p) { return !p.inside; });
+    var open = WALKS.filter(function (w) { return cnt[w.k] >= w.n; });
+    var wantP = Math.min(18, Math.floor(cnt.homes * 0.7 + cnt.main * 0.5 + cnt.sch));
+    while (open.length && live.length < wantP) {
+      var w = open[Math.floor(rand() * open.length)];
+      var p = { sheet: rand() < 0.3 ? 'adult_' + [3, 4, 5, 6, 8][Math.floor(rand() * 5)] : 'kid_' + (1 + Math.floor(rand() * 8)),
+        line: w.p, t: rand(), dir: rand() < 0.5 ? 1 : -1, sp: 12 + rand() * 10, ph: rand() * 6, x: 0, y: 0, face: 'right' };
+      walker(p, 0);
+      people.push(p);
+      live.push(p);
     }
-    st.forEach(function (n) {
-      [1.75, 3.25].forEach(function (off, d) {
-        var have = cars.filter(function (c) { return c.lane === n * 10 + d; });
-        var need = cnt.main >= 8 || cnt.homes >= 8 ? 2 : 1;
-        for (var i = have.length; i < need; i++) {
-          var sp = 26 + ((n * 7 + d * 13) % 18);
-          cars.push({ lane: n * 10 + d, x: (d ? 0 : 384) + (d ? 1 : -1) * i * 230 + rand() * 40, y: (n + off) * 16, sp: d ? sp : -sp,
-            dir: d ? CAR_DIR.east : CAR_DIR.west, sheet: ['car_01', 'car_03', 'car_05', 'car_10'][(n + d + i) % 4] });
-        }
-      });
-    });
+    var ok = routes.filter(function (r) { return cnt.homes >= 2 + r.n / 3 || cnt.main >= 1 + r.n / 3; });
+    while (cars.length < want && ok.length) {
+      var rt = ok[cars.length % ok.length];
+      var c = { id: cars.length + 1, r: rt, s: rand() * rt.total, sp: 28 + rand() * 14, hold: 0,
+        sheet: ['car_01', 'car_03', 'car_05', 'car_10'][cars.length % 4], x: 0, y: 0, f: 0, hx: 0, hy: 0 };
+      cars.push(c);
+      place(c);
+    }
     var yard = cnt.yard >= 7 ? 3 : 0;
     var hallN = cnt.sch >= 2 ? Math.min(5, cnt.sch) : 0;
-    var ins = people.filter(function (p) { return p.inside; });
-    var have2 = ins.filter(function (p) { return p.kind === 'hall'; }).length;
+    var ins = people.filter(function (q) { return q.inside; });
+    var have2 = ins.filter(function (q) { return q.kind === 'hall'; }).length;
     for (var i2 = have2; i2 < hallN; i2++) {
       people.push({ inside: 1, kind: 'hall', sheet: 'kid_' + (1 + (i2 * 3) % 8), x: 48 + (i2 % 2) * 32, y: (6 + i2 * 6) * 32,
         sp: 22 + i2 * 3, face: i2 % 2 ? 'up' : 'down', ph: i2 * 1.3, y0: 4 * 32, y1: 37 * 32 });
     }
-    var have3 = ins.filter(function (p) { return p.kind === 'yard'; }).length;
+    var have3 = ins.filter(function (q) { return q.kind === 'yard'; }).length;
     for (var i3 = have3; i3 < yard; i3++) {
       people.push({ inside: 1, kind: 'yard', sheet: 'kid_' + (1 + (i3 * 2 + 3) % 8), x: 130 + i3 * 40, y: (43 + i3 * 3) * 32 + 20,
         sp: 20 + i3 * 4, face: 'right', ph: i3 * 2, x0: 100, x1: 330 });
     }
+  }
+
+  // a car waits for the one ahead in its own direction, and for a lower numbered car it would otherwise drive into
+  function blocked(c) {
+    var n = Math.hypot(c.hx, c.hy) || 1;
+    var ux = c.hx / n;
+    var uy = c.hy / n;
+    for (var i = 0; i < cars.length; i++) {
+      var o = cars[i];
+      if (o === c) continue;
+      var dx = o.x - c.x;
+      var dy = o.y - c.y;
+      var d = Math.hypot(dx, dy);
+      if (d > 30 || d === 0) continue;
+      if ((dx * ux + dy * uy) / d < 0.35) continue;
+      var on = Math.hypot(o.hx, o.hy) || 1;
+      if ((o.hx * ux + o.hy * uy) / on > 0.5 || o.id < c.id) return true;
+    }
+    return false;
   }
 
   function move(dt) {
@@ -792,20 +1018,24 @@ var View = (function () {
         }
         return;
       }
-      w.x += (w.face === 'right' ? 1 : -1) * w.sp * dt;
-      if (w.x > 400) w.x = -16;
-      if (w.x < -16) w.x = 400;
+      walker(w, dt);
     });
     cars.forEach(function (c) {
-      c.x += c.sp * dt;
-      if (c.sp > 0 && c.x > 430) c.x = -50;
-      if (c.sp < 0 && c.x < -50) c.x = 430;
+      if (blocked(c) && c.hold < 4) {
+        c.hold += dt;
+        return;
+      }
+      c.hold = 0;
+      c.s += c.sp * dt;
+      if (c.s >= c.r.total) c.s = 0;
+      place(c);
     });
   }
 
   function hit(sx, sy) {
+    var z = zoom();
     var wy = sy / z + cam.y;
-    var wx = sx / z;
+    var wx = sx / z + cam.x;
     var best = null;
     fx.coins.forEach(function (c) {
       if (c.v === view && Math.abs(c.x - wx) < 20 && Math.abs(c.y - 8 - wy) < 22) best = c;
@@ -815,16 +1045,18 @@ var View = (function () {
       return { kind: 'coin', x: best.x, y: best.y };
     }
     if (view === 'town') {
-      var row = wy / 16;
+      var tx = wx / 16;
+      var ty = wy / 16;
       for (var i = 0; i < BLOCKS.length; i++) {
-        if (row >= BLOCKS[i][0] && row < BLOCKS[i][1]) return { kind: 'block', id: BLOCKS[i][2] };
+        var b = BLOCKS[i];
+        if (tx >= b[0] && tx < b[0] + b[2] && ty >= b[1] && ty < b[1] + b[3]) return { kind: 'block', id: b[4] };
       }
       return null;
     }
-    var ty = wy / 32;
+    var ry = wy / 32;
     for (var key in ROOMS) {
       var f = ROOMS[key].floor;
-      if (key !== 'hall' && ty >= f[1] - 2 && ty < f[1] + f[3]) return { kind: 'room', id: key };
+      if (key !== 'hall' && ry >= f[1] - 2 && ry < f[1] + f[3]) return { kind: 'room', id: key };
     }
     return null;
   }
@@ -837,19 +1069,61 @@ var View = (function () {
     resize();
     window.addEventListener('resize', resize);
     cv.addEventListener('pointerdown', function (e) {
+      if (e.isPrimary) {
+        ptr = {};
+        pinch = null;
+        drag = null;
+      }
       cv.setPointerCapture(e.pointerId);
-      drag = { y: e.clientY, cam: cam.y, x0: e.clientX, y0: e.clientY, t: performance.now(), moved: false };
+      ptr[e.pointerId] = { x: e.clientX, y: e.clientY };
+      var ids = Object.keys(ptr);
+      if (ids.length === 1) {
+        drag = { id: e.pointerId, x: e.clientX, y: e.clientY, cx: cam.x, cy: cam.y, x0: e.clientX, y0: e.clientY, t: performance.now(), moved: false };
+      } else if (ids.length === 2 && view === 'town') {
+        var a = ptr[ids[0]];
+        var b = ptr[ids[1]];
+        pinch = { d: Math.hypot(a.x - b.x, a.y - b.y) || 1, z: zt };
+        if (drag) drag.moved = true;
+      }
     });
     cv.addEventListener('pointermove', function (e) {
-      if (!drag) return;
-      if (Math.abs(e.clientY - drag.y0) > 7) drag.moved = true;
+      if (!ptr[e.pointerId]) return;
+      ptr[e.pointerId] = { x: e.clientX, y: e.clientY };
+      if (pinch) {
+        if (busy()) return;
+        var ids = Object.keys(ptr);
+        var a = ptr[ids[0]];
+        var b = ptr[ids[1]];
+        var r = cv.getBoundingClientRect();
+        var mx = (a.x + b.x) / 2 - r.left;
+        var my = (a.y + b.y) / 2 - r.top;
+        var wx = mx / zt + cam.x;
+        var wy = my / zt + cam.y;
+        zt = Math.max(zmin, Math.min(zmax, pinch.z * Math.hypot(a.x - b.x, a.y - b.y) / pinch.d));
+        cam.x = wx - mx / zt;
+        cam.y = wy - my / zt;
+        clamp();
+        return;
+      }
+      if (!drag || e.pointerId !== drag.id) return;
+      if (Math.abs(e.clientX - drag.x0) > 7 || Math.abs(e.clientY - drag.y0) > 7) drag.moved = true;
       if (drag.moved && !busy()) {
-        cam.y = drag.cam - (e.clientY - drag.y) / z;
+        var z = zoom();
+        cam.x = drag.cx - (e.clientX - drag.x) / z;
+        cam.y = drag.cy - (e.clientY - drag.y) / z;
         clamp();
       }
     });
     function up(e) {
-      if (!drag) return;
+      delete ptr[e.pointerId];
+      var left = Object.keys(ptr);
+      if (pinch && left.length < 2) {
+        pinch = null;
+        var q = ptr[left[0]];
+        drag = q ? { id: +left[0], x: q.x, y: q.y, cx: cam.x, cy: cam.y, x0: 0, y0: 0, t: 0, moved: true } : null;
+        return;
+      }
+      if (!drag || e.pointerId !== drag.id) return;
       var d = drag;
       drag = null;
       if (!d.moved && performance.now() - d.t < 600 && e.type === 'pointerup') {
@@ -876,10 +1150,11 @@ var View = (function () {
     });
     fx.conf = fx.conf.filter(function (c) { return c.y < ch + 20; });
     spawnCoin(now);
+    var z = zoom();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.fillStyle = view === 'town' ? GRASS : '#262830';
     ctx.fillRect(0, 0, cv.width, cv.height);
-    ctx.setTransform(dpr * z, 0, 0, dpr * z, 0, -cam.y * dpr * z);
+    ctx.setTransform(dpr * z, 0, 0, dpr * z, -cam.x * dpr * z, -cam.y * dpr * z);
     ctx.imageSmoothingEnabled = false;
     if (view === 'town') drawTown(now);
     else drawSchool(now);
@@ -899,25 +1174,18 @@ var View = (function () {
     }
   }
 
-  // go to a place right away, without the walk
-  function jump(v, wy) {
-    view = v;
-    cam.cur = null;
-    cam.q = [];
-    cam.y = centerOn(wy);
-    clamp();
-  }
-
   function refresh() {
     sync(false, 0);
+    people.length = 0;
+    cars.length = 0;
+    fx.coins.length = 0;
     populate();
   }
 
   return {
-    init: init, draw: draw, inset: function (t, b) { IT = t; IB = b; clamp(); }, ready: function () { return ready; }, stepped: stepped, go: go, jump: jump, refresh: refresh,
-    confetti: confetti, resize: resize, busy: busy, populate: populate, roomY: roomY, blockY: blockY, locked: locked,
-    view: function () { return view; }, focusNow: focusNow, cam: cam, scale: function () { return z; }, fmt: fmt, sync: sync,
-    pop: function (x, y, now) { fx.puffs.push({ x: x, y: y, t0: now }); },
+    init: init, draw: draw, inset: function (t, b) { IT = t; IB = b; clamp(); }, ready: function () { return ready; },
+    stepped: stepped, go: go, refresh: refresh, confetti: confetti, populate: populate, roomY: roomY, blockAt: blockAt,
+    view: function () { return view; }, focusNow: focusNow,
     float: function (x, y, text, now) { fx.floats.push({ x: x, y: y, text: text, t0: now }); }
   };
 })();
