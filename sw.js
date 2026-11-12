@@ -1,4 +1,4 @@
-var CACHE = 'mainstreet-3fba210f';
+var CACHE = 'mainstreet-0d4c1a7d';
 var FILES = [
   './',
   'city.js',
