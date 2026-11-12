@@ -1106,3 +1106,8 @@ small {
   background: #4f9a40;
   transition: width 0.15s;
 }
+
+#loading p {
+  margin-top: 12px;
+  font-size: 15px;
+}

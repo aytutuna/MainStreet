@@ -1,11 +1,11 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { planTown, modelList } from './plan.js';
+import { planTown, modelList, FOLK } from './plan.js';
+import { SchoolInside, FURN, figure } from './school3d.js';
 import { Life } from './life.js';
 
 var BASE = 'assets/models/';
 var TILT = 52 * Math.PI / 180;
-var STAGES = [0, 0, 1, 1, 2, 2];
 
 var IT = 64;
 var IB = 118;
@@ -32,6 +32,7 @@ var BOUNDS = [-25, 25, -4, 25];
 var bump = {};
 var tagsEl;
 var arrowEl;
+var loadingEl;
 var ptr = {};
 var drag = null;
 var pinch = null;
@@ -42,15 +43,30 @@ var hitA = new THREE.Vector3();
 var hitB = new THREE.Vector3();
 var proj = new THREE.Vector3();
 var picks = [];
+var townG;
+var inside;
+var mode = 'town';
+var tagged = [];
+var puffs = [];
+var bg = new THREE.Color(0xa9d8ee);
 
-// ---- loading
+// WKWebView has no Safari token in its user agent, so GLTFLoader would pick the ImageBitmap path, which iOS 16 flips wrongly
+var textureFix = function (parser) {
+  return {
+    name: 'TextureFix',
+    beforeRoot: function () {
+      var ua = navigator.userAgent;
+      if (/AppleWebKit/.test(ua) && !/Chrome|Chromium|Edg/.test(ua)) parser.textureLoader = new THREE.TextureLoader(parser.options.manager);
+    }
+  };
+};
 
 function loadModels(list, progress, done) {
   var loader = new GLTFLoader();
+  loader.register(textureFix);
   var mats = {};
   var tex = {};
   var models = {};
-  var used = {};
   var n = 0;
   function material(src, kit) {
     var key = kit + '|' + (src.map ? 'map' : src.name + src.color.getHex());
@@ -69,6 +85,7 @@ function loadModels(list, progress, done) {
     mats[key] = m;
     return m;
   }
+  var missing = { parts: [], box: { x0: -0.3, x1: 0.3, z0: -0.3, z1: 0.3, h: 0.3 }, gltf: null };
   list.forEach(function (ref) {
     var kit = ref.split('/')[0];
     loader.load(BASE + ref + '.glb', function (g) {
@@ -84,7 +101,7 @@ function loadModels(list, progress, done) {
       });
       if (kit !== 'chars') box.setFromObject(g.scene);
       else box.set(new THREE.Vector3(-0.3, 0, -0.3), new THREE.Vector3(0.3, 0.8, 0.3));
-      models[ref] = { parts: parts, box: { x0: box.min.x, x1: box.max.x, z0: box.min.z, z1: box.max.z, h: box.max.y }, gltf: g, kit: kit };
+      models[ref] = { parts: parts, box: { x0: box.min.x, x1: box.max.x, z0: box.min.z, z1: box.max.z, h: box.max.y }, gltf: kit === 'chars' ? g : null };
       progress(++n / list.length);
       if (n === list.length) done();
     }, undefined, function () {
@@ -95,20 +112,16 @@ function loadModels(list, progress, done) {
   });
   return {
     model: function (ref) {
-      used[ref] = 1;
-      if (!models[ref]) throw new Error('model not loaded: ' + ref);
-      return models[ref];
-    },
-    mats: mats,
-    used: used
+      return models[ref] || missing;
+    }
   };
 }
 
-// ---- scene
-
 function sceneUp() {
-  renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true, powerPreference: 'high-performance' });
-  renderer.setPixelRatio(Math.min(2, window.devicePixelRatio || 1));
+  var dpr = window.devicePixelRatio || 1;
+  renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: dpr < 2, powerPreference: 'high-performance' });
+  cv.addEventListener('webglcontextrestored', function () { renderer.shadowMap.needsUpdate = true; });
+  renderer.setPixelRatio(Math.min(2, dpr));
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.shadowMap.autoUpdate = false;
@@ -133,13 +146,15 @@ function sceneUp() {
   sun.shadow.normalBias = 0.02;
   scene.add(sun);
   scene.add(sun.target);
+  townG = new THREE.Group();
+  scene.add(townG);
 }
 
 function ground() {
   var g = new THREE.Mesh(new THREE.PlaneGeometry(400, 400), new THREE.MeshLambertMaterial({ color: 0x84c26c }));
   g.rotation.x = -Math.PI / 2;
   g.receiveShadow = true;
-  scene.add(g);
+  townG.add(g);
 }
 
 function resize() {
@@ -155,11 +170,18 @@ function resize() {
   }
 }
 
-// ---- camera
+var far = false;
 
 function place() {
   var cx = Math.cos(TILT);
   cam.position.set(focus.x + focus.dist * Math.sin(focus.az) * cx, focus.dist * Math.sin(TILT), focus.z + focus.dist * Math.cos(focus.az) * cx);
+  var nf = mode === 'town' && focus.dist > 34;
+  if (nf !== far && town) {
+    far = nf;
+    town.lods.near.forEach(function (m) { m.visible = !far; });
+    town.lods.far.forEach(function (m) { m.visible = far; });
+    if (life) life.far(far);
+  }
   cam.near = Math.max(1, focus.dist * 0.3);
   cam.far = focus.dist * 6 + 120;
   cam.updateProjectionMatrix();
@@ -317,16 +339,18 @@ function bind() {
 function hit(sx, sy) {
   ndc.set(sx / cw * 2 - 1, -(sy / ch * 2 - 1));
   ray.setFromCamera(ndc, cam);
-  var h = ray.intersectObjects(picks, false);
+  var h = ray.intersectObjects(mode === 'town' ? picks : inside.picks, false);
   if (h.length) return { kind: 'biz', id: h[0].object.userData.id };
   return { kind: 'none' };
 }
 
-// ---- businesses
-
+// the park counts its own levels; every other business changes at each milestone of STAGE
 function stageOf(id) {
   if (id === 'park') return S.park;
-  return shape(id);
+  var l = lv(id);
+  var n = 0;
+  STAGE.forEach(function (t) { if (l >= t) n++; });
+  return n;
 }
 
 // builds every business once: its models for each stage, its building site, its pick box
@@ -346,10 +370,85 @@ function makeBiz() {
     pick.userData.id = id;
     b.group.add(pick);
     picks.push(pick);
-    scene.add(b.group);
+    townG.add(b.group);
     b.shown = -1;
     bizList.push(id);
+    tagged.push(id);
+    if (id !== 'park') extras(id, b);
   });
+}
+
+// the manager at the door and the coin stack waiting on the step
+function extras(id, b) {
+  var r = b.rec;
+  var tx = r.dir[1];
+  var tz = -r.dir[0];
+  var f = figure(lib, FOLK[(bizList.length * 5 + 2) % FOLK.length], 'idle', 0.3);
+  f.obj.position.set(b.at[0] + tx * 0.32, 0.02, b.at[2] + tz * 0.32);
+  f.obj.rotation.y = Math.atan2(r.dir[0], r.dir[1]);
+  f.obj.visible = false;
+  b.group.add(f.obj);
+  b.mgr = f;
+  var st = new THREE.Group();
+  for (var i = 0; i < 3; i++) {
+    var c = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.035, 14), new THREE.MeshLambertMaterial({ color: 0xffd23a, emissive: 0x6a4a00 }));
+    c.position.set(i === 1 ? 0.03 : 0, 0.02 + i * 0.037, i === 1 ? 0.02 : 0);
+    st.add(c);
+  }
+  st.position.set(b.at[0] - tx * 0.32, 0.02, b.at[2] - tz * 0.32);
+  st.visible = false;
+  b.group.add(st);
+  b.stack = st;
+}
+
+var puffMat = new THREE.MeshBasicMaterial({ color: 0xf2efe8, transparent: true, opacity: 0.8, depthWrite: false });
+
+// dust at the foot of a building that changes
+function dust(b, now) {
+  var f = b.foot;
+  for (var i = 0; i < 12; i++) {
+    var m = new THREE.Mesh(new THREE.SphereGeometry(0.1, 6, 5), puffMat.clone());
+    var side = i % 4;
+    var u = Math.random();
+    var x = side < 2 ? f.x0 + (f.x1 - f.x0) * u : (side === 2 ? f.x0 : f.x1);
+    var z = side < 2 ? (side === 0 ? f.z0 : f.z1) : f.z0 + (f.z1 - f.z0) * u;
+    m.position.set(x, 0.08, z);
+    townG.add(m);
+    puffs.push({ m: m, t0: now + Math.random() * 120, vx: (x - (f.x0 + f.x1) / 2) * 0.25, vz: (z - (f.z0 + f.z1) / 2) * 0.25 });
+  }
+}
+
+function puffsStep(now) {
+  for (var i = puffs.length - 1; i >= 0; i--) {
+    var p = puffs[i];
+    var u = (now - p.t0) / 900;
+    if (u < 0) continue;
+    if (u >= 1) {
+      townG.remove(p.m);
+      p.m.geometry.dispose();
+      p.m.material.dispose();
+      puffs.splice(i, 1);
+      continue;
+    }
+    p.m.position.x += p.vx * 0.016;
+    p.m.position.z += p.vz * 0.016;
+    p.m.position.y = 0.08 + u * 0.35;
+    p.m.scale.setScalar(0.6 + u * 1.8);
+    p.m.material.opacity = 0.8 * (1 - u);
+  }
+}
+
+function setMode(m) {
+  mode = m;
+  townG.visible = m === 'town';
+  inside.root.visible = m === 'school';
+  scene.background = m === 'town' ? bg : new THREE.Color(0x3a3d4f);
+  scene.fog = m === 'town' ? new THREE.Fog(0xa9d8ee, 115, 270) : null;
+  BOUNDS = m === 'town' ? [-25, 25, -4, 25] : [1.8, 3.4, 3, 9.5];
+  DMIN = m === 'town' ? 7 : 8;
+  DMAX = m === 'town' ? 125 : 30;
+  renderer.shadowMap.needsUpdate = true;
+  goal = null;
 }
 
 function sync(animate, now) {
@@ -360,10 +459,23 @@ function sync(animate, now) {
     if (st === b.shown) return;
     var pk = b.pick(st);
     b.models.forEach(function (g, i) { g.visible = b.cum ? (i === 0 ? pk === 0 : i <= pk) : i === pk; });
-    if (animate && b.shown >= 0) bump[id] = now;
+    if (animate && b.shown >= 0) {
+      bump[id] = now;
+      dust(b, now);
+    }
     b.shown = st;
     changed = true;
   });
+  bizList.forEach(function (id) {
+    var b = town.biz[id];
+    if (b.mgr) {
+      var on = managed(id);
+      if (on !== b.mgr.obj.visible) changed = true;
+      if (on && !b.mgr.obj.visible && animate) bump[id] = now;
+      b.mgr.obj.visible = on;
+    }
+  });
+  if (inside.sync(animate)) changed = true;
   if (changed) renderer.shadowMap.needsUpdate = true;
 }
 
@@ -373,6 +485,7 @@ function pop(now) {
     var b = town.biz[id];
     if (u >= 1) {
       b.group.scale.set(1, 1, 1);
+      b.group.position.set(0, 0, 0);
       delete bump[id];
       renderer.shadowMap.needsUpdate = true;
       continue;
@@ -381,16 +494,18 @@ function pop(now) {
     var f = b.foot;
     b.group.scale.set(s, s, s);
     b.group.position.set((f.x0 + f.x1) / 2 * (1 - s), 0, (f.z0 + f.z1) / 2 * (1 - s));
-    renderer.shadowMap.needsUpdate = true;
   }
 }
 
-// ---- labels over the town
+function bz(id) {
+  return town.biz[id] || inside.biz[id];
+}
 
 function makeTags() {
   tagsEl = document.getElementById('tags');
-  bizList.forEach(function (id) {
-    var b = town.biz[id];
+  Object.keys(inside.biz).forEach(function (id) { tagged.push(id); });
+  tagged.forEach(function (id) {
+    var b = bz(id);
     var el = document.createElement('div');
     el.className = 'tag';
     el.innerHTML = '<b></b><i><u></u></i>';
@@ -434,15 +549,17 @@ var sp = { x: 0, y: 0, z: 0 };
 var anchorXY = {};
 
 function overlay(now) {
-  var near = focus.dist < 24;
-  bizList.forEach(function (id) {
-    var b = town.biz[id];
+  var near = focus.dist < 24 || mode === 'school';
+  tagged.forEach(function (id) {
+    var b = bz(id);
     var t = b.tag;
+    var here = b.inside ? mode === 'school' : mode === 'town';
     var st = bstate(id);
     var a = b.top();
     toScreen(a[0], a[1], a[2], sp);
-    anchorXY[id] = { x: sp.x, y: sp.y };
-    var vis = sp.z < 1 && sp.x > -60 && sp.x < cw + 60 && sp.y > IT + 34 && sp.y < ch - IB + 30;
+    var vis = here && sp.z < 1 && sp.x > -60 && sp.x < cw + 60 && sp.y > IT + 34 && sp.y < ch - IB + 30;
+    if (here && sp.z < 1) anchorXY[id] = { x: sp.x, y: sp.y };
+    else if (!b.inside || mode === 'school') delete anchorXY[id];
     var locked = !st.own;
     var show = vis && (near || (focus.dist < 48 && (st.own || locked && st.avail)));
     if (t.shown !== show) {
@@ -472,17 +589,28 @@ function overlay(now) {
         t.el.style.transform = 'translate(' + tx + 'px,' + ty + 'px) translate(-50%,-100%) scale(' + sc + ')';
       }
     }
-    var coin = st.wait > 0 && vis;
+    if (b.stack) {
+      b.stack.visible = st.wait > 0;
+      b.stack.position.y = 0.02 + Math.abs(Math.sin(now / 300)) * 0.03;
+    }
+    // the coin waits at the door, so it never covers the rooftop props or the label
+    var door = b.at;
+    toScreen(door[0], b.inside ? 0.25 : 0.12, door[2], sp);
+    var coin = st.wait > 0 && here && sp.z < 1 && sp.y > IT + 20 && sp.y < ch - IB + 30;
     if (coin) {
       if (t.wait !== st.wait) {
         t.wait = st.wait;
         t.coin.textContent = '$' + short(st.wait);
       }
       var bob = Math.sin(now / 260 + sp.x) * 3;
-      t.coin.style.transform = 'translate(' + Math.round(sp.x) + 'px,' + Math.round(sp.y + 14 + bob) + 'px) translate(-50%,0)';
+      t.coin.style.transform = 'translate(' + Math.round(sp.x) + 'px,' + Math.round(sp.y + bob) + 'px) translate(-50%,-50%)';
     }
     if (t.coin.hidden === coin) t.coin.hidden = !coin;
   });
+  // in the town the school rooms are pointed at through the School building
+  if (mode === 'town' && anchorXY.school) {
+    ['class', 'lib', 'cafeteria', 'yard'].forEach(function (id) { anchorXY[id] = anchorXY.school; });
+  }
   var a2 = bestId && anchorXY[bestId];
   if (!a2) {
     arrowEl.hidden = true;
@@ -500,12 +628,16 @@ function overlay(now) {
   arrowEl.style.transform = 'translate(' + Math.round(cx) + 'px,' + Math.round(cy) + 'px) translate(-50%,-50%) rotate(' + rot.toFixed(3) + 'rad)';
 }
 
-// ---- the part the page talks to
-
 function init(canvas, tap) {
   cv = canvas;
   onTap = tap;
-  sceneUp();
+  loadingEl = document.getElementById('loading');
+  try {
+    sceneUp();
+  } catch (e) {
+    fail('This device cannot start the 3D town (WebGL is not available).');
+    return;
+  }
   resize();
   window.addEventListener('resize', resize);
   bind();
@@ -516,28 +648,40 @@ function init(canvas, tap) {
     });
   });
   var bar = document.getElementById('load-bar');
-  var list = modelList();
+  var list = modelList().concat(FURN);
   lib = loadModels(list, function (p) { if (bar) bar.style.width = Math.round(p * 100) + '%'; }, function () {
     setTimeout(function () {
-      town = planTown(lib);
-      scene.add(town.root);
-      makeBiz();
-      makeTags();
-      life = new Life(scene, lib, town);
-      sync(false, 0);
-      focusNow();
-      place();
-      renderer.shadowMap.needsUpdate = true;
-      ready = true;
-      var el = document.getElementById('loading');
-      if (el) el.classList.add('done');
-      if (window.townWarnings) window.townWarnings(town.warns);
+      try {
+        start();
+      } catch (e) {
+        console.error(e);
+        fail('The town could not be built. Please reload.');
+      }
     }, 30);
   });
 }
 
+function fail(msg) {
+  loadingEl.firstChild.innerHTML = '<b>Main Street</b><p>' + msg + '</p>';
+}
+
+function start() {
+  town = planTown(lib);
+  townG.add(town.root);
+  inside = new SchoolInside(lib, FOLK);
+  scene.add(inside.root);
+  makeBiz();
+  makeTags();
+  life = new Life(townG, lib, town);
+  sync(false, 0);
+  focusNow();
+  place();
+  renderer.shadowMap.needsUpdate = true;
+  ready = true;
+  loadingEl.classList.add('done');
+}
+
 var lastT = 0;
-var perf = { life: 0, render: 0, overlay: 0 };
 
 function draw(now) {
   if (!ready) return;
@@ -548,32 +692,64 @@ function draw(now) {
     clamp();
     place();
   }
-  var t0 = performance.now();
-  life.update(dt, now);
+  if (mode === 'town') {
+    life.update(dt);
+    if (focus.dist < 40) {
+      bizList.forEach(function (id) {
+        var m = town.biz[id].mgr;
+        if (m && m.obj.visible) m.mixer.update(dt);
+      });
+    }
+  } else if (inside.update(dt)) renderer.shadowMap.needsUpdate = true;
+  puffsStep(now);
   pop(now);
-  var t1 = performance.now();
   renderer.render(scene, cam);
-  var t2 = performance.now();
   overlay(now);
-  var t3 = performance.now();
-  perf.life += (t1 - t0 - perf.life) * 0.05;
-  perf.render += (t2 - t1 - perf.render) * 0.05;
-  perf.overlay += (t3 - t2 - perf.overlay) * 0.05;
+}
+
+function confetti() {
+  var cols = ['#f0c040', '#e8553a', '#4f9a40', '#3f78b8', '#e85d9a'];
+  for (var i = 0; i < 30; i++) {
+    var d = document.createElement('i');
+    var x = Math.random() * cw;
+    d.style.cssText = 'position:absolute;left:0;top:0;width:8px;height:12px;background:' + cols[i % cols.length];
+    tagsEl.appendChild(d);
+    var dx = (Math.random() - 0.5) * 120;
+    var a = d.animate([
+      { transform: 'translate(' + x + 'px,-20px) rotate(0deg)' },
+      { transform: 'translate(' + (x + dx) + 'px,' + ch + 'px) rotate(' + Math.round(Math.random() * 720) + 'deg)' }
+    ], { duration: 1300 + Math.random() * 900, easing: 'ease-in' });
+    a.onfinish = (function (el) { return function () { el.remove(); }; })(d);
+  }
 }
 
 function spot(id) {
-  var p = id === 'park' ? town.biz.park : town.biz[id];
-  if (!p) {
-    var sch = town.biz.school;
-    return { v: 'school', x: sch.at[0], y: sch.at[2] };
-  }
-  return { v: 'town', x: p.at[0], y: p.at[2] };
+  var p = town.biz[id];
+  if (p) return { v: 'town', x: p.at[0], y: p.at[2] };
+  var r = inside.biz[id];
+  if (r) return { v: 'school', x: r.at[0], y: r.at[2] };
+  return { v: 'town', x: 0, y: 8 };
 }
 
 function go(v, z, x) {
   if (v === 'school') {
-    var s = town.biz.school;
-    flyTo(s.at[0], s.at[2], 15);
+    setMode('school');
+    focus.x = 2.6;
+    focus.z = 6.2;
+    focus.dist = 27;
+    focus.az = 0;
+    azGoal = null;
+    clamp();
+    place();
+    return;
+  }
+  if (mode !== 'town') {
+    setMode('town');
+    focus.x = x;
+    focus.z = z;
+    focus.dist = 17;
+    clamp();
+    place();
     return;
   }
   flyTo(x, z, 15);
@@ -583,21 +759,23 @@ function focusNow(id) {
   goal = null;
   var b = best();
   var sp2 = spot(id || (b ? b.id : 'homes'));
+  var want = sp2.v;
+  if (want !== mode) setMode(want);
   focus.x = sp2.x;
   focus.z = sp2.y;
-  focus.dist = 17;
+  focus.dist = want === 'school' ? 27 : 17;
   focus.az = 0;
   clamp();
   place();
 }
 
 function event(res, now) {
-  bump[res.id] = now;
+  if (town.biz[res.id]) bump[res.id] = now;
   sync(true, now);
   var big = res.unlock || res.park || (res.ms && res.ms.length);
   var sp2 = spot(res.id);
   var out = 0.25;
-  if (big) out = flyTo(sp2.x, sp2.y, Math.min(focus.dist, 17)) + 0.1;
+  if (big && sp2.v === mode) out = flyTo(sp2.x, sp2.y, Math.min(focus.dist, 17)) + 0.1;
   return out;
 }
 
@@ -618,78 +796,15 @@ window.View = {
   event: event,
   go: go,
   refresh: refresh,
-  confetti: function () {},
+  confetti: confetti,
   populate: function () { sync(true, performance.now()); },
-  roomY: function () { return 0; },
-  blockAt: spot,
-  view: function () { return 'town'; },
+  roomY: function (room) { return inside.roomZ(room); },
+  view: function () { return mode; },
   focusNow: focusNow,
   screenOf: function (id) {
     var a = anchorXY[id];
     return a ? { x: a.x, y: a.y } : null;
   },
   spot: spot,
-  setBest: function (id) { bestId = id; },
-  turn: function (q) {
-    focus.az += q;
-    place();
-  },
-  look: function (x, z, dist, az) {
-    goal = null;
-    focus.x = x;
-    focus.z = z;
-    focus.dist = dist;
-    focus.az = az || 0;
-    clamp();
-    place();
-  },
-  project: function (x, z) {
-    toScreen(x, 0, z, sp);
-    return { x: sp.x, y: sp.y };
-  },
-  where: function () { return { x: focus.x, z: focus.z, d: focus.dist, az: focus.az, ch: ch, cw: cw }; },
-  plan: function () {
-    var k = 16;
-    var cv2 = document.createElement('canvas');
-    cv2.width = 70 * k;
-    cv2.height = 36 * k;
-    var x = cv2.getContext('2d');
-    x.fillStyle = '#ffffff';
-    x.fillRect(0, 0, cv2.width, cv2.height);
-    var X = function (v) { return (v + 35) * k; };
-    var Z = function (v) { return (v + 7) * k; };
-    var cells = function (set, col) {
-      x.fillStyle = col;
-      for (var key in set) {
-        var q = key.split(',');
-        x.fillRect(X(+q[0] / 2), Z(+q[1] / 2), k / 2, k / 2);
-      }
-    };
-    cells(town.roadCells, '#555');
-    cells(town.walkCells, '#ccd');
-    town.claims.forEach(function (c) {
-      var t = c.tag || '';
-      x.fillStyle = /tree|bush|hedge/.test(t) ? '#4a4' : /car|vehicle/.test(t) ? '#e84' : /lamp|signal/.test(t) ? '#888' : '#47c';
-      x.fillRect(X(c.x0), Z(c.z0), (c.x1 - c.x0) * k, (c.z1 - c.z0) * k);
-    });
-    x.strokeStyle = '#ddd';
-    x.lineWidth = 1;
-    for (var g = -35; g <= 35; g += 5) {
-      x.beginPath();
-      x.moveTo(X(g), 0);
-      x.lineTo(X(g), cv2.height);
-      x.stroke();
-    }
-    for (g = -7; g <= 29; g += 5) {
-      x.beginPath();
-      x.moveTo(0, Z(g));
-      x.lineTo(cv2.width, Z(g));
-      x.stroke();
-    }
-    return cv2.toDataURL('image/png');
-  },
-  perf: function () { return perf; },
-  used: function () { return Object.keys(lib.used); },
-  life: function () { return life; },
-  stats: function () { return { calls: renderer.info.render.calls, tris: renderer.info.render.triangles }; }
+  setBest: function (id) { bestId = id; }
 };

@@ -104,8 +104,6 @@ function flag(c, key, el, name, on) {
   el.classList.toggle(name, on);
 }
 
-// ---- juice
-
 function popAt(text, x, y, cls) {
   var d = document.createElement('div');
   d.className = 'pop ' + (cls || '');
@@ -188,8 +186,6 @@ function nextBanner() {
     }, 2000);
   }, q.d * 1000);
 }
-
-// ---- rows: one per business, in the Businesses list and in the card of a tapped building
 
 function amount(id) {
   return mode === 0 ? Math.max(1, maxBuy(id)) : mode;
@@ -331,8 +327,6 @@ function focusBiz(id) {
   View.go(sp.v, sp.y, sp.x);
 }
 
-// ---- actions
-
 function afterBuy(res) {
   var t = View.event(res, performance.now());
   var ms = res.ms || [];
@@ -422,10 +416,8 @@ function onPayout(id, v) {
   if (t - (lastPay[id] || 0) < 900) return;
   lastPay[id] = t;
   var p = View.screenOf(id);
-  if (p && p.y > 40 && p.y < innerHeight - 100) popAt('+' + money(v), p.x, p.y, 'small');
+  if (p && p.x > 0 && p.x < innerWidth && p.y > 40 && p.y < innerHeight - 100) popAt('+' + money(v), p.x, p.y, 'small');
 }
-
-// ---- hud
 
 function updateHud() {
   set(shown, 'cash', $('cash-n'), 'textContent', money(S.cash));
@@ -507,8 +499,6 @@ function updateOpen() {
   if (cardRow) upRow(cardRow);
   if (!$('boost').hidden) paintBoost();
 }
-
-// ---- screens
 
 function showAway(a) {
   if (a.gain <= 0 && !a.ready) return false;
