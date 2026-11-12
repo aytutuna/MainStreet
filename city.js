@@ -35,34 +35,28 @@ function turn(d, k) {
 
 var CHUNK = 10;
 
-// The town grows out of the ground round its businesses. Each seed is a business: x, z, the radius built so far and a
-// slower radius behind it; what lies between the two is still rising. Seeds only build their own district, roads are
-// built by any seed a little ahead of the houses, and district WILD (the land round the town) is always there.
-export var SEEDS = 16;
+// The town grows out of the ground lot by lot. Each lot belongs to the nearest business of its district and has a
+// number: the order in which that business builds its lots, nearest first. uOwn holds how many lots each business has
+// built so far (rising through the fraction of the one going up). A piece carries the owner and number of the lot it
+// belongs to; a street carries those of up to four blocks beside it and is there once any of them has begun. Owner -2
+// is the land round the town and the boulevard into it, always there.
+export var OWNERS = 16;
 export var WILD = 99;
-export var ROAD = 9;
-export var GROW = {
-  seed: { value: Array.from({ length: SEEDS }, function () { return new THREE.Vector4(0, 0, -1, -1); }) },
-  dist: { value: new Float32Array(SEEDS) }
-};
+export var GROW = { own: { value: new Float32Array(OWNERS) } };
 var GLSL = [
-  'float gk = aD > 50.0 ? 1.0 : 0.0;',
-  'for (int i = 0; i < ' + SEEDS + '; i++) {',
-  '  vec4 s = uSeed[i];',
-  '  if (gk >= 1.0 || s.z <= 0.0) continue;',
-  '  if (aD < 8.5 && abs(uDist[i] - aD) > 0.5) continue;',
-  '  float d = distance(aC, s.xy) - (aD > 8.5 ? 2.0 : 0.0);',
-  '  gk = max(gk, d <= s.w ? 1.0 : (d < s.z ? (s.z - d) / max(s.z - s.w, 0.001) : 0.0));',
-  '}',
+  'float gk = aG.x < -1.5 ? 1.0 : 0.0;',
+  'if (aG.x > -0.5) gk = max(gk, clamp(uOwn[int(aG.x)] - aG.y, 0.0, 1.0));',
+  'if (aG.z > -0.5) gk = max(gk, clamp(uOwn[int(aG.z)] - aG.w, 0.0, 1.0));',
+  'if (aH.x > -0.5) gk = max(gk, clamp(uOwn[int(aH.x)] - aH.y, 0.0, 1.0));',
+  'if (aH.z > -0.5) gk = max(gk, clamp(uOwn[int(aH.z)] - aH.w, 0.0, 1.0));',
   'gk = smoothstep(0.0, 1.0, gk);',
   'transformed.y = transformed.y * gk - (gk <= 0.0 ? 0.4 : 0.0);'
 ].join('\n');
 
 function growPatch(mat) {
   mat.onBeforeCompile = function (sh) {
-    sh.uniforms.uSeed = GROW.seed;
-    sh.uniforms.uDist = GROW.dist;
-    sh.vertexShader = 'attribute vec2 aC;\nattribute float aD;\nuniform vec4 uSeed[' + SEEDS + '];\nuniform float uDist[' + SEEDS + '];\n' +
+    sh.uniforms.uOwn = GROW.own;
+    sh.vertexShader = 'attribute vec4 aG;\nattribute vec4 aH;\nuniform float uOwn[' + OWNERS + '];\n' +
       sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\n' + GLSL);
   };
   mat.customProgramCacheKey = function () { return 'grow'; };
@@ -84,7 +78,7 @@ export function newCity(lib) {
   var walkCells = {};
   var special = {};
   var arcs = [];
-  var city = { root: new THREE.Group(), rng: rng, warns: warns, tiles: tiles, biz: {}, crossings: [], region: function () { return 1; } };
+  var city = { root: new THREE.Group(), rng: rng, warns: warns, tiles: tiles, biz: {}, crossings: [], lots: [], region: function () { return 1; } };
   // the piece being put: every part of one model rises together, from the middle of its footprint
   var curC = null;
   var curKind = 'thing';
@@ -180,7 +174,7 @@ export function newCity(lib) {
   }
 
   function slab(x0, z0, x1, z1, col, y, h) {
-    flat.push({ x0: x0, z0: z0, x1: x1, z1: z1, col: col, y: y === undefined ? 0.012 : y, h: h || 0.004, k: curKind === 'road' ? 'road' : 'ground' });
+    flat.push({ x0: x0, z0: z0, x1: x1, z1: z1, col: col, y: y === undefined ? 0.012 : y, h: h || 0.004, k: curKind === 'thing' ? 'ground' : curKind });
   }
 
   // a model standing on its own spot, claimed with a footprint a little smaller than its box
@@ -366,6 +360,8 @@ export function newCity(lib) {
   function arcRoad(cx, cz, r, a0, a1) {
     arcs.push({ cx: cx, cz: cz, r: r, a0: a0, a1: a1 });
     curKind = 'road';
+    var am = (a0 + a1) / 2 * Math.PI / 180;
+    curC = [cx + r * Math.cos(am), cz - r * Math.sin(am)];
     var A0 = a0 * Math.PI / 180;
     var A1 = (a1 - a0) * Math.PI / 180;
     var ring = function (ri, ro, from, len, y, col) {
@@ -392,6 +388,7 @@ export function newCity(lib) {
       }
     }
     curKind = 'thing';
+    curC = null;
   }
 
   // the curved sidewalks are drawn as rings, so their half tiles get no slab
@@ -416,7 +413,7 @@ export function newCity(lib) {
         }
       }
     }
-    curKind = 'road';
+    curKind = 'walk';
     for (var w in seen) {
       var q = w.split(',');
       walkCells[w] = 1;
@@ -546,6 +543,7 @@ export function newCity(lib) {
       var f = put(r.it.m, og[0], og[1], r.rot, { s: r.s, tint: r.tint, lod: lod });
       if (onShop && r.it.m.indexOf('commercial/') === 0) onShop(r);
       r.foot = claim(f, r.it.m + '@' + r.px.toFixed(1) + ',' + r.pz.toFixed(1));
+      city.lots.push(r.foot);
     });
     return recs;
   }
@@ -555,7 +553,138 @@ export function newCity(lib) {
     return grown[mat.uuid] || (grown[mat.uuid] = growPatch(mat.clone()));
   }
 
-  // a piece rises from the middle of its footprint; road vertices each grow from where they are, so streets spread
+  // Blocks are the pieces of land between streets, on a half tile grid over the town. Every lot is owned by the
+  // nearest business of its district and numbered in the order that business builds them.
+  var TOWN = [-25.5, 27.3, -4.6, 24.6];
+  var cellBlock = {};
+  var blocks = [];
+  var lotList = [];
+  var owners = [];
+  function blockAt(x, z) {
+    return cellBlock[Math.floor(x * 2) + ',' + Math.floor(z * 2)];
+  }
+  function makeBlocks() {
+    for (var ix = Math.floor(TOWN[0] * 2); ix < Math.ceil(TOWN[1] * 2); ix++) {
+      for (var iz = Math.floor(TOWN[2] * 2); iz < Math.ceil(TOWN[3] * 2); iz++) {
+        var k = ix + ',' + iz;
+        if (roadCells[k] || cellBlock[k] !== undefined) continue;
+        var b = { id: blocks.length, n: 0, x: 0, z: 0, lots: [] };
+        blocks.push(b);
+        var todo = [[ix, iz]];
+        cellBlock[k] = b.id;
+        while (todo.length) {
+          var q = todo.pop();
+          b.n++;
+          b.x += (q[0] + 0.5) / 2;
+          b.z += (q[1] + 0.5) / 2;
+          ORDER.forEach(function (d) {
+            var nx = q[0] + DIRS[d][0];
+            var nz = q[1] + DIRS[d][1];
+            var nk = nx + ',' + nz;
+            if (nx < TOWN[0] * 2 || nx >= TOWN[1] * 2 || nz < TOWN[2] * 2 || nz >= TOWN[3] * 2) return;
+            if (roadCells[nk] || cellBlock[nk] !== undefined) return;
+            cellBlock[nk] = b.id;
+            todo.push([nx, nz]);
+          });
+        }
+        b.x /= b.n;
+        b.z /= b.n;
+      }
+    }
+  }
+  function ownerOf(x, z) {
+    var d = city.region(x, z, 'thing');
+    var best = -2;
+    var bd = 1e9;
+    owners.forEach(function (o, i) {
+      if (o.d !== d) return;
+      var dd = Math.hypot(x - o.x, z - o.z);
+      if (dd < bd) {
+        bd = dd;
+        best = i;
+      }
+    });
+    return best;
+  }
+  // how many of an owner's lots lie nearer to it than a point: a spot with no lot of its own goes up when the
+  // business has built that far
+  function rankAt(o, x, z) {
+    var own = owners[o];
+    var dd = Math.hypot(x - own.x, z - own.z);
+    var n = 0;
+    lotList.forEach(function (l) { if (l.o === o && l.dist < dd) n++; });
+    return n;
+  }
+  function makeLots() {
+    var ids = Object.keys(city.biz);
+    owners = ids.map(function (id) {
+      var at = city.biz[id].at;
+      return { id: id, x: at[0], z: at[2], d: city.region(at[0], at[2], 'thing'), count: 0 };
+    });
+    var feet = city.lots.map(function (f) { return { f: f, biz: false }; });
+    ids.forEach(function (id) { feet.push({ f: city.biz[id].foot, biz: true }); });
+    feet.forEach(function (e) {
+      var f = e.f;
+      var x = (f.x0 + f.x1) / 2;
+      var z = (f.z0 + f.z1) / 2;
+      if (city.region(x, z, 'thing') === WILD) return;
+      var o = ownerOf(x, z);
+      if (o < 0) return;
+      var l = { f: f, x: x, z: z, o: o, dist: e.biz ? -1 : Math.hypot(x - owners[o].x, z - owners[o].z), b: blockAt(x, z) };
+      lotList.push(l);
+    });
+    owners.forEach(function (own, o) {
+      var mine = lotList.filter(function (l) { return l.o === o; }).sort(function (a, b) { return a.dist - b.dist; });
+      mine.forEach(function (l, i) { l.n = i; });
+      own.count = mine.length;
+    });
+    lotList.forEach(function (l) { if (l.b !== undefined) blocks[l.b].lots.push(l); });
+    // a block begins with its earliest lot; one with no lot of its own begins when its owner has built that far
+    blocks.forEach(function (b) {
+      var first = null;
+      b.lots.forEach(function (l) { if (!first || l.n < first.n) first = l; });
+      if (first) b.key = [first.o, first.n];
+      else {
+        var o = ownerOf(b.x, b.z);
+        b.key = o < 0 ? [-2, 0] : [o, rankAt(o, b.x, b.z)];
+      }
+    });
+    city.lots = lotList;
+    city.owners = owners;
+  }
+
+  // the owners and numbers a spot waits for: up to four pairs
+  function keyAt(x, z, k) {
+    if (city.region(x, z, k) === WILD) return [-2, 0];
+    var b = blockAt(x, z);
+    if (b === undefined) {
+      // on a street: the blocks round it
+      var out = [];
+      var seen = {};
+      [[1, 0], [-1, 0], [0, 1], [0, -1], [0.8, 0.8], [-0.8, 0.8], [0.8, -0.8], [-0.8, -0.8], [1.6, 0], [-1.6, 0], [0, 1.6], [0, -1.6]].forEach(function (v) {
+        var nb = blockAt(x + v[0], z + v[1]);
+        if (nb === undefined || seen[nb] || out.length >= 8) return;
+        seen[nb] = 1;
+        out.push(blocks[nb].key[0], blocks[nb].key[1]);
+      });
+      return out.length ? out : [-2, 0];
+    }
+    var blk = blocks[b];
+    if (k !== 'thing') return blk.key;
+    var best = null;
+    var bd = 2.5;
+    blk.lots.forEach(function (l) {
+      var f = l.f;
+      var inside = x > f.x0 - 0.9 && x < f.x1 + 0.9 && z > f.z0 - 0.9 && z < f.z1 + 0.9;
+      var dd = inside ? 0 : Math.hypot(x - l.x, z - l.z);
+      if (dd < bd) {
+        bd = dd;
+        best = l;
+      }
+    });
+    return best ? [best.o, best.n] : blk.key;
+  }
+
   function tagGrowth(g, c, k) {
     var pos = g.attributes.position;
     var n = pos.count;
@@ -564,18 +693,14 @@ export function newCity(lib) {
       var bb = g.boundingBox;
       c = [(bb.min.x + bb.max.x) / 2, (bb.min.z + bb.max.z) / 2];
     }
-    var d = city.region(c[0], c[1], k);
-    var spread = k === 'road' && d !== WILD;
-    if (spread) d = ROAD;
-    var ac = new Float32Array(n * 2);
-    var ad = new Float32Array(n);
+    var key = keyAt(c[0], c[1], k);
+    var ag = new Float32Array(n * 4).fill(-1);
+    var ah = new Float32Array(n * 4).fill(-1);
     for (var i = 0; i < n; i++) {
-      ac[i * 2] = spread ? pos.getX(i) : c[0];
-      ac[i * 2 + 1] = spread ? pos.getZ(i) : c[1];
-      ad[i] = d;
+      for (var j = 0; j < key.length && j < 8; j++) (j < 4 ? ag : ah)[i * 4 + j % 4] = key[j];
     }
-    g.setAttribute('aC', new THREE.BufferAttribute(ac, 2));
-    g.setAttribute('aD', new THREE.BufferAttribute(ad, 1));
+    g.setAttribute('aG', new THREE.BufferAttribute(ag, 4));
+    g.setAttribute('aH', new THREE.BufferAttribute(ah, 4));
     return g;
   }
 
@@ -586,6 +711,8 @@ export function newCity(lib) {
 
   function finish() {
     var root = city.root;
+    makeBlocks();
+    makeLots();
     for (var k in batches) {
       var b = batches[k];
       var geo = merged(b.geoms);
@@ -632,7 +759,7 @@ export function newCity(lib) {
       tagGrowth(g, null, f.k);
       (boxes[chunkOf(g)] = boxes[chunkOf(g)] || []).push(g);
     });
-    var flatMat = growPatch(new THREE.MeshLambertMaterial({ vertexColors: true, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 }));
+    var flatMat = growPatch(new THREE.MeshLambertMaterial({ vertexColors: true, polygonOffset: true, polygonOffsetFactor: -1, polygonOffsetUnits: -1 }));
     for (var bk in boxes) {
       var fm = new THREE.Mesh(mergeGeometries(boxes[bk], false), flatMat);
       fm.receiveShadow = true;
@@ -668,6 +795,7 @@ export function newCity(lib) {
   city.row = row;
   city.commit = commit;
   city.finish = finish;
+  city.keyAt = keyAt;
   city.warn = warn;
   return city;
 }
