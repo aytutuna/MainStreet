@@ -1,14 +1,13 @@
 import * as THREE from 'three';
-import { clone } from 'three/addons/utils/SkeletonUtils.js';
 import { CARS, FOLK } from './plan.js';
+import { figure } from './school3d.js';
 
 // Cars follow closed lanes on the right of the road, people walk the sidewalks and a few cross at the stripes.
 // Nothing is checked against a map: every car looks ahead for another car or a person, and each junction lets one
-// car through at a time (the circle three), the boulevard junctions have signals as well.
+// car through at a time (the circle takes four), and the boulevard junctions have signals as well.
 
 var RING = 1.0;
 var SPEED = 1.0;
-var BOXES = [];
 
 function arc(a0, a1) {
   var pts = [];
@@ -78,20 +77,15 @@ function route(ring, pts, off, mid, pts2) {
     var b = out[i % out.length];
     cum.push(cum[i - 1] + Math.hypot(b[0] - a[0], b[1] - a[1]));
   }
-  return { p: out, cum: cum, len: cum[out.length], ringLen: 0 };
+  return { p: out, cum: cum, len: cum[out.length] };
 }
 
 // the lane of the crescent: Park Street west to the curve, down the straight and round the second curve to Main Street
 function crescent() {
   var pts = [];
-  var i;
-  for (i = 0; i <= 8; i++) {
-    var a = (90 + 90 * i / 8) * Math.PI / 180;
-    pts.push([-16.5 + 1.75 * Math.cos(a), 6.5 - 1.75 * Math.sin(a)]);
-  }
-  for (i = 0; i <= 8; i++) {
-    a = (180 + 90 * i / 8) * Math.PI / 180;
-    pts.push([-16.5 + 1.75 * Math.cos(a), 8.5 - 1.75 * Math.sin(a)]);
+  for (var i = 0; i <= 18; i++) {
+    var a = (90 + 180 * i / 18) * Math.PI / 180;
+    pts.push([-15.5 + 2.75 * Math.cos(a), 7.5 - 2.75 * Math.sin(a)]);
   }
   return pts;
 }
@@ -101,7 +95,7 @@ var LOOPS = [
   [arc(284.5, 345.5), [[2, 0], [14, 0], [14, 15], [1, 15], [1, 2], [0, 2], [0, 1.5]]],
   [arc(284.5, 345.5), [[2, 0], [26, 0], [26, 20], [1, 20], [1, 2], [0, 2], [0, 1.5]]],
   [arc(14.5, 255.5), [[0, 1.5], [0, 2], [-1, 2], [-1, 20], [26, 20], [26, 0], [2, 0]]],
-  [arc(14.5, 255.5), [[0, 1.5], [0, 2], [-1, 2], [-1, 5], [-16.5, 5]], crescent(), [[-16.5, 10], [-1, 10], [-1, 20], [26, 20], [26, 0], [2, 0]]]
+  [arc(14.5, 255.5), [[0, 1.5], [0, 2], [-1, 2], [-1, 5], [-15, 5]], crescent(), [[-15, 10], [-1, 10], [-1, 20], [26, 20], [26, 0], [2, 0]]]
 ];
 
 // the places where roads cross; the boulevard ones have signals
@@ -192,7 +186,6 @@ export function Life(scene, lib, town) {
   routes.forEach(function (r) { r.gates = gates(r); });
   var cars = [];
   var folk = [];
-  var obstacles = [];
   var clock = 0;
   var lights = [];
 
@@ -213,7 +206,7 @@ export function Life(scene, lib, town) {
 
   function makeCars() {
     var k = 0;
-    routes.forEach(function (r, ri) {
+    routes.forEach(function (r) {
       var n = 4;
       for (var i = 0; i < n; i++) {
         var ref = CARS[(k * 5 + 1) % CARS.length];
@@ -221,31 +214,7 @@ export function Life(scene, lib, town) {
         var c = { r: r, s: (i + 0.5) * r.len / n + (rnd() - 0.5) * 0.4, v: 0, obj: carObject(ref), id: cars.length, gi: 0, held: [], len: 0.7, x: 0, z: 0, hx: 0, hz: 1 };
         cars.push(c);
       }
-      void ri;
     });
-  }
-
-  function personObject(ref) {
-    var m = lib.model(ref);
-    var scene2 = clone(m.gltf.scene);
-    var mats = {};
-    scene2.traverse(function (o) {
-      if (!o.isMesh) return;
-      var src = o.material;
-      var key = src.map ? src.map.uuid : src.uuid;
-      if (!mats[key]) mats[key] = new THREE.MeshLambertMaterial({ map: src.map || null, color: src.map ? 0xffffff : src.color });
-      o.material = mats[key];
-      o.castShadow = false;
-    });
-    scene2.scale.setScalar(0.28);
-    var o2 = new THREE.Group();
-    o2.add(scene2);
-    scene.add(o2);
-    var mixer = new THREE.AnimationMixer(scene2);
-    var clip = THREE.AnimationClip.findByName(m.gltf.animations, 'walk');
-    var act = mixer.clipAction(clip);
-    act.play();
-    return { obj: o2, mixer: mixer, act: act };
   }
 
   // a line walked to and fro, or round when closed. A crossing waits at each end for the road to clear
@@ -257,7 +226,9 @@ export function Life(scene, lib, town) {
       var b = pts[i % n];
       cum.push(cum[i - 1] + Math.hypot(b[0] - a[0], b[1] - a[1]));
     }
-    var p = personObject(ref);
+    var p = figure(lib, ref, 'walk', 0.28);
+    scene.add(p.obj);
+    if (!p.act) p.act = { paused: false, time: 0 };
     var w = { p: pts, cum: cum, len: cum[cum.length - 1], closed: closed, cross: cross, s: rnd() * cum[cum.length - 1], dir: 1, v: speed, obj: p.obj, mixer: p.mixer,
       act: p.act, wait: 0, x: 0, z: 0, hx: 0, hz: 1, onRoad: false };
     p.act.time = rnd() * 1.5;
@@ -292,13 +263,12 @@ export function Life(scene, lib, town) {
     var k = 0;
     var next = function () { return FOLK[(k++ * 5 + 3) % FOLK.length]; };
     // round the blocks on the sidewalk, a lane each way: 0.12 from the building line or 0.4 off it
-    [[15, 1, 25, 4], [2, 6, 13, 9], [15, 6, 25, 9], [2, 11, 13, 14], [15, 11, 25, 14], [2, 16, 13, 19], [15, 16, 25, 19]].forEach(function (b, i) {
+    [[15, 1, 25, 4], [2, 6, 13, 9], [15, 6, 25, 9], [2, 11, 13, 14], [15, 11, 25, 14], [2, 16, 13, 19], [15, 16, 25, 19]].forEach(function (b) {
       [0.12, 0.4].forEach(function (o, j) {
         var pts = j ? [[b[0] - o, b[1] - o], [b[2] + o, b[1] - o], [b[2] + o, b[3] + o], [b[0] - o, b[3] + o]]
           : [[b[0] - o, b[3] + o], [b[2] + o, b[3] + o], [b[2] + o, b[1] - o], [b[0] - o, b[1] - o]];
         walker(pts, true, false, 0.26 + rnd() * 0.1, next());
       });
-      void i;
     });
     // along a street and back
     [[1.12, -24, -3], [4.38, -15, -3], [9.12, -15, -3], [10.88, -15, -3], [14.12, -24, -3], [16.12, -24, -3], [19.12, -15, -3], [-1.12, -24, -3],
@@ -507,7 +477,7 @@ export function Life(scene, lib, town) {
     }
   }
 
-  function update(dt, now) {
+  function update(dt) {
     clock += dt;
     var ph = phase(clock);
     for (var i = 0; i < lights.length; i++) {
@@ -515,9 +485,8 @@ export function Life(scene, lib, town) {
       lights[i].ew.material = ph === 'ew' ? lamp.green : lamp.red;
     }
     stepCars(dt);
-    stepFolk(dt);
+    if (!hidden) stepFolk(dt);
     shade();
-    void now;
   }
 
   makeCars();
@@ -549,9 +518,16 @@ export function Life(scene, lib, town) {
     blobs.instanceMatrix.needsUpdate = true;
   }
   stepCars(0.001);
+  var hidden = false;
+  this.far = function (v) {
+    hidden = v;
+    folk.forEach(function (w) {
+      w.obj.visible = !v;
+      w.onRoad = false;
+    });
+  };
   this.update = update;
   this.reset = reset;
-  this.counts = function () { return { cars: cars.length, folk: folk.length }; };
   this.cars = cars;
   this.folk = folk;
 }

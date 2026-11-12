@@ -5,9 +5,8 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 // half tiles around the road and a lot starts at its edge. Models face +z, so a building north of a street is turned 0 and
 // one south of it half a circle.
 
-export var PAVE = 0xc9d0f0;
-export var ASPH = 0x5f6478;
-export var GRASS = 0x84c26c;
+var PAVE = 0xc9d0f0;
+var ASPH = 0x5f6478;
 export var LAWN = 0x93cc78;
 export var DIRT = 0xb9915f;
 export var PLAZA = 0xd9d3c6;
@@ -34,9 +33,13 @@ function turn(d, k) {
   return v[0] === 0 ? (v[1] < 0 ? 'N' : 'S') : (v[0] > 0 ? 'E' : 'W');
 }
 
+var CHUNK = 10;
+
 export function newCity(lib) {
   var rng = seeded(11);
   var batches = {};
+  var lodBatches = {};
+  var lowBatches = {};
   var flat = [];
   var claims = [];
   var warns = [];
@@ -45,14 +48,12 @@ export function newCity(lib) {
   var green = {};
   var walkCells = {};
   var special = {};
-  var city = { root: new THREE.Group(), rng: rng, warns: warns, tiles: tiles, roadCells: roadCells, walkCells: walkCells, claims: claims, biz: {}, crossings: [], lamps: [],
-    signals: [], extras: [], DIRS: DIRS, FACE: FACE };
+  var arcs = [];
+  var city = { root: new THREE.Group(), rng: rng, warns: warns, tiles: tiles, biz: {}, crossings: [] };
 
   function warn(msg) {
     warns.push(msg);
   }
-
-  // ---- placing
 
   function rect(m, x, z, rot, s) {
     var c = Math.cos(rot);
@@ -85,8 +86,14 @@ export function newCity(lib) {
     m.parts.forEach(function (p) {
       var g = p.geom.clone();
       g.applyMatrix4(mat);
-      addGeom(o.tint ? tintMat(p.mat, o.tint) : p.mat, g);
+      var mt = o.tint ? tintMat(p.mat, o.tint) : p.mat;
+      if (o.lod) {
+        var lk = mt.uuid + '|' + chunkOf(g);
+        var lb = lodBatches[lk] || (lodBatches[lk] = { mat: mt, geoms: [] });
+        lb.geoms.push(g);
+      } else addGeom(mt, g);
     });
+    if (o.lod) lowModel(m, mat, o.lod);
     return rect(m, x, z, rot || 0, s);
   }
 
@@ -130,18 +137,6 @@ export function newCity(lib) {
   }
 
   // a model standing on its own spot, claimed with a footprint a little smaller than its box
-  function prop(ref, x, z, rot, o) {
-    o = o || {};
-    var f = put(ref, x, z, rot, o);
-    var k = o.shrink === undefined ? 0 : o.shrink;
-    f.x0 += k;
-    f.x1 -= k;
-    f.z0 += k;
-    f.z1 -= k;
-    if (!o.free) claim(f, o.tag || ref, o.walk);
-    return f;
-  }
-
   function free(f, walk) {
     if (cellsOver(f, roadCells, 0.0001)) return false;
     if (!walk && cellsOver(f, walkCells, 0.0001)) return false;
@@ -171,14 +166,39 @@ export function newCity(lib) {
     b.geoms.push(g);
   }
 
+  // the simple stand-in shown at overview zoom: a walls box and a roof box in the given colours
+  function lowModel(m, mat, lod) {
+    var b = m.box;
+    var h = b.h;
+    var roof = lod.roof === undefined ? 0x50556a : lod.roof;
+    var rf = lod.rf === undefined ? 0.12 : lod.rf;
+    var part = function (hh, y, col) {
+      var g = new THREE.BoxGeometry(b.x1 - b.x0, hh, b.z1 - b.z0);
+      g.translate((b.x0 + b.x1) / 2, y + hh / 2, (b.z0 + b.z1) / 2);
+      g.applyMatrix4(mat);
+      var mt = solidMats[col] || (solidMats[col] = new THREE.MeshLambertMaterial({ color: col }));
+      var lb = lowBatches[mt.uuid] || (lowBatches[mt.uuid] = { mat: mt, geoms: [] });
+      lb.geoms.push(g);
+    };
+    part(h * (1 - rf), 0, lod.wall);
+    part(h * rf, h * (1 - rf), roof);
+  }
+
   var tints = {};
   function tintMat(mat, tint) {
     var k = mat.uuid + tint;
     if (!tints[k]) tints[k] = new THREE.MeshLambertMaterial({ map: mat.map, color: tint, emissive: new THREE.Color(tint).multiplyScalar(0.1) });
     return tints[k];
   }
+  // static pieces are merged per material and per square of CHUNK tiles, so frustum culling can drop what is off screen
+  function chunkOf(g) {
+    g.computeBoundingBox();
+    var b = g.boundingBox;
+    return Math.floor((b.min.x + b.max.x) / 2 / CHUNK) + ',' + Math.floor((b.min.z + b.max.z) / 2 / CHUNK);
+  }
   function addGeom(mat, g) {
-    var b = batches[mat.uuid] || (batches[mat.uuid] = { mat: mat, geoms: [] });
+    var k = mat.uuid + '|' + chunkOf(g);
+    var b = batches[k] || (batches[k] = { mat: mat, geoms: [] });
     b.geoms.push(g);
   }
   // a block with its own transform (tilted awnings and the like)
@@ -198,8 +218,6 @@ export function newCity(lib) {
     claims.push(f);
     return f;
   }
-
-  // ---- roads
 
   function tile(x, z, piece) {
     tiles[x + ',' + z] = { x: x, z: z, piece: piece };
@@ -242,6 +260,7 @@ export function newCity(lib) {
   var BASE = { 'road-straight': 'EW', 'road-intersection': 'EWS', 'road-crossroad': 'NESW', 'road-bend-sidewalk': 'WS', 'road-end': 'E', 'road-end-round': 'E' };
 
   function pickPiece(t) {
+    if (t.piece === 'road-straight') return { name: t.piece, rot: 0 };
     var c = connected(t.x, t.z);
     var n = Object.keys(c).length;
     var name;
@@ -294,6 +313,47 @@ export function newCity(lib) {
     }
   }
 
+  // a curved road drawn in the style of the kit: asphalt, a pale kerb each side, a dashed line. Angles run anticlockwise
+  // on the map (0 is east, 90 north); r is the centre line, the road is one tile wide.
+  function arcRoad(cx, cz, r, a0, a1) {
+    arcs.push({ cx: cx, cz: cz, r: r, a0: a0, a1: a1 });
+    var A0 = a0 * Math.PI / 180;
+    var A1 = (a1 - a0) * Math.PI / 180;
+    var ring = function (ri, ro, from, len, y, col) {
+      var g = new THREE.RingGeometry(ri, ro, Math.max(2, Math.ceil(len * 14)), 1, from, len);
+      g.rotateX(-Math.PI / 2);
+      g.translate(cx, y, cz);
+      var mt = solidMats[col] || (solidMats[col] = new THREE.MeshLambertMaterial({ color: col, side: THREE.DoubleSide }));
+      addGeom(mt, g);
+    };
+    ring(r - 0.5, r + 0.5, A0, A1, 0.015, ASPH);
+    ring(r - 0.5, r - 0.44, A0, A1, 0.02, 0xc9d0f0);
+    ring(r + 0.44, r + 0.5, A0, A1, 0.02, 0xc9d0f0);
+    ring(r + 0.5, r + 1.0, A0, A1, 0.016, PAVE);
+    ring(r - 1.0, r - 0.5, A0, A1, 0.016, PAVE);
+    for (var a = a0 + 3; a < a1 - 3; a += 8) ring(r - 0.012, r + 0.012, a * Math.PI / 180, 0.07, 0.021, 0xe6e9f6);
+    for (var ix = Math.floor((cx - r - 1) * 2); ix < Math.ceil((cx + r + 1) * 2); ix++) {
+      for (var iz = Math.floor((cz - r - 1) * 2); iz < Math.ceil((cz + r + 1) * 2); iz++) {
+        var x = ix / 2 + 0.25;
+        var z = iz / 2 + 0.25;
+        var d = Math.hypot(x - cx, z - cz);
+        var ang = Math.atan2(-(z - cz), x - cx) * 180 / Math.PI;
+        if (ang < 0) ang += 360;
+        if (Math.abs(d - r) <= 0.62 && ang >= a0 - 4 && ang <= a1 + 4) roadCells[ix + ',' + iz] = 1;
+      }
+    }
+  }
+
+  // the curved sidewalks are drawn as rings, so their half tiles get no slab
+  function onArcWalk(x, z) {
+    return arcs.some(function (a) {
+      var d = Math.hypot(x - a.cx, z - a.cz);
+      var ang = Math.atan2(-(z - a.cz), x - a.cx) * 180 / Math.PI;
+      if (ang < 0) ang += 360;
+      return Math.abs(d - a.r) > 0.5 && Math.abs(d - a.r) <= 1.5 && ang >= a.a0 - 4 && ang <= a.a1 + 4;
+    });
+  }
+
   // sidewalk on every half tile that touches the road, unless it is reserved as green
   function layWalks() {
     var seen = {};
@@ -309,11 +369,10 @@ export function newCity(lib) {
     for (var w in seen) {
       var q = w.split(',');
       walkCells[w] = 1;
+      if (onArcWalk((+q[0] + 0.5) / 2, (+q[1] + 0.5) / 2)) continue;
       slab(+q[0] / 2, +q[1] / 2, +q[0] / 2 + 0.5, +q[1] / 2 + 0.5, PAVE, 0.016, 0.004);
     }
   }
-
-  // ---- rows of buildings
 
   // a stage of a business is one model or a list of models standing side by side
   function span(ref) {
@@ -420,40 +479,24 @@ export function newCity(lib) {
   function commit(recs, onBiz, onShop) {
     recs.forEach(function (r) {
       if (r.it.biz) {
-        r.foot = { x0: 0, x1: 0, z0: 0, z1: 0 };
-        // the lot is the widest and deepest stage of the business, front-centred on the line
-        var lw = r.w;
-        var ld = r.d;
-        var q = [r.px - r.dir[0] * 0, r.pz];
-        var cx = r.px;
-        var cz = r.pz;
+        // the lot is as wide and deep as the biggest stage of the business
         var tx = r.dir[1];
         var tz = -r.dir[0];
-        // the lot spans lw along the row and ld back from the line
-        var a = [cx - tx * lw / 2, cz - tz * lw / 2];
-        var b2 = [cx + tx * lw / 2 - r.dir[0] * ld, cz + tz * lw / 2 - r.dir[1] * ld];
-        void q;
+        var a = [r.px - tx * r.w / 2, r.pz - tz * r.w / 2];
+        var b2 = [r.px + tx * r.w / 2 - r.dir[0] * r.d, r.pz + tz * r.w / 2 - r.dir[1] * r.d];
         r.foot = claim({ x0: Math.min(a[0], b2[0]), x1: Math.max(a[0], b2[0]), z0: Math.min(a[1], b2[1]), z1: Math.max(a[1], b2[1]) }, r.it.biz);
         onBiz(r);
         return;
       }
       var mm = lib.model(r.it.m);
       var og = origin(mm, r.px, r.pz, r.rot, r.s);
-      var f = put(r.it.m, og[0], og[1], r.rot, { s: r.s, tint: r.tint });
+      var lod = r.it.m.indexOf('suburban/') === 0 ? { wall: 0xeeeeee, roof: 0x58c47a, rf: 0.32 } : { wall: r.tint || 0xdcdce8, roof: 0x50556a, rf: 0.1 };
+      var f = put(r.it.m, og[0], og[1], r.rot, { s: r.s, tint: r.tint, lod: lod });
       if (onShop && r.it.m.indexOf('commercial/') === 0) onShop(r);
       r.foot = claim(f, r.it.m + '@' + r.px.toFixed(1) + ',' + r.pz.toFixed(1));
     });
     return recs;
   }
-
-  // the model of a record placed at its lot (used for businesses, which are not merged)
-  function lotMatrix(ref, r) {
-    var m = lib.model(ref);
-    var o = origin(m, r.px, r.pz, r.rot, r.s);
-    return matrix(o[0], 0, o[1], r.rot, r.s);
-  }
-
-  // ---- finishing
 
   function finish() {
     var root = city.root;
@@ -467,7 +510,22 @@ export function newCity(lib) {
       mesh.receiveShadow = true;
       root.add(mesh);
     }
-    var boxes = [];
+    var lods = { near: [], far: [] };
+    [[lodBatches, 'near'], [lowBatches, 'far']].forEach(function (set) {
+      for (var q in set[0]) {
+        var lg = mergeGeometries(set[0][q].geoms, false);
+        set[0][q].geoms.forEach(function (g) { g.dispose(); });
+        if (!lg) continue;
+        var lm = new THREE.Mesh(lg, set[0][q].mat);
+        lm.castShadow = set[1] === 'near';
+        lm.receiveShadow = true;
+        lm.visible = set[1] === 'near';
+        root.add(lm);
+        lods[set[1]].push(lm);
+      }
+    });
+    city.lods = lods;
+    var boxes = {};
     flat.forEach(function (f) {
       var g = new THREE.BoxGeometry(f.x1 - f.x0, f.h, f.z1 - f.z0);
       g.translate((f.x0 + f.x1) / 2, f.y + f.h / 2, (f.z0 + f.z1) / 2);
@@ -481,20 +539,19 @@ export function newCity(lib) {
         a[i * 3 + 2] = col.b;
       }
       g.setAttribute('color', new THREE.BufferAttribute(a, 3));
-      boxes.push(g);
+      (boxes[chunkOf(g)] = boxes[chunkOf(g)] || []).push(g);
     });
-    if (boxes.length) {
-      var fm = new THREE.Mesh(mergeGeometries(boxes, false), new THREE.MeshLambertMaterial({ vertexColors: true, polygonOffset: true, polygonOffsetFactor: 1,
-        polygonOffsetUnits: 1 }));
+    var flatMat = new THREE.MeshLambertMaterial({ vertexColors: true, polygonOffset: true, polygonOffsetFactor: 1, polygonOffsetUnits: 1 });
+    for (var bk in boxes) {
+      var fm = new THREE.Mesh(mergeGeometries(boxes[bk], false), flatMat);
       fm.receiveShadow = true;
       root.add(fm);
-      boxes.forEach(function (g) { g.dispose(); });
+      boxes[bk].forEach(function (g) { g.dispose(); });
     }
     return root;
   }
 
   city.put = put;
-  city.prop = prop;
   city.tryProp = tryProp;
   city.tintMat = tintMat;
   city.addGeom = addGeom;
@@ -512,16 +569,13 @@ export function newCity(lib) {
   city.hline = hline;
   city.vline = vline;
   city.big = big;
+  city.arcRoad = arcRoad;
   city.greenRect = greenRect;
   city.placeRoads = placeRoads;
   city.layWalks = layWalks;
   city.row = row;
   city.commit = commit;
-  city.lotMatrix = lotMatrix;
   city.finish = finish;
-  city.wOf = wOf;
-  city.dOf = dOf;
   city.warn = warn;
-  city.cellsOf = cellsOf;
   return city;
 }

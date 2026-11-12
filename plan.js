@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { newCity, PAVE, ASPH, GRASS, LAWN, DIRT, PLAZA } from './city.js';
+import { newCity, LAWN, DIRT, PLAZA } from './city.js';
 
 var C = 'commercial/building-';
 var S = 'suburban/building-type-';
@@ -14,7 +14,7 @@ export var POOL = {
 };
 
 var BRICK = [0xffd6c4, 0xffc9b0, 0xffe6b8, 0xfff0d0, 0xcfe4ff, 0xd8f0d0, 0xffd9e8, 0xf4ecdf, 0xe8d8ff, 0xffddb8];
-var SOFT = [0xffffff, 0xfff0dc, 0xe6efff, 0xf4ffe8, 0xffe9e0];
+var CARCOL = [0xd9433a, 0x2a5fa8, 0xf0c040, 0x2f8f5a, 0xe8e8ee, 0x555a66, 0xe8802a];
 var AWN = [0xd9433a, 0x2f8f5a, 0x2a5fa8, 0xe8a020, 0x8a4a9a, 0xd9433a];
 
 export var CARS = ['sedan', 'suv', 'taxi', 'van', 'hatchback-sports', 'sedan-sports', 'suv-luxury', 'truck', 'delivery'].map(function (n) { return 'car/' + n; });
@@ -56,8 +56,6 @@ export function modelList() {
   }
   return Object.keys(all);
 }
-
-// ---- small drawing helpers
 
 function label(text, col, w, h, ink) {
   var k = document.createElement('canvas');
@@ -123,9 +121,6 @@ function mergeGroup(g) {
 export function planTown(lib) {
   var c = newCity(lib);
   var rng = c.rng;
-  var rows = [];
-
-  // ---- streets
 
   function streets() {
     c.big('road-roundabout', 0, 0, 0, 3, ['0,-2', '2,0', '0,2', '-2,0']);
@@ -137,9 +132,11 @@ export function planTown(lib) {
     c.vline(-1, 3, 52);
     c.vline(1, 3, 52);
     [5, 10, 15, 20].forEach(function (z) { c.tile(0, z); });
-    c.hline(5, -16, -2);
+    c.hline(5, -15, -2);
+    c.tile(-15, 5, 'road-straight');
     c.hline(5, 2, 26);
-    c.hline(10, -16, -2);
+    c.hline(10, -15, -2);
+    c.tile(-15, 10, 'road-straight');
     c.hline(10, 2, 26);
     c.hline(15, -25, -2);
     c.tile(-26, 15, 'road-end-round');
@@ -148,15 +145,11 @@ export function planTown(lib) {
     c.hline(20, 2, 26);
     c.vline(14, 1, 19);
     c.vline(26, 1, 19);
-    c.big('road-curve', -17.5, 5.5, 1, 2, ['-16,5', '-18,7']);
-    c.big('road-curve', -17.5, 9.5, 2, 2, ['-18,8', '-16,10']);
-    c.vline(-18, 7, 8);
+    c.arcRoad(-15.5, 7.5, 2.5, 90, 270);
     c.tile(-17, 20, 'road-end-round');
     // the median and the grounds that must not become sidewalk
     c.greenRect(-0.5, 2.5, 0.5, 35);
   }
-
-  // ---- street furniture
 
   // trees and lamps along a straight run of sidewalk: axis 'x' means a street running east to west at z
   function furnish(axis, at, from, to, side, lampEvery, treeEvery, skip) {
@@ -170,8 +163,7 @@ export function planTown(lib) {
       if (lampEvery && k % (lampEvery * 2) === 0) {
         var toRoad = axis === 'x' ? [0, -side] : [-side, 0];
         var rot = Math.atan2(-toRoad[0], -toRoad[1]);
-        var f = c.tryProp('roads/light-curved', x, z, rot, { walk: true, onWalk: true, tag: 'lamp' });
-        if (f) c.lamps.push([x, z]);
+        c.tryProp('roads/light-curved', x, z, rot, { walk: true, onWalk: true, tag: 'lamp' });
       } else if (treeEvery && (k - lampEvery) % (treeEvery * 2) === 0) {
         c.tryProp('suburban/tree-large', x, z, rng() * 6, { walk: true, onWalk: true, s: 1.5, tag: 'tree', shrink: 0.04 });
       }
@@ -191,7 +183,7 @@ export function planTown(lib) {
       return Math.hypot(x, z) < 2.8;
     };
     // east-west streets
-    [[0, -25, 26], [5, -16, 26], [10, -16, 26], [15, -25, 26], [20, -17, -2], [20, 2, 26]].forEach(function (s) {
+    [[0, -25, 26], [5, -15, 26], [10, -15, 26], [15, -25, 26], [20, -17, -2], [20, 2, 26]].forEach(function (s) {
       furnish('x', s[0], s[1], s[2], -1, 3, 1.5, clear);
       furnish('x', s[0], s[1] + 0.75, s[2], 1, 3, 1.5, clear);
     });
@@ -209,8 +201,6 @@ export function planTown(lib) {
       else c.tryProp('suburban/tree-large', 0, z, rng() * 6, { walk: true, s: 1.5, tag: 'tree', shrink: 0.04 });
     }
   }
-
-  // ---- businesses
 
   function bizModel(ref, r, h, tint) {
     var refs = Array.isArray(ref) ? ref : [ref];
@@ -245,23 +235,15 @@ export function planTown(lib) {
     var sp = SHOPS[id];
     var m = new THREE.Mesh(new THREE.PlaneGeometry(0.6, 0.15), new THREE.MeshBasicMaterial({ map: label(sp.sign, sp.col, 256, 64) }));
     var d = r.dir;
-    var tx = d[1];
-    var tz = -d[0];
-    var wide = Math.min(1, r.w);
-    m.scale.set(Math.min(1.1, wide / 0.7), 1, 1);
+    m.scale.set(Math.min(1.1, Math.min(1, r.w) / 0.7), 1, 1);
     m.position.set(r.px + d[0] * 0.012, 0.36, r.pz + d[1] * 0.012);
     m.rotation.y = r.rot;
-    void tx;
-    void tz;
     return m;
   }
 
   // a fenced dirt lot with a crane, a digger, barriers and a price board
   function site(id, r, name, price) {
     var g = new THREE.Group();
-    var d = r.dir;
-    var tx = d[1];
-    var tz = -d[0];
     var local = new THREE.Group();
     local.position.set(r.px, 0, r.pz);
     local.rotation.y = r.rot;
@@ -320,47 +302,53 @@ export function planTown(lib) {
     local.add(board);
     local.add(box(0.03, 0.22, 0.03, 0x6b4a2a, -0.28, 0.012, -0.1));
     local.add(box(0.03, 0.22, 0.03, 0x6b4a2a, 0.28, 0.012, -0.1));
-    void tx;
-    void tz;
     return mergeGroup(g);
+  }
+
+  // each milestone of a business changes it: the model changes at 10, 50 and 100 (the stage models spread over the list),
+  // bunting hangs from it at 25 and gold trim crowns it at 100
+  function stageDeco(st, g, r, h) {
+    var local = new THREE.Group();
+    local.position.set(r.px, 0, r.pz);
+    local.rotation.y = r.rot;
+    var w = Math.min(r.w * 0.9, 1.3);
+    if (st === 3 || st === 5) {
+      local.add(box(w, 0.008, 0.008, 0x555a6a, 0, 0.56, 0.015));
+      for (var i = 0; i < 7; i++) local.add(box(0.05, 0.07, 0.01, AWN[i % AWN.length], -w / 2 + (i + 0.5) * w / 7, 0.5, 0.018));
+    }
+    if (st === 5) {
+      local.add(box(w, 0.04, 0.05, 0xf0c040, 0, h.v - 0.02, 0.012));
+      [-1, 1].forEach(function (k) { local.add(box(0.05, h.v, 0.05, 0xf0c040, k * w / 2, 0, 0.012)); });
+    }
+    g.add(local);
   }
 
   function onBiz(r) {
     var id = r.it.biz;
     var sp = SHOPS[id];
-    var h = { v: 0 };
-    var models = [];
-    var heights = [];
-    var info = { foot: r.foot, rec: r };
-    var name = BZ[id] ? BZ[id].name : id;
-    var s0 = site(id, r, name, short(BZ[id].c0));
-    models.push(s0);
-    heights.push(0.9);
-    sp.m.forEach(function (ref) {
+    var models = [site(id, r, BZ[id].name, short(BZ[id].c0))];
+    var heights = [0.9];
+    var pick = sp.m.length === 4 ? [0, 1, 2, 3, 3] : [0, 1, 1, 2, 2];
+    for (var st = 1; st <= 5; st++) {
+      var ref = sp.m[pick[st - 1]];
       var hh = { v: 0 };
       var g = bizModel(ref, r, hh, sp.tint);
       g.add(signFor(id, r, hh));
       deco(id, g, r, hh, ref);
+      stageDeco(st, g, r, hh);
+      mergeGroup(g);
       models.push(g);
       heights.push(hh.v);
-    });
-    info.build = function () { return models; };
-    // stages 0 to 5 show the site, then the models, the last one for stages 4 and 5
-    var map = sp.m.length === 4 ? [0, 1, 2, 3, 4, 4] : sp.m.length === 3 ? [0, 1, 2, 2, 3, 3] : [0, 1, 2, 2, 3, 3];
-    info.pick = function (st) { return map[Math.min(st, map.length - 1)]; };
+    }
+    var info = { foot: r.foot, rec: r, build: function () { return models; }, pick: function (st) { return st; } };
     info.h = Math.max.apply(null, heights);
     info.at = [r.px + r.dir[0] * 0.3, 0, r.pz + r.dir[1] * 0.3];
     info.top = function () {
-      var hh = heights[info.pick(Math.max(0, info.shown))] || 0.9;
-      return [r.px - r.dir[0] * r.d / 2, hh + 0.08, r.pz - r.dir[1] * r.d / 2];
+      return [r.px - r.dir[0] * r.d / 2, (heights[Math.max(0, info.shown)] || 0.9) + (sp.prop ? 0.5 : 0.1), r.pz - r.dir[1] * r.d / 2];
     };
-    var gx = r.px + r.dir[0] * 0.3;
-    var gz = r.pz + r.dir[1] * 0.3;
-    c.claim({ x0: gx - 0.2, x1: gx + 0.2, z0: gz - 0.2, z1: gz + 0.2 }, id + ' gate', true);
+    c.claim({ x0: info.at[0] - 0.2, x1: info.at[0] + 0.2, z0: info.at[2] - 0.2, z1: info.at[2] + 0.2 }, id + ' gate', true);
     c.biz[id] = info;
   }
-
-  // ---- shopfronts: striped awnings, signs from one shared atlas, rooftop props
 
   var SIGNS = ['\u{1F355} Pizza', '\u2702 Barber', '\u{1F48A} Pharmacy', '\u{1F3E6} Bank', '\u{1F527} Hardware', '\u{1F455} Clothes', '\u{1F4F1} Phones',
     '\u{1F354} Burgers', '\u{1F956} Deli', '\u{1F488} Salon', '\u{1F4F7} Photo', '\u{1F453} Optician', '\u{1F381} Gifts', '\u{1F9C1} Sweets',
@@ -409,7 +397,30 @@ export function planTown(lib) {
     var w = Math.min(r.w * 0.86, 1.1);
     var i = signN++ % SIGNS.length;
     var col = AWN[Math.floor(rng() * AWN.length)];
-    awning(r, col, w, 0.26);
+    var v = Math.floor(rng() * 4);
+    var base = c.matrix(r.px, 0, r.pz, r.rot, 1);
+    var at = function (lx, y, lz) { return base.clone().multiply(new THREE.Matrix4().makeTranslation(lx, y, lz)); };
+    if (v === 0) awning(r, col, w, 0.26);
+    else if (v === 1) {
+      // a flat canopy and flower boxes under the windows
+      c.solidM(w, 0.02, 0.16, col, at(0, 0.27, 0.08));
+      c.solidM(0.012, 0.25, 0.012, 0xdfe4f0, at(-w / 2 + 0.02, 0.14, 0.15));
+      c.solidM(0.012, 0.25, 0.012, 0xdfe4f0, at(w / 2 - 0.02, 0.14, 0.15));
+      [-0.25, 0.25].forEach(function (lx) {
+        c.solidM(0.3, 0.05, 0.07, 0x8a5a34, at(lx * w, 0.5, 0.04));
+        c.solidM(0.26, 0.05, 0.05, 0x56b45c, at(lx * w, 0.55, 0.04));
+      });
+    } else if (v === 2) {
+      // half an awning, and a banner hanging from the corner
+      awning({ px: r.px, pz: r.pz, rot: r.rot }, col, w * 0.55, 0.26);
+      c.solidM(0.012, 0.2, 0.06, 0xd9433a, at(w / 2 - 0.02, 0.42, 0.04));
+      c.solidM(0.08, 0.2, 0.012, col, at(w / 2 + 0.02, 0.45, 0.06));
+    } else {
+      c.solidM(w, 0.02, 0.12, col, at(0, 0.3, 0.06));
+      c.solidM(0.2, 0.12, 0.02, 0x2f4a3f, at(w / 2 - 0.15, 0.06, 0.3));
+      c.solidM(0.03, 0.1, 0.02, 0x6b4a2a, at(w / 2 - 0.23, 0.05, 0.29));
+      c.solidM(0.03, 0.1, 0.02, 0x6b4a2a, at(w / 2 - 0.07, 0.05, 0.29));
+    }
     var g = new THREE.PlaneGeometry(w * 0.8, w * 0.2);
     var u0 = (i % 4) / 4;
     var v1 = 1 - Math.floor(i / 4) / 4;
@@ -466,7 +477,6 @@ export function planTown(lib) {
   // extras of each business, added to the group of one stage
   function deco(id, g, r, h, ref) {
     var sp = SHOPS[id];
-    var d = r.dir;
     var local = new THREE.Group();
     local.position.set(r.px, 0, r.pz);
     local.rotation.y = r.rot;
@@ -523,7 +533,6 @@ export function planTown(lib) {
       local.add(box(0.2, 0.12, 0.01, 0xd92a2a, -width / 2, 0.58, 0.18));
       local.add(box(0.2, 0.012, 0.2, 0xe8d9a8, 0, 0.42, 0.1));
     }
-    void d;
   }
 
   // a vehicle with a body colour of its own (the school bus)
@@ -545,7 +554,6 @@ export function planTown(lib) {
     o.pools = POOL;
     if (o.tints === undefined) o.tints = o.house ? null : BRICK;
     var recs = c.row(axis, front, from, to, face, items, o);
-    rows.push({ recs: recs, o: o, axis: axis, face: face, front: front });
     return c.commit(recs, onBiz, o.house ? null : shopfront);
   }
 
@@ -553,11 +561,8 @@ export function planTown(lib) {
     return { biz: id, ms: SHOPS[id].m };
   }
 
-  // ---- yards behind the rows and the open grounds
-
   var XE = 25;
   var XW = -24;
-  var CAR_SPOTS = [];
 
   // fills the strip between two rows that stand back to back
   function yard(x0, x1, top, bot, kind, z0, z1) {
@@ -573,10 +578,11 @@ export function planTown(lib) {
       c.slab(x0, pa, x1, pb, 0x565b6e, 0.012, 0.004);
       var ya = pa + 0.25;
       var yb = pb - 0.25;
+      if (yb - ya < 1.15) yb = ya;
       for (var zc = ya + 0.35; zc < yb - 0.3; zc += 0.8) {
         for (var x = x0 + 0.35; x < x1 - 0.25; x += 0.5) {
           if (rng() < 0.3) continue;
-          if (c.tryProp(CARS[Math.floor(rng() * CARS.length)], x, zc, rng() < 0.5 ? 0 : Math.PI, { s: 0.26, tag: 'car', shrink: 0.02 })) {
+          if (c.tryProp(CARS[Math.floor(rng() * CARS.length)], x, zc, rng() < 0.5 ? 0 : Math.PI, { s: 0.26, tag: 'car', shrink: 0.02, lod: { wall: CARCOL[Math.floor(rng() * CARCOL.length)], rf: 0.3, roof: 0x2b2f3d } })) {
             c.slab(x - 0.25, zc - 0.34, x - 0.235, zc + 0.34, 0xffffff, 0.018, 0.002);
             c.slab(x + 0.235, zc - 0.34, x + 0.25, zc + 0.34, 0xffffff, 0.018, 0.002);
           }
@@ -603,7 +609,35 @@ export function planTown(lib) {
     c.slab(x0, z0, x1, z1, col, y || 0.018, 0.003);
   }
 
-  // ---- the blocks
+  // houses round the outside of the crescent, each looking at the middle of the curve
+  function arcHouses() {
+    var cx = -15.5;
+    var cz = 7.5;
+    var R0 = 3.5 + 0.62;
+    for (var a = 112; a <= 248; a += 19) {
+      var rad = a * Math.PI / 180;
+      var ref = POOL.house[Math.floor(rng() * POOL.house.length)];
+      var m = lib.model(ref);
+      var fx = -Math.cos(rad);
+      var fz = Math.sin(rad);
+      var rot = Math.atan2(fx, fz);
+      var o = c.origin(m, cx + R0 * Math.cos(rad), cz - R0 * Math.sin(rad), rot, 1);
+      var f = c.rect(m, o[0], o[1], rot, 1);
+      var k = 0.28;
+      f.x0 += k;
+      f.x1 -= k;
+      f.z0 += k;
+      f.z1 -= k;
+      c.put(ref, o[0], o[1], rot, {});
+      c.claim(f, ref + '@arc');
+    }
+  }
+
+  // a tall building at each end of a row, where it meets a cross street
+  function cornered(items) {
+    var tall = [C + 'm', C + 'l', C + 'i'];
+    return [{ m: tall[Math.floor(rng() * 3)] }].concat(items, [{ m: tall[Math.floor(rng() * 3)] }]);
+  }
 
   function blocks() {
     var house = { gap: 0.18, setback: 0.35, house: true };
@@ -614,35 +648,35 @@ export function planTown(lib) {
     // Civic Avenue south side and Park Street north side, east
     R.a1 = lotsAlong('x', 1, 9, 13, 'N', [{ fill: 'shop' }]);
     R.a2 = lotsAlong('x', 4, 9, 13, 'S', [{ fill: 'shop' }]);
-    R.a3 = lotsAlong('x', 1, 15, XE, 'N', [{ fill: 'office' }]);
+    R.a3 = lotsAlong('x', 1, 15, XE, 'N', cornered([{ fill: 'office' }]));
     R.a4 = lotsAlong('x', 4, 15, XE, 'S', [{ m: C + 'k', tag: 'fire', tint: 0xff9c88 }, { fill: 'mid' }]);
     // Park Street south side, Main Street north side
-    R.b1 = lotsAlong('x', 6, 2, 13, 'N', [{ fill: 'mid' }]);
-    R.b2 = lotsAlong('x', 6, 15, XE, 'N', [{ fill: 'office' }]);
+    R.b1 = lotsAlong('x', 6, 2, 13, 'N', cornered([{ fill: 'mid' }]));
+    R.b2 = lotsAlong('x', 6, 15, XE, 'N', cornered([{ fill: 'office' }]));
     R.b3 = lotsAlong('x', 9, 2, 13, 'S', [B('bakery'), B('cafe'), B('grocery'), { fill: 'shop' }]);
     R.b4 = lotsAlong('x', 9, 15, XE, 'S', [B('icecream'), B('flower'), B('books'), B('toys'), { fill: 'shop' }]);
     // Main Street south side, South Street north side
     R.c1 = lotsAlong('x', 11, 9, 13, 'N', [{ fill: 'mid' }]);
-    R.c2 = lotsAlong('x', 11, 15, XE, 'N', [{ fill: 'mid' }]);
+    R.c2 = lotsAlong('x', 11, 15, XE, 'N', cornered([{ fill: 'mid' }]));
     R.c3 = lotsAlong('x', 14, 9, 13, 'S', [B('restaurant'), { fill: 'shop' }]);
     R.c4 = lotsAlong('x', 14, 15, XE, 'S', [{ fill: 'flat' }]);
     // South Street south side, Depot Street north side, Depot Street south side
-    R.d1 = lotsAlong('x', 16, 2, 13, 'N', [{ fill: 'flat' }]);
-    R.d2 = lotsAlong('x', 16, 15, XE, 'N', [{ fill: 'mid' }]);
+    R.d1 = lotsAlong('x', 16, 2, 13, 'N', cornered([{ fill: 'flat' }]));
+    R.d2 = lotsAlong('x', 16, 15, XE, 'N', cornered([{ fill: 'mid' }]));
     R.d3 = lotsAlong('x', 19, 2, 13, 'S', [{ fill: 'shop' }]);
     R.d4 = lotsAlong('x', 19, 15, XE, 'S', [{ fill: 'mid' }]);
     R.e1 = lotsAlong('x', 21, 2, XE, 'N', [{ m: C + 'j', tag: 'bus' }, { fill: 'mid' }]);
     // west
     R.w1 = lotsAlong('x', 1, XW, -2, 'N', [{ fill: 'house' }], house);
-    R.w2 = lotsAlong('x', 4, -16, -2, 'S', [{ fill: 'house' }, B('homes'), { fill: 'house' }, { m: S + 'o', tag: 'church' }], house);
-    R.w3 = lotsAlong('x', 9, -16, -2, 'S', [{ fill: 'house' }], house);
-    R.w4 = lotsAlong('x', 11, XW, -2, 'N', [{ fill: 'house' }], house);
+    R.w2 = lotsAlong('x', 4, -15, -2, 'S', [{ fill: 'house' }, B('homes'), { fill: 'house' }, { m: S + 'o', tag: 'church' }], house);
+    R.w3 = lotsAlong('x', 9, -15, -2, 'S', [{ fill: 'house' }], house);
+    R.w4 = lotsAlong('x', 11, -15, -2, 'N', [{ fill: 'house' }], house);
     R.w5 = lotsAlong('x', 14, XW, -2, 'S', [{ fill: 'house' }], house);
     R.w6 = lotsAlong('x', 16, XW, -2, 'N', [{ fill: 'house' }], house);
     R.w7 = lotsAlong('x', 19, -16, -2, 'S', [{ fill: 'house' }], house);
     R.w8 = lotsAlong('x', 21, -16, -2, 'N', [{ fill: 'house' }], house);
     // the crescent and the court
-    R.cr = lotsAlong('z', -19, 4.2, 10.8, 'E', [{ fill: 'house' }], house);
+    arcHouses();
     R.ct = lotsAlong('z', -18, 17.5, 23.5, 'E', [{ fill: 'house' }], house);
     return R;
   }
@@ -923,7 +957,7 @@ export function planTown(lib) {
     c.put('nature/statue_column', -9, 6.6, 0, { s: 0.6 });
     [-14, -12, -6.5, -4.5].forEach(function (x) { bench(x, 6.95, Math.PI); });
     [-13, -5.5].forEach(function (x) { c.tryProp('roads/light-curved', x, 6.2, 0, { s: 1, tag: 'lamp' }); });
-    yard(-16, -2, null, R.w3, 'garden', 6, undefined);
+    yard(-14.5, -2, null, R.w3, 'garden', 6, undefined);
     // the bus station on Depot Street
     R.e1.forEach(function (r) {
       if (r.it.tag === 'bus') {
@@ -931,7 +965,7 @@ export function planTown(lib) {
         [-0.9, 0, 0.9].forEach(function (k) { behind(r, 'car/delivery', k); });
       }
     });
-    garden(-24, 3.2, -20.5, 10.4);
+    garden(-24, 3.2, -19.5, 10.4);
     garden(-24, 17.8, -20.2, 21.4);
     court(-23.6, 21.9, -21.2, 23.7);
     belt();
@@ -970,7 +1004,42 @@ export function planTown(lib) {
         c.addGeom(p.mat, g);
       });
     });
-    c.put('nature/statue_column', 5.5, 13.5, 0, { s: 0.5, y: 0.02 });
+    c.put('nature/statue_column', 5.5, 13.65, 0, { s: 0.5, y: 0.02 });
+    // a checker of two paving tones round the fountain, flower beds, lamps, kiosks and a clock tower
+    for (var i = 0; i < 14; i++) {
+      for (var j = 0; j < 6; j++) {
+        if ((i + j) % 2) c.slab(x0 + 0.2 + i * 0.5, z0 + 0.2 + j * 0.43, x0 + 0.7 + i * 0.5, z0 + 0.63 + j * 0.43, 0xe2d8c2, 0.022, 0.002);
+      }
+    }
+    [[4.7, 12.5], [6.3, 12.5], [5.5, 11.7], [5.5, 13.3]].forEach(function (q, k) {
+      c.root.add(box(0.3, 0.05, 0.14, 0x7a5230, q[0], 0.02, q[1]));
+      c.put(['nature/flower_redA', 'nature/flower_yellowA', 'nature/flower_purpleA', 'nature/flower_redA'][k], q[0], q[1], k, { y: 0.07, s: 1.6 });
+    });
+    [[2.4, 11.3], [8.6, 11.3], [2.4, 13.7], [8.6, 13.7]].forEach(function (q) { c.put('roads/light-curved-double', q[0], q[1], Math.PI / 2, { y: 0.02 }); });
+    [[3.4, 11.5, 0], [7.6, 13.5, Math.PI]].forEach(function (q) {
+      c.root.add(box(0.5, 0.3, 0.32, 0xf0d8a8, q[0], 0.02, q[1]));
+      for (var s2 = 0; s2 < 6; s2++) c.root.add(box(0.085, 0.015, 0.2, s2 % 2 ? 0xfaf6ee : 0xd9433a, q[0] - 0.21 + s2 * 0.085, 0.32, q[1] + (q[2] ? -0.2 : 0.2)));
+    });
+    c.root.add(box(0.26, 0.95, 0.26, 0xe8dcc0, 2.7, 0.02, 12.6));
+    var ck = document.createElement('canvas');
+    ck.width = ck.height = 64;
+    var cx2 = ck.getContext('2d');
+    cx2.fillStyle = '#fff';
+    cx2.beginPath();
+    cx2.arc(32, 32, 30, 0, 7);
+    cx2.fill();
+    cx2.strokeStyle = '#333';
+    cx2.lineWidth = 4;
+    cx2.beginPath();
+    cx2.moveTo(32, 32);
+    cx2.lineTo(32, 12);
+    cx2.moveTo(32, 32);
+    cx2.lineTo(46, 36);
+    cx2.stroke();
+    var face = new THREE.Mesh(new THREE.CircleGeometry(0.1, 20), new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(ck) }));
+    face.position.set(2.7, 0.82, 12.735);
+    c.root.add(face);
+    c.root.add(box(0.32, 0.08, 0.32, 0x8a4a3a, 2.7, 0.97, 12.6));
   }
 
   // hills, lakes and fields frame the town; the boulevard leaves through a welcome sign
