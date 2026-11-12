@@ -1,9 +1,9 @@
-var KEY = 'mainstreet.v5';
-var OLD_KEYS = ['mainstreet.v4', 'mainstreet.v3', 'mainstreet.v2', 'mainstreet.v1', 'mainstreet.won'];
+var KEY = 'mainstreet.v6';
+var OLD_KEYS = ['mainstreet.v5', 'mainstreet.v4', 'mainstreet.v3', 'mainstreet.v2', 'mainstreet.v1', 'mainstreet.won'];
 var MAX_AWAY = 8 * 3600;
 var START_CASH = 5;
 var STAR_BONUS = 0.02;
-var STAR_DIV = 1e15;
+var STAR_DIV = 1e13;
 var MGR_WEIGHT = 0.5;
 var X2_COST = 20;
 var X2_SECS = 1800;
@@ -25,9 +25,9 @@ BIZ.forEach(function (b, i) {
 var S = fresh();
 
 function fresh() {
-  var s = { v: 5, cash: START_CASH, gems: 0, stars: 0, run: 0, all: 0, pend: 0, park: 0, x2: 0, b: {}, ms: {},
+  var s = { v: 6, cash: START_CASH, gems: 0, stars: 0, run: 0, all: 0, pend: 0, hall: 0, x2: 0, b: {}, ms: {},
     st: { col: 0, sales: 0 }, goal: [0, 1, 2], gn: 3, gd: {}, day: { n: 0, d: -1 }, ts: clock() };
-  s.b.homes = { l: 1, m: 0, t: 0, w: 0 };
+  s.b.fruit = { l: 1, m: 0, t: 0, w: 0 };
   return s;
 }
 
@@ -79,7 +79,7 @@ function nextMs(l) {
 }
 
 function gmul() {
-  return (1 + STAR_BONUS * S.stars) * (1 + PARK.boost * S.park);
+  return (1 + STAR_BONUS * S.stars) * (1 + HALL.boost * S.hall);
 }
 
 function bmul() {
@@ -137,7 +137,7 @@ function maxBuy(id) {
 function shape(id) {
   var v = VIEW[id];
   var at = v ? (v.lv || v) : STAGE;
-  var l = id === 'park' ? S.park : lv(v && v.of ? v.of : id);
+  var l = lv(v && v.of ? v.of : id);
   var n = 0;
   for (var i = 0; i < at.length; i++) if (l >= at[i]) n++;
   return n;
@@ -149,7 +149,7 @@ function earn(v) {
   S.all += v;
 }
 
-// returns what changed: unlock, milestones crossed and their gems, whether the building changes
+// returns what changed: unlock, milestones crossed and their gems, whether the shop gets a new piece
 function buy(id, n) {
   n = n || 1;
   if (!avail(id) || n < 1) return null;
@@ -182,15 +182,15 @@ function hire(id) {
   return true;
 }
 
-function parkCost() {
-  return S.park < PARK.cost.length && has(PARK.after) ? PARK.cost[S.park] : 0;
+function hallCost() {
+  return S.hall < HALL.cost.length && has(HALL.after) ? HALL.cost[S.hall] : 0;
 }
 
-function buyPark() {
-  var c = parkCost();
+function buyHall() {
+  var c = hallCost();
   if (!c || S.cash < c) return false;
   S.cash -= c;
-  S.park++;
+  S.hall++;
   return true;
 }
 
@@ -279,8 +279,8 @@ function options() {
     if (m && m.lv - l > 1 && l > 0) add({ k: 'lv', id: id, n: m.lv - l, cost: cost(id, m.lv - l), gain: perSec(id, m.lv) * bmul() - now, ms: m.lv });
     if (l > 0 && !managed(id)) add({ k: 'mgr', id: id, n: 1, cost: z.m, gain: now * MGR_WEIGHT });
   });
-  var pc = parkCost();
-  if (pc) add({ k: 'park', id: 'park', n: 1, cost: pc, gain: r * PARK.boost / (1 + PARK.boost * S.park) });
+  var pc = hallCost();
+  if (pc) add({ k: 'hall', id: 'hall', n: 1, cost: pc, gain: r * HALL.boost / (1 + HALL.boost * S.hall) });
   return out;
 }
 
@@ -295,7 +295,7 @@ function best() {
 function doOption(o) {
   if (o.k === 'lv') return buy(o.id, o.n);
   if (o.k === 'mgr') return hire(o.id) ? { id: o.id, mgr: true } : null;
-  return buyPark() ? { id: 'park', park: true } : null;
+  return buyHall() ? { id: 'hall', hall: true } : null;
 }
 
 function buyBest() {
@@ -324,15 +324,14 @@ function gCol(n, gems) {
   return gl('Collect cash ' + n + ' times', gems, n, function () { return S.st.col; });
 }
 var GOALS = [
-  gCol(5, 3), gLv('homes', 10, 3), gLv('bakery', 1, 4), gMgr(1, 5), gCol(25, 3), gLv('bakery', 10, 4), gEarn(1000, 3),
-  gLv('cafe', 1, 5), gLv('homes', 25, 5, 15), gMgr(3, 8), gEarn(1e5, 5), gLv('grocery', 1, 6), gLv('bakery', 25, 6),
-  gCol(100, 5), gLv('icecream', 1, 8), gLv('cafe', 25, 8, 30), gMgr(5, 10), gEarn(1e7, 8), gLv('flower', 1, 10),
-  gl('Open the Park', 10, 1, function () { return S.park; }), gLv('homes', 100, 12), gLv('books', 1, 10), gLv('toys', 1, 12),
-  gEarn(1e9, 10, 30), gMgr(8, 15), gLv('restaurant', 1, 15), gLv('school', 1, 20), gEarn(1e11, 15),
-  gl('Upgrade the Park to level 3', 12, 3, function () { return S.park; }), gLv('school', 25, 15, 30), gLv('class', 1, 15),
-  gLv('lib', 1, 15), gLv('cafeteria', 1, 15), gLv('yard', 1, 20), gLv('hosp', 1, 25),
-  gl('Sell the town', 30, 1, function () { return S.st.sales; }), gEarn(1e15, 20, 60), gMgr(15, 25),
-  gEarn(1e18, 25), gl('Earn 100 Town stars', 40, 100, function () { return S.stars; }), gEarn(1e21, 30)
+  gCol(5, 3), gLv('fruit', 10, 3), gLv('bakery', 1, 4), gMgr(1, 5), gCol(25, 3), gLv('bakery', 10, 4), gEarn(1000, 3),
+  gLv('flower', 1, 5), gLv('fruit', 25, 5, 15), gMgr(3, 8), gEarn(1e5, 5), gLv('grocery', 1, 6), gLv('bakery', 25, 6),
+  gCol(100, 5), gLv('frozen', 1, 8), gLv('flower', 25, 8, 30), gMgr(5, 10), gEarn(1e7, 8), gLv('clothes', 1, 10),
+  gl('Open the Entrance', 10, 1, function () { return S.hall; }), gLv('fruit', 100, 12), gLv('gifts', 1, 10), gLv('arcade', 1, 12),
+  gEarn(1e9, 10, 30), gMgr(8, 15), gLv('games', 1, 15), gLv('sports', 1, 20), gEarn(1e11, 15),
+  gl('Upgrade the Entrance to level 3', 12, 3, function () { return S.hall; }), gLv('sports', 25, 15, 30), gLv('arcade', 50, 15),
+  gl('Sell the mall', 30, 1, function () { return S.st.sales; }), gEarn(1e13, 20, 60), gMgr(10, 25),
+  gEarn(1e15, 25), gl('Earn 100 Mall stars', 40, 100, function () { return S.stars; }), gEarn(1e18, 30)
 ];
 
 function goals() {
@@ -372,8 +371,8 @@ function sell() {
   S.st.sales++;
   S.cash = START_CASH;
   S.run = 0;
-  S.park = 0;
-  S.b = { homes: { l: 1, m: 0, t: 0, w: 0 } };
+  S.hall = 0;
+  S.b = { fruit: { l: 1, m: 0, t: 0, w: 0 } };
   return n;
 }
 
@@ -434,7 +433,7 @@ function num(v, d) {
 
 // copies what it knows by id; anything unknown is dropped and anything missing starts over
 function validate(o) {
-  if (!o || typeof o !== 'object' || o.v !== 5 || !o.b || typeof o.b !== 'object') return null;
+  if (!o || typeof o !== 'object' || o.v !== 6 || !o.b || typeof o.b !== 'object') return null;
   if (!isFinite(o.cash) || !isFinite(o.ts)) return null;
   var s = fresh();
   s.b = {};
@@ -445,7 +444,7 @@ function validate(o) {
   s.all = Math.max(s.run, num(o.all, 0));
   s.pend = num(o.pend, 0);
   s.x2 = num(o.x2, 0);
-  s.park = Math.min(PARK.cost.length, Math.floor(num(o.park, 0)));
+  s.hall = Math.min(HALL.cost.length, Math.floor(num(o.hall, 0)));
   s.ts = o.ts;
   BIZ.forEach(function (z) {
     var e = o.b[z.id];

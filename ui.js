@@ -201,12 +201,12 @@ function makeRow(id) {
   var b = BZ[id];
   var el = document.createElement('div');
   el.className = 'biz';
-  el.innerHTML = '<img class="ic" src="assets/' + (b ? b.ic : 'park_5') + '.png" alt="">' +
+  el.innerHTML = '<img class="ic" src="assets/' + (b ? b.ic : 'shop/shopping-cart') + '.png" alt="">' +
     '<div class="mid"><div class="l1"><b></b><span></span></div><div class="pr"><i></i><em></em></div><div class="l3"></div></div>' +
     '<div class="btns"><button type="button" class="up"></button><button type="button" class="mg"></button></div>';
   var r = { id: id, el: el, k: {}, nm: el.querySelector('b'), lv: el.querySelector('.l1 span'), bar: el.querySelector('.pr'),
     fill: el.querySelector('.pr i'), bt: el.querySelector('.pr em'), ms: el.querySelector('.l3'), up: el.querySelector('.up'), mg: el.querySelector('.mg') };
-  r.nm.textContent = b ? b.name : 'Park';
+  r.nm.textContent = b ? b.name : 'Entrance';
   el.querySelector('.ic').addEventListener('click', function () { focusBiz(id); });
   r.up.addEventListener('click', function () { upgrade(id); });
   r.mg.addEventListener('click', function () { hireManager(id); });
@@ -219,14 +219,14 @@ function upRow(r) {
   var k = r.k;
   var hl = bestOpt && bestOpt.id === id;
   flag(k, 'best', r.el, 'best', hl);
-  if (id === 'park') {
-    var c = parkCost();
-    var open = has(PARK.after);
+  if (id === 'hall') {
+    var c = hallCost();
+    var open = has(HALL.after);
     flag(k, 'lock', r.el, 'lock', !open);
-    set(k, 'lv', r.lv, 'textContent', S.park ? 'Lv ' + S.park + '/' + PARK.cost.length : '');
+    set(k, 'lv', r.lv, 'textContent', S.hall ? 'Lv ' + S.hall + '/' + HALL.cost.length : '');
     flag(k, 'nobar', r.el, 'nobar', true);
-    set(k, 'ms', r.ms, 'textContent', open ? 'Each level: income of everything +' + Math.round(PARK.boost * 100) + '%' : 'Unlock ' + BZ[PARK.after].name + ' first');
-    set(k, 'up', r.up, 'innerHTML', c ? (S.park ? 'Upgrade' : 'Build') + '<small>' + money(c) + '</small>' : 'Done<small>all levels</small>');
+    set(k, 'ms', r.ms, 'textContent', open ? 'Each level: income of everything +' + Math.round(HALL.boost * 100) + '%' : 'Unlock ' + BZ[HALL.after].name + ' first');
+    set(k, 'up', r.up, 'innerHTML', c ? (S.hall ? 'Upgrade' : 'Build') + '<small>' + money(c) + '</small>' : 'Done<small>all levels</small>');
     set(k, 'upd', r.up, 'disabled', !c || S.cash < c);
     flag(k, 'uphl', r.up, 'hl', hl);
     flag(k, 'nomg', r.el, 'nomg', true);
@@ -268,9 +268,9 @@ function buildList() {
   BIZ.forEach(function (b) {
     rows[b.id] = makeRow(b.id);
     list.appendChild(rows[b.id].el);
-    if (b.id === PARK.after) {
-      rows.park = makeRow('park');
-      list.appendChild(rows.park.el);
+    if (b.id === HALL.after) {
+      rows.hall = makeRow('hall');
+      list.appendChild(rows.hall.el);
     }
   });
 }
@@ -324,13 +324,13 @@ function closeCard() {
 
 function focusBiz(id) {
   var sp = View.spot(id);
-  View.go(sp.v, sp.y, sp.x);
+  View.go(sp.x, sp.y);
 }
 
 function afterBuy(res) {
   var t = View.event(res, performance.now());
   var ms = res.ms || [];
-  var name = res.id === 'park' ? 'Park' : BZ[res.id].name;
+  var name = res.id === 'hall' ? 'Entrance' : BZ[res.id].name;
   if (ms.length) {
     var m = ms[ms.length - 1];
     sfx('mile');
@@ -339,9 +339,9 @@ function afterBuy(res) {
   } else if (res.unlock) {
     sfx('unlock');
     banner('<b>New: ' + name + '</b><small>Costs ' + money(BZ[res.id].c0) + ', earns while you play</small>', t + 0.3, true);
-  } else if (res.park) {
+  } else if (res.hall) {
     sfx('mile');
-    banner('<b>Park level ' + S.park + '</b><small>All income +' + Math.round(PARK.boost * 100) + '%</small>', t + 0.3, S.park === PARK.cost.length);
+    banner('<b>Entrance level ' + S.hall + '</b><small>All income +' + Math.round(HALL.boost * 100) + '%</small>', t + 0.3, S.hall === HALL.cost.length);
   } else sfx('buy');
   buzz();
   nudge();
@@ -357,7 +357,7 @@ function nudge() {
 function upgrade(id) {
   wake();
   var res;
-  if (id === 'park') res = buyPark() ? { id: 'park', park: true } : null;
+  if (id === 'hall') res = buyHall() ? { id: 'hall', hall: true } : null;
   else res = buy(id, has(id) ? amount(id) : 1);
   if (res) afterBuy(res);
 }
@@ -427,9 +427,6 @@ function updateHud() {
   var x = $('x2');
   set(shown, 'x2h', x, 'hidden', !(S.x2 > 0));
   if (S.x2 > 0) set(shown, 'x2t', x, 'textContent', 'x2  ' + clock2(S.x2));
-  var sw = $('swap');
-  set(shown, 'swapH', sw, 'hidden', !has('school'));
-  set(shown, 'swapT', sw, 'textContent', View.view() === 'town' ? 'School' : 'Town');
 }
 
 function updateBest() {
@@ -438,11 +435,11 @@ function updateBest() {
 }
 
 function bestText(o) {
-  var name = o.id === 'park' ? 'Park' : BZ[o.id].name;
+  var name = o.id === 'hall' ? 'Entrance' : BZ[o.id].name;
   var l = lv(o.id);
   if (o.k === 'mgr') return ['Hire ' + name + ' manager', 'Collects and restarts by itself'];
-  if (o.k === 'park') return [S.park ? 'Park level ' + (S.park + 1) : 'Build the Park', 'All income +' + Math.round(PARK.boost * 100) + '%'];
-  if (!l) return ['Unlock ' + name, 'A new business for the town'];
+  if (o.k === 'hall') return [S.hall ? 'Entrance level ' + (S.hall + 1) : 'Open the Entrance', 'All income +' + Math.round(HALL.boost * 100) + '%'];
+  if (!l) return ['Unlock ' + name, 'A new shop for the mall'];
   if (o.n > 1) return [name + ': ' + o.n + ' levels', 'Reaches the level ' + o.ms + ' milestone'];
   return ['Level up ' + name, 'Lv ' + l + ' to ' + (l + 1) + ',  +' + money(o.gain) + '/s'];
 }
@@ -495,7 +492,7 @@ function updateGoals() {
 
 function updateOpen() {
   if (sheetOpen) BIZ.forEach(function (b) { upRow(rows[b.id]); });
-  if (sheetOpen) upRow(rows.park);
+  if (sheetOpen) upRow(rows.hall);
   if (cardRow) upRow(cardRow);
   if (!$('boost').hidden) paintBoost();
 }
@@ -555,10 +552,10 @@ function openSell() {
   var now = 1 + STAR_BONUS * S.stars;
   var then = 1 + STAR_BONUS * (S.stars + n);
   $('sell-txt').innerHTML = n >= 1 ?
-    'Selling now gives <b>' + n + ' Town stars</b>. Each star adds ' + Math.round(STAR_BONUS * 100) + '% to all income, forever. Your income goes from x' + now.toFixed(2) + ' to x' + then.toFixed(2) + '.' +
+    'Selling now gives <b>' + n + ' Mall stars</b>. Each star adds ' + Math.round(STAR_BONUS * 100) + '% to all income, forever. Your income goes from x' + now.toFixed(2) + ' to x' + then.toFixed(2) + '.' +
     (n < 10 ? ' Waiting for about 10 stars makes the sale worth more.' : '') :
     'You need to earn about ' + money(STAR_DIV) + ' in this run to get the first star. So far: ' + money(S.run) + '.';
-  $('sell-keep').textContent = 'You keep: stars, gems, goals and boosts. Everything else starts again: cash, businesses, managers and the Park.';
+  $('sell-keep').textContent = 'You keep: stars, gems, goals and boosts. Everything else starts again: cash, businesses, managers and the Entrance.';
   $('sell-ok').textContent = n >= 1 ? 'Sell for ' + n + ' stars' : 'Not yet';
   $('sell-ok').disabled = n < 1;
   $('sell').hidden = false;
@@ -580,12 +577,6 @@ function afterLoad() {
   View.focusNow();
   updateBest();
   updateGoals();
-}
-
-function schoolRoom() {
-  var o = bestOpt;
-  var p = o && PLACE[o.id];
-  return p && p.room ? p.room : 'class1';
 }
 
 function wire() {
@@ -654,16 +645,8 @@ function wire() {
     if (!n) return;
     afterLoad();
     sfx('mile');
-    banner('<b>Town sold</b><small>+' + n + ' Town stars, income x' + (1 + STAR_BONUS * S.stars).toFixed(2) + '</small>', 0.2, true);
+    banner('<b>Mall sold</b><small>+' + n + ' Mall stars, income x' + (1 + STAR_BONUS * S.stars).toFixed(2) + '</small>', 0.2, true);
     nudge();
-  });
-  $('swap').addEventListener('click', function () {
-    closeCard();
-    if (View.view() === 'town') View.go('school', View.roomY(schoolRoom()));
-    else {
-      var b = View.spot('school');
-      View.go('town', b.y, b.x);
-    }
   });
   $('gear').addEventListener('click', function () {
     setSound();
@@ -705,7 +688,7 @@ function wire() {
       $('m-reset').textContent = 'Tap again to erase';
       setTimeout(function () {
         armed = false;
-        $('m-reset').textContent = 'Reset town';
+        $('m-reset').textContent = 'Reset mall';
       }, 3000);
       return;
     }
@@ -713,7 +696,7 @@ function wire() {
     reset();
     speed = 1;
     afterLoad();
-    $('m-reset').textContent = 'Reset town';
+    $('m-reset').textContent = 'Reset mall';
     $('menu').hidden = true;
     maybeDaily();
   });
