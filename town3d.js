@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { planTown, modelList, FOLK, district } from './plan.js';
-import { GROW, WILD, ROAD } from './city.js';
+import { planTown, modelList, FOLK } from './plan.js';
+import { GROW } from './city.js';
 import { SchoolInside, FURN, figure } from './school3d.js';
 import { Life } from './life.js';
 
@@ -50,7 +50,7 @@ var mode = 'town';
 var tagged = [];
 var puffs = [];
 var bg = new THREE.Color(0xa9d8ee);
-var seeds = [];
+var built = [];
 var loose = [];
 var growing = false;
 
@@ -268,7 +268,7 @@ function bind() {
       var bx = before ? before.x : focus.x;
       var bz = before ? before.z : focus.z;
       focus.dist = pinch.k * pinch.d / (Math.hypot(a.x - b.x, a.y - b.y) || 1);
-      focus.az = pinch.az - (Math.atan2(b.y - a.y, b.x - a.x) - pinch.ang);
+      focus.az = pinch.az + (Math.atan2(b.y - a.y, b.x - a.x) - pinch.ang);
       clamp();
       place();
       var after = under(mx, my, hitB);
@@ -442,73 +442,71 @@ function puffsStep(now) {
   }
 }
 
-// how far a business has built the town round it: [radius at level 1, radius added by level `at`]. Homes fills the
-// whole west by about level 150, a shop its corner of downtown by 100
-var REACH = { homes: [3, 17.5, 150], school: [2.5, 10, 100], hosp: [2.5, 12, 100] };
-function reach(id) {
-  if (id === 'park') return S.park > 0 ? 4 + S.park * 3 : -1;
-  var l = lv(id);
-  if (id === 'school') l += (lv('class') + lv('lib') + lv('cafeteria') + lv('yard')) / 4;
-  if (l <= 0) return -1;
-  var q = REACH[id] || [2, 7, 100];
-  return q[0] + q[1] * Math.pow(Math.min(1, (l - 1) / q[2]), 0.7) + (managed(id) ? 1 : 0);
+// how many of its lots a business has built: the first with the business, the rest spread over its levels until level
+// `REACH` (100 unless named). The Park builds a quarter of its lots with each of its four levels
+var REACH = { homes: 150 };
+function wanted(o) {
+  var own = town.owners[o];
+  if (!own.count) return 0;
+  if (own.id === 'park') return Math.round(own.count * S.park / 4);
+  var l = lv(own.id);
+  if (own.id === 'school') l += (lv('class') + lv('lib') + lv('cafeteria') + lv('yard')) / 4;
+  if (l <= 0) return 0;
+  var f = Math.pow(Math.min(1, (l - 1) / (REACH[own.id] || 100)), 0.7);
+  return Math.min(own.count, 1 + Math.round((own.count - 1) * f) + (managed(own.id) ? 1 : 0));
 }
 
-function makeSeeds() {
-  bizList.forEach(function (id) {
-    var b = town.biz[id];
-    seeds.push({ id: id, x: b.at[0], z: b.at[2], d: district(b.at[0], b.at[2], 'thing'), r: -1, l: -1 });
-  });
+function makeGrowth() {
+  town.owners.forEach(function () { built.push(0); });
   town.root.children.forEach(function (o) {
     if (o.userData.grow) return;
     var bb = new THREE.Box3().setFromObject(o);
     var x = (bb.min.x + bb.max.x) / 2;
     var z = (bb.min.z + bb.max.z) / 2;
-    loose.push({ o: o, x: x, z: z, d: district(x, z, 'thing') });
+    loose.push({ o: o, key: town.keyAt(x, z, 'thing') });
   });
 }
 
 // the same test the town's shader makes, for what is not merged: cars, people, signs
-function built(x, z, d) {
-  if (d === WILD) return 1;
+function risen(key) {
   var k = 0;
-  for (var i = 0; i < seeds.length && k < 1; i++) {
-    var s = seeds[i];
-    if (s.r <= 0 || d !== ROAD && s.d !== d) continue;
-    var dd = Math.hypot(x - s.x, z - s.z) - (d === ROAD ? 2 : 0);
-    k = Math.max(k, dd <= s.l ? 1 : dd < s.r ? (s.r - dd) / Math.max(s.r - s.l, 0.001) : 0);
+  for (var i = 0; i < key.length; i += 2) {
+    if (key[i] < -1) return 1;
+    if (key[i] >= 0) k = Math.max(k, Math.min(1, Math.max(0, built[key[i]] - key[i + 1])));
   }
   return k;
 }
 
+// lots go up one after another, quicker when many are due, each with a puff of dust
 function grow(dt, snap) {
   var moving = false;
   var sum = 0;
-  seeds.forEach(function (s, i) {
-    var t = reach(s.id);
-    if (snap || t < s.l - 0.01) {
-      s.r = t;
-      s.l = t;
-    } else if (Math.abs(t - s.l) > 0.02) {
-      s.r += (t - s.r) * Math.min(1, dt * 5);
-      s.l += (t - s.l) * Math.min(1, dt * 1.4);
+  var now = performance.now();
+  built.forEach(function (v, o) {
+    var want = wanted(o);
+    var was = v;
+    if (snap || want < v) v = want;
+    else if (want > v) {
+      v = Math.min(want, v + dt * Math.max(2.5, (want - v) * 1.5));
       moving = true;
-    } else {
-      s.r = t;
-      s.l = t;
     }
-    GROW.seed.value[i].set(s.x, s.z, s.r, s.l);
-    GROW.dist.value[i] = s.d;
-    if (s.r > 0) sum += s.r;
+    built[o] = v;
+    GROW.own.value[o] = v;
+    sum += v;
+    if (!snap && v > was) {
+      town.lots.forEach(function (l) {
+        if (l.o === o && l.n >= was && l.n < v) dust({ foot: l.f }, now);
+      });
+    }
   });
   if (growing && !moving || snap) renderer.shadowMap.needsUpdate = true;
   growing = moving;
-  loose.forEach(function (q) { q.o.visible = built(q.x, q.z, q.d) > 0.5; });
-  life.vis(onRoad, Math.round(2 + sum / 4));
+  loose.forEach(function (q) { q.o.visible = risen(q.key) > 0.5; });
+  life.vis(onRoad, Math.round(2 + sum / 3));
 }
 
 function onRoad(x, z) {
-  return built(x, z, ROAD) > 0.5;
+  return risen(town.keyAt(x, z, 'road')) > 0.5;
 }
 
 function setMode(m) {
@@ -716,7 +714,7 @@ function init(canvas, tap) {
   window.addEventListener('resize', resize);
   bind();
   ground();
-  [['turn-l', 1], ['turn-r', -1]].forEach(function (b) {
+  [['turn-l', -1], ['turn-r', 1]].forEach(function (b) {
     document.getElementById(b[0]).addEventListener('click', function () {
       azGoal = (azGoal === null ? Math.round(focus.az / (Math.PI / 4)) * Math.PI / 4 : azGoal) + b[1] * Math.PI / 4;
     });
@@ -747,7 +745,7 @@ function start() {
   makeBiz();
   makeTags();
   life = new Life(townG, lib, town);
-  makeSeeds();
+  makeGrowth();
   grow(0, true);
   sync(false, 0);
   focusNow();

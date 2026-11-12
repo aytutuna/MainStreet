@@ -311,7 +311,7 @@ export function Life(scene, lib, town) {
         var ns = new THREE.Mesh(new THREE.SphereGeometry(0.028, 8, 6), lamp.red);
         ns.position.set(q[0], 0.46, q[1] + (q[1] < z ? 0.08 : -0.08) * 0.6);
         var ew = new THREE.Mesh(new THREE.SphereGeometry(0.028, 8, 6), lamp.red);
-        ew.position.set(q[0] + (q[0] < 0 ? 0.1 : -0.1), 0.38, q[1]);
+        ew.position.set(ns.position.x, 0.4, ns.position.z);
         scene.add(ns);
         scene.add(ew);
         lights.push({ ns: ns, ew: ew });
