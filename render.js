@@ -15,7 +15,7 @@ var View = (function () {
   var COLORS = [null, WALK, CURB, ASPHALT, LINE, PLANT, CURB, ASPHALT];
   var FACE = { right: 0, up: 6, left: 12, down: 18 };
   var IMG = {};
-  var PROC = { court: 1 };
+  var PROC = { court: 1, con_shop: 1 };
   var cv;
   var ctx;
   var cw = 0;
@@ -35,11 +35,14 @@ var View = (function () {
   var pat = {};
   var landCv = {};
   var sorted;
-  var fx = { puffs: [], floats: [], coins: [], conf: [] };
+  var fx = { puffs: [], conf: [] };
   var people = [];
   var cars = [];
   var routes = [];
-  var coinAt = 0;
+  var bestId = null;
+  var bump = {};
+  var anch = [];
+  var MANAGERS = ['adult_3', 'adult_4', 'adult_5', 'adult_6', 'adult_8', 'adult_2'];
   var last = 0;
   var loaded = 0;
   var wanted = 0;
@@ -94,7 +97,7 @@ var View = (function () {
       for (var k in p.s) load(p.s[k]);
     });
     INSIDE.forEach(function (p) { load(p.spr); });
-    ['lockfence', 'coin', 'park_5', 'clinic_3', 'f_class', 'f_rest', 'f_lib', 'f_cafe', 'f_hall', 'f_path', 'wall', 'wall_v',
+    ['lockfence', 'coin', 'con_16x11', 'park_5', 'clinic_3', 'f_class', 'f_rest', 'f_lib', 'f_cafe', 'f_hall', 'f_path', 'wall', 'wall_v',
       'yfence', 'adult_2', 'adult_3', 'adult_4', 'adult_5', 'adult_6', 'adult_8', 'car_01', 'car_03', 'car_05', 'car_10'].forEach(load);
     for (var i = 1; i <= 8; i++) load('kid_' + i);
   }
@@ -139,6 +142,9 @@ var View = (function () {
     g.stroke();
     frame(g, 9, 7);
     IMG.court = c;
+    var cs = mk(144, 182);
+    cs.getContext('2d').drawImage(IMG.con_16x11, 112, 0, 144, 182, 0, 0, 144, 182);
+    IMG.con_shop = cs;
     stretch.forEach(function (s) { IMG[s[0]] = tall(IMG[s[1]], s[2]); });
     pat.walk = tile('walk');
     pat.hedge = tile('hedge');
@@ -154,6 +160,147 @@ var View = (function () {
       view = 'town';
       focusNow();
     });
+  }
+
+  function bstate(id) {
+    if (id === 'park') return { name: 'Park', lv: S.park, own: S.park > 0, price: parkCost(), avail: avail2(id), frac: 0, wait: 0 };
+    var e = S.b[id];
+    return { name: BZ[id].name, lv: e ? e.l : 0, own: !!e, price: cost(id, 1), avail: avail(id),
+      frac: e ? (e.w ? 1 : Math.min(1, e.t / cycleAt(id, e.l))) : 0, wait: e ? e.w : 0 };
+  }
+
+  // where a label hangs over a business in the town, in world px: above its building
+  function tagAt(id) {
+    var p = PLACE[id];
+    if (p.tag) return { x: p.tag[0] * 16, y: p.tag[1] * 16 };
+    var h = p.piece && p.piece.cur ? IMG[p.piece.cur].height : 182;
+    return { x: p.door[0] * 16, y: p.door[1] * 16 - h - 4 };
+  }
+
+  // the labelled businesses of the view being shown, in screen px
+  function anchors() {
+    var out = [];
+    var z = zoom();
+    function add(id, wx, wy, nocoin) {
+      out.push({ id: id, x: (wx - cam.x) * z, y: (wy - cam.y) * z, nocoin: nocoin });
+    }
+    if (view === 'town') {
+      BIZ.forEach(function (b) {
+        if (!PLACE[b.id].door) return;
+        var t = tagAt(b.id);
+        add(b.id, t.x, t.y);
+      });
+      var t2 = tagAt('park');
+      add('park', t2.x, t2.y);
+    } else {
+      for (var k in ROOMS) {
+        var r = ROOMS[k];
+        if (!r.biz || r.biz === 'school') continue;
+        var f = r.floor;
+        var built = has(r.biz);
+        var wy = k === 'yard' ? (built ? 40.4 : 45) * 32 : built ? (f[1] - 1.2) * 32 : (f[1] + f[3] / 2) * 32;
+        add(r.biz, (f[0] + f[2] / 2) * 32, wy, k === 'class2');
+      }
+    }
+    return out;
+  }
+
+  function tag(a, st, now) {
+    var line = st.own ? st.name + '  Lv ' + st.lv : st.avail ? st.name + '  $' + short(st.price) : st.name + '  locked';
+    var ready = !st.own && st.avail && S.cash >= st.price;
+    ctx.font = 'bold 11px system-ui, sans-serif';
+    var w = Math.max(ctx.measureText(line).width + 14, 78);
+    var h = st.own ? 25 : 18;
+    var p = bump[a.id] ? Math.max(0, 1 - (now - bump[a.id]) / 500) : 0;
+    var s = 1 + 0.3 * Math.sin(p * 3.1416);
+    ctx.save();
+    ctx.translate(a.x, a.y);
+    ctx.scale(s, s);
+    ctx.fillStyle = ready ? '#f0c040' : st.own ? 'rgba(20,20,30,0.85)' : st.avail ? 'rgba(20,20,30,0.7)' : 'rgba(20,20,30,0.45)';
+    ctx.beginPath();
+    ctx.roundRect(-w / 2, -h / 2, w, h, 6);
+    ctx.fill();
+    if (ready) {
+      ctx.strokeStyle = '#fff';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+    ctx.fillStyle = ready ? '#2a1c10' : st.own ? '#fff' : st.avail ? '#ffe9a8' : '#b4b4c4';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(line, 0, st.own ? -5 : 1);
+    if (st.own) {
+      ctx.fillStyle = 'rgba(255,255,255,0.25)';
+      ctx.fillRect(-w / 2 + 6, 5, w - 12, 5);
+      ctx.fillStyle = st.wait > 0 ? '#ffd84a' : '#5fd35a';
+      ctx.fillRect(-w / 2 + 6, 5, (w - 12) * st.frac, 5);
+    }
+    ctx.restore();
+  }
+
+  // cash waiting at a business: a stack of coins with the amount, tapped to collect
+  function stack(a, st, now) {
+    var s = Math.max(1.5, Math.min(2.6, zoom() * 1.5));
+    var y = a.y - 46 + Math.sin(now / 240 + a.x) * 3;
+    for (var i = 0; i < 3; i++) ctx.drawImage(IMG.coin, Math.round(a.x - 7 * s), Math.round(y + 6 - i * 4 * s), 14 * s, 14 * s);
+    ctx.font = 'bold 12px system-ui, sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'alphabetic';
+    ctx.lineWidth = 3;
+    ctx.strokeStyle = '#2a1c10';
+    ctx.fillStyle = '#ffd84a';
+    var t = '$' + short(st.wait);
+    ctx.strokeText(t, a.x, y - 12 * s + 8);
+    ctx.fillText(t, a.x, y - 12 * s + 8);
+  }
+
+  // a bouncing arrow over the best buy; when it is out of view, at the edge of the screen pointing to it
+  function arrow(now) {
+    var a = null;
+    anch.forEach(function (q) { if (q.id === bestId) a = q; });
+    if (!a) return;
+    var st = bstate(a.id);
+    var bob = Math.abs(Math.sin(now / 260)) * 9;
+    var x = a.x;
+    var y = a.y - (st.wait > 0 ? 104 : 34) - bob;
+    var rot = 0;
+    var cx = Math.max(20, Math.min(cw - 20, x));
+    var cy = Math.max(IT + 20, Math.min(ch - IB - 20, y));
+    if (cx !== x || cy !== y) {
+      rot = Math.atan2(a.y - cy, a.x - cx) - Math.PI / 2;
+      x = cx;
+      y = cy;
+    }
+    ctx.save();
+    ctx.translate(x, y);
+    ctx.rotate(rot);
+    ctx.beginPath();
+    ctx.moveTo(0, 15);
+    ctx.lineTo(-12, -2);
+    ctx.lineTo(-5, -2);
+    ctx.lineTo(-5, -13);
+    ctx.lineTo(5, -13);
+    ctx.lineTo(5, -2);
+    ctx.lineTo(12, -2);
+    ctx.closePath();
+    ctx.fillStyle = '#ffd84a';
+    ctx.strokeStyle = '#2a1c10';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+    ctx.fill();
+    ctx.restore();
+  }
+
+  function overlay(now) {
+    anch = anchors();
+    var close = view === 'school' || zoom() >= 0.5;
+    anch.forEach(function (a) {
+      if (a.x < -90 || a.x > cw + 90 || a.y < -140 || a.y > ch + 60) return;
+      var st = bstate(a.id);
+      if (close && !(view === 'town' && LANDS[a.id] && locked(a.id))) tag(a, st, now);
+      if (st.wait > 0 && !a.nocoin) stack(a, st, now);
+    });
+    arrow(now);
   }
 
   function hex(s) {
@@ -338,8 +485,9 @@ var View = (function () {
   }
 
   function sync(animate, now, delay) {
-    PROJECTS.forEach(function (p) { cnt[p.id] = got(p.id); });
-    cnt.sch = counter('sch');
+    BIZ.forEach(function (b) { cnt[b.id] = shape(b.id); });
+    cnt.rest = shape('rest');
+    cnt.park = shape('park');
     cnt.town = 1;
     var changed = [];
     PIECES.forEach(function (p) {
@@ -366,8 +514,8 @@ var View = (function () {
   }
 
   function locked(id) {
-    var l = LANDS[id];
-    return l.till ? got(l.till) === 0 : true;
+    var b = LANDS[id].biz;
+    return b === 'park' ? S.park === 0 : !has(b);
   }
 
   function zoom() {
@@ -411,37 +559,29 @@ var View = (function () {
     return { x: cam.x + cw / 2 / z, y: cam.y + (IT + (ch - IT - IB) / 2) / z, z: z };
   }
 
-  function blockAt(id) {
-    var l = LANDS[id];
-    if (l && l.at) {
-      var r = l.rects[l.at];
-      return { x: (r[0] + r[2] / 2) * 16, y: (r[1] + r[3] / 2) * 16 };
-    }
-    var x = 0;
-    var y = 0;
-    var n = 0;
-    BLOCKS.forEach(function (b) {
-      if (b[4] !== id) return;
-      x += b[0] + b[2] / 2;
-      y += b[1] + b[3] / 2;
-      n++;
-    });
-    return { x: x / n * 16, y: y / n * 16 };
+  // the middle of a business on its map, in px, with the view it is in
+  function spot(id) {
+    var p = PLACE[id];
+    if (p.room) return { v: 'school', x: 192, y: roomY(p.room) };
+    return { v: 'town', x: p.door[0] * 16, y: p.door[1] * 16 - 90 };
   }
 
-  function focusNow() {
-    var n = upNext();
+  function blockAt(id) {
+    return spot(id);
+  }
+
+  // looks at the best buy, or at the first business when there is none
+  function focusNow(id) {
     cam.cur = null;
     cam.q = [];
     cam.fade = 0;
-    if (n && PROJ[n.p].room) {
-      view = 'school';
-      centerOn(192, roomY(n.p), zs);
-    } else {
-      view = 'town';
+    var b = best();
+    var sp = spot(id || (b ? b.id : 'homes'));
+    view = sp.v;
+    if (view === 'school') centerOn(192, sp.y, zs);
+    else {
       zt = Math.max(zmin, Math.min(zmax, zfocus));
-      var b = blockAt(n ? n.p : 'school');
-      centerOn(b.x, b.y, zt);
+      centerOn(sp.x, sp.y, zt);
     }
     clamp();
   }
@@ -536,35 +676,32 @@ var View = (function () {
     return { x: x / list.length * scale, y: y / list.length * scale };
   }
 
-  function stepped(res, now) {
-    var step = res.step;
-    var room = !!PROJ[step.p].room;
-    var v = room ? 'school' : 'town';
+  // after a purchase: new pieces pop in, and the camera goes there for a new building or one that is out of sight.
+  // Returns the seconds the camera takes
+  function event(res, now) {
     var changed = sync(true, now, 0);
-    var mine = changed.filter(function (p) {
-      return room ? p.r === step.p : p.k === step.p;
-    });
-    var focus;
-    if (mine.length) {
-      focus = mean(mine, room ? 32 : 16);
-      if (!room) focus.y -= 40;
-    } else focus = room ? { x: 192, y: roomY(step.p) } : blockAt(step.p);
-    var t = go(v, focus.y, focus.x);
+    populate();
+    bump[res.id] = now;
+    var big = res.unlock || res.park || (res.ms && res.ms.length);
+    var sp = spot(res.id);
+    if (sp.v !== view || !(big || res.stage)) return 0;
+    var t = 0;
+    var s2 = view === 'town' ? 16 : 32;
+    var mine = changed.filter(function (p) { return p.k === res.id || p.r === res.id; });
+    var focus = mine.length ? mean(mine, s2) : { x: sp.x, y: sp.y };
+    var z = zoom();
+    var onScreen = focus.x > cam.x && focus.x < cam.x + cw / z && focus.y > cam.y + IT / z && focus.y < cam.y + (ch - IB) / z;
+    if (big || !onScreen) {
+      if (view === 'town' && mine.length) focus.y -= 40;
+      t = go(view, focus.y, focus.x);
+    }
     changed.forEach(function (p) {
       p.t0 = now + t * 1000 + 80;
     });
     changed.slice(0, 10).forEach(function (p) {
-      var s = room ? 32 : 16;
-      fx.puffs.push({ x: p.x * s, y: p.y * s + (room ? 32 : 0), t0: p.t0 });
+      fx.puffs.push({ x: p.x * s2, y: p.y * s2 + (view === 'school' ? 32 : 0), t0: p.t0 });
     });
-    fx.floats.push({ x: focus.x, y: focus.y - 20, text: '+$' + fmt(step.inc) + '/s', t0: now + t * 1000 + 150 });
     return t;
-  }
-
-  function fmt(v) {
-    if (v >= 1e6) return (v / 1e6).toFixed(v >= 1e7 ? 0 : 1).replace('.0', '') + 'M';
-    if (v >= 1e4) return Math.round(v / 1e3) + 'k';
-    return String(Math.round(v));
   }
 
   function confetti() {
@@ -635,7 +772,7 @@ var View = (function () {
     ctx.font = 'bold 15px system-ui, sans-serif';
     ctx.fillText(l.name.toUpperCase(), cx + 8, cy - 3);
     ctx.font = '9px system-ui, sans-serif';
-    ctx.fillText(l.sub, cx + 8, cy + 12);
+    ctx.fillText(lockSub(l.biz), cx + 8, cy + 12);
     ctx.fillStyle = '#f0c83c';
     ctx.fillRect(cx - w / 2 + 11, cy - 1, 11, 9);
     ctx.strokeStyle = '#5a3c14';
@@ -674,6 +811,45 @@ var View = (function () {
     frame(g, r[2], r[3]);
     landCv[key] = c;
     return c;
+  }
+
+  function avail2(id) {
+    return id === 'park' ? has(PARK.after) : avail(id);
+  }
+
+  function lockSub(id) {
+    if (id === 'park') return avail2(id) ? '$' + short(parkCost()) : 'After Flower Shop';
+    return avail2(id) ? '$' + short(cost(id, 1)) : 'Unlock ' + BIZ[BZ[id].i - 1].name + ' first';
+  }
+
+  // the manager standing at the door of a business
+  function boss(id, now, k) {
+    var pl = PLACE[id];
+    var i = BZ[id].i;
+    var x = pl.door[0] * 16 + 18;
+    var y = pl.door[1] * 16 + 3;
+    person(MANAGERS[i % MANAGERS.length], 'down', Math.floor(now / 520 + i) % 6, false, x, y, k);
+  }
+
+  // a price board at the foot of a building site
+  function price(id) {
+    var pl = PLACE[id];
+    var x = pl.door[0] * 16;
+    var y = pl.door[1] * 16 - 2;
+    var t = '$' + short(cost(id, 1));
+    ctx.font = 'bold 11px system-ui, sans-serif';
+    var w = ctx.measureText(t).width + 14;
+    ctx.fillStyle = '#78502c';
+    ctx.strokeStyle = '#462c1a';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.roundRect(x - w / 2, y - 16, w, 15, 3);
+    ctx.fill();
+    ctx.stroke();
+    ctx.fillStyle = '#ffeec8';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(t, x, y - 8);
   }
 
   function drawTown(now) {
@@ -720,22 +896,30 @@ var View = (function () {
     cars.forEach(function (c) {
       if (c.y > top && c.y < vy1 + 40 && c.x > left && c.x < right) items.push({ y: c.y + 8, c: c });
     });
+    BIZ.forEach(function (b) {
+      var pl = PLACE[b.id];
+      if (pl.door && managed(b.id)) items.push({ y: pl.door[1] * 16 + 3, m: b.id });
+    });
     people.forEach(function (w) {
       if (!w.inside && w.y > top && w.y < vy1 + 40 && w.x > left && w.x < right) items.push({ y: w.y, w: w });
     });
     items.sort(function (a, b) { return a.y - b.y; });
     items.forEach(function (it2) {
       if (it2.p) sprite(it2.p, now);
+      else if (it2.m) boss(it2.m, now, 0.5);
       else if (it2.c) car(IMG[it2.c.sheet], it2.c.f, it2.c.x, it2.c.y);
       else {
         var w = it2.w;
         person(w.sheet, w.face, Math.floor(now / 130 + w.ph) % 6, true, w.x, w.y, 0.5);
       }
     });
+    SHOPS.forEach(function (s) {
+      if (!has(s[0])) price(s[0]);
+    });
     for (id in LANDS) {
       if (!locked(id)) continue;
       var l = LANDS[id];
-      var rect = l.rects[l.at || 0];
+      var rect = l.rects[0];
       if (rect[1] * 16 < vy1 && (rect[1] + rect[3]) * 16 > vy0) sign(l, rect);
     }
   }
@@ -783,8 +967,17 @@ var View = (function () {
     var all = rest.map(function (p) { return { y: (p.flat ? -1000 : 0) + p.y * 32 + 32, p: p }; });
     folks.forEach(function (p) { all.push({ y: p.y * 32 + 33, p: p }); });
     movers.forEach(function (w) { all.push({ y: w.y, w: w }); });
+    for (var rk in ROOMS) {
+      var rm = ROOMS[rk];
+      if (rm.biz && rm.biz !== 'school' && managed(rm.biz)) all.push({ y: (rm.floor[1] + rm.floor[3]) * 32 - 4, g: rm });
+    }
     all.sort(function (a, b) { return a.y - b.y; });
     all.forEach(function (o) {
+      if (o.g) {
+        var gf = o.g.floor;
+        person(MANAGERS[BZ[o.g.biz].i % MANAGERS.length], 'down', Math.floor(now / 520 + gf[1]) % 6, false, gf[0] * 32 + 24, (gf[1] + gf[3]) * 32 - 4, 1);
+        return;
+      }
       if (o.w) {
         person(o.w.sheet, o.w.face, Math.floor(now / 110 + o.w.ph) % 6, true, o.w.x, o.w.y, 1);
         return;
@@ -809,25 +1002,12 @@ var View = (function () {
       }
       ctx.globalAlpha = 1;
     });
-    for (var key in ROOMS) {
-      if (key === 'hall') continue;
-      var r = ROOMS[key];
-      var fl = r.floor;
-      var res = PROJ[key];
-      var n = cnt[key];
-      var cx = (fl[0] + fl[2] / 2) * 32;
-      if (n === 0) {
-        pill(r.name, cx, (fl[1] + fl[3] / 2 - 0.2) * 32, 15, false);
-        pill('not built yet', cx, (fl[1] + fl[3] / 2 + 0.35) * 32, 11, true);
-      } else {
-        var wy = key === 'yard' ? 40.2 * 32 : (fl[1] - 2) * 32;
-        pill(r.name + '  ' + n + '/' + res.steps.length, cx, wy + 10, 11, false);
-      }
-    }
+    var rr = ROOMS.rest;
+    var rf = rr.floor;
+    pill(rr.name, (rf[0] + rf[2] / 2) * 32, (rf[1] + rf[3] / 2) * 32, 13, cnt.rest === 0);
   }
 
   function effects(now) {
-    fx.coins = fx.coins.filter(function (c) { return now - c.t0 < 11800; });
     fx.puffs = fx.puffs.filter(function (p) { return now - p.t0 < 700; });
     fx.puffs.forEach(function (p) {
       var u = (now - p.t0) / 700;
@@ -843,54 +1023,6 @@ var View = (function () {
       }
     });
     ctx.globalAlpha = 1;
-    fx.floats = fx.floats.filter(function (f) { return now - f.t0 < 1500; });
-    fx.floats.forEach(function (f) {
-      var u = (now - f.t0) / 1500;
-      if (u < 0) return;
-      ctx.globalAlpha = u < 0.7 ? 1 : (1 - u) / 0.3;
-      ctx.font = 'bold 14px system-ui, sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'alphabetic';
-      ctx.lineWidth = 3;
-      ctx.strokeStyle = '#2a1c10';
-      ctx.fillStyle = '#ffd84a';
-      ctx.strokeText(f.text, f.x, f.y - u * 30);
-      ctx.fillText(f.text, f.x, f.y - u * 30);
-    });
-    ctx.globalAlpha = 1;
-    fx.coins.forEach(function (c) {
-      if (c.v !== view) return;
-      var b = Math.sin((now - c.t0) / 300) * 2;
-      var s = Math.min(1, (now - c.t0) / 250);
-      ctx.globalAlpha = Math.max(0, Math.min(1, (c.t0 + 11000 - now) / 800));
-      var im = IMG.coin;
-      ctx.drawImage(im, c.x - im.width * s, c.y - 14 + b - im.height * s, im.width * 2 * s, im.height * 2 * s);
-    });
-    ctx.globalAlpha = 1;
-  }
-
-  function spawnCoin(now) {
-    var here = fx.coins.filter(function (c) { return c.v === view; });
-    if (here.length >= 3 || now < coinAt) return;
-    coinAt = now + 7000 + rand() * 6000;
-    var spots = [];
-    if (view === 'town') {
-      PIECES.forEach(function (p) {
-        if (p.z && p.cur && /^(house|farm|bakery|cafe|market|icecream|restaurant|stor)/.test(p.cur)) {
-          spots.push({ x: p.x * 16 + (rand() - 0.5) * 30, y: p.y * 16 - IMG[p.cur].height * 0.55 });
-        }
-      });
-    } else {
-      for (var k in ROOMS) {
-        if (k !== 'hall' && cnt[k] > 0) {
-          var f = ROOMS[k].floor;
-          spots.push({ x: (f[0] + 1 + rand() * (f[2] - 2)) * 32, y: (f[1] + 1 + rand() * (f[3] - 2)) * 32 });
-        }
-      }
-    }
-    if (!spots.length) return;
-    var s = spots[Math.floor(rand() * spots.length)];
-    fx.coins.push({ x: s.x, y: s.y, t0: now, v: view });
   }
 
   // a route in px: the waypoints smoothed so that a turn is a curve, with the running length at every point
@@ -950,10 +1082,12 @@ var View = (function () {
   }
 
   function populate() {
-    var want = Math.min(10, Math.floor(cnt.homes * 0.5 + cnt.main * 0.4 + cnt.sch * 1.5));
+    var own = 0;
+    BIZ.forEach(function (b) { if (has(b.id)) own++; });
+    var want = Math.min(10, own + 1);
     var live = people.filter(function (p) { return !p.inside; });
     var open = WALKS.filter(function (w) { return cnt[w.k] >= w.n; });
-    var wantP = Math.min(18, Math.floor(cnt.homes * 0.7 + cnt.main * 0.5 + cnt.sch));
+    var wantP = Math.min(18, own * 2 + cnt.homes);
     while (open.length && live.length < wantP) {
       var w = open[Math.floor(rand() * open.length)];
       var p = { sheet: rand() < 0.3 ? 'adult_' + [3, 4, 5, 6, 8][Math.floor(rand() * 5)] : 'kid_' + (1 + Math.floor(rand() * 8)),
@@ -962,7 +1096,7 @@ var View = (function () {
       people.push(p);
       live.push(p);
     }
-    var ok = routes.filter(function (r) { return cnt.homes >= 2 + r.n / 3 || cnt.main >= 1 + r.n / 3; });
+    var ok = routes.filter(function (r) { return own >= 1 + r.n / 3; });
     while (cars.length < want && ok.length) {
       var rt = ok[cars.length % ok.length];
       var c = { id: cars.length + 1, r: rt, s: rand() * rt.total, sp: 28 + rand() * 14, hold: 0,
@@ -970,8 +1104,8 @@ var View = (function () {
       cars.push(c);
       place(c);
     }
-    var yard = cnt.yard >= 7 ? 3 : 0;
-    var hallN = cnt.sch >= 2 ? Math.min(5, cnt.sch) : 0;
+    var yard = cnt.yard >= 4 ? 3 : 0;
+    var hallN = cnt.school >= 2 ? Math.min(5, cnt.school) : 0;
     var ins = people.filter(function (q) { return q.inside; });
     var have2 = ins.filter(function (q) { return q.kind === 'hall'; }).length;
     for (var i2 = have2; i2 < hallN; i2++) {
@@ -1033,30 +1167,31 @@ var View = (function () {
   }
 
   function hit(sx, sy) {
+    for (var i = 0; i < anch.length; i++) {
+      var a = anch[i];
+      if (a.nocoin || bstate(a.id).wait <= 0) continue;
+      if (Math.abs(a.x - sx) < 30 && Math.abs(a.y - 46 - sy) < 30) return { kind: 'coin', id: a.id, x: a.x, y: a.y - 46 };
+    }
     var z = zoom();
     var wy = sy / z + cam.y;
     var wx = sx / z + cam.x;
-    var best = null;
-    fx.coins.forEach(function (c) {
-      if (c.v === view && Math.abs(c.x - wx) < 20 && Math.abs(c.y - 8 - wy) < 22) best = c;
-    });
-    if (best) {
-      fx.coins.splice(fx.coins.indexOf(best), 1);
-      return { kind: 'coin', x: best.x, y: best.y };
-    }
     if (view === 'town') {
       var tx = wx / 16;
       var ty = wy / 16;
-      for (var i = 0; i < BLOCKS.length; i++) {
-        var b = BLOCKS[i];
-        if (tx >= b[0] && tx < b[0] + b[2] && ty >= b[1] && ty < b[1] + b[3]) return { kind: 'block', id: b[4] };
+      var ids = BIZ.map(function (b) { return b.id; }).concat('park');
+      for (var k = 0; k < ids.length; k++) {
+        var rs = PLACE[ids[k]].rects || [];
+        for (var j = 0; j < rs.length; j++) {
+          var b = rs[j];
+          if (tx >= b[0] && tx < b[0] + b[2] && ty >= b[1] && ty < b[1] + b[3]) return { kind: 'biz', id: ids[k] };
+        }
       }
       return null;
     }
     var ry = wy / 32;
     for (var key in ROOMS) {
       var f = ROOMS[key].floor;
-      if (key !== 'hall' && ry >= f[1] - 2 && ry < f[1] + f[3]) return { kind: 'room', id: key };
+      if (ROOMS[key].biz && ry >= f[1] - 2 && ry < f[1] + f[3]) return { kind: 'biz', id: ROOMS[key].biz };
     }
     return null;
   }
@@ -1149,7 +1284,6 @@ var View = (function () {
       c.a += dt * 5;
     });
     fx.conf = fx.conf.filter(function (c) { return c.y < ch + 20; });
-    spawnCoin(now);
     var z = zoom();
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.fillStyle = view === 'town' ? GRASS : '#262830';
@@ -1160,6 +1294,7 @@ var View = (function () {
     else drawSchool(now);
     effects(now);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    overlay(now);
     fx.conf.forEach(function (c) {
       ctx.fillStyle = c.c;
       ctx.save();
@@ -1178,14 +1313,19 @@ var View = (function () {
     sync(false, 0);
     people.length = 0;
     cars.length = 0;
-    fx.coins.length = 0;
     populate();
+  }
+
+  // where the cash of a business is shown on screen right now, null when it is in the other view
+  function screenOf(id) {
+    for (var i = 0; i < anch.length; i++) if (anch[i].id === id) return { x: anch[i].x, y: anch[i].y - 46 };
+    return null;
   }
 
   return {
     init: init, draw: draw, inset: function (t, b) { IT = t; IB = b; clamp(); }, ready: function () { return ready; },
-    stepped: stepped, go: go, refresh: refresh, confetti: confetti, populate: populate, roomY: roomY, blockAt: blockAt,
-    view: function () { return view; }, focusNow: focusNow,
-    float: function (x, y, text, now) { fx.floats.push({ x: x, y: y, text: text, t0: now }); }
+    event: event, go: go, refresh: refresh, confetti: confetti, populate: populate, roomY: roomY, blockAt: blockAt,
+    view: function () { return view; }, focusNow: focusNow, screenOf: screenOf, spot: spot,
+    setBest: function (id) { bestId = id; }
   };
 })();
