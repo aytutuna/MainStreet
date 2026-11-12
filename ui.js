@@ -8,7 +8,7 @@ var ac = null;
 var snd = true;
 var cardId = null;
 var lastTick = 0;
-var shownRate = '';
+var shown = {};
 var insets = [0, 0];
 
 function $(id) {
@@ -59,12 +59,6 @@ function lower(s) {
   return s.charAt(0).toLowerCase() + s.slice(1);
 }
 
-function projectInc(p) {
-  var sum = 0;
-  for (var i = p.first; i < Math.min(S.k, p.end); i++) sum += STEPS[i].inc;
-  return sum * (done(p.id) ? 2 : 1);
-}
-
 function fitInsets() {
   var top = $('top').offsetHeight + 6;
   var bot = $('bottom').offsetHeight + 6;
@@ -74,39 +68,40 @@ function fitInsets() {
   }
 }
 
+// writes to the page only when a value changed
+function put(key, el, prop, value) {
+  if (shown[key] === value) return false;
+  shown[key] = value;
+  el[prop] = value;
+  return true;
+}
+
 function updateNext() {
   var n = upNext();
   var b = $('next');
-  if (!n) {
-    b.hidden = true;
-    fitInsets();
-    return;
+  var moved = put('nextHidden', b, 'hidden', !n);
+  if (n) {
+    var ok = canBuy();
+    var html = 'Next: ' + PROJ[n.p].name + ', ' + lower(n.name);
+    if (!ok) html += '<small>' + Math.ceil(waitFor()) + ' s to go</small>';
+    moved = put('nextHtml', $('next-txt'), 'innerHTML', html) || moved;
+    put('nextCost', $('next-cost'), 'textContent', money(n.cost));
+    if (shown.wait !== !ok) {
+      shown.wait = !ok;
+      b.classList.toggle('wait', !ok);
+    }
+    put('nextFill', $('next-fill').style, 'width', (ok ? 0 : Math.min(100, S.cash / n.cost * 100)) + '%');
+    if (cardId) put('goOff', $('card-go'), 'disabled', !ok);
   }
-  b.hidden = false;
-  var ok = canBuy();
-  var html = 'Next: ' + PROJ[n.p].name + ', ' + lower(n.name);
-  if (!ok) html += '<small>' + Math.ceil(waitFor()) + ' s to go</small>';
-  var t = $('next-txt');
-  if (t.getAttribute('data-h') !== html) {
-    t.innerHTML = html;
-    t.setAttribute('data-h', html);
-  }
-  $('next-cost').textContent = money(n.cost);
-  b.classList.toggle('wait', !ok);
-  $('next-fill').style.width = (ok ? 0 : Math.min(100, S.cash / n.cost * 100)) + '%';
-  fitInsets();
+  if (moved) fitInsets();
 }
 
 function updateHud() {
-  $('cash-n').textContent = free ? '∞' : money(S.cash);
-  var r = '+' + money(rate()) + '/s';
-  if (r !== shownRate) {
-    $('rate').textContent = r;
-    shownRate = r;
-  }
+  put('cash', $('cash-n'), 'textContent', free ? '∞' : money(S.cash));
+  put('rate', $('rate'), 'textContent', '+' + money(rate()) + '/s');
   var sw = $('swap');
-  sw.hidden = got('class1') === 0;
-  sw.textContent = View.view() === 'town' ? 'School' : 'Town';
+  put('swapHidden', sw, 'hidden', got('class1') === 0);
+  put('swapText', sw, 'textContent', View.view() === 'town' ? 'School' : 'Town');
 }
 
 // the card for a project, a locked block or the whole school
@@ -236,7 +231,10 @@ function wire() {
   $('swap').addEventListener('click', function () {
     closeCard();
     if (View.view() === 'town') View.go('school', View.roomY(schoolRoom()));
-    else View.go('town', View.blockY('school'));
+    else {
+      var b = View.blockAt('school');
+      View.go('town', b.y, b.x);
+    }
   });
   $('gear').addEventListener('click', function () {
     setSound();
@@ -296,6 +294,7 @@ function wire() {
   $('away-ok').addEventListener('click', function () { $('away').hidden = true; });
   $('end-ok').addEventListener('click', function () { $('end').hidden = true; });
   document.addEventListener('pointerup', wake);
+  window.addEventListener('resize', fitInsets);
   var hiddenAt = 0;
   document.addEventListener('visibilitychange', function () {
     if (document.hidden) {
@@ -312,12 +311,12 @@ function wire() {
 }
 
 function loop(t) {
+  requestAnimationFrame(loop);
   tick(Math.min(1, (t - lastTick) / 1000));
   lastTick = t;
   View.draw(t);
   updateHud();
   updateNext();
-  requestAnimationFrame(loop);
 }
 
 function start() {
@@ -336,6 +335,14 @@ function start() {
     lastTick = performance.now();
     requestAnimationFrame(loop);
     setInterval(save, 5000);
+    if (location.protocol !== 'file:') {
+      // file:// blocks the manifest fetch and logs an error
+      var man = document.createElement('link');
+      man.rel = 'manifest';
+      man.href = 'manifest.webmanifest';
+      document.head.appendChild(man);
+      if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+    }
   }, 50);
 }
 
