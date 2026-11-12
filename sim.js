@@ -25,7 +25,7 @@ BIZ.forEach(function (b, i) {
 var S = fresh();
 
 function fresh() {
-  var s = { v: 6, cash: START_CASH, gems: 0, stars: 0, run: 0, all: 0, pend: 0, hall: 0, x2: 0, b: {}, ms: {},
+  var s = { v: 6, cash: START_CASH, gems: 0, stars: 0, run: 0, all: 0, pend: 0, pl: { lot: 0, hall: 0, taxi: 0 }, x2: 0, b: {}, ms: {},
     st: { col: 0, sales: 0 }, goal: [0, 1, 2], gn: 3, gd: {}, day: { n: 0, d: -1 }, ts: clock() };
   s.b.fruit = { l: 1, m: 0, t: 0, w: 0 };
   return s;
@@ -79,7 +79,9 @@ function nextMs(l) {
 }
 
 function gmul() {
-  return (1 + STAR_BONUS * S.stars) * (1 + HALL.boost * S.hall);
+  var m = 1 + STAR_BONUS * S.stars;
+  PLACES.forEach(function (p) { m *= 1 + p.boost * S.pl[p.id]; });
+  return m;
 }
 
 function bmul() {
@@ -143,7 +145,29 @@ function shape(id) {
   return n;
 }
 
+// unlimited money for testing: spending is free, and the real balance waits in FREE so saves never hold the top-up
+var FREE = null;
+var TOP = 1e60;
+
+function setFree(on) {
+  if (on && FREE === null) {
+    FREE = S.cash;
+    S.cash = TOP;
+  } else if (!on && FREE !== null) {
+    S.cash = FREE;
+    FREE = null;
+  }
+}
+
+// a balance below the top-up means S was just loaded, sold or reset: that is the real one
+function topUp() {
+  if (FREE === null) return;
+  if (S.cash < TOP / 10) FREE = S.cash;
+  S.cash = TOP;
+}
+
 function earn(v) {
+  if (FREE !== null) FREE += v;
   S.cash += v;
   S.run += v;
   S.all += v;
@@ -182,16 +206,18 @@ function hire(id) {
   return true;
 }
 
-function hallCost() {
-  return S.hall < HALL.cost.length && has(HALL.after) ? HALL.cost[S.hall] : 0;
+function placeCost(id) {
+  var p = PL[id];
+  var l = S.pl[id];
+  return l < p.cost.length && has(p.after) ? p.cost[l] : 0;
 }
 
-function buyHall() {
-  var c = hallCost();
-  if (!c || S.cash < c) return false;
+function buyPlace(id) {
+  var c = placeCost(id);
+  if (!c || S.cash < c) return null;
   S.cash -= c;
-  S.hall++;
-  return true;
+  S.pl[id]++;
+  return { id: id, place: true };
 }
 
 function collect(id) {
@@ -279,8 +305,10 @@ function options() {
     if (m && m.lv - l > 1 && l > 0) add({ k: 'lv', id: id, n: m.lv - l, cost: cost(id, m.lv - l), gain: perSec(id, m.lv) * bmul() - now, ms: m.lv });
     if (l > 0 && !managed(id)) add({ k: 'mgr', id: id, n: 1, cost: z.m, gain: now * MGR_WEIGHT });
   });
-  var pc = hallCost();
-  if (pc) add({ k: 'hall', id: 'hall', n: 1, cost: pc, gain: r * HALL.boost / (1 + HALL.boost * S.hall) });
+  PLACES.forEach(function (p) {
+    var c = placeCost(p.id);
+    if (c) add({ k: 'place', id: p.id, n: 1, cost: c, gain: r * p.boost / (1 + p.boost * S.pl[p.id]) });
+  });
   return out;
 }
 
@@ -295,7 +323,7 @@ function best() {
 function doOption(o) {
   if (o.k === 'lv') return buy(o.id, o.n);
   if (o.k === 'mgr') return hire(o.id) ? { id: o.id, mgr: true } : null;
-  return buyHall() ? { id: 'hall', hall: true } : null;
+  return buyPlace(o.id);
 }
 
 function buyBest() {
@@ -327,11 +355,12 @@ var GOALS = [
   gCol(5, 3), gLv('fruit', 10, 3), gLv('bakery', 1, 4), gMgr(1, 5), gCol(25, 3), gLv('bakery', 10, 4), gEarn(1000, 3),
   gLv('flower', 1, 5), gLv('fruit', 25, 5, 15), gMgr(3, 8), gEarn(1e5, 5), gLv('grocery', 1, 6), gLv('bakery', 25, 6),
   gCol(100, 5), gLv('frozen', 1, 8), gLv('flower', 25, 8, 30), gMgr(5, 10), gEarn(1e7, 8), gLv('clothes', 1, 10),
-  gl('Open the Entrance', 10, 1, function () { return S.hall; }), gLv('fruit', 100, 12), gLv('gifts', 1, 10), gLv('arcade', 1, 12),
+  gl('Open the Entrance', 10, 1, function () { return S.pl.hall; }), gLv('fruit', 100, 12), gLv('gifts', 1, 10), gLv('arcade', 1, 12),
   gEarn(1e9, 10, 30), gMgr(8, 15), gLv('games', 1, 15), gLv('sports', 1, 20), gEarn(1e11, 15),
-  gl('Upgrade the Entrance to level 3', 12, 3, function () { return S.hall; }), gLv('sports', 25, 15, 30), gLv('arcade', 50, 15),
+  gl('Upgrade the Entrance to level 3', 12, 3, function () { return S.pl.hall; }), gLv('sports', 25, 15, 30), gLv('arcade', 50, 15),
   gl('Sell the mall', 30, 1, function () { return S.st.sales; }), gEarn(1e13, 20, 60), gMgr(10, 25),
-  gEarn(1e15, 25), gl('Earn 100 Mall stars', 40, 100, function () { return S.stars; }), gEarn(1e18, 30)
+  gEarn(1e15, 25), gl('Earn 100 Mall stars', 40, 100, function () { return S.stars; }), gEarn(1e18, 30),
+  gl('Build the Parking', 4, 1, function () { return S.pl.lot; }), gl('Open the Taxi Stand', 8, 1, function () { return S.pl.taxi; })
 ];
 
 function goals() {
@@ -371,7 +400,7 @@ function sell() {
   S.st.sales++;
   S.cash = START_CASH;
   S.run = 0;
-  S.hall = 0;
+  S.pl = { lot: 0, hall: 0, taxi: 0 };
   S.b = { fruit: { l: 1, m: 0, t: 0, w: 0 } };
   return n;
 }
@@ -423,7 +452,7 @@ function warp() {
 function save() {
   S.ts = clock();
   try {
-    localStorage.setItem(KEY, JSON.stringify(S));
+    localStorage.setItem(KEY, saved());
   } catch (e) {}
 }
 
@@ -444,7 +473,8 @@ function validate(o) {
   s.all = Math.max(s.run, num(o.all, 0));
   s.pend = num(o.pend, 0);
   s.x2 = num(o.x2, 0);
-  s.hall = Math.min(HALL.cost.length, Math.floor(num(o.hall, 0)));
+  var pl = o.pl && typeof o.pl === 'object' ? o.pl : { hall: o.hall };
+  PLACES.forEach(function (p) { s.pl[p.id] = Math.min(p.cost.length, Math.floor(num(pl[p.id], 0))); });
   s.ts = o.ts;
   BIZ.forEach(function (z) {
     var e = o.b[z.id];
@@ -489,8 +519,16 @@ function load() {
   return gone;
 }
 
+function saved() {
+  var c = S.cash;
+  if (FREE !== null) S.cash = FREE;
+  var out = JSON.stringify(S);
+  S.cash = c;
+  return out;
+}
+
 function exportCode() {
-  return btoa(JSON.stringify(S));
+  return btoa(saved());
 }
 
 function importCode(code) {

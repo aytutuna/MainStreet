@@ -13,15 +13,19 @@ var BIZ = [
   { id: 'sports', name: 'Game Zone', ic: 'arcade/air-hockey', cy: 120, c0: 6e9, g: 1.08, r: 7.32e8, m: 7.2e10 }
 ];
 
-// level thresholds: [level, revenue x, cycle x2]. Each level in STAGE also puts one more piece in the shop
+// level thresholds: [level, revenue x, cycle x2]. Each level in STAGE also adds one more piece to the shop
 var MS = [[10, 2, 0], [25, 2, 1], [50, 3, 0], [100, 2, 1], [200, 3, 0], [300, 3, 0], [400, 3, 0]];
 var MS_GEMS = [1, 2, 3, 5, 8, 10, 15];
-var STAGE = [1, 5, 10, 25, 50, 100, 200];
+var STAGE = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 16, 18, 20, 25, 50, 100, 200, 300, 400];
 
-// the entrance hall: a few levels, each raises all income by 20%
-var HALL = { after: 'flower', cost: [5e6, 1e8, 2e9, 4e10], boost: 0.2 };
+// places round the shops: a few levels each, and every level raises all income. `after` must be open first
+var PLACES = [
+  { id: 'lot', name: 'Parking', ic: 'car/sedan', after: 'bakery', cost: [500, 5e4, 5e6, 5e8], boost: 0.1 },
+  { id: 'hall', name: 'Entrance', ic: 'shop/shopping-cart', after: 'flower', cost: [5e6, 1e8, 2e9, 4e10], boost: 0.2 },
+  { id: 'taxi', name: 'Taxi Stand', ic: 'car/taxi', after: 'frozen', cost: [2e6, 2e8, 2e10, 2e12], boost: 0.15 }
+];
+var PL = {};
+PLACES.forEach(function (p) { PL[p.id] = p; });
 
-// shops that fill up quicker than STAGE
-var VIEW = {
-  fruit: [1, 3, 6, 10, 15, 20, 25]
-};
+// shops that fill up on other levels than STAGE
+var VIEW = {};
