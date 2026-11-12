@@ -1,0 +1,527 @@
+import * as THREE from 'three';
+import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
+
+// The town is laid on a grid of 1 unit tiles (x east, z south). Streets run on tile centres; the sidewalk is the ring of
+// half tiles around the road and a lot starts at its edge. Models face +z, so a building north of a street is turned 0 and
+// one south of it half a circle.
+
+export var PAVE = 0xc9d0f0;
+export var ASPH = 0x5f6478;
+export var GRASS = 0x84c26c;
+export var LAWN = 0x93cc78;
+export var DIRT = 0xb9915f;
+export var PLAZA = 0xd9d3c6;
+
+var DIRS = { N: [0, -1], E: [1, 0], S: [0, 1], W: [-1, 0] };
+var ORDER = ['N', 'E', 'S', 'W'];
+var FACE = { S: 0, E: Math.PI / 2, N: Math.PI, W: -Math.PI / 2 };
+
+// small seeded generator so the town is the same on every visit
+export function seeded(n) {
+  return function () {
+    n |= 0;
+    n = (n + 0x6d2b79f5) | 0;
+    var t = Math.imul(n ^ (n >>> 15), 1 | n);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+// the side a model's side ends up on when it is turned k quarter turns about +y
+function turn(d, k) {
+  var v = DIRS[d];
+  for (var i = 0; i < k; i++) v = [v[1], -v[0]];
+  return v[0] === 0 ? (v[1] < 0 ? 'N' : 'S') : (v[0] > 0 ? 'E' : 'W');
+}
+
+export function newCity(lib) {
+  var rng = seeded(11);
+  var batches = {};
+  var flat = [];
+  var claims = [];
+  var warns = [];
+  var tiles = {};
+  var roadCells = {};
+  var green = {};
+  var walkCells = {};
+  var special = {};
+  var city = { root: new THREE.Group(), rng: rng, warns: warns, tiles: tiles, roadCells: roadCells, walkCells: walkCells, claims: claims, biz: {}, crossings: [], lamps: [],
+    signals: [], extras: [], DIRS: DIRS, FACE: FACE };
+
+  function warn(msg) {
+    warns.push(msg);
+  }
+
+  // ---- placing
+
+  function rect(m, x, z, rot, s) {
+    var c = Math.cos(rot);
+    var sn = Math.sin(rot);
+    var f = { x0: 1e9, x1: -1e9, z0: 1e9, z1: -1e9 };
+    [m.box.x0, m.box.x1].forEach(function (px) {
+      [m.box.z0, m.box.z1].forEach(function (pz) {
+        var wx = x + s * (px * c + pz * sn);
+        var wz = z + s * (-px * sn + pz * c);
+        f.x0 = Math.min(f.x0, wx);
+        f.x1 = Math.max(f.x1, wx);
+        f.z0 = Math.min(f.z0, wz);
+        f.z1 = Math.max(f.z1, wz);
+      });
+    });
+    return f;
+  }
+
+  function matrix(x, y, z, rot, s) {
+    return new THREE.Matrix4().compose(new THREE.Vector3(x, y, z), new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), rot),
+      new THREE.Vector3(s, s, s));
+  }
+
+  // adds a model to the merged static meshes at its own origin
+  function put(ref, x, z, rot, o) {
+    o = o || {};
+    var s = o.s || 1;
+    var m = lib.model(ref);
+    var mat = matrix(x, o.y || 0, z, rot || 0, s);
+    m.parts.forEach(function (p) {
+      var g = p.geom.clone();
+      g.applyMatrix4(mat);
+      addGeom(o.tint ? tintMat(p.mat, o.tint) : p.mat, g);
+    });
+    return rect(m, x, z, rot || 0, s);
+  }
+
+  // where the origin goes so that the middle of the front face lands on (px, pz)
+  function origin(m, px, pz, rot, s) {
+    var cx = (m.box.x0 + m.box.x1) / 2;
+    var c = Math.cos(rot);
+    var sn = Math.sin(rot);
+    return [px - s * (cx * c + m.box.z1 * sn), pz - s * (-cx * sn + m.box.z1 * c)];
+  }
+
+  function overlap(a, b, e) {
+    return a.x0 < b.x1 - e && a.x1 > b.x0 + e && a.z0 < b.z1 - e && a.z1 > b.z0 + e;
+  }
+
+  function cellsOver(f, into, minArea) {
+    for (var ix = Math.floor(f.x0 * 2); ix < Math.ceil(f.x1 * 2); ix++) {
+      for (var iz = Math.floor(f.z0 * 2); iz < Math.ceil(f.z1 * 2); iz++) {
+        var ox = Math.min(f.x1, ix / 2 + 0.5) - Math.max(f.x0, ix / 2);
+        var oz = Math.min(f.z1, iz / 2 + 0.5) - Math.max(f.z0, iz / 2);
+        if (ox * oz > minArea && into[ix + ',' + iz]) return true;
+      }
+    }
+    return false;
+  }
+
+  // a footprint is claimed once; it may not cross a road, a sidewalk or anything claimed before. walk: may stand on a sidewalk
+  function claim(f, tag, walk) {
+    if (cellsOver(f, roadCells, 0.03)) warn(tag + ' is on the road at ' + f.x0.toFixed(2) + ',' + f.z0.toFixed(2));
+    else if (!walk && cellsOver(f, walkCells, 0.03)) warn(tag + ' is on a sidewalk at ' + f.x0.toFixed(2) + ',' + f.z0.toFixed(2));
+    for (var i = 0; i < claims.length; i++) {
+      if (overlap(f, claims[i], 0.02)) warn(tag + ' overlaps ' + claims[i].tag + ' at ' + f.x0.toFixed(2) + ',' + f.z0.toFixed(2));
+    }
+    f.tag = tag;
+    claims.push(f);
+    return f;
+  }
+
+  function slab(x0, z0, x1, z1, col, y, h) {
+    flat.push({ x0: x0, z0: z0, x1: x1, z1: z1, col: col, y: y === undefined ? 0.012 : y, h: h || 0.004 });
+  }
+
+  // a model standing on its own spot, claimed with a footprint a little smaller than its box
+  function prop(ref, x, z, rot, o) {
+    o = o || {};
+    var f = put(ref, x, z, rot, o);
+    var k = o.shrink === undefined ? 0 : o.shrink;
+    f.x0 += k;
+    f.x1 -= k;
+    f.z0 += k;
+    f.z1 -= k;
+    if (!o.free) claim(f, o.tag || ref, o.walk);
+    return f;
+  }
+
+  function free(f, walk) {
+    if (cellsOver(f, roadCells, 0.0001)) return false;
+    if (!walk && cellsOver(f, walkCells, 0.0001)) return false;
+    for (var i = 0; i < claims.length; i++) if (overlap(f, claims[i], 0.005)) return false;
+    return true;
+  }
+
+  // optional furniture: placed only where nothing else stands
+  function tryProp(ref, x, z, rot, o) {
+    o = o || {};
+    var m = lib.model(ref);
+    var f = rect(m, x, z, rot || 0, o.s || 1);
+    if (!free(f, o.walk)) return null;
+    if (o.onWalk && !cellsOver({ x0: x - 0.01, x1: x + 0.01, z0: z - 0.01, z1: z + 0.01 }, walkCells, 0)) return null;
+    put(ref, x, z, rot, o);
+    f.tag = o.tag || ref;
+    claims.push(f);
+    return f;
+  }
+
+  var solidMats = {};
+  function solid(x, y, z, w, h, d, col) {
+    var g = new THREE.BoxGeometry(w, h, d);
+    g.translate(x, y + h / 2, z);
+    var m = solidMats[col] || (solidMats[col] = new THREE.MeshLambertMaterial({ color: col }));
+    var b = batches[m.uuid] || (batches[m.uuid] = { mat: m, geoms: [] });
+    b.geoms.push(g);
+  }
+
+  var tints = {};
+  function tintMat(mat, tint) {
+    var k = mat.uuid + tint;
+    if (!tints[k]) tints[k] = new THREE.MeshLambertMaterial({ map: mat.map, color: tint, emissive: new THREE.Color(tint).multiplyScalar(0.1) });
+    return tints[k];
+  }
+  function addGeom(mat, g) {
+    var b = batches[mat.uuid] || (batches[mat.uuid] = { mat: mat, geoms: [] });
+    b.geoms.push(g);
+  }
+  // a block with its own transform (tilted awnings and the like)
+  function solidM(w, h, d, col, m) {
+    var g = new THREE.BoxGeometry(w, h, d);
+    g.applyMatrix4(m);
+    var mt = solidMats[col] || (solidMats[col] = new THREE.MeshLambertMaterial({ color: col }));
+    addGeom(mt, g);
+  }
+
+  // a plain coloured block placed only where nothing stands
+  function boxProp(x, z, w, h, d, col, tag, walk) {
+    var f = { x0: x - w / 2, x1: x + w / 2, z0: z - d / 2, z1: z + d / 2 };
+    if (!free(f, walk)) return null;
+    solid(x, 0, z, w, h, d, col);
+    f.tag = tag;
+    claims.push(f);
+    return f;
+  }
+
+  // ---- roads
+
+  function tile(x, z, piece) {
+    tiles[x + ',' + z] = { x: x, z: z, piece: piece };
+  }
+  function cellsOf(x0, z0, x1, z1, into) {
+    for (var ix = Math.round(x0 * 2); ix < Math.round(x1 * 2); ix++) {
+      for (var iz = Math.round(z0 * 2); iz < Math.round(z1 * 2); iz++) into[ix + ',' + iz] = 1;
+    }
+  }
+  function hline(z, x0, x1) {
+    for (var x = x0; x <= x1; x++) tile(x, z);
+  }
+  function vline(x, z0, z1) {
+    for (var z = z0; z <= z1; z++) tile(x, z);
+  }
+  function greenRect(x0, z0, x1, z1) {
+    cellsOf(x0, z0, x1, z1, green);
+  }
+
+  // a big piece owns several tiles; ports are the plain tiles that may connect to it
+  function big(piece, cx, cz, rot, w, ports) {
+    var h = w / 2;
+    for (var x = cx - h + 0.5; x < cx + h; x++) {
+      for (var z = cz - h + 0.5; z < cz + h; z++) special[x + ',' + z] = { ports: ports };
+    }
+    tiles['big' + cx + ',' + cz] = { x: cx, z: cz, piece: piece, rot: rot, big: w };
+  }
+
+  function connected(x, z) {
+    var set = {};
+    ORDER.forEach(function (d) {
+      var k = (x + DIRS[d][0]) + ',' + (z + DIRS[d][1]);
+      if (special[k]) {
+        if (special[k].ports.indexOf(x + ',' + z) >= 0) set[d] = 1;
+      } else if (tiles[k]) set[d] = 1;
+    });
+    return set;
+  }
+
+  var BASE = { 'road-straight': 'EW', 'road-intersection': 'EWS', 'road-crossroad': 'NESW', 'road-bend-sidewalk': 'WS', 'road-end': 'E', 'road-end-round': 'E' };
+
+  function pickPiece(t) {
+    var c = connected(t.x, t.z);
+    var n = Object.keys(c).length;
+    var name;
+    if (t.piece) name = t.piece;
+    else if (n >= 4) name = 'road-crossroad';
+    else if (n === 3) name = 'road-intersection';
+    else if (n === 2) name = (c.N && c.S) || (c.E && c.W) ? 'road-straight' : 'road-bend-sidewalk';
+    else name = 'road-end';
+    var want = ORDER.filter(function (d) { return c[d]; }).sort().join('');
+    for (var k = 0; k < 4; k++) {
+      var open = BASE[name].split('').map(function (d) { return turn(d, k); }).sort().join('');
+      if (open === want) return { name: name, rot: k * Math.PI / 2 };
+      if (name.indexOf('road-end') === 0 && c[turn('E', k)]) return { name: name, rot: k * Math.PI / 2 };
+    }
+    warn('road piece at ' + t.x + ',' + t.z + ' has no fit for ' + want);
+    return { name: name, rot: 0 };
+  }
+
+  // places the road pieces; stripes mark the first tile of every leg that meets a junction
+  function placeRoads(noStripe) {
+    for (var k in tiles) if (!tiles[k].big) tiles[k].pick = pickPiece(tiles[k]);
+    for (var j in tiles) {
+      var tj = tiles[j];
+      if (tj.big || (tj.pick.name !== 'road-crossroad' && tj.pick.name !== 'road-intersection')) continue;
+      ORDER.forEach(function (d) {
+        var n = tiles[(tj.x + DIRS[d][0]) + ',' + (tj.z + DIRS[d][1])];
+        if (!n || n.big || n.pick.name !== 'road-straight' || (noStripe && noStripe(n.x, n.z))) return;
+        n.pick = { name: 'road-crossing', rot: n.pick.rot };
+        city.crossings.push({ x: n.x, z: n.z, across: n.pick.rot === 0 || Math.abs(n.pick.rot - Math.PI) < 0.01 ? 'z' : 'x' });
+      });
+    }
+    for (var q in tiles) {
+      var t = tiles[q];
+      var h = t.big ? t.big / 2 : 0.5;
+      var name = t.big ? t.piece : t.pick.name;
+      var rot = t.big ? t.rot * Math.PI / 2 : t.pick.rot;
+      put('roads/' + name, t.x, t.z, rot);
+      cellsOf(t.x - h, t.z - h, t.x + h, t.z + h, roadCells);
+      slab(t.x - h, t.z - h, t.x + h, t.z + h, PAVE, 0, 0.004);
+      if (name === 'road-curve') {
+        // the ground inside the bend is lawn, the rest of the tile is pavement
+        var k = Math.round(rot / (Math.PI / 2));
+        var a = DIRS[turn('W', k)];
+        var b = DIRS[turn('S', k)];
+        var cx = t.x + (a[0] + b[0]) * h;
+        var cz = t.z + (a[1] + b[1]) * h;
+        slab(Math.min(cx, cx - (a[0] + b[0]) * 1.0), Math.min(cz, cz - (a[1] + b[1]) * 1.0), Math.max(cx, cx - (a[0] + b[0]) * 1.0),
+          Math.max(cz, cz - (a[1] + b[1]) * 1.0), 0x93cc78, 0.004, 0.004);
+      }
+    }
+  }
+
+  // sidewalk on every half tile that touches the road, unless it is reserved as green
+  function layWalks() {
+    var seen = {};
+    for (var k in roadCells) {
+      var p = k.split(',');
+      for (var dx = -1; dx <= 1; dx++) {
+        for (var dz = -1; dz <= 1; dz++) {
+          var kk = (+p[0] + dx) + ',' + (+p[1] + dz);
+          if (!roadCells[kk] && !green[kk]) seen[kk] = 1;
+        }
+      }
+    }
+    for (var w in seen) {
+      var q = w.split(',');
+      walkCells[w] = 1;
+      slab(+q[0] / 2, +q[1] / 2, +q[0] / 2 + 0.5, +q[1] / 2 + 0.5, PAVE, 0.016, 0.004);
+    }
+  }
+
+  // ---- rows of buildings
+
+  // a stage of a business is one model or a list of models standing side by side
+  function span(ref) {
+    var refs = Array.isArray(ref) ? ref : [ref];
+    var w = 0.04 * (refs.length - 1);
+    var d = 0;
+    refs.forEach(function (r) {
+      var b = lib.model(r).box;
+      w += b.x1 - b.x0;
+      d = Math.max(d, b.z1 - b.z0);
+    });
+    return { w: w, d: d };
+  }
+  function wOf(it) {
+    var w = 0;
+    (it.ms || [it.m]).forEach(function (r) { w = Math.max(w, span(r).w); });
+    return w;
+  }
+  function dOf(it) {
+    var d = 0;
+    (it.ms || [it.m]).forEach(function (r) { d = Math.max(d, span(r).d); });
+    return d;
+  }
+
+  // picks buildings from a pool whose widths, scaled a little, fill len
+  function fit(len, pool, gap) {
+    var best = null;
+    var bestErr = 1e9;
+    for (var tries = 0; tries < 500; tries++) {
+      var list = [];
+      var sum = 0;
+      for (var guard = 0; guard < 30; guard++) {
+        var ref = pool[Math.floor(rng() * pool.length)];
+        var w = wOf({ m: ref });
+        if ((len - gap * list.length) / (sum + w) < 0.94 && list.length) break;
+        list.push(ref);
+        sum += w;
+        if ((len - gap * (list.length - 1)) / sum <= 1.06) break;
+      }
+      var sc = (len - gap * (list.length - 1)) / sum;
+      var err = Math.abs(sc - 1);
+      if (sc >= 0.94 && sc <= 1.06 && err < bestErr) {
+        best = list;
+        bestErr = err;
+        if (err < 0.012) break;
+      }
+    }
+    return best;
+  }
+
+  // one row along a street. face is the way the fronts look; items are model names, {m, biz} or {fill: pool}.
+  // front is the lot line (x for a row along z, z for a row along x). Returns the placed records.
+  function row(axis, front, from, to, face, items, o) {
+    o = o || {};
+    var gap = o.gap === undefined ? 0.03 : o.gap;
+    var len = to - from;
+    var fixed = 0;
+    var fills = 0;
+    items.forEach(function (it) {
+      if (it.fill) fills++;
+      else fixed += wOf(typeof it === 'string' ? { m: it } : it);
+    });
+    var rest = len - fixed - gap * (items.length - 1);
+    var list = [];
+    items.forEach(function (it) {
+      if (it.fill) {
+        var pool = typeof it.fill === 'string' ? o.pools[it.fill] : it.fill;
+        var got = fit(rest / fills + gap, pool, gap);
+        if (!got) {
+          warn('no fit for ' + (rest / fills).toFixed(2) + ' at ' + axis + front + ' from ' + from);
+          return;
+        }
+        got.forEach(function (r) { list.push({ m: r }); });
+      } else list.push(typeof it === 'string' ? { m: it } : it);
+    });
+    var sum = 0;
+    list.forEach(function (it) { sum += wOf(it); });
+    var s = (len - gap * (list.length - 1)) / sum;
+    if (o.noscale) s = 1;
+    if (s < 0.9 || s > 1.12) warn('row at ' + axis + front + ' from ' + from + ' scales by ' + s.toFixed(2));
+    var u = from + (len - sum * s - gap * (list.length - 1)) / 2;
+    var d = DIRS[face];
+    var out = [];
+    var lastTint = null;
+    list.forEach(function (it) {
+      var w = wOf(it) * s;
+      var c = u + w / 2;
+      var px = axis === 'x' ? c : front;
+      var pz = axis === 'x' ? front : c;
+      var rec = { it: it, face: face, tint: null, rot: FACE[face], s: s, w: w, d: dOf(it) * s, px: px, pz: pz, dir: d };
+      if (o.tints) {
+        var tn;
+        do tn = o.tints[Math.floor(rng() * o.tints.length)]; while (tn === lastTint && o.tints.length > 1);
+        lastTint = tn;
+        rec.tint = it.tint || tn;
+      }
+      out.push(rec);
+      u += w + gap;
+    });
+    return out;
+  }
+
+  // makes the placed records real: ordinary buildings are merged, businesses are handed to the plan's builder
+  function commit(recs, onBiz, onShop) {
+    recs.forEach(function (r) {
+      if (r.it.biz) {
+        r.foot = { x0: 0, x1: 0, z0: 0, z1: 0 };
+        // the lot is the widest and deepest stage of the business, front-centred on the line
+        var lw = r.w;
+        var ld = r.d;
+        var q = [r.px - r.dir[0] * 0, r.pz];
+        var cx = r.px;
+        var cz = r.pz;
+        var tx = r.dir[1];
+        var tz = -r.dir[0];
+        // the lot spans lw along the row and ld back from the line
+        var a = [cx - tx * lw / 2, cz - tz * lw / 2];
+        var b2 = [cx + tx * lw / 2 - r.dir[0] * ld, cz + tz * lw / 2 - r.dir[1] * ld];
+        void q;
+        r.foot = claim({ x0: Math.min(a[0], b2[0]), x1: Math.max(a[0], b2[0]), z0: Math.min(a[1], b2[1]), z1: Math.max(a[1], b2[1]) }, r.it.biz);
+        onBiz(r);
+        return;
+      }
+      var mm = lib.model(r.it.m);
+      var og = origin(mm, r.px, r.pz, r.rot, r.s);
+      var f = put(r.it.m, og[0], og[1], r.rot, { s: r.s, tint: r.tint });
+      if (onShop && r.it.m.indexOf('commercial/') === 0) onShop(r);
+      r.foot = claim(f, r.it.m + '@' + r.px.toFixed(1) + ',' + r.pz.toFixed(1));
+    });
+    return recs;
+  }
+
+  // the model of a record placed at its lot (used for businesses, which are not merged)
+  function lotMatrix(ref, r) {
+    var m = lib.model(ref);
+    var o = origin(m, r.px, r.pz, r.rot, r.s);
+    return matrix(o[0], 0, o[1], r.rot, r.s);
+  }
+
+  // ---- finishing
+
+  function finish() {
+    var root = city.root;
+    for (var k in batches) {
+      var b = batches[k];
+      var geo = mergeGeometries(b.geoms, false);
+      b.geoms.forEach(function (g) { g.dispose(); });
+      if (!geo) continue;
+      var mesh = new THREE.Mesh(geo, b.mat);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      root.add(mesh);
+    }
+    var boxes = [];
+    flat.forEach(function (f) {
+      var g = new THREE.BoxGeometry(f.x1 - f.x0, f.h, f.z1 - f.z0);
+      g.translate((f.x0 + f.x1) / 2, f.y + f.h / 2, (f.z0 + f.z1) / 2);
+      g.deleteAttribute('uv');
+      var col = new THREE.Color(f.col);
+      var n = g.attributes.position.count;
+      var a = new Float32Array(n * 3);
+      for (var i = 0; i < n; i++) {
+        a[i * 3] = col.r;
+        a[i * 3 + 1] = col.g;
+        a[i * 3 + 2] = col.b;
+      }
+      g.setAttribute('color', new THREE.BufferAttribute(a, 3));
+      boxes.push(g);
+    });
+    if (boxes.length) {
+      var fm = new THREE.Mesh(mergeGeometries(boxes, false), new THREE.MeshLambertMaterial({ vertexColors: true, polygonOffset: true, polygonOffsetFactor: 1,
+        polygonOffsetUnits: 1 }));
+      fm.receiveShadow = true;
+      root.add(fm);
+      boxes.forEach(function (g) { g.dispose(); });
+    }
+    return root;
+  }
+
+  city.put = put;
+  city.prop = prop;
+  city.tryProp = tryProp;
+  city.tintMat = tintMat;
+  city.addGeom = addGeom;
+  city.solidM = solidM;
+  city.boxProp = boxProp;
+  city.solid = solid;
+  city.free = free;
+  city.span = span;
+  city.origin = origin;
+  city.rect = rect;
+  city.matrix = matrix;
+  city.claim = claim;
+  city.slab = slab;
+  city.tile = tile;
+  city.hline = hline;
+  city.vline = vline;
+  city.big = big;
+  city.greenRect = greenRect;
+  city.placeRoads = placeRoads;
+  city.layWalks = layWalks;
+  city.row = row;
+  city.commit = commit;
+  city.lotMatrix = lotMatrix;
+  city.finish = finish;
+  city.wOf = wOf;
+  city.dOf = dOf;
+  city.warn = warn;
+  city.cellsOf = cellsOf;
+  return city;
+}
