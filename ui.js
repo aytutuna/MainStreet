@@ -3,6 +3,7 @@ var MODE_KEY = 'mainstreet.mode';
 var SND = {
   buy: ['triangle', 0.07, 0.16, [523, 784]],
   coin: ['square', 0.05, 0.1, [880, 1175]],
+  till: ['sine', 0.05, 0.12, [1568, 2093]],
   done: ['triangle', 0.1, 0.25, [523, 659, 784, 1047]],
   mile: ['triangle', 0.08, 0.22, [523, 659, 784, 1047, 1319, 1568]],
   unlock: ['triangle', 0.09, 0.2, [392, 523, 659, 784]]
