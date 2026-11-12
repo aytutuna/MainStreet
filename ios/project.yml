@@ -34,8 +34,6 @@ targets:
         buildPhase: resources
       - path: ../data.js
         buildPhase: resources
-      - path: ../map.js
-        buildPhase: resources
       - path: ../sim.js
         buildPhase: resources
       - path: ../render.js

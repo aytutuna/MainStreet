@@ -14,53 +14,54 @@
 </head>
 <body>
 <div id="app">
-  <main id="stage">
-    <canvas id="view"></canvas>
-    <div id="top">
-      <div id="hud" class="card">
-        <button type="button" id="stats">
-          <span class="stat" id="st-cash"><img class="ico" src="assets/ico_coin.png" alt=""><b></b></span>
-          <span class="stat" id="st-pop"><img class="ico" src="assets/ico_resident.png" alt=""><b></b></span>
-          <span class="stat" id="st-work"><img class="ico" src="assets/ico_worker.png" alt=""><b></b></span>
-          <span class="stat" id="st-happy"><img class="ico big" src="assets/ico_face_ok.png" alt=""><b></b></span>
-        </button>
-        <button type="button" id="goodsbtn" aria-label="Goods"><img class="ico big" src="assets/ico_goods.png" alt=""></button>
-      </div>
-      <div id="ask" class="card" hidden>
-        <p></p>
-        <button type="button" class="more" hidden></button>
-        <button type="button" class="btn go">Show me</button>
-        <span class="waits" hidden>Under way</span>
-      </div>
+  <canvas id="view"></canvas>
+  <div id="top">
+    <button type="button" id="swap" class="pill" hidden>Town</button>
+    <div id="cash" class="pill"><img class="ico" src="assets/coin.png" alt=""><b id="cash-n"></b><span id="rate"></span></div>
+    <button type="button" id="gear" class="pill" aria-label="Menu"><i></i><i></i><i></i></button>
+  </div>
+  <div id="bottom">
+    <div id="card" hidden>
+      <button type="button" id="card-x" aria-label="Close">x</button>
+      <h2 id="card-name"></h2>
+      <div class="bar"><i id="card-bar"></i></div>
+      <p id="card-info"></p>
+      <button type="button" id="card-go" class="btn"></button>
     </div>
-  </main>
-  <aside id="panel">
-    <div id="sheet" class="idle"></div>
-    <nav id="tabs">
-      <button type="button" data-tab="map" class="on">Map</button>
-      <button type="button" data-tab="req">Requests<i hidden></i></button>
-      <button type="button" data-tab="goods">Goods</button>
-      <button type="button" data-tab="town">Town</button>
-    </nav>
-  </aside>
-  <div id="away" hidden>
-    <div class="card">
+    <button type="button" id="next" class="btn">
+      <i id="next-fill"></i>
+      <span id="next-txt"></span>
+      <span id="next-cost"></span>
+    </button>
+  </div>
+  <div id="banner" hidden></div>
+  <div id="away" class="veil" hidden>
+    <div class="box">
       <h2>While you were away</h2>
-      <p id="awaytime"></p>
-      <ul id="awaylist"></ul>
-      <button type="button" id="awayok" class="btn go">OK</button>
+      <p id="away-txt"></p>
+      <button type="button" id="away-ok" class="btn">OK</button>
     </div>
   </div>
-  <div id="won" hidden>
-    <div class="card">
-      <h2>Main Street is thriving</h2>
-      <ul id="wonlist"></ul>
-      <button type="button" id="wonok" class="btn go">Keep playing</button>
+  <div id="end" class="veil" hidden>
+    <div class="box">
+      <h2>The town is done for now</h2>
+      <p>More places are coming.</p>
+      <button type="button" id="end-ok" class="btn">Keep looking around</button>
+    </div>
+  </div>
+  <div id="menu" class="veil" hidden>
+    <div class="box">
+      <h2>Menu</h2>
+      <button type="button" id="m-snd" class="btn alt"></button>
+      <button type="button" id="m-copy" class="btn alt">Copy code</button>
+      <div class="row"><input id="m-code" type="text" placeholder="Paste a code" autocomplete="off" autocapitalize="off" spellcheck="false"><button type="button" id="m-load" class="btn alt">Load code</button></div>
+      <button type="button" id="m-reset" class="btn alt">Reset town</button>
+      <p class="credit">Art: LimeZu (https://limezu.itch.io/)</p>
+      <button type="button" id="m-ok" class="btn">Close</button>
     </div>
   </div>
 </div>
 <script src="data.js"></script>
-<script src="map.js"></script>
 <script src="sim.js"></script>
 <script src="render.js"></script>
 <script src="ui.js"></script>
