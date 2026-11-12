@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
-import { newCity, LAWN, DIRT, PLAZA } from './city.js';
+import { newCity, LAWN, DIRT, PLAZA, WILD } from './city.js';
 
 var C = 'commercial/building-';
 var S = 'suburban/building-type-';
@@ -1136,6 +1136,20 @@ export function planTown(lib) {
   signals();
   special(R);
   grounds(R);
+  c.region = district;
   c.finish();
   return c;
+}
+
+// which seed builds a spot: the homes and the school build the west, the shops build downtown, the hospital and the park
+// the civic strip. The land round the town and the boulevard into it are there from the start.
+export var WEST = 0;
+export var DOWN = 1;
+export var CIVIC = 2;
+export function district(x, z, k) {
+  if (x < -25.5 || x > 27.3 || z < -4.6 || z > 24.6) return WILD;
+  if (k === 'road' && Math.abs(x) < 1.6 && z > 1.6) return WILD;
+  if (x < -1.6) return WEST;
+  if (z < 0.6 || x < 9.4 && z < 4.6) return CIVIC;
+  return DOWN;
 }
