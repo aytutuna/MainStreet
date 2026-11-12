@@ -1,4 +1,4 @@
-var CACHE = 'mainstreet-ae2bcb33';
+var CACHE = 'mainstreet-d443ea93';
 var FILES = [
   './',
   'index.html',
@@ -122,6 +122,13 @@ var FILES = [
   'assets/toy_bars.png',
   'assets/toy_slide.png',
   'assets/tree.png',
+  'assets/ui_bolt.png',
+  'assets/ui_boss.png',
+  'assets/ui_gem.png',
+  'assets/ui_gift.png',
+  'assets/ui_goal.png',
+  'assets/ui_star.png',
+  'assets/ui_warp.png',
   'assets/wall.png',
   'assets/wall_v.png',
   'assets/wshelf.png',
