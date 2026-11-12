@@ -5,7 +5,7 @@ name: MainStreet
 
 options:
   deploymentTarget:
-    iOS: "16.0"
+    iOS: "16.4"
   createIntermediateGroups: true
   developmentLanguage: en
 
@@ -14,13 +14,13 @@ settings:
     SWIFT_VERSION: "5.0"
     MARKETING_VERSION: "1.0"
     CURRENT_PROJECT_VERSION: "1"
-    IPHONEOS_DEPLOYMENT_TARGET: "16.0"
+    IPHONEOS_DEPLOYMENT_TARGET: "16.4"
 
 targets:
   MainStreet:
     type: application
     platform: iOS
-    deploymentTarget: "16.0"
+    deploymentTarget: "16.4"
     sources:
       - path: MainStreet
         excludes:
@@ -34,14 +34,22 @@ targets:
         buildPhase: resources
       - path: ../data.js
         buildPhase: resources
-      - path: ../map.js
-        buildPhase: resources
       - path: ../sim.js
         buildPhase: resources
-      - path: ../render.js
+      - path: ../town3d.js
+        buildPhase: resources
+      - path: ../city.js
+        buildPhase: resources
+      - path: ../plan.js
+        buildPhase: resources
+      - path: ../life.js
+        buildPhase: resources
+      - path: ../school3d.js
         buildPhase: resources
       - path: ../ui.js
         buildPhase: resources
+      - path: ../vendor
+        type: folder
       - path: ../assets
         type: folder
     settings:
