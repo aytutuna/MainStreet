@@ -1409,7 +1409,7 @@ function buildDepts() {
     var s = shops[id];
     s.group = new THREE.Group();
     root.add(s.group);
-    // the associate a manager brings, who keeps the shelves full, or stands at the counter
+    // the clerk who joins at the first milestone, who keeps the shelves full, or stands at the counter
     s.clerk = { f: crew(s.cfg.clerk ? 'shop/character-employee@5,3>2,2' : 'shop/character-employee', 'idle'), i: 0, wait: 0, path: null };
     var home = world(s, [3.2, s.cfg.aisles[0]]);
     s.clerk.f.obj.position.set(home.x, 0, home.z);
@@ -2536,15 +2536,19 @@ function person(i) {
   return { f: f, bag: bag, basket: basket, plant: plant, path: null, i: 0, wait: 0, speed: 1.05 + (i % 5) * 0.08 };
 }
 
+function busy(p) {
+  return p.path || p.lane || p.hold;
+}
+
 function spare() {
   var n = 0;
-  people.forEach(function (p) { if (p.path || p.lane) n++; });
-  return 56 - n;
+  people.forEach(function (p) { if (busy(p)) n++; });
+  return 64 - n;
 }
 
 function idlePerson() {
-  for (var i = 0; i < people.length; i++) if (!people[i].path && !people[i].lane) return people[i];
-  if (people.length >= 56) return null;
+  for (var i = 0; i < people.length; i++) if (!busy(people[i])) return people[i];
+  if (people.length >= 64) return null;
   var p = person(people.length * 7 + 3);
   people.push(p);
   return p;
@@ -2808,7 +2812,7 @@ function spawnFrom(kind, c, n, cu) {
   } else if (kind === 'taxi') {
     var tx = 5.4 + n * 0.5;
     pts.push({ x: tx, z: 10.9 }, { x: tx, z: WALK_N }, { x: 0.9, z: WALK_N }, { x: 0.7, z: LOT[0] - 0.2 });
-    back = [{ x: 0.7, z: LOT[0] - 0.2 }, { x: 0.9, z: WALK_N }, { x: 30 + Math.random() * 30, z: WALK_N }];
+    back = [{ x: 0.7, z: LOT[0] - 0.2 }, { x: 0.9, z: WALK_N }, { x: 16 + Math.random() * 4, z: WALK_N }];
   } else {
     var sd = Math.random() < 0.5 ? -1 : 1;
     var south = Math.random() < 0.4;
@@ -2818,7 +2822,7 @@ function spawnFrom(kind, c, n, cu) {
     pts.push({ x: -0.6, z: LOT[0] - 0.2 });
     back = [{ x: 0.6, z: LOT[0] - 0.2 }, { x: sd * 0.6, z: WALK_N }];
     if (south) back.push({ x: sd * 0.6, z: WALK_S });
-    back.push({ x: sd * 60, z: wz });
+    back.push({ x: sd * (16 + Math.random() * 4), z: wz });
   }
   storeRoute(pts);
   start(p, pts, { car: kind === 'car' ? c : null, cust: cu });
@@ -2850,11 +2854,12 @@ function gardenRoute(c) {
   var rows = [2.0, 0.6, -0.8].slice(0, Math.min(3, S.pl.garden));
   var z = rows[Math.floor(Math.random() * rows.length)];
   var west = Math.random() < 0.5;
-  var pts = [{ x: sd * 60, z: WALK_N }, { x: -11.6, z: WALK_N }, { x: -11.6, z: LOT[0] + 0.3 }, { x: gx, z: LOT[0] - 0.1 }, { x: gx, z: z + 0.7 },
+  var ex = sd * (16 + Math.random() * 4) - 2;
+  var pts = [{ x: ex, z: WALK_N }, { x: -11.6, z: WALK_N }, { x: -11.6, z: LOT[0] + 0.3 }, { x: gx, z: LOT[0] - 0.1 }, { x: gx, z: z + 0.7 },
     { x: gx, z: z, wait: 1.8, act: 'pick-up', face: west ? -Math.PI / 2 : Math.PI / 2, plant: true }, { x: gx, z: GARDEN[3] + 0.45, pick: true }];
   start(p, pts, { cust: c });
   c.p = p;
-  p.after = [{ x: gx, z: LOT[0] - 0.1 }, { x: -11.6, z: LOT[0] + 0.3 }, { x: -11.6, z: WALK_N }, { x: sd * 60, z: WALK_N }];
+  p.after = [{ x: gx, z: LOT[0] - 0.1 }, { x: -11.6, z: LOT[0] + 0.3 }, { x: -11.6, z: WALK_N }, { x: ex, z: WALK_N }];
 }
 
 function crowdStep(dt) {
@@ -3306,6 +3311,7 @@ function refresh() {
   resetCrowd();
   seed = 3;
   for (var i = 0; i < 3; i++) come('walk');
+  seed = 0;
 }
 
 window.View = {

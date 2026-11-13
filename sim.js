@@ -327,7 +327,7 @@ function lose(c) {
 function serve(t, dt) {
   while (t.q.length) {
     var c = t.q[0];
-    if (c.v && !c.here) return;
+    if (c.v && !c.here && speed === 1) return;
     var need = svc(t.k) + (c.v ? 0 : GAP[t.k]) - t.t;
     if (dt < need) {
       t.t += dt;
@@ -369,7 +369,7 @@ function tick(dt) {
       if (join(c)) continue;
       c.wait -= dt;
       if (c.wait <= 0) lose(c);
-    } else if (!c.v) {
+    } else if (!c.v || speed !== 1) {
       c.t -= dt;
       if (c.t <= 0) atFront(c);
     }
