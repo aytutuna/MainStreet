@@ -6,13 +6,13 @@ import { clone } from 'three/addons/utils/SkeletonUtils.js';
 var BASE = 'assets/models/';
 var TILT = 52 * Math.PI / 180;
 
-// The mall stands on the kits' one unit grid, walls on the half lines. An entrance hall runs across the front, a
-// corridor goes north from it, and the shop units, six wide and five deep, sit two to a row either side of it.
-// In front: a paved square, the parking lot, the sidewalk and the street.
+// The store stands on the kits' one unit grid, walls on the half lines. The checkouts fill the front, the main aisle runs
+// north from the doors to the back wall, and the departments, six wide and five deep, sit two to a row either side of
+// it with no walls between them. In front: the parking lot, the sidewalk and the street.
 var DEPTH = 5;
 var UNIT = 6;
 var FRONT = 2.5;
-var BACK = -0.5;
+var BACK = -2.5;
 var SIDE = 1.5;
 var EDGE = SIDE + UNIT;
 var LOT = [4, 9.6];
@@ -24,70 +24,241 @@ var AISLE = 6.8;
 var DRIVE = 10.6;
 
 // the kits are drawn at different sizes; these bring them to the shop kit's people
-var SCALE = { car: 0.47, roads: 3, nature: 1.4, furn: 1.4, food: 0.5, sub: 3.2 };
+var SCALE = { car: 0.47, roads: 3, nature: 1.4, furn: 0.9, food: 0.5, sub: 3.2, toy: 1.1, forest: 0.9 };
 
 var FOLK = 'abcdef'.split('').reduce(function (a, c) { return a.concat(['chars/character-female-' + c, 'chars/character-male-' + c]); }, []);
 var CARS = ['car/sedan', 'car/suv', 'car/suv-luxury', 'car/hatchback-sports', 'car/van'];
 
-// Every shop has twelve spots for its stands, in the order they are filled. lx runs from the back wall (-3) to the
-// open front on the corridor (3), lz across the unit, north (-2.5) to south (2.5). b stands against the back wall,
-// s against the north wall facing south, n against the south wall facing north; the two islands stand in the middle
-// facing the aisles either side. A stand is pushed flush against its wall whatever its depth
-var SPOTS = [['b', -0.5], ['s', -1], ['b', 0.5], ['n', -1], ['s', 0], ['b', -1.5], ['in', -0.6], ['b', 1.5], ['s', 1], ['n', 0],
-  ['is', 0.6], ['s', 2]];
-
-// what each shop is fitted with: its twelve stands, what goes on its counter, and the kit of its walls and floor
-var SHOPS = {
-  fruit: { kit: 'shop', floor: 'shop/floor-wood', top: ['food/watermelon', 'food/pineapple'],
-    fix: ['display-fruit', 'display-fruit', 'display-fruit', 'display-fruit', 'display-fruit', 'display-cans', 'display-fruit', 'display-fruit',
-      'display-fruit', 'display-small', 'display-fruit', 'display-cans'] },
-  bakery: { kit: 'shop', floor: 'shop/floor-wood', top: ['food/cake', 'food/croissant'],
-    fix: ['display-bread', 'display-bread', 'display-bread', 'display-small', 'display-bread', 'display-bread', 'display-bread', 'display-bread',
-      'display-bread', 'display-small', 'display-bread', 'display-bread'] },
-  flower: { kit: 'shop', floor: 'shop/floor', top: ['furn/plantSmall1', 'furn/plantSmall2'],
-    fix: ['display-flowers', 'display-flowers', 'display-flowers', 'display-small', 'display-flowers', 'display-flowers', 'display-flowers', 'display-flowers',
-      'display-flowers', 'display-small', 'display-flowers', 'display-flowers'] },
-  grocery: { kit: 'shop', floor: 'shop/floor', top: ['food/apple', 'food/soda-bottle'],
-    fix: ['shelf-boxes', 'shelf-bags', 'shelf-bags', 'display-cans', 'shelf-boxes', 'shelf-end', 'display-cans', 'shelf-end', 'shelf-bags',
-      'display-fruit', 'display-cans', 'shelf-boxes'] },
-  frozen: { kit: 'shop', floor: 'shop/floor', top: ['food/ice-cream', 'food/popsicle'],
-    fix: ['freezers-standing', 'freezer', 'freezers-standing', 'freezer', 'freezer', 'freezers-standing', 'freezer', 'freezers-standing', 'freezer',
-      'freezer', 'freezer', 'freezer'] },
-  clothes: { kit: 'shop', floor: 'shop/floor-wood', top: ['shop/shopping-basket', 'furn/plantSmall3'],
-    fix: ['clothing-rack', 'clothing-table', 'clothing-rack', 'mannequin', 'clothing-rack', 'clothing-rack', 'clothing-table', 'clothing-rack',
-      'mannequin', 'clothing-table', 'clothing-table', 'mannequin'] },
-  gifts: { kit: 'shop', floor: 'shop/floor', top: ['food/lollypop', 'food/candy-bar'],
-    fix: ['gacha-machine', 'arcade/prizes', 'gacha-machine', 'display-small', 'arcade/prizes', 'gacha-machine', 'display-small', 'gacha-machine',
-      'arcade/prizes', 'display-small', 'display-small', 'arcade/prizes'] },
-  arcade: { kit: 'arcade', floor: 'arcade/floor', play: true, top: ['food/soda-can', 'food/popsicle'],
-    fix: ['arcade-machine', 'arcade-machine', 'arcade-machine', 'pinball', 'arcade-machine', 'arcade-machine', 'pinball', 'arcade-machine',
-      'arcade-machine', 'pinball', 'pinball', 'vending-machine'] },
-  games: { kit: 'arcade', floor: 'arcade/floor', play: true, top: ['food/lollypop', 'food/cookie-chocolate'],
-    fix: ['claw-machine', 'gambling-machine', 'claw-machine', 'ticket-machine', 'gambling-machine', 'claw-machine', 'prize-wheel', 'claw-machine',
-      'gambling-machine', 'ticket-machine', 'prize-wheel', 'gambling-machine'] },
-  sports: { kit: 'arcade', floor: 'arcade/floor', play: true, top: ['food/soda-can', 'food/donut-sprinkles'],
-    fix: ['basketball-game', 'dance-machine', 'basketball-game', 'ticket-machine', 'dance-machine', 'basketball-game', 'air-hockey', 'basketball-game',
-      'dance-machine', 'vending-machine', 'air-hockey', 'ticket-machine'] }
+// Fixtures, with the surfaces their goods stand on, in the model's own frame (front toward +z). A shelf is stocked on
+// both faces, two levels each; an end cap on its front only; tables, crates and pallets carry heaps, one kind of goods
+// per section; coolers hold goods behind their glass, on two levels, and chests in their tub. A bunker is a chest
+// left open. `stock` is overstock on a pallet, which nobody shops from
+var WHITE = '@13,3>2,2';
+var RED = '@13,3>2,1';
+var KIND = {
+  shelf: { ref: 'shop/shelf-boxes', two: true, rows: [0.18, 0.56], x: [-0.33, 0.33], z: [0.04, 0.32] },
+  end: { ref: 'shop/shelf-end', rows: [0.18, 0.56], x: [-0.33, 0.33], z: [-0.36, -0.06] },
+  table: { ref: 'shop/clothing-table', top: 0.35, x: [-0.4, 0.4], z: [-0.25, 0.1] },
+  stand: { ref: 'shop/clothing-table@3,3>9,2', top: 0.35, x: [-0.4, 0.4], z: [-0.25, 0.1] },
+  crate: { ref: 'shop/display-bread', top: 0.22, x: [-0.26, 0.26], z: [-0.2, 0.24] },
+  pallet: { ref: 'shop/display-cans', top: 0.3, x: [-0.35, 0.35], z: [-0.35, 0.35] },
+  cooler: { ref: 'shop/freezers-standing', rows: [0.1, 0.5], x: [-0.42, 0.42], z: [-0.44, -0.16] },
+  coolerW: { ref: 'shop/freezers-standing' + WHITE, rows: [0.1, 0.5], x: [-0.42, 0.42], z: [-0.44, -0.16] },
+  coolerR: { ref: 'shop/freezers-standing' + RED, rows: [0.1, 0.5], x: [-0.42, 0.42], z: [-0.44, -0.16] },
+  chest: { ref: 'shop/freezer', top: 0.06, x: [-0.34, 0.34], z: [-0.25, 0.25], flat: true },
+  bunker: { ref: 'shop/freezer', top: 0.06, x: [-0.34, 0.34], z: [-0.25, 0.25], flat: true, open: true },
+  stock: { ref: 'skate/pallet', top: 0.16, x: [-0.24, 0.24], z: [-0.24, 0.24], none: true }
 };
 
-// what a shop gets at each of its 21 steps (STAGE): one more stand, its sign, plants, a rug, goods on the counter,
-// a second clerk, and lights and a gold rim on the sign
-var STEPS = ['fix', 'fix', 'sign', 'fix', 'plantN', 'fix', 'fix', 'rug', 'fix', 'fix', 'top', 'fix', 'plantS', 'fix', 'fix', 'top', 'fix', 'fix',
-  'helper', 'glow', 'gold'];
-var COUNTER = [1.9, 1.7];
+// recoloured packaging: the label cell of each item moved round the atlas
+function tints(ref, from, to) {
+  return to.map(function (c) { return ref + '@' + from + '>' + c; });
+}
+var BOX = tints('shop/shelf-boxes.box', '15,2', ['15,2', '3,1', '4,1', '12,2', '8,1', '0,1']);
+var CARTON = tints('shop/shelf-boxes.carton', '7,1', ['7,1', '2,1', '12,2', '14,2', '10,1']);
+var BAG = tints('shop/shelf-bags.bag', '15,2', ['15,2', '3,1', '4,1', '12,2', '10,1', '0,1']);
+var BOTTLE = tints('shop/shelf-end.bottle', '7,1', ['7,1', '2,1', '12,2', '8,1', '14,2']);
+var CAN = tints('food/can', '15,2', ['15,2', '1,1', '9,2', '11,2', '5,1']);
+var MILK = tints('food/carton', '5,1', ['5,1', '1,1', '15,2', '9,2', '11,2']);
+var SMALL = tints('food/carton-small', '1,3', ['1,3', '11,2', '15,2', '1,1']);
+var SODA = tints('food/soda-bottle', '15,2', ['15,2', '9,2', '1,1', '11,2']);
+var TIN = tints('shop/display-cans.can', '3,1', ['3,1', '4,1', '12,2', '14,2']);
+var TEE = tints('shop/clothing-table.clothing', '13,2', ['13,2', '3,1', '4,1', '14,2', '8,1', '2,3', '6,1']);
+var RACK = ['shop/clothing-rack', 'shop/clothing-rack@7,1>14,2;13,2>8,1;3,1>2,3', 'shop/clothing-rack@7,1>3,1;13,2>2,2;3,1>4,1',
+  'shop/clothing-rack@7,1>10,1;13,2>12,1;3,1>6,1'];
+var PIZZA = tints('shop/shelf-boxes.box', '15,2', ['3,1', '0,1']).map(function (r) { return r + '~x'; });
+var COOK = ['food/pot*0.7', 'food/pan*0.7', 'food/frying-pan*0.6', 'food/plate*0.55', 'food/bowl*0.6', 'food/mug', 'food/cup', 'food/glass',
+  'food/cutting-board*0.6', 'food/knife-block*0.7', 'food/pot-stew*0.7', 'food/plate-deep*0.55'];
 
-// the entrance hall fills its two sides a level at a time, and the square in front with it; the middle is the way in
-var HALL_ITEMS = [
-  [1, 'shop/shopping-cart', -6.8, 1.7, 0], [1, 'shop/shopping-cart', -6.4, 1.7, 0], [1, 'shop/shopping-cart', -6.0, 1.7, 0],
-  [1, 'shop/shopping-basket', -5.3, 1.9, 0], [1, 'furn/bench', -4.5, 3.25, Math.PI], [1, 'furn/bench', 4.5, 3.25, Math.PI],
-  [1, 'furn/trashcan', -3.7, 3.3, 0], [1, 'furn/trashcan', 3.7, 3.3, 0],
-  [2, 'shop/cash-register-self', 3.6, 0.3, 0], [2, 'shop/cash-register-self', 4.9, 0.3, 0], [2, 'shop/cash-register-self', 6.2, 0.3, 0],
-  [2, 'sub/planter', -6.6, 3.25, 0], [2, 'sub/planter', 6.6, 3.25, 0],
-  [3, 'shop/bottle-return', -3.6, 1.95, Math.PI], [3, 'shop/bottle-return', -3.0, 1.95, Math.PI], [3, 'furn/pottedPlant', -2.1, 0.1, 0],
-  [3, 'furn/pottedPlant', 2.1, 0.1, 0], [3, 'roads/light-curved', -2.3, 3.75, Math.PI], [3, 'roads/light-curved', 2.3, 3.75, Math.PI],
-  [4, 'arcade/vending-machine', 5.4, 1.95, Math.PI], [4, 'arcade/vending-machine', 6.0, 1.95, Math.PI], [4, 'arcade/vending-machine', 6.6, 1.95, Math.PI],
-  [4, 'nature/tree_oak', -6.6, 3.25, 0], [4, 'nature/tree_oak', 6.6, 3.25, 0]
-];
+// Every department fills its block in its own frame: lx from its outer wall (-3) to the main aisle (3), lz from north
+// (-2.5) to south (2.5); the east ones are mirror images. What matters is set facing south, toward the camera: a back
+// line along the north edge (coolers, ovens, the TV wall), two rows across the middle and a row of low displays at the
+// south. A fixture is [kind or model, lx, lz, face, goods, extra, n]: placed by the middle of its footprint, its
+// front turned to face (s south, n north, b toward the main aisle, k toward the wall), `n` copies side by side.
+// Shoppers walk in from the main aisle along the aisles, at these lz. Sixteen fixtures go in one per step, then the
+// promo display; `decor` stands from the start, and the clerk of a counter department stands at `clerk`
+var AISLES = [-1.7, -0.3, 1.2];
+var BL = -2.26;
+var RA = -1.05;
+var RB = 0.45;
+var RC = 1.85;
+var STRIP = [['stock', -2.45, RA, 's', 'boxes'], ['stock', -2.45, RB, 's', 'boxes']];
+
+var DEPTS = {
+  produce: {
+    floor: 'shop/floor-wood', aisles: AISLES, decor: STRIP,
+    feature: ['end', 2.65, RA, 'b', ['food/avocado', 'food/coconut']],
+    fix: [['end', -2.2, BL, 's', ['food/broccoli', 'food/carrot~z*0.8']], ['end', -1.4, BL, 's', ['food/cauliflower', 'food/radish']],
+      ['stand', -1.4, RA, 's', ['food/apple', 'food/pear']], ['stand', -0.45, RA, 's', ['food/grapes', 'food/orange']],
+      ['stand', 0.5, RA, 's', ['food/avocado', 'food/lemon']], ['end', -0.6, BL, 's', ['food/cabbage', 'food/beet']],
+      ['pallet', 1.9, RA, 's', ['food/pineapple']], ['stand', -1.4, RB, 's', ['food/tomato', 'hand:food/banana*0.5']],
+      ['stand', -0.45, RB, 's', ['food/eggplant', 'food/onion']], ['end', 0.2, BL, 's', ['food/corn~z', 'food/mushroom']],
+      ['stand', 0.5, RB, 's', ['food/paprika@15,2>11,2', 'food/paprika@15,2>9,2']], ['crate', -1.6, RC, 'n', ['flat:food/strawberry']],
+      ['pallet', 1.9, RB, 's', ['food/watermelon']], ['crate', -0.7, RC, 'n', ['food/apple@15,2>9,2']],
+      ['end', 1.0, BL, 's', ['food/leek~z*0.6', 'food/coconut']], ['shop/display-fruit', 0.2, RC, 'n']],
+    promo: ['pallet', 1.9, RC, 'n', ['food/pumpkin']]
+  },
+  bakery: {
+    floor: 'shop/floor-wood', aisles: [-0.6, 1.2], clerk: [-1.8, -1.88, 's'], decor: [['stock', -2.45, RB, 's', 'boxes']],
+    feature: ['end', 2.65, RB, 'b', [BOX[0], BOX[4]]],
+    fix: [['furn/kitchenCabinet', -2.2, -1.47, 's', [], [['food/loaf*0.8', 0, 0.02, 0.2, 0.405]], 2],
+      ['furn/kitchenStove', -1.8, -2.3, 's', [], null, 3, 'staff'], ['coolerW', 0.45, BL, 's', [['food/cake*0.75', 'food/cake-birthday*0.8'], ['food/pie*0.55', 'food/cake*0.75']]],
+      ['furn/kitchenCabinet', -1.4, -1.47, 's', [], [['food/croissant', 0, 0, 0.4, 0.405]], 2],
+      ['shelf', -1.1, RB, 's', [[['food/loaf', 'food/loaf-round'], ['food/loaf-baguette', 'food/loaf']], [['food/croissant', 'food/bread'], ['food/loaf-round', 'food/croissant']]], null, 2],
+      ['chest', 1.45, -2.2, 's', ['food/donut-sprinkles', 'food/muffin', 'food/donut-chocolate']],
+      ['furn/kitchenCabinet', -1.0, -2.3, 's', null, [['food/bowl*0.6', 0, 0, 0, 0.405], ['food/rollingPin*0.6', 0, -0.1, 0.3, 0.405]], 1, 'staff'],
+      ['crate', 1.9, RB, 's', ['food/loaf-baguette']], ['crate', -1.9, RC, 'n', ['food/loaf-round']],
+      ['shelf', 0.5, RB, 's', [[['food/loaf-baguette', 'food/bread'], ['food/croissant', 'food/loaf']], [['food/loaf', 'food/loaf-round'], ['food/bread', 'food/loaf-baguette']]], null, 2],
+      ['crate', -1.15, RC, 'n', ['food/croissant']], ['furn/kitchenFridgeLarge', -0.45, -2.28, 's', null, null, 1, 'staff'],
+      ['end', 2.3, -2.3, 's', [[BOX[2], BOX[3]]]], ['crate', -0.4, RC, 'n', ['food/loaf']], ['crate', 1.1, RC, 'n', ['food/croissant']],
+      ['crate', 0.35, RC, 'n', ['food/bread']]],
+    promo: ['crate', 1.9, RC, 'n', ['food/loaf-baguette']]
+  },
+  dairy: {
+    floor: 'shop/floor', aisles: AISLES, decor: [['bunker', -2.4, RB, 'b', ['food/cheese*0.6']]],
+    feature: ['bunker', 2.65, RA, 'b', ['food/cheese*0.6']],
+    fix: [['coolerW', -2.1, BL, 's', [[MILK[0], MILK[1]], [MILK[2], MILK[0]]]], ['coolerW', -1.1, BL, 's', [[SMALL[0], 'food/pudding'], [MILK[3], SMALL[1]]]],
+      ['bunker', -1.5, RA, 's', ['food/cheese*0.6']], ['coolerW', -0.1, BL, 's', [['flat:food/egg', 'flat:food/egg'], [MILK[1], MILK[4]]]],
+      ['bunker', -0.6, RA, 's', [SMALL[2]]], ['coolerW', 0.9, BL, 's', [['food/pudding', SMALL[3]], [MILK[0], MILK[2]]]],
+      ['bunker', 0.3, RA, 's', ['food/cheese*0.6']], ['coolerW', 1.9, BL, 's', [[MILK[4], MILK[3]], ['flat:food/egg', SMALL[0]]]],
+      ['coolerW', -1.6, RB, 's', [[MILK[2], MILK[1]], ['food/pudding', SMALL[1]]]], ['bunker', 1.9, RA, 's', [SMALL[3]]],
+      ['coolerW', -0.6, RB, 's', [[SMALL[2], MILK[0]], [MILK[3], 'flat:food/egg']]], ['coolerW', 0.4, RB, 's', [[MILK[1], 'food/pudding'], [SMALL[0], MILK[4]]]],
+      ['bunker', 1.9, RB, 's', ['food/cheese*0.6']], ['bunker', -1.6, RC, 'n', [SMALL[1]]], ['bunker', -0.7, RC, 'n', ['food/pudding']],
+      ['bunker', 0.2, RC, 'n', ['food/cheese*0.6']]],
+    promo: ['bunker', 1.9, RC, 'n', [SMALL[2]]]
+  },
+  meat: {
+    floor: 'shop/floor%=f2ddd8', aisles: [-0.6, 1.2], clerk: [-1.4, -1.9, 's'], decor: [['stock', -2.45, RB, 's', 'boxes']],
+    feature: ['chest', 2.65, RB, 'b', ['food/meat-ribs']],
+    fix: [['chest', -2.2, -1.38, 's', ['food/meat-raw']], ['chest', -1.4, -1.38, 's', ['food/meat-ribs']],
+      ['furn/kitchenCabinet', -1.8, -2.3, 's', null, [['food/cutting-board*0.6', 0, 0, 0.2, 0.405], ['food/knife-block*0.6', 0.1, -0.1, 0, 0.405]], 3, 'staff'],
+      ['chest', -0.6, -1.38, 's', ['food/meat-sausage']], ['coolerR', 0.45, BL, 's', [['food/turkey*0.6', 'food/whole-ham*0.7'], ['food/sausage', 'food/hot-dog-raw']]],
+      ['chest', 1.45, -2.2, 's', ['food/fish~z*0.8']], ['chest', -1.72, RB, 's', ['food/bacon-raw']], ['chest', -0.9, RB, 's', ['food/meat-patty']],
+      ['chest', -0.05, RB, 's', ['food/meat-raw']], ['end', 2.3, -2.3, 's', [['food/bottle-ketchup', 'food/bottle-musterd']]],
+      ['chest', 0.8, RB, 's', ['food/mussel']], ['chest', -1.6, RC, 'n', ['food/whole-ham*0.7']], ['chest', -0.7, RC, 'n', ['food/meat-ribs']],
+      ['chest', 1.9, RB, 's', ['food/hot-dog-raw']], ['chest', 0.2, RC, 'n', ['food/bacon-raw']], ['chest', 1.05, RC, 'n', ['food/sausage']]],
+    promo: ['chest', 1.9, RC, 'n', ['food/meat-patty']]
+  },
+  frozen: {
+    floor: 'shop/floor%=d6e7f5', aisles: AISLES, decor: [['chest', -2.4, RA, 'b', ['food/ice-cream-cup']], ['chest', -2.4, RB, 'b', [PIZZA[0]]]],
+    feature: ['chest', 2.65, RA, 'b', [PIZZA[1]]],
+    fix: [['cooler', -2.1, BL, 's', [['food/ice-cream-cup', SMALL[1]], [PIZZA[0], 'food/bag-flat']]], ['cooler', -1.1, BL, 's', [[SMALL[2], 'food/ice-cream-cup'], ['food/bag-flat', PIZZA[1]]]],
+      ['cooler', -1.6, RA, 's', [['food/ice-cream-cup', SMALL[0]], ['food/popsicle', PIZZA[1]]]], ['cooler', -0.1, BL, 's', [['food/popsicle', 'food/ice-cream-cup'], [SMALL[3], 'food/popsicle-chocolate']]],
+      ['cooler', -0.6, RA, 's', [[PIZZA[0], 'food/bag-flat'], [SMALL[2], 'food/ice-cream-cup']]], ['cooler', 0.9, BL, 's', [[PIZZA[0], SMALL[0]], ['food/ice-cream-cup', 'food/bag-flat']]],
+      ['cooler', 0.4, RA, 's', [['food/popsicle-chocolate', SMALL[1]], ['food/bag-flat', PIZZA[0]]]], ['cooler', 1.9, BL, 's', [['food/bag-flat', 'food/ice-cream-cup'], [SMALL[1], PIZZA[1]]]],
+      ['chest', -1.5, RB, 's', ['food/ice-cream-cup', 'food/popsicle']], ['chest', 1.9, RA, 's', [SMALL[3]]],
+      ['chest', -0.6, RB, 's', [PIZZA[1]]],
+      ['chest', 0.3, RB, 's', ['food/bag-flat']], ['chest', 1.9, RB, 's', ['food/ice-cream-cup']],
+      ['chest', -1.6, RC, 'n', ['food/popsicle']], ['chest', -0.7, RC, 'n', [PIZZA[0]]], ['chest', 0.2, RC, 'n', ['food/bag-flat']]],
+    promo: ['chest', 1.9, RC, 'n', ['food/ice-cream-cup']]
+  },
+  pantry: {
+    floor: 'shop/floor%=efe6d2', aisles: AISLES, decor: STRIP,
+    feature: ['end', 2.65, RA, 'b', [CAN[4], 'food/peanut-butter']],
+    fix: [['end', -2.2, -2.3, 's', ['food/peanut-butter', 'food/honey']], ['end', -1.4, -2.3, 's', ['food/bottle-ketchup', 'food/bottle-musterd']],
+      ['shelf', -1.1, RA, 's', [[[BOX[0], CAN[0]], [CARTON[1], BAG[0]]], [[BOX[1], CAN[1]], [BAG[2], CARTON[0]]]], null, 2],
+      ['end', -0.6, -2.3, 's', ['food/bottle-oil', 'food/soy']], ['shelf', 0.5, RA, 's', [[[CAN[2], BOX[2]], [BAG[1], CAN[3]]], [[CARTON[2], BOX[3]], [CAN[4], BAG[3]]]], null, 2],
+      ['end', 0.2, -2.3, 's', [CAN[3], 'food/can-small']], ['pallet', 1.9, RA, 's', [CAN[1]]],
+      ['shelf', -1.1, RB, 's', [[[BOX[4], CARTON[3]], [CAN[0], BAG[4]]], [[BOX[5], CAN[2]], [CARTON[4], BAG[5]]]], null, 2],
+      ['end', 1.0, -2.3, 's', [CAN[4], CAN[0]]], ['shelf', 0.5, RB, 's', [[[CAN[1], BOX[0]], [BAG[0], CARTON[2]]], [[BOX[2], CAN[3]], [CARTON[1], BAG[1]]]], null, 2],
+      ['pallet', 1.9, RB, 's', [CAN[2]]], ['pallet', -1.6, RC, 'n', [BAG[2]]], ['end', 1.8, -2.3, 's', ['food/peanut-butter', CAN[2]]],
+      ['pallet', -0.7, RC, 'n', [BOX[1]]], ['pallet', 0.2, RC, 'n', [CARTON[3]]], ['pallet', 1.05, RC, 'n', ['food/honey']]],
+    promo: ['pallet', 1.9, RC, 'n', [CAN[0]]]
+  },
+  snacks: {
+    floor: 'shop/floor%=f4ecca', aisles: AISLES, decor: STRIP,
+    feature: ['end', 2.65, RA, 'b', [BAG[5], 'food/candy-bar-wrapper']],
+    fix: [['coolerR', -2.1, BL, 's', [[SODA[0], TIN[1]], [SODA[1], SODA[2]]]], ['coolerR', -1.1, BL, 's', [[TIN[2], SODA[3]], [SODA[2], TIN[3]]]],
+      ['shelf', -1.1, RA, 's', [[[BAG[0], 'food/candy-bar-wrapper'], [BAG[1], 'food/chocolate-wrapper']], [[BAG[2], 'food/lollypop'], [BAG[3], 'food/candy-bar-wrapper']]], null, 2],
+      ['coolerR', -0.1, BL, 's', [[SODA[1], SODA[0]], [TIN[0], SODA[3]]]],
+      ['shelf', 0.5, RA, 's', [[[BAG[4], 'food/chocolate-wrapper'], [BAG[5], BOX[3]]], [[BAG[0], BOX[1]], [BAG[2], 'food/lollypop']]], null, 2],
+      ['end', 0.8, -2.3, 's', [BAG[1], BAG[3]]], ['pallet', 1.9, RA, 's', [SODA[0]]],
+      ['shelf', -1.1, RB, 's', [[[SODA[0], TIN[1]], [SODA[2], SODA[1]]], [[SODA[3], SODA[0]], [TIN[2], SODA[2]]]], null, 2],
+      ['end', 1.6, -2.3, 's', ['food/lollypop', BAG[4]]], ['shelf', 0.5, RB, 's', [[[BOX[0], BAG[5]], [BOX[2], BAG[1]]], [[BOX[4], BAG[0]], [BOX[5], BAG[3]]]], null, 2],
+      ['pallet', 1.9, RB, 's', [SODA[1]]], ['pallet', -1.6, RC, 'n', [CARTON[0]]], ['end', 2.4, -2.3, 's', ['food/chocolate-wrapper', BAG[2]]],
+      ['pallet', -0.7, RC, 'n', [SODA[3]]], ['pallet', 0.2, RC, 'n', [CARTON[2]]], ['pallet', 1.05, RC, 'n', [TIN[3]]]],
+    promo: ['pallet', 1.9, RC, 'n', [TIN[0]]]
+  },
+  toys: {
+    floor: 'shop/floor%=e6dff3', aisles: AISLES, decor: STRIP,
+    feature: ['end', 2.65, RA, 'b', [BOX[1], 'toy/vehicle-monster-truck*0.2']],
+    fix: [['arcade/prizes', -2.2, -2.3, 's'], ['end', -1.4, -2.3, 's', [BOX[4], 'toy/vehicle-speedster*0.2']],
+      ['shelf', -1.1, RA, 's', [[[BOX[2], 'toy/vehicle-suv*0.2'], ['holiday/train-locomotive*0.3', 'toy/vehicle-racer*0.2']], [['toy/vehicle-monster-truck*0.2', BOX[3]], ['toy/vehicle-truck*0.2', 'skate/skateboard*0.4']]], null, 2],
+      ['end', -0.6, -2.3, 's', ['holiday/present-a-cube', 'holiday/present-b-round']], ['arcade/prizes', 0.2, -2.3, 's'],
+      ['shelf', 0.5, RA, 's', [[['toy/vehicle-speedster*0.2', BOX[4]], ['skate/skateboard*0.4', 'toy/vehicle-vintage-racer*0.2']], [[BOX[5], 'toy/vehicle-suv*0.2'], ['toy/vehicle-racer*0.2', 'holiday/train-locomotive*0.3']]], null, 2],
+      ['arcade/claw-machine', 1.9, RA, 's', null, [['toy/vehicle-racer*0.15', -0.1, 0, 0.5, 0.25], ['toy/vehicle-racer*0.15', 0.1, 0.05, -0.4, 0.25]]],
+      ['shelf', -1.1, RB, 's', [[['holiday/present-b-cube', 'toy/vehicle-truck*0.2'], [BOX[0], 'holiday/sled*0.3']], [['toy/vehicle-monster-truck*0.2', 'skate/skateboard*0.4'], ['holiday/train-wagon*0.3', BOX[1]]]], null, 2],
+      ['shop/gacha-machine', 1.9, RB, 's'], ['shelf', 0.5, RB, 's', [[[BOX[2], 'toy/vehicle-speedster*0.2'], ['holiday/train-tender*0.3', 'toy/vehicle-suv*0.2']], [['toy/vehicle-vintage-racer*0.2', BOX[3]], ['skate/skateboard*0.4', 'toy/vehicle-racer*0.2']]], null, 2],
+      ['end', 1.0, -2.3, 's', ['skate/skateboard*0.4', BOX[2]]], ['furn/table', -1.6, RC, 'n', null, [['holiday/train-locomotive*0.45', -0.15, 0, 0.3, 0.3], ['holiday/train-wagon*0.45', 0.15, 0.03, 0.3, 0.3]]],
+      ['holiday/sled*0.45', -0.7, RC, 'n'], ['crate', 1.0, RC, 'n', [BOX[0]]], ['furn/bookcaseOpenLow', 0.2, RC, 'n', null, [['toy/vehicle-suv*0.2', 0, 0.02, 0, 0.36]]],
+      ['end', 1.8, -2.3, 's', ['toy/vehicle-truck*0.2', BOX[5]]]],
+    promo: ['holiday/tree-decorated*0.4', 1.9, RC, 'n', null, [['holiday/present-a-cube*0.35', 0.32, 0.2, 0.4, 0], ['holiday/present-b-round*0.35', -0.3, 0.25, 0, 0]]]
+  },
+  tech: {
+    floor: 'shop/floor%=d3d7e3', aisles: AISLES, decor: STRIP,
+    feature: ['end', 2.65, RA, 'b', [BOX[2], 'furn/speakerSmall']],
+    fix: [['furn/cabinetTelevisionDoors', -2.15, -2.36, 's', null, [['furn/televisionModern', 0, -0.03, 0, 0.28]]],
+      ['furn/cabinetTelevisionDoors', -1.35, -2.36, 's', null, [['furn/televisionModern*1.15', 0, -0.03, 0, 0.28]]],
+      ['furn/desk', -1.4, RA, 's', null, [['furn/laptop*1.3', -0.12, 0, 0.2, 0.343], ['furn/laptop*1.3', 0.14, 0.02, -0.15, 0.343]], 2],
+      ['furn/cabinetTelevisionDoors', -0.55, -2.36, 's', null, [['furn/televisionModern*1.3', 0, -0.03, 0, 0.28]]],
+      ['furn/desk', 0.0, RA, 's', null, [['furn/computerScreen*1.3', 0, -0.05, 0, 0.343], ['furn/computerKeyboard*1.3', 0, 0.07, 0, 0.343]], 2],
+      ['furn/cabinetTelevisionDoors', 0.25, -2.36, 's', null, [['furn/televisionModern*1.15', 0, -0.03, 0, 0.28]]],
+      ['furn/desk', 1.9, RA, 's', null, [['furn/laptop*1.3', 0, 0, 0, 0.343]], 1],
+      ['furn/desk', -1.4, RB, 's', null, [['furn/radio*1.2', -0.1, 0, 0.1, 0.343], ['furn/speakerSmall', 0.18, 0, 0, 0.343]], 2],
+      ['furn/cabinetTelevisionDoors', 1.05, -2.36, 's', null, [['furn/televisionModern', 0, -0.03, 0, 0.28]]],
+      ['shelf', 0.3, RB, 's', [[[BOX[1], BOX[2]], [BOX[4], BOX[0]]], [[BOX[3], BOX[1]], [BOX[2], BOX[5]]]], null, 2],
+      ['furn/speaker', 1.9, RB, 's', null, null, 2], ['furn/bookcaseOpenLow', -1.6, RC, 'n', null, [['furn/radio', 0, 0, 0, 0.36]]],
+      ['furn/speaker', 1.9, -2.32, 's', null, null, 2], ['furn/bookcaseOpenLow', -0.7, RC, 'n', null, [['furn/speakerSmall', -0.08, 0, 0, 0.36], ['furn/speakerSmall', 0.1, 0, 0, 0.36]]],
+      ['furn/bookcaseOpenLow', 0.2, RC, 'n', null, [['furn/laptop', 0, 0, 0, 0.36]]], ['furn/cabinetTelevisionDoors', 2.45, -2.36, 's', null, [['furn/televisionModern', 0, -0.03, 0, 0.28]]]],
+    promo: ['pallet', 1.9, RC, 'n', [BOX[1]]]
+  },
+  kitchen: {
+    floor: 'shop/floor%=dcebd5', aisles: AISLES, decor: STRIP,
+    feature: ['end', 2.65, RA, 'b', [COOK[2], COOK[0]]],
+    fix: [['furn/kitchenCabinet', -2.2, -2.3, 's', null, [['furn/kitchenCoffeeMachine*1.6', 0, -0.05, 0, 0.405]], 2], ['furn/kitchenSink', -1.4, -2.3, 's'],
+      ['shelf', -1.1, RA, 's', [[[COOK[0], COOK[3]], [COOK[1], COOK[4]]], [[COOK[2], COOK[5]], [COOK[10], COOK[6]]]], null, 2],
+      ['furn/kitchenStove', -1.0, -2.3, 's'], ['shelf', 0.5, RA, 's', [[[COOK[7], COOK[0]], [COOK[8], COOK[2]]], [[COOK[3], COOK[1]], [COOK[9], COOK[5]]]], null, 2],
+      ['furn/kitchenCabinet', -0.6, -2.3, 's', null, [['furn/kitchenMicrowave*1.3', 0, -0.03, 0, 0.405]]],
+      ['furn/table', 1.9, RA, 's', null, [['furn/toaster*1.8', -0.2, 0, 0, 0.297], ['furn/kitchenBlender*1.8', 0.05, 0, 0, 0.297], ['furn/kitchenCoffeeMachine*1.6', 0.25, 0, 0, 0.297]]],
+      ['shelf', -1.1, RB, 's', [[[COOK[4], COOK[11]], [COOK[6], COOK[0]]], [[COOK[5], COOK[3]], [COOK[7], COOK[1]]]], null, 2],
+      ['furn/kitchenFridge', -0.05, -2.3, 's'], ['shelf', 0.5, RB, 's', [[[COOK[1], COOK[9]], [COOK[2], COOK[10]]], [[COOK[0], COOK[8]], [COOK[4], COOK[11]]]], null, 2],
+      ['furn/table', 1.9, RB, 's', null, [['furn/kitchenMicrowave*1.3', -0.12, 0, 0, 0.297], ['furn/toaster*1.8', 0.22, 0, 0, 0.297]]],
+      ['furn/table', -1.6, RC, 'n', null, [['food/cutting-board*0.6', -0.15, 0, 0, 0.297], ['food/knife-block*0.7', 0.15, 0, 0, 0.297]]],
+      ['furn/kitchenFridgeLarge', 0.7, -2.28, 's'], ['furn/table', -0.7, RC, 'n', null, [['food/pot*0.7', -0.15, 0, 0, 0.297], ['food/pan*0.7', 0.17, 0, 0.5, 0.297]]],
+      ['furn/table', 0.2, RC, 'n', null, [['food/plate*0.55', -0.15, 0, 0, 0.297], ['food/bowl*0.6', 0.15, 0, 0, 0.297]]],
+      ['furn/kitchenCabinet', 1.6, -2.3, 's', null, [['furn/toaster*1.8', 0, 0, 0, 0.405]], 2]],
+    promo: ['pallet', 1.9, RC, 'n', [COOK[0]]]
+  },
+  clothes: {
+    floor: 'shop/floor-wood', aisles: AISLES, decor: STRIP,
+    feature: ['shop/mannequin', 2.65, RA, 'b'],
+    fix: [[RACK[0], -2.2, -2.25, 's'], ['shop/mannequin', -1.45, -2.25, 's'], ['table', -1.15, RA, 's', [[TEE[0], TEE[1]], [TEE[2], TEE[3]]], null, 2], [RACK[1], -0.7, -2.25, 's'],
+      [RACK[2], 0.55, RA, 's', null, null, 2], [RACK[3], 0.1, -2.25, 's'], ['shop/mannequin', 1.8, RA, 's'],
+      ['table', -1.15, RB, 's', [[TEE[4], TEE[5]], [TEE[6], TEE[1]]], null, 2], ['shop/mannequin', 0.85, -2.25, 's'], [RACK[0], 0.55, RB, 's', null, null, 2],
+      [RACK[1], 1.9, RB, 'b'], ['table', -1.6, RC, 'n', [TEE[4], TEE[5]]], [RACK[2], 1.6, -2.25, 's'], ['table', -0.7, RC, 'n', [TEE[6], TEE[0]]],
+      ['table', 0.2, RC, 'n', [TEE[1], TEE[3]]], [RACK[3], 2.4, -2.25, 's']],
+    promo: ['table', 1.9, RC, 'n', [TEE[2], TEE[5]]]
+  },
+  home: {
+    floor: 'shop/floor-wood', aisles: [-0.3, 1.2], decor: STRIP,
+    feature: ['furn/bookcaseOpenLow', 2.65, RA, 'b', null, [['furn/books', 0, 0, 0, 0.36]]],
+    fix: [['furn/rugRectangle%=b9c9e6', -1.5, -1.95, 's', null, null, 1, 'staff'], ['furn/loungeSofa%carpet=5b7fc4', -1.5, -2.3, 's', null, null, 1, 'staff'],
+      ['furn/tableCoffee', -1.5, -1.7, 's', null, null, 1, 'staff'], ['furn/loungeChair%carpet=e0a44a', -2.45, -1.9, 'b', null, null, 1, 'staff'],
+      ['furn/lampRoundFloor', -0.55, -2.3, 's', null, null, 1, 'staff'], ['furn/bedDouble', 1.2, -2.0, 's', null, null, 1, 'staff'],
+      ['furn/cabinetBedDrawer', 0.55, -2.38, 's', null, [['furn/lampRoundTable', 0, 0, 0, 0.234]], 1, 'staff'],
+      ['furn/table', -1.4, RA, 's', null, [['furn/chair', -0.2, 0.33, Math.PI, 0], ['furn/chair', 0.2, 0.33, Math.PI, 0], ['furn/chair', -0.2, -0.33, 0, 0], ['furn/chair', 0.2, -0.33, 0, 0]]],
+      ['furn/lampSquareFloor', -0.55, RA, 's'],
+      ['furn/sideTableDrawers', 0.5, RA, 's', null, [['furn/lampSquareTable', -0.1, 0, 0, 0.342], ['furn/plantSmall2', 0.12, 0, 0, 0.342]], 2],
+      ['furn/washerDryerStacked', 1.9, RA, 's', null, null, 2], ['furn/bookcaseOpenLow', -1.4, RB, 's', null, [['furn/books', 0, 0, 0, 0.36], ['furn/plantSmall1', 0.12, 0, 0, 0.36]], 3],
+      ['furn/cabinetBedDrawer', 1.85, -2.38, 's', null, [['furn/lampRoundTable', 0, 0, 0, 0.234]], 1, 'staff'],
+      ['furn/sideTableDrawers', 0.5, RB, 's', null, [['furn/pillowBlue', 0, 0, 0.1, 0.342], ['furn/pillow', 0.15, 0.02, -0.2, 0.342]], 2],
+      ['furn/rugRound%=e6b8a8', -0.7, RC, 'n', null, null, 1, 'staff'], ['furn/lampSquareFloor', 1.9, RB, 's', null, null, 2]],
+    promo: ['furn/pottedPlant', 1.9, RC, 'n', null, null, 2]
+  }
+};
+
+// what stands on overstock pallets
+var OVERSTOCK = { boxes: ['furn/cardboardBoxClosed*1.2'] };
 
 var IT = 64;
 var IB = 118;
@@ -146,14 +317,152 @@ var textureFix = function (parser) {
   };
 };
 
+// A ref names a model file, and optionally one product out of it, colours and a size:
+//   shop/shelf-boxes          the shelf without the goods it comes with (see BARE)
+//   shop/shelf-boxes.box      one of those goods on its own, standing on the origin
+//   food/can@14,2>4,1         atlas cells moved to other cells, which recolours a label, a garment or a wrapper
+//   furn/loungeSofa%carpet=5b7fc4   a named material in another colour
+//   food/carrot~z             laid on its side, turned a quarter about z (or x)
+//   holiday/present-a-cube*0.4      drawn that much bigger or smaller than the rest of its kit
+var REF = /^([^.@%~*]+)(?:\.([\w-]+))?(?:@([\d,>;]+))?(?:%([\w=;]*))?(?:~([xz]))?(?:\*([\d.]+))?$/;
+function parseRef(ref) {
+  var m = REF.exec(ref);
+  return {
+    file: m[1],
+    part: m[2] || null,
+    cells: m[3] ? m[3].split(';').map(function (c) { return c.split('>').map(function (p) { return p.split(',').map(Number); }); }) : null,
+    mats: m[4] ? m[4].split(';').map(function (c) { return c.split('='); }) : null,
+    lay: m[5] || null,
+    k: m[6] ? +m[6] : 1
+  };
+}
+
+// fixtures whose goods are separate nodes; the bare fixture is stocked with other things in place
+var BARE = { 'shop/shelf-boxes': 1, 'shop/shelf-bags': 1, 'shop/shelf-end': 1, 'shop/display-cans': 1, 'shop/display-bread': 1,
+  'shop/clothing-table': 1, 'shop/hand-truck': 1 };
+
+// The kit's coolers are solid boxes with their glass painted on (atlas cell 3,2). For goods to show, the glass gets
+// its own see-through material, the body face behind it goes, and a lit inner box closes the opening
+var glassMat = new THREE.MeshLambertMaterial({ color: 0xd8eef8, transparent: true, opacity: 0.25, depthWrite: false });
+var innerMat = new THREE.MeshLambertMaterial({ color: 0xe6eef6, side: THREE.BackSide });
+var shelfMat = new THREE.MeshLambertMaterial({ color: 0xc9d3de });
+var COOLER = {
+  'shop/freezers-standing': { face: 2, at: -0.055, inner: [-0.5, 0.5, 0.1, 0.9, -0.5, -0.06], shelf: 0.49 },
+  'shop/freezer': { face: 1, at: 0.31, inner: [-0.4, 0.4, 0.06, 0.3, -0.3, 0.3] }
+};
+
+function cell(uv, a, b, c) {
+  return [Math.floor((uv.getX(a) + uv.getX(b) + uv.getX(c)) / 3 * 16), Math.floor((uv.getY(a) + uv.getY(b) + uv.getY(c)) / 3 * 4)];
+}
+
+// splits a cooler's geometry into body and glass, leaving out the body face behind the glass
+function openCooler(geom, cfg) {
+  var g = geom.index ? geom.toNonIndexed() : geom;
+  var pos = g.attributes.position;
+  var uv = g.attributes.uv;
+  var keep = [];
+  var glass = [];
+  var e1 = new THREE.Vector3();
+  var e2 = new THREE.Vector3();
+  var v = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
+  for (var t = 0; t < pos.count; t += 3) {
+    var c = cell(uv, t, t + 1, t + 2);
+    for (var i = 0; i < 3; i++) v[i].fromBufferAttribute(pos, t + i);
+    e1.subVectors(v[1], v[0]);
+    e2.subVectors(v[2], v[0]);
+    var n = e1.cross(e2).toArray();
+    var mid = (v[0].getComponent(cfg.face) + v[1].getComponent(cfg.face) + v[2].getComponent(cfg.face)) / 3;
+    var big = Math.abs(n[cfg.face]) > Math.abs(n[(cfg.face + 1) % 3]) && Math.abs(n[cfg.face]) > Math.abs(n[(cfg.face + 2) % 3]) && n[cfg.face] > 0;
+    if (c[0] === 3 && c[1] === 2) glass.push(t);
+    else if (!(c[0] === 13 && c[1] === 3 && big && mid < cfg.at)) keep.push(t);
+  }
+  function pick(list) {
+    var out = new THREE.BufferGeometry();
+    Object.keys(g.attributes).forEach(function (k) {
+      var a = g.attributes[k];
+      var arr = new Float32Array(list.length * 3 * a.itemSize);
+      list.forEach(function (t, j) {
+        for (var q = 0; q < 3 * a.itemSize; q++) arr[j * 3 * a.itemSize + q] = a.array[t * a.itemSize + q];
+      });
+      out.setAttribute(k, new THREE.BufferAttribute(arr, a.itemSize));
+    });
+    return out;
+  }
+  var b = cfg.inner;
+  var box = new THREE.BoxGeometry(b[1] - b[0], b[3] - b[2], b[5] - b[4]);
+  box.translate((b[0] + b[1]) / 2, (b[2] + b[3]) / 2, (b[4] + b[5]) / 2);
+  box.deleteAttribute('uv');
+  var shelf = null;
+  if (cfg.shelf) {
+    shelf = new THREE.BoxGeometry(b[1] - b[0] - 0.02, 0.012, b[5] - b[4] - 0.02);
+    shelf.translate((b[0] + b[1]) / 2, cfg.shelf, (b[4] + b[5]) / 2);
+    shelf.deleteAttribute('uv');
+  }
+  return { body: pick(keep), glass: pick(glass), inner: box, shelf: shelf };
+}
+
+// moves every triangle whose middle lies in one atlas cell to another cell; the kits' atlases are 16 columns by 4 rows
+function recolour(geom, cells) {
+  var uv = geom.attributes.uv;
+  if (!uv) return;
+  var idx = geom.index ? geom.index.array : null;
+  var n = idx ? idx.length : uv.count;
+  var done = new Uint8Array(uv.count);
+  // cells are judged on the UVs as they were: triangles of a quad share corners, and moved corners would mislead
+  var src = uv.array.slice();
+  var w = uv.itemSize;
+  for (var t = 0; t < n; t += 3) {
+    var a = idx ? idx[t] : t;
+    var b = idx ? idx[t + 1] : t + 1;
+    var c = idx ? idx[t + 2] : t + 2;
+    var cu = Math.floor((src[a * w] + src[b * w] + src[c * w]) / 3 * 16);
+    var cv = Math.floor((src[a * w + 1] + src[b * w + 1] + src[c * w + 1]) / 3 * 4);
+    for (var i = 0; i < cells.length; i++) {
+      var f = cells[i][0];
+      var to = cells[i][1];
+      if (f[0] !== cu || f[1] !== cv) continue;
+      [a, b, c].forEach(function (v) {
+        if (done[v]) return;
+        done[v] = 1;
+        uv.setXY(v, src[v * w] + (to[0] - f[0]) / 16, src[v * w + 1] + (to[1] - f[1]) / 4);
+      });
+      break;
+    }
+  }
+  uv.needsUpdate = true;
+}
+
+// a model's meshes that share a material are drawn as one
+function joinParts(parts) {
+  var by = {};
+  var out = [];
+  parts.forEach(function (p) {
+    var g = p.geom;
+    var key = p.mat.uuid + (g.index ? 'i' : 'n') + Object.keys(g.attributes).sort().join();
+    if (!by[key]) {
+      by[key] = { mat: p.mat, list: [] };
+      out.push(by[key]);
+    }
+    by[key].list.push(g);
+  });
+  return out.map(function (e) { return { geom: e.list.length > 1 ? mergeGeometries(e.list, false) : e.list[0], mat: e.mat }; });
+}
+
 function loadModels(list, progress, done) {
   var loader = new GLTFLoader();
   loader.register(textureFix);
   var mats = {};
   var models = {};
+  var files = {};
+  list.forEach(function (ref) {
+    var f = parseRef(ref).file;
+    (files[f] = files[f] || []).push(ref);
+  });
+  var names = Object.keys(files);
   var n = 0;
-  function material(src, kit) {
-    var key = kit + '|' + (src.map ? 'map' : src.name + src.color.getHex());
+  function material(src, kit, tint) {
+    var see = src.transparent || src.opacity < 1;
+    var key = kit + '|' + (src.map ? 'map' : src.name + src.color.getHex()) + (tint || '') + (see ? 't' + src.opacity : '');
     if (mats[key]) return mats[key];
     if (src.map) {
       src.map.magFilter = THREE.NearestFilter;
@@ -161,71 +470,126 @@ function loadModels(list, progress, done) {
       src.map.generateMipmaps = false;
       src.map.colorSpace = THREE.SRGBColorSpace;
     }
-    mats[key] = src.map ? new THREE.MeshLambertMaterial({ map: src.map }) : new THREE.MeshLambertMaterial({ color: src.color });
+    var c = tint ? new THREE.Color(parseInt(tint, 16)) : src.map ? new THREE.Color(1, 1, 1) : src.color;
+    var opt = src.map ? { map: src.map, color: c } : { color: c };
+    if (see) {
+      opt.transparent = true;
+      opt.opacity = src.opacity;
+      opt.depthWrite = false;
+    }
+    mats[key] = new THREE.MeshLambertMaterial(opt);
     return mats[key];
   }
   var missing = { parts: [], box: { x0: -0.3, x1: 0.3, z0: -0.3, z1: 0.3, y0: 0, h: 0.3 }, gltf: null };
   function one() {
-    progress(++n / list.length);
-    if (n === list.length) done();
+    progress(++n / names.length);
+    if (n === names.length) done();
   }
-  list.forEach(function (ref) {
-    var kit = ref.split('/')[0];
-    var k = SCALE[kit] || 1;
-    loader.load(BASE + ref + '.glb', function (g) {
-      var parts = [];
-      var skinned = false;
-      g.scene.traverse(function (o) { if (o.isSkinnedMesh) skinned = true; });
-      g.scene.updateMatrixWorld(true);
-      var box = new THREE.Box3().setFromObject(g.scene);
-      // the furniture kit puts its models' corner at the origin
-      var shift = new THREE.Matrix4().makeTranslation(kit === 'furn' ? -(box.min.x + box.max.x) / 2 : 0, 0, kit === 'furn' ? -(box.min.z + box.max.z) / 2 : 0);
-      var sm = new THREE.Matrix4().makeScale(k, k, k).multiply(shift);
-      g.scene.traverse(function (o) {
-        if (!o.isMesh) return;
-        var geom = o.geometry.clone();
-        if (!o.isSkinnedMesh) geom.applyMatrix4(new THREE.Matrix4().multiplyMatrices(sm, o.matrixWorld));
-        ['color', 'tangent', 'uv1', 'uv2'].forEach(function (a) { if (geom.attributes[a]) geom.deleteAttribute(a); });
-        parts.push({ geom: geom, mat: material(o.material, kit) });
+  function make(g, ref) {
+    var r = parseRef(ref);
+    var kit = r.file.split('/')[0];
+    var k = (SCALE[kit] || 1) * r.k;
+    var skinned = false;
+    g.scene.traverse(function (o) { if (o.isSkinnedMesh) skinned = true; });
+    g.scene.updateMatrixWorld(true);
+    var meshes = [];
+    var origin = null;
+    g.scene.traverse(function (o) {
+      if (!o.isMesh) return;
+      if (r.part) {
+        // a node of several materials loads as a group of meshes; repeated names get a suffix, so this is the first one
+        var own = o.name === r.part ? o : o.parent && o.parent.name === r.part ? o.parent : null;
+        if (!own || origin && origin !== own) return;
+        origin = own;
+      } else if (BARE[r.file] && o.parent && o.parent.isMesh) return;
+      meshes.push(o);
+    });
+    var at = new THREE.Matrix4();
+    if (origin) at.makeTranslation(-origin.matrixWorld.elements[12], -origin.matrixWorld.elements[13], -origin.matrixWorld.elements[14]);
+    var parts = [];
+    var box = new THREE.Box3();
+    meshes.forEach(function (o) {
+      var geom = o.geometry.clone();
+      if (!o.isSkinnedMesh) geom.applyMatrix4(new THREE.Matrix4().multiplyMatrices(at, o.matrixWorld));
+      ['color', 'tangent', 'uv1', 'uv2'].forEach(function (a) { if (geom.attributes[a]) geom.deleteAttribute(a); });
+      var cool = COOLER[r.file] && !r.part ? COOLER[r.file] : null;
+      if (r.cells && !cool) recolour(geom, r.cells);
+      var tint = null;
+      // an empty material name tints the whole model
+      (r.mats || []).forEach(function (mt) { if (!mt[0] || mt[0] === o.material.name) tint = mt[1]; });
+      geom.computeBoundingBox();
+      box.union(geom.boundingBox);
+      if (cool) {
+        var oc = openCooler(geom, cool);
+        if (r.cells) recolour(oc.body, r.cells);
+        parts.push({ geom: oc.body, mat: material(o.material, kit, tint) }, { geom: oc.glass, mat: glassMat }, { geom: oc.inner, mat: innerMat });
+        if (oc.shelf) parts.push({ geom: oc.shelf, mat: shelfMat });
+      } else parts.push({ geom: geom, mat: material(o.material, kit, tint) });
+    });
+    if (r.lay) {
+      var turn = new THREE.Matrix4()[r.lay === 'x' ? 'makeRotationX' : 'makeRotationZ'](Math.PI / 2);
+      parts.forEach(function (p) { p.geom.applyMatrix4(turn); });
+      box.makeEmpty();
+      parts.forEach(function (p) {
+        p.geom.computeBoundingBox();
+        box.union(p.geom.boundingBox);
       });
-      if (skinned) box.set(new THREE.Vector3(-0.2, 0, -0.2), new THREE.Vector3(0.2, 0.75, 0.2));
-      else box.applyMatrix4(sm);
-      models[ref] = { parts: parts, box: { x0: box.min.x, x1: box.max.x, z0: box.min.z, z1: box.max.z, y0: box.min.y, h: box.max.y }, gltf: skinned ? g : null };
+    }
+    // the furniture kit puts its models' corner at the origin
+    var sm = new THREE.Matrix4().makeScale(k, k, k);
+    if (kit === 'furn') sm.multiply(new THREE.Matrix4().makeTranslation(-(box.min.x + box.max.x) / 2, 0, -(box.min.z + box.max.z) / 2));
+    if (!skinned) {
+      parts.forEach(function (p) { p.geom.applyMatrix4(sm); });
+      box.applyMatrix4(sm);
+      parts = joinParts(parts);
+    } else box.set(new THREE.Vector3(-0.2, 0, -0.2), new THREE.Vector3(0.2, 0.75, 0.2));
+    models[ref] = { parts: parts, box: { x0: box.min.x, x1: box.max.x, z0: box.min.z, z1: box.max.z, y0: box.min.y, h: box.max.y }, gltf: skinned ? g : null };
+  }
+  names.forEach(function (f) {
+    loader.load(BASE + f + '.glb', function (g) {
+      files[f].forEach(function (ref) { make(g, ref); });
       one();
     }, undefined, function () {
-      console.warn('missing model', ref);
+      console.warn('missing model', f);
       one();
     });
   });
   return { model: function (ref) { return models[ref] || missing; } };
 }
 
-function fixRef(s, name) {
-  return name.indexOf('/') > 0 ? name : s.kit + '/' + name;
-}
-
+// every model the store can show, gathered from the tables
 function modelList() {
   var seen = {};
-  function add(r) { seen[r] = 1; }
-  ['shop', 'arcade'].forEach(function (k) {
-    ['wall', 'column', 'floor', 'cash-register', 'character-employee'].forEach(function (m) { add(k + '/' + m); });
+  function walk(v) {
+    if (typeof v === 'string') {
+      if (v.indexOf('/') > 0) seen[v.replace(/^\w+:/, '')] = 1;
+    } else if (Array.isArray(v)) v.forEach(walk);
+  }
+  Object.keys(KIND).forEach(function (k) { seen[KIND[k].ref] = 1; });
+  Object.keys(DEPTS).forEach(function (id) {
+    walk(DEPTS[id].fix);
+    walk(DEPTS[id].promo);
+    walk(DEPTS[id].decor);
+    walk(DEPTS[id].feature);
+    seen[DEPTS[id].floor] = 1;
   });
-  ['shop/floor-wood', 'shop/hand-truck', 'furn/cardboardBoxClosed', 'furn/cardboardBoxOpen', 'furn/pottedPlant', 'furn/plantSmall1', 'furn/rugRectangle',
-    'furn/rugDoormat', 'furn/bench', 'furn/trashcan', 'sub/planter', 'roads/road-straight', 'roads/road-crossing', 'roads/light-square',
+  walk(FRONT_ITEMS);
+  walk(FLOWERS);
+  walk(OVERSTOCK.boxes);
+  walk(['food/plate-rectangle*0.55', 'skate/pallet', 'shop/character-employee@5,3>2,2', 'shop/freezers-standing@13,3>2,2',
+    'shop/freezers-standing@13,3>2,1']);
+  Object.keys(KIND).forEach(function (k) { seen[KIND[k].ref] = 1; });
+  ['shop/wall', 'shop/wall-window', 'shop/column', 'shop/floor', 'shop/cash-register', 'shop/cash-register-self', 'shop/character-employee', 'arcade/cash-register',
+    'shop/hand-truck', 'shop/shopping-basket', 'shop/shopping-basket*0.62', 'furn/cardboardBoxClosed', 'furn/cardboardBoxOpen', 'furn/rugDoormat',
+    'furn/bench', 'furn/trashcan', 'furn/pottedPlant', 'sub/planter', 'roads/road-straight', 'roads/road-crossing', 'roads/light-square',
     'roads/light-curved', 'roads/construction-fence', 'roads/construction-light', 'roads/construction-barrier', 'roads/construction-cone',
     'roads/dumpster', 'roads/road-sign-street', 'car/taxi', 'car/delivery', 'car/tractor-shovel', 'car/box', 'car/truck-flat',
     'nature/tree_oak', 'nature/tree_default', 'nature/tree_fat', 'nature/tree_detailed', 'nature/tree_pineRoundC', 'nature/plant_bush',
-    'nature/plant_bushLarge', 'food/bag', 'nature/flower_redA', 'nature/flower_yellowA', 'nature/flower_purpleA', 'sub/building-type-a',
-    'sub/building-type-c', 'sub/building-type-e', 'sub/building-type-h', 'sub/building-type-k', 'sub/tree-large'].forEach(add);
-  Object.keys(SHOPS).forEach(function (id) {
-    var c = SHOPS[id];
-    c.fix.forEach(function (f) { add(fixRef(c, f)); });
-    c.top.forEach(add);
-  });
-  HALL_ITEMS.forEach(function (it) { add(it[1]); });
-  FOLK.forEach(add);
-  CARS.forEach(add);
-  add('arcade/character-gamer');
+    'nature/plant_bushLarge', 'food/bag', 'food/bag-flat', 'nature/flower_redA', 'nature/flower_yellowA', 'nature/flower_purpleA',
+    'forest/fence', 'nature/tree_small', 'furn/plantSmall2*1.6', 'sub/building-type-a', 'sub/building-type-c', 'sub/building-type-e', 'sub/building-type-h',
+    'sub/building-type-k', 'sub/tree-large'].forEach(function (r) { seen[r] = 1; });
+  FOLK.forEach(function (r) { seen[r] = 1; });
+  CARS.forEach(function (r) { seen[r] = 1; });
   return Object.keys(seen);
 }
 
@@ -258,6 +622,7 @@ function dayStep(dt) {
   scene.background.copy(skyNight).lerp(skyDay, k);
   scene.fog.color.copy(scene.background);
   bulbMat.emissive.copy(lampOn).multiplyScalar(1 - k);
+  if (doorMat) doorMat.emissive.setScalar(0.5 * (1 - k));
   poolMat.opacity = 0.5 * (1 - k);
   poolMat.visible = k < 0.98;
 }
@@ -320,15 +685,13 @@ function place() {
   cutaway();
 }
 
-// outer walls on the camera's side drop to their foot, so the rooms behind them stay in view; so do the walls
-// between rows when the camera looks straight along the corridor
+// outer walls on the camera's side drop to their foot, so the floor behind them stays in view
 function cutaway() {
   var sx = Math.sin(focus.az);
   var sz = Math.cos(focus.az);
   outer.forEach(function (w) {
     var d = w.n[0] * sx + w.n[1] * sz;
-    var cut = w.on() ? d > 0.3 : Math.abs(d) > 0.8;
-    var s = cut ? 0.12 : 1;
+    var s = d > 0.3 ? 0.12 : 1;
     if (w.g.scale.y !== s) {
       w.g.scale.y = s;
       shadowDirty = true;
@@ -336,7 +699,11 @@ function cutaway() {
   });
 }
 
+// everything in the store faces the doors, so the camera turns no more than an eighth either way
+var TURN = Math.PI / 4;
+
 function clamp() {
+  focus.az = Math.max(-TURN, Math.min(TURN, focus.az));
   focus.dist = Math.max(DMIN, Math.min(DMAX, focus.dist));
   focus.x = Math.max(BOUNDS[0], Math.min(BOUNDS[1], focus.x));
   focus.z = Math.max(BOUNDS[2], Math.min(BOUNDS[3], focus.z));
@@ -416,7 +783,8 @@ function bind() {
       var bx = before ? before.x : focus.x;
       var bz = before ? before.z : focus.z;
       focus.dist = pinch.k * pinch.d / (Math.hypot(a.x - b.x, a.y - b.y) || 1);
-      focus.az = pinch.az + (Math.atan2(b.y - a.y, b.x - a.x) - pinch.ang);
+      var da = Math.atan2(b.y - a.y, b.x - a.x) - pinch.ang;
+      focus.az = pinch.az + Math.atan2(Math.sin(da), Math.cos(da));
       clamp();
       place();
       var after = under(mx, my, hitB);
@@ -433,6 +801,7 @@ function bind() {
     if (!drag.moved) return;
     if (drag.button === 2 || e.shiftKey) {
       focus.az = drag.az - (e.clientX - drag.x0) * 0.008;
+      clamp();
       place();
       return;
     }
@@ -517,16 +886,31 @@ function Batch() {
   var q = new THREE.Quaternion();
   var up = new THREE.Vector3(0, 1, 0);
   var one = new THREE.Vector3(1, 1, 1);
-  function put(geom, mat, x, y, z, rot) {
-    var key = mat.uuid + (geom.index ? 'i' : 'n') + Object.keys(geom.attributes).sort().join();
-    if (!sets[key]) sets[key] = { mat: mat, list: [] };
+  function put(geom, mat, x, y, z, rot, k, goods) {
+    var key = mat.uuid + (geom.index ? 'i' : 'n') + Object.keys(geom.attributes).sort().join() + (goods ? 'g' : '');
+    if (!sets[key]) sets[key] = { mat: mat, list: [], goods: goods };
     q.setFromAxisAngle(up, rot || 0);
-    mtx.compose(new THREE.Vector3(x, y, z), q, one);
+    mtx.compose(new THREE.Vector3(x, y, z), q, k ? new THREE.Vector3(k, k, k) : one);
     sets[key].list.push(geom.clone().applyMatrix4(mtx));
   }
-  this.add = function (ref, x, z, rot, y) {
+  this.sets = sets;
+  this.add = function (ref, x, z, rot, y, skip) {
     var m = lib.model(ref);
-    m.parts.forEach(function (p) { put(p.geom, p.mat, x, (y || 0) - Math.min(0, m.box.y0), z, rot); });
+    m.parts.forEach(function (p) { if (p.mat !== skip) put(p.geom, p.mat, x, (y || 0) - Math.min(0, m.box.y0), z, rot); });
+  };
+  this.plane = function (mat, w, h, x, y, z, rot) {
+    var g = new THREE.PlaneGeometry(w, h);
+    put(g, mat, x, y, z, rot);
+  };
+  this.raw = function (ref, x, z, rot, y, k) {
+    lib.model(ref).parts.forEach(function (p) { put(p.geom, p.mat, x, y, z, rot, k, true); });
+  };
+  this.take = function (o) {
+    Object.keys(o.sets).forEach(function (key) {
+      if (!sets[key]) sets[key] = { mat: o.sets[key].mat, list: [] };
+      sets[key].goods = o.sets[key].goods;
+      sets[key].list = sets[key].list.concat(o.sets[key].list);
+    });
   };
   // a flat slab of one colour, for paving, asphalt and paint
   this.slab = function (mat, x0, x1, z0, z1, y, h) {
@@ -540,11 +924,14 @@ function Batch() {
   this.pool = function (x, z) {
     put(poolGeo, poolMat, x, 0.07, z, 0);
   };
+  this.light = function (x, z) {
+    put(roomGeo, poolMat, x, 0.06, z, 0);
+  };
   this.group = function (shadow) {
     var g = new THREE.Group();
     Object.keys(sets).forEach(function (k) {
       var o = new THREE.Mesh(mergeGeometries(sets[k].list, false), sets[k].mat);
-      o.castShadow = shadow !== false && sets[k].mat !== poolMat && sets[k].mat !== bulbMat;
+      o.castShadow = shadow !== false && !sets[k].goods && !sets[k].mat.transparent && sets[k].mat !== poolMat && sets[k].mat !== bulbMat && sets[k].mat !== innerMat;
       o.receiveShadow = true;
       g.add(o);
     });
@@ -568,6 +955,8 @@ function fade() {
 var poolMat = new THREE.MeshBasicMaterial({ color: 0xffc870, map: fade(), transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
 var poolGeo = new THREE.PlaneGeometry(2.8, 2.8).rotateX(-Math.PI / 2);
 poolGeo.deleteAttribute('normal');
+var roomGeo = new THREE.PlaneGeometry(4.4, 4.4).rotateX(-Math.PI / 2);
+roomGeo.deleteAttribute('normal');
 var LAMP = { 'roads/light-curved': [1.9, -0.55], 'roads/light-square': [1.72, -0.58] };
 
 // a street lamp, and the bulb under the end of its arm
@@ -619,10 +1008,15 @@ function figure(ref, clip) {
   var g = new THREE.Group();
   if (!m.gltf) return { obj: g, mixer: null, acts: {}, cur: null };
   var obj = clone(m.gltf.scene);
+  var cells = parseRef(ref).cells;
   obj.traverse(function (o) {
     if (!o.isMesh) return;
+    if (cells) {
+      o.geometry = o.geometry.clone();
+      recolour(o.geometry, cells);
+    }
     o.material = m.parts[0].mat;
-    o.castShadow = true;
+    o.castShadow = false;
   });
   g.add(obj);
   var f = { obj: g, mixer: new THREE.AnimationMixer(obj), acts: {}, cur: null, ref: ref };
@@ -631,6 +1025,17 @@ function figure(ref, clip) {
     if (a) f.acts[c] = f.mixer.clipAction(a);
   });
   act(f, clip || 'idle', 0);
+  f.mixer.update(0);
+  return f;
+}
+
+// staff stand on the same soft blob as shoppers
+function crew(ref, clip) {
+  var f = figure(ref, clip);
+  var blob = new THREE.Mesh(blobGeo, blobMat);
+  blob.rotation.x = -Math.PI / 2;
+  blob.position.y = 0.035;
+  f.obj.add(blob);
   return f;
 }
 
@@ -658,6 +1063,8 @@ function shownRows() {
   return Math.min(rows.length, Math.floor(n / 2) + 1);
 }
 
+// A row of the store: the floor of its two departments and the main aisle, columns at its north corners and on the
+// aisle, its stretch of the side walls, and the back wall, which only stands while this is the last row
 function buildRows() {
   var n = Math.ceil(order.length / 2);
   for (var p = 0; p < n; p++) {
@@ -666,36 +1073,30 @@ function buildRows() {
     var row = { p: p, z0: z0, z1: z1, parts: [], shown: false };
     var base = new Batch();
     floors(base, 'shop/floor', -SIDE, SIDE, z0, z1);
-    [-EDGE, -SIDE, SIDE, EDGE].forEach(function (x) { base.add((x < 0 ? shopAt(p, 0) : shopAt(p, 1)).kit + '/column', x, z0, 0); });
+    [0, 1].forEach(function (side) {
+      var s = shopAt(p, side);
+      floors(base, s.cfg.floor, s.cx - UNIT / 2, s.cx + UNIT / 2, z0, z1);
+    });
+    [-EDGE, EDGE].forEach(function (x) { base.add('shop/column', x, z0, 0); });
     // hedges along the outside walls
     [-1, 1].forEach(function (sd) {
       for (var z = z1 - 0.6; z > z0; z -= 1.1) base.add(p % 2 ? 'nature/plant_bushLarge' : 'nature/plant_bush', sd * (EDGE + 0.65), z, z * 1.7);
     });
-    var north = new Batch();
     var west = new Batch();
     var east = new Batch();
-    [0, 1].forEach(function (side) {
-      var s = shopAt(p, side);
-      floors(base, s.cfg.floor, s.cx - UNIT / 2, s.cx + UNIT / 2, z0, z1);
-      var xo = side ? EDGE : -EDGE;
-      var xi = side ? SIDE : -SIDE;
-      wallRun(north, s.kit, xo, z0, xi, z0, 0, 1);
-      wallRun(side ? east : west, s.kit, xo, z1, xo, z0, side ? -1 : 1, 0);
-    });
+    wallRun(west, 'shop', -EDGE, z1, -EDGE, z0, 1, 0);
+    wallRun(east, 'shop', EDGE, z1, EDGE, z0, -1, 0);
+    // the back wall stands just outside the row, so the back line can go right up to it
     var cap = new Batch();
-    wallRun(cap, 'shop', -SIDE, z0, SIDE, z0, 0, 1);
-    var parts = [[base, null], [north, [0, -1]], [west, [-1, 0]], [east, [1, 0]], [cap, [0, -1]]];
+    wallRun(cap, 'shop', -EDGE, z0 - 0.3, EDGE, z0 - 0.3, 0, 1);
+    var parts = [[base, null], [west, [-1, 0]], [east, [1, 0]], [cap, [0, -1]]];
     parts.forEach(function (pt, i) {
       var g = pt[0].group();
       g.visible = false;
       root.add(g);
       row.parts.push(g);
-      if (i === 4) row.cap = g;
-      if (pt[1]) {
-        (function (r, last) {
-          outer.push({ g: g, n: pt[1], on: function () { return !last || r.p === shownRows() - 1; } });
-        })(row, i === 1 || i === 4);
-      }
+      if (i === 3) row.cap = g;
+      if (pt[1]) outer.push({ g: g, n: pt[1] });
     });
     row.site = buildSite(z0, z1, p);
     row.woods = buildWoods(z0, z1, p);
@@ -747,48 +1148,308 @@ function buildWoods(z0, z1, p) {
   return g;
 }
 
-function buildShops() {
+// what a department gets at each of its 21 steps (STAGE): sixteen fixtures, its sign, the promo display, a second
+// associate, then a lit sign with light on the floor and finally a gold sign with a featured display
+var STEPS = ['fix', 'fix', 'sign', 'fix', 'fix', 'fix', 'fix', 'fix', 'fix', 'fix', 'promo', 'fix', 'fix', 'fix', 'fix', 'helper', 'fix', 'fix', 'fix',
+  'glow', 'gold'];
+
+function rotY(x, z, r) {
+  var c = Math.cos(r);
+  var s = Math.sin(r);
+  return [x * c + z * s, -x * s + z * c];
+}
+
+// only round things are piled two deep; everything else is one layer. Heavy models are capped per section
+var HEAP = { can: 1, apple: 1, orange: 1, lemon: 1, tomato: 1, onion: 1, coconut: 1, pear: 1, paprika: 1, avocado: 1, 'pumpkin-basic': 1, mushroom: 1 };
+var CAP = { watermelon: 4, grapes: 6, pineapple: 8, cheese: 4, strawberry: 4, can: 12, 'soda-bottle': 16, lollypop: 12, popsicle: 16, mussel: 16,
+  'vehicle-suv': 2, 'vehicle-racer': 2, 'vehicle-truck': 2, 'vehicle-monster-truck': 2, 'vehicle-speedster': 2, 'vehicle-vintage-racer': 2,
+  'train-locomotive': 2, 'train-wagon': 2, 'train-tender': 2, 'cake-birthday': 1, cake: 1, pie: 1, turkey: 1, 'whole-ham': 2, broccoli: 6,
+  cauliflower: 6, cabbage: 6 };
+
+function base(ref) {
+  return parseRef(ref.replace(/^\w+:/, '')).file.split('/')[1];
+}
+
+// A few goods are built from several models: berries on a tray, bananas as a hand
+function composite(ref) {
+  var m = /^(\w+):(.+)$/.exec(ref);
+  if (!m) return null;
+  if (m[1] === 'flat') {
+    var tray = 'food/plate-rectangle*0.55';
+    var tb = lib.model(tray).box;
+    var out = [[tray, 0, 0, 0, 0, 1]];
+    var b = lib.model(m[2]).box;
+    var step = (b.x1 - b.x0) * 0.95;
+    for (var i = -0.5; i <= 0.5; i++) for (var j = -0.5; j <= 0.5; j++) out.push([m[2], i * step, j * step, i * 0.7 + j, tb.h - tb.y0 - 0.01, 1]);
+    return { parts: out, box: { x0: tb.x0, x1: tb.x1, z0: tb.z0, z1: tb.z1, y0: 0, h: tb.h - tb.y0 + b.h - b.y0 } };
+  }
+  // a hand of four bananas fanned out from one stem
+  var bb = lib.model(m[2]).box;
+  var parts = [];
+  var hb = { x0: 9, x1: -9, z0: 9, z1: -9, y0: 0, h: bb.h - bb.y0 };
+  for (var k = 0; k < 4; k++) {
+    var px = (k - 1.5) * 0.05;
+    var pr = (k - 1.5) * 0.35;
+    parts.push([m[2], px, 0, pr, 0, 1]);
+    [[bb.x0, bb.z0], [bb.x1, bb.z0], [bb.x0, bb.z1], [bb.x1, bb.z1]].forEach(function (q) {
+      var p = rotY(q[0], q[1], pr);
+      hb.x0 = Math.min(hb.x0, px + p[0]);
+      hb.x1 = Math.max(hb.x1, px + p[0]);
+      hb.z0 = Math.min(hb.z0, p[1]);
+      hb.z1 = Math.max(hb.z1, p[1]);
+    });
+  }
+  return { parts: parts, box: hb };
+}
+
+// Goods on a flat surface: as many of one item as fit in the rectangle x0..x1, z0..z1 (in the fixture's own frame,
+// front toward +z), at height y. Round produce gets a second layer in the hollows of the first. Long items are turned
+// if more of them fit that way, and an item too tall for its shelf or too big for its section is shrunk to fit
+function fill(out, ref, x0, x1, z0, z1, y, heap, room) {
+  var comp = composite(ref);
+  var b = comp ? comp.box : lib.model(ref).box;
+  var name = base(ref);
+  var k = 1;
+  if (room && b.h - b.y0 > room) k = room / (b.h - b.y0);
+  var w = (b.x1 - b.x0) * k;
+  var d = (b.z1 - b.z0) * k;
+  var gap = heap ? 0.004 : 0.012;
+  function fit(a, c) {
+    return [Math.floor((x1 - x0 + gap) / (a + gap)), Math.floor((z1 - z0 + gap) / (c + gap))];
+  }
+  var s = fit(w, d);
+  var t = fit(d, w);
+  var turn = t[0] * t[1] > s[0] * s[1];
+  var n = turn ? t : s;
+  if (n[0] < 1 || n[1] < 1) {
+    // bigger than the section either way: one, shrunk to fit
+    var f = Math.min((x1 - x0) / w, (z1 - z0) / d);
+    k *= f;
+    w *= f;
+    d *= f;
+    n = [1, 1];
+    turn = false;
+  }
+  var cap = CAP[name] || 10;
+  while (n[0] * n[1] > cap) {
+    if (n[0] >= n[1]) n[0]--;
+    else n[1]--;
+  }
+  var iw = turn ? d : w;
+  var id = turn ? w : d;
+  var ax = x0 + (x1 - x0 - n[0] * iw - (n[0] - 1) * gap) / 2;
+  var az = z0 + (z1 - z0 - n[1] * id - (n[1] - 1) * gap) / 2;
+  // the item's own middle is not always its origin
+  var c = turn ? rotY((b.x0 + b.x1) / 2 * k, (b.z0 + b.z1) / 2 * k, Math.PI / 2) : [(b.x0 + b.x1) / 2 * k, (b.z0 + b.z1) / 2 * k];
+  var r = turn ? Math.PI / 2 : 0;
+  var count = 0;
+  function put(x, z, yy, rr) {
+    if (!comp) {
+      out.push([ref, x, z, rr, yy, k]);
+      return;
+    }
+    comp.parts.forEach(function (p) {
+      var q = rotY(p[1] * k, p[2] * k, rr);
+      out.push([p[0], x + q[0], z + q[1], rr + p[3], yy + p[4] * k, k * p[5]]);
+    });
+  }
+  for (var i = 0; i < n[0] && count < cap; i++) {
+    for (var j = 0; j < n[1] && count < cap; j++) {
+      put(ax + iw / 2 + i * (iw + gap) - c[0], az + id / 2 + j * (id + gap) - c[1], y, r);
+      count++;
+    }
+  }
+  if (!heap || !HEAP[name]) return;
+  var h = (b.h - b.y0) * k * 0.55;
+  for (var i2 = 0; i2 < n[0] - 1 && count < cap * 1.6; i2++) {
+    for (var j2 = 0; j2 < Math.max(1, n[1] - 1) && count < cap * 1.6; j2++) {
+      var dz = n[1] > 1 ? id / 2 + gap / 2 : 0;
+      put(ax + iw + i2 * (iw + gap) + gap / 2 - c[0], az + id / 2 + dz + j2 * (id + gap) - c[1], y + h, r + 0.6);
+      count++;
+    }
+  }
+}
+
+// the goods a fixture is stocked with, in its own frame. Shelves and coolers take [top, bottom] for a face, or a list
+// of those for sections side by side; two-faced shelves take one face for each side. Tables, crates, pallets and
+// chests take a list of goods, one per section across the top
+function stock(kd, goods, out) {
+  if (!goods) return;
+  if (kd.none) {
+    var ob = OVERSTOCK[goods];
+    fill(out, ob[0], kd.x[0], kd.x[1], kd.z[0], kd.z[1], kd.top, false);
+    var hb = lib.model(ob[0]).box;
+    var layer = out.length;
+    for (var o = 0; o < layer; o++) if (o % 3 !== 2) out.push([out[o][0], out[o][1], out[o][2], out[o][3] + 0.1, kd.top + hb.h - hb.y0 + 0.002, out[o][5]]);
+    return;
+  }
+  if (kd.rows) {
+    var faces = !kd.two ? [goods] : typeof goods[0] === 'string' ? [goods, goods] : [goods[0], goods[1] || goods[0]];
+    faces.forEach(function (face, si) {
+      var sd = si === 0 ? 1 : -1;
+      var secs = typeof face[0] === 'string' ? [face] : face;
+      var w = (kd.x[1] - kd.x[0]) / secs.length;
+      secs.forEach(function (g, gi) {
+        kd.rows.forEach(function (y, ri) {
+          var top = ri === kd.rows.length - 1;
+          var room = top ? (kd.ref === 'shop/freezers-standing' ? 0.32 : 0.3) : kd.rows[ri + 1] - y - 0.05;
+          var ref = g[kd.rows.length - 1 - ri];
+          var part = [];
+          var za = sd > 0 ? kd.z[0] : -kd.z[1];
+          var zb = sd > 0 ? kd.z[1] : -kd.z[0];
+          fill(part, ref, kd.x[0] + gi * w + 0.01, kd.x[0] + (gi + 1) * w - 0.01, za, zb, y, false, room);
+          part.forEach(function (p) {
+            if (sd < 0) p[3] += Math.PI;
+            out.push(p);
+          });
+        });
+      });
+    });
+    return;
+  }
+  var n = goods.length;
+  var sw = (kd.x[1] - kd.x[0]) / n;
+  goods.forEach(function (ref, i) {
+    fill(out, ref, kd.x[0] + i * sw + 0.01, kd.x[0] + (i + 1) * sw - 0.01, kd.z[0], kd.z[1], kd.top, !kd.flat, kd.flat ? 0.2 : 0.3);
+  });
+}
+
+// a TV's picture: a bright canvas just in front of its screen, lit day and night
+var screenMat = (function () {
+  var c = document.createElement('canvas');
+  c.width = 64;
+  c.height = 40;
+  var x = c.getContext('2d');
+  var g = x.createLinearGradient(0, 0, 0, 40);
+  g.addColorStop(0, '#6fc3ff');
+  g.addColorStop(0.6, '#bfe8ff');
+  g.addColorStop(0.61, '#69c25a');
+  g.addColorStop(1, '#3e8f3a');
+  x.fillStyle = g;
+  x.fillRect(0, 0, 64, 40);
+  x.fillStyle = '#ffe27a';
+  x.beginPath();
+  x.arc(48, 11, 6, 0, 7);
+  x.fill();
+  var t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return new THREE.MeshBasicMaterial({ map: t });
+})();
+
+// one fixture (or a row of n alike) with its goods, merged into a batch, and the places shoppers stand to look at it
+function fixture(s, fx) {
+  var b = new Batch();
+  var kd = KIND[fx[0]];
+  var ref = kd ? kd.ref : fx[0];
+  var box = lib.model(ref).box;
+  var rot = faceRot(s, fx[3]);
+  var copies = fx[6] || 1;
+  var width = box.x1 - box.x0;
+  var depth = box.z1 - box.z0;
+  var d = DIR[fx[3]];
+  var spots = [];
+  // copies run along the fixture's own x, which is across its face
+  var ax = [-d[1], d[0]];
+  for (var ci = 0; ci < copies; ci++) {
+    var off = (ci - (copies - 1) / 2) * width;
+    var lx = fx[1] + ax[0] * off;
+    var lz = fx[2] + ax[1] * off;
+    var w = toWorld(s, lx, lz);
+    var c = rotY((box.x0 + box.x1) / 2, (box.z0 + box.z1) / 2, rot);
+    var ox = w[0] - c[0];
+    var oz = w[1] - c[1];
+    b.add(ref, ox, oz, rot, 0, kd && kd.open ? glassMat : null);
+    var goods = [];
+    if (kd) stock(kd, copies > 1 ? fx[4] && fx[4][ci] : fx[4], goods);
+    (fx[5] || []).forEach(function (e) { goods.push(e); });
+    // goods are given by the height of the surface they stand on
+    goods.forEach(function (g) {
+      var p = rotY(g[1], g[2], rot);
+      var k = g[5] || 1;
+      var gb = lib.model(g[0]).box;
+      b.raw(g[0], ox + p[0], oz + p[1], rot + g[3], g[4] - gb.y0 * k, k);
+      if (g[0].indexOf('televisionModern') >= 0) {
+        var sp = rotY(g[1], g[2] + gb.z1 * k + 0.004, rot);
+        b.plane(screenMat, (gb.x1 - gb.x0) * k * 0.86, (gb.h - gb.y0) * k * 0.62, ox + sp[0], g[4] + (gb.h - gb.y0) * k * 0.58, oz + sp[1], rot + g[3]);
+      }
+    });
+    if (kd && kd.none || fx[7] === 'staff') continue;
+    var st = depth / 2 + 0.28;
+    spots.push({ at: [lx + d[0] * st, lz + d[1] * st], f: fx[3] });
+    if (kd && kd.two) spots.push({ at: [lx - d[0] * st, lz - d[1] * st], f: OPP[fx[3]] });
+  }
+  // the footprint in the department's frame, for the path check
+  var len = width * copies / 2;
+  var half = depth / 2;
+  var foot = d[0] ? [fx[1] - half, fx[1] + half, fx[2] - len, fx[2] + len] : [fx[1] - len, fx[1] + len, fx[2] - half, fx[2] + half];
+  return { b: b, spots: spots, foot: foot };
+}
+var OPP = { b: 'k', k: 'b', s: 'n', n: 's' };
+
+// from the main aisle into the department to a place in front of a fixture, along the nearest aisle. Points in the
+// department's frame, the first one on the main aisle
+function route(s, at) {
+  var cfg = s.cfg;
+  if (at[0] > 2.3) return [[3.4, at[1]], at];
+  var a = cfg.aisles[0];
+  cfg.aisles.forEach(function (z) { if (Math.abs(z - at[1]) < Math.abs(a - at[1])) a = z; });
+  return [[3.4, a], [at[0], a], at];
+}
+
+function buildDepts() {
   BIZ.forEach(function (b, k) {
-    var cfg = SHOPS[b.id];
-    if (!cfg) return;
+    var cfg = DEPTS[b.id];
     var p = k >> 1;
     var side = k & 1;
-    shops[b.id] = { id: b.id, cfg: cfg, kit: cfg.kit, k: k, p: p, sg: side ? -1 : 1, cx: (side ? 1 : -1) * (SIDE + UNIT / 2), cz: rowZ(p) - DEPTH / 2,
-      items: [], pieces: [], shown: -1 };
+    shops[b.id] = { id: b.id, cfg: cfg, k: k, p: p, sg: side ? -1 : 1, cx: (side ? 1 : -1) * (SIDE + UNIT / 2), cz: rowZ(p) - DEPTH / 2,
+      items: [], pieces: [], shown: -1, merged: null, built: false };
     order.push(b.id);
   });
   order.forEach(function (id) {
     var s = shops[id];
     s.group = new THREE.Group();
     root.add(s.group);
-    var c = toWorld(s, COUNTER[0], COUNTER[1]);
-    s.counter = mesh(s.kit + '/cash-register', c[0], c[1], faceRot(s, 'b'));
-    s.group.add(s.counter);
-    var e = toWorld(s, COUNTER[0] - 0.7, COUNTER[1]);
-    s.clerk = figure(s.kit + '/character-employee', 'idle');
-    s.clerk.obj.position.set(e[0], 0, e[1]);
-    s.clerk.obj.rotation.y = faceRot(s, 'b');
-    s.group.add(s.clerk.obj);
-    var st = new THREE.Group();
-    for (var i = 0; i < 3; i++) {
-      var coin = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.035, 14), new THREE.MeshLambertMaterial({ color: 0xffd23a, emissive: 0x6a4a00 }));
-      coin.position.set(i === 1 ? 0.03 : 0, i * 0.037, i === 1 ? 0.02 : 0);
-      st.add(coin);
+    // the associate a manager brings, who keeps the shelves full, or stands at the counter
+    s.clerk = { f: crew(s.cfg.clerk ? 'shop/character-employee@5,3>2,2' : 'shop/character-employee', 'idle'), i: 0, wait: 0, path: null };
+    var home = world(s, [3.2, s.cfg.aisles[0]]);
+    s.clerk.f.obj.position.set(home.x, 0, home.z);
+    s.clerk.f.obj.visible = false;
+    if (s.cfg.clerk) {
+      var cw = toWorld(s, s.cfg.clerk[0], s.cfg.clerk[1]);
+      s.clerk.f.obj.position.set(cw[0], 0, cw[1]);
+      s.clerk.f.obj.rotation.y = faceRot(s, s.cfg.clerk[2]);
+      s.clerk.still = true;
     }
-    var sk = toWorld(s, COUNTER[0] + 0.1, COUNTER[1] + 0.25);
-    st.position.set(sk[0], lib.model(s.kit + '/cash-register').box.h + 0.02, sk[1]);
-    s.group.add(st);
-    s.stack = st;
-    // an empty unit being fitted out
+    s.group.add(s.clerk.f.obj);
+    // an empty block being fitted out: bare concrete, boxes on a pallet, a sack truck, barriers to the main aisle
     s.vacant = new THREE.Group();
-    var h = toWorld(s, 0.4, 0.3);
-    s.vacant.add(mesh('shop/hand-truck', h[0], h[1], faceRot(s, 'k') + 0.5));
-    var bx = toWorld(s, -0.6, -0.4);
-    s.vacant.add(mesh('furn/cardboardBoxClosed', bx[0], bx[1], 0.3));
-    s.vacant.add(mesh('furn/cardboardBoxOpen', bx[0] + 0.45, bx[1] + 0.2, -0.4));
-    s.vacant.add(mesh('furn/cardboardBoxClosed', bx[0] + 0.05, bx[1], 0.1, 0.39));
+    var vb = new Batch();
+    var c0 = toWorld(s, -2.7, -2.5);
+    var c1 = toWorld(s, 3, 2.5);
+    vb.slab(flat(0xb9b6ae), Math.min(c0[0], c1[0]), Math.max(c0[0], c1[0]), c0[1], c1[1], 0.012, 0.01);
+    var pw = toWorld(s, -0.6, -0.4);
+    vb.add('skate/pallet', pw[0], pw[1], 0.3);
+    var pb = [];
+    stock(KIND.stock, 'boxes', pb);
+    pb.forEach(function (g) {
+      var q = rotY(g[1], g[2], 0.3);
+      vb.raw(g[0], pw[0] + q[0], pw[1] + q[1], 0.3 + g[3], g[4] - lib.model(g[0]).box.y0 * g[5], g[5]);
+    });
+    var h = toWorld(s, 0.5, 0.4);
+    vb.add('shop/hand-truck', h[0], h[1], faceRot(s, 'k') + 0.5);
+    [-1.2, 1.2].forEach(function (z) {
+      var bw = toWorld(s, 2.75, z);
+      vb.add('roads/construction-barrier', bw[0], bw[1], 0);
+    });
+    s.vacant.add(vb.group());
     s.group.add(s.vacant);
-    buildPieces(s);
+    // what stands from the start once the department is open, and its lights at night
+    s.decor = (s.cfg.decor || []).map(function (fx) { return fixture(s, fx).b; });
+    s.lights = new Batch();
+    [[-1.2, -0.5], [1.2, 0.6]].forEach(function (q) {
+      var w = toWorld(s, q[0], q[1]);
+      s.lights.light(w[0], w[1]);
+    });
     var pick = new THREE.Mesh(new THREE.BoxGeometry(UNIT, 1.2, DEPTH), new THREE.MeshBasicMaterial({ visible: false }));
     pick.position.set(s.cx, 0.6, s.cz);
     pick.userData.id = id;
@@ -798,159 +1459,295 @@ function buildShops() {
   });
 }
 
-// where a stand goes so that its back meets its wall, and where a shopper stands to look at it
-function spotFor(s, spot, ref) {
-  var box = lib.model(ref).box;
-  var f = spot[0];
-  var lx;
-  var lz;
-  if (f === 'b') {
-    lx = -2.68 - box.z0;
-    lz = spot[1];
-  } else if (f === 's') {
-    lx = spot[1];
-    lz = -2.18 - box.z0;
-  } else if (f === 'n') {
-    lx = spot[1];
-    lz = 2.18 + box.z0;
-  } else {
-    lx = spot[1];
-    lz = 0;
-    f = f === 'in' ? 'n' : 's';
+// a department's fixtures are made when its row first shows, which keeps the first load short
+function buildPieces(s) {
+  var fixN = 0;
+  STEPS.forEach(function (k) {
+    var pc = { k: k, g: null, b: null };
+    if (k === 'fix' || k === 'promo') {
+      var fx = fixture(s, k === 'fix' ? s.cfg.fix[fixN++] : s.cfg.promo);
+      pc.b = fx.b;
+      pc.spots = fx.spots;
+      pc.foot = fx.foot;
+      s.items.push(pc);
+    } else if (k === 'sign') pc.g = makeSign(s);
+    else if (k === 'helper') {
+      pc.g = new THREE.Group();
+      s.helper = { f: crew('shop/character-employee', 'walk'), i: 0, wait: 0, path: null };
+      var hw = world(s, [3.2, s.cfg.aisles[s.cfg.aisles.length - 1]]);
+      s.helper.f.obj.position.set(hw.x, 0, hw.z);
+      pc.g.add(s.helper.f.obj);
+    } else if (k === 'glow') pc.g = floorLight(s);
+    else if (k === 'gold') {
+      var top = fixture(s, s.cfg.feature);
+      pc.b = top.b;
+      pc.spots = top.spots;
+      pc.foot = top.foot;
+      s.items.push(pc);
+    }
+    if (pc.g) {
+      pc.g.visible = false;
+      s.group.add(pc.g);
+    }
+    s.pieces.push(pc);
+  });
+  s.built = true;
+}
+
+// once nothing in a department is moving, its fixtures are drawn as one merged batch, a few draw calls for the lot
+function settle(s) {
+  if (s.merged) {
+    s.group.remove(s.merged);
+    s.merged.traverse(function (o) { if (o.geometry) o.geometry.dispose(); });
+    s.merged = null;
   }
-  var d = DIR[f];
-  var off = box.z1 + 0.28;
-  return { lx: lx, lz: lz, f: f, at: [lx + d[0] * off, lz + d[1] * off] };
+  var all = new Batch();
+  var any = false;
+  if (has(s.id)) {
+    s.decor.forEach(function (b) { all.take(b); });
+    all.take(s.lights);
+  }
+  s.items.forEach(function (pc) {
+    if (!pc.on || pc.rising) return;
+    all.take(pc.b);
+    if (pc.g) {
+      s.group.remove(pc.g);
+      pc.g.traverse(function (o) { if (o.geometry) o.geometry.dispose(); });
+      pc.g = null;
+    }
+    any = true;
+  });
+  if (!any) return;
+  s.merged = all.group();
+  s.group.add(s.merged);
+  shadowDirty = true;
 }
 
 function signTex(name, gold) {
   var c = document.createElement('canvas');
-  c.width = 256;
-  c.height = 96;
+  c.width = 512;
+  c.height = 136;
   var x = c.getContext('2d');
   x.fillStyle = gold ? '#e0b43a' : '#2f3446';
-  x.fillRect(0, 0, 256, 96);
+  x.fillRect(0, 0, 512, 136);
+  x.fillStyle = gold ? '#fff2c2' : '#f2c230';
+  x.fillRect(0, 124, 512, 12);
   x.fillStyle = gold ? '#3a2a08' : '#fff6e0';
-  x.font = 'bold 40px sans-serif';
   x.textAlign = 'center';
   x.textBaseline = 'middle';
-  var words = name.split(' ');
-  if (words.length > 1 && x.measureText(name).width > 236) {
-    x.font = 'bold 34px sans-serif';
-    x.fillText(words[0], 128, 30);
-    x.fillText(words.slice(1).join(' '), 128, 68);
-  } else x.fillText(name, 128, 50);
-  var t = new THREE.CanvasTexture(c);
-  t.colorSpace = THREE.SRGBColorSpace;
-  return t;
+  var t = name.toUpperCase();
+  x.font = 'bold 64px sans-serif';
+  if (x.measureText(t).width > 480) {
+    var w = t.split(' ');
+    var half = Math.ceil(w.length / 2);
+    x.font = 'bold 50px sans-serif';
+    x.fillText(w.slice(0, half).join(' '), 256, 36);
+    x.fillText(w.slice(half).join(' '), 256, 92);
+  } else x.fillText(t, 256, 64);
+  var tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
+  return tex;
 }
 
-// a blade sign on the column at the shop's south front corner, out over the corridor where the camera can read it
+// The department's name on a blade over the main aisle at its north corner, hung from a post at the aisle edge.
+// Out there it covers only aisle floor; over the department it would hide the row behind it
 function makeSign(s) {
   var g = new THREE.Group();
-  var c = toWorld(s, 3, 2.5);
+  var p = toWorld(s, 3.05, -2.42);
+  var c = toWorld(s, 3.78, -2.42);
+  var frame = [];
+  [[0.06, 1.34, 0.06, p[0], 0.67], [0.8, 0.04, 0.04, (p[0] + c[0]) / 2, 1.32], [1.38, 0.4, 0.05, c[0], 1.1]].forEach(function (q) {
+    var b = new THREE.BoxGeometry(q[0], q[1], q[2]);
+    b.translate(q[3], q[4], p[1]);
+    b.deleteAttribute('uv');
+    frame.push(b);
+  });
+  var fm = new THREE.Mesh(mergeGeometries(frame, false), flat(0x2f3446));
+  fm.castShadow = true;
+  g.add(fm);
   var mat = new THREE.MeshLambertMaterial({ map: signTex(BZ[s.id].name, false) });
-  var w = 0.72;
-  var board = new THREE.Mesh(new THREE.PlaneGeometry(w, 0.27), mat);
-  board.position.set(c[0] + s.sg * (w / 2 + 0.3), 0.86, c[1] + 0.012);
-  g.add(board);
-  var back = board.clone();
-  back.rotation.y = Math.PI;
-  back.position.z = c[1] - 0.012;
-  g.add(back);
-  var arm = new THREE.Mesh(new THREE.BoxGeometry(w + 0.34, 0.035, 0.035), flat(0x3a3d4a));
-  arm.position.set(c[0] + s.sg * (w / 2 + 0.17), 1.01, c[1]);
-  g.add(arm);
+  var face = new THREE.Mesh(new THREE.PlaneGeometry(1.32, 0.35), mat);
+  face.position.set(c[0], 1.1, p[1] + 0.03);
+  g.add(face);
   s.signMat = mat;
   return g;
 }
 
-function buildPieces(s) {
-  var fixN = 0;
-  var topN = 0;
-  STEPS.forEach(function (k, i) {
-    var g = null;
-    if (k === 'fix') {
-      var ref = fixRef(s.cfg, s.cfg.fix[fixN]);
-      var sp = spotFor(s, SPOTS[fixN], ref);
-      var w = toWorld(s, sp.lx, sp.lz);
-      g = mesh(ref, w[0], w[1], faceRot(s, sp.f));
-      s.items.push({ g: g, at: sp.at, f: sp.f, step: i });
-      fixN++;
-    } else if (k === 'sign') g = makeSign(s);
-    else if (k === 'plantN') {
-      var a = toWorld(s, 2.7, -1.95);
-      g = mesh('furn/pottedPlant', a[0], a[1], 0.4);
-    } else if (k === 'plantS') {
-      var b2 = toWorld(s, 0.72, 2.0);
-      g = mesh('furn/pottedPlant', b2[0], b2[1], 1.1);
-    } else if (k === 'rug') {
-      var r = toWorld(s, 2.05, 0);
-      g = mesh('furn/rugRectangle', r[0], r[1], Math.PI / 2, 0.004);
-    } else if (k === 'top') {
-      var ref2 = s.cfg.top[topN];
-      var t = toWorld(s, COUNTER[0] - 0.05, COUNTER[1] - 0.25 + topN * 0.5);
-      var cb = lib.model(s.kit + '/cash-register').box;
-      g = mesh(ref2, t[0], t[1], topN * 1.3, s.kit === 'arcade' ? cb.h : cb.h - 0.13);
-      topN++;
-    } else if (k === 'helper') {
-      g = new THREE.Group();
-      s.helper = { f: figure(s.kit + '/character-employee', 'walk'), i: 0, wait: 0, path: null };
-      g.add(s.helper.f.obj);
-    }
-    if (g) {
-      g.visible = false;
-      s.group.add(g);
-    }
-    s.pieces.push({ k: k, g: g });
+// level 300: light falling on the department floor from above, day and night
+function floorLight(s) {
+  var g = new THREE.Group();
+  var mat = new THREE.MeshBasicMaterial({ color: 0xfff0c8, map: fade(), transparent: true, opacity: 0.28, depthWrite: false, blending: THREE.AdditiveBlending });
+  [[-1.2, -0.3], [1.0, 0.5]].forEach(function (q) {
+    var m = new THREE.Mesh(new THREE.PlaneGeometry(3.2, 3.2).rotateX(-Math.PI / 2), mat);
+    var w = toWorld(s, q[0], q[1]);
+    m.position.set(w[0], 0.03, w[1]);
+    g.add(m);
   });
+  return g;
 }
 
-function buildHall() {
+
+// The front of the store. Shoppers come down from the aisles, cross the front aisle (z -2.3) and pay on their way to
+// the doors. A staffed lane is a counter with its belt on the west half and the till on the east: the customer queues
+// on the west side, the cashier stands east of it. Self checkouts face east in two columns, customers east of them.
+// After paying everyone walks out along the exit lane (z 1.1) to the doors; what stands against the front wall stays
+// south of it. Each level of the checkouts adds to what is there; level 0 is the store as it opens
+var LANES = [{ x: -2.3, lv: 0 }, { x: -4.2, lv: 1 }, { x: -6.1, lv: 3 }];
+var KIOSKS = [{ x: 3.0, z: -1.7, lv: 2 }, { x: 3.0, z: -0.6, lv: 2 }, { x: 3.0, z: 0.5, lv: 2 }, { x: 5.3, z: -1.7, lv: 4 }, { x: 5.3, z: -0.6, lv: 4 },
+  { x: 5.3, z: 0.5, lv: 4 }];
+var CROSS = -2.3;
+var EXIT = 1.1;
+var BASKETS = [-1.15, 1.8];
+var FRONT_ITEMS = [
+  [1, 'shop/shopping-cart', 'carts'],
+  [3, 'shop/bottle-return', -6.6, 1.95, Math.PI], [3, 'shop/bottle-return', -6.1, 1.95, Math.PI],
+  [4, 'arcade/vending-machine', 3.4, 1.95, Math.PI], [4, 'arcade/vending-machine', 3.95, 1.95, Math.PI], [4, 'arcade/vending-machine', 4.5, 1.95, Math.PI],
+  [4, 'shop/gacha-machine', 2.6, 1.95, Math.PI], [4, 'furn/bench', -4.9, 1.95, Math.PI], [4, 'furn/pottedPlant', -7.0, 1.95, 0],
+  [4, 'furn/pottedPlant', 7.0, 0.3, 0]
+];
+
+// a lane's number on a small lit box, standing on its impulse rack
+function laneSign(n) {
+  var c = document.createElement('canvas');
+  c.width = 64;
+  c.height = 64;
+  var x = c.getContext('2d');
+  x.fillStyle = '#2f3446';
+  x.fillRect(0, 0, 64, 64);
+  x.fillStyle = '#ffd34a';
+  x.font = 'bold 46px sans-serif';
+  x.textAlign = 'center';
+  x.textBaseline = 'middle';
+  x.fillText(String(n), 32, 35);
+  var t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  var lit = new THREE.MeshLambertMaterial({ map: t, emissive: 0xffffff, emissiveMap: t, emissiveIntensity: 0.6 });
+  var rim = flat(0x2f3446);
+  return new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.22, 0.22), [lit, lit, rim, rim, lit, lit]);
+}
+
+// the store's name over the doors, standing above the wall line
+function doorSign() {
+  var c = document.createElement('canvas');
+  c.width = 512;
+  c.height = 96;
+  var x = c.getContext('2d');
+  x.fillStyle = '#2f3446';
+  x.fillRect(0, 0, 512, 96);
+  x.fillStyle = '#f2c230';
+  x.fillRect(0, 84, 512, 12);
+  x.fillStyle = '#fff6e0';
+  x.font = 'bold 60px sans-serif';
+  x.textAlign = 'center';
+  x.textBaseline = 'middle';
+  x.fillText('MAIN STREET', 256, 44);
+  var t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  var m = new THREE.MeshLambertMaterial({ map: t, emissiveMap: t, emissive: 0x000000 });
+  var rim = flat(0x2f3446);
+  var b = new THREE.Mesh(new THREE.BoxGeometry(2.9, 0.42, 0.06), [rim, rim, rim, rim, m, rim]);
+  b.position.set(0, 1.2, FRONT + 0.05);
+  b.castShadow = true;
+  root.add(b);
+  doorMat = m;
+}
+var doorMat;
+
+function buildFront() {
   var b = new Batch();
   floors(b, 'shop/floor', -EDGE, EDGE, BACK, FRONT);
-  [-EDGE, -SIDE, SIDE, EDGE].forEach(function (x) {
-    b.add('shop/column', x, BACK, 0);
-    b.add('shop/column', x, FRONT, 0);
-  });
-  b.add('furn/rugDoormat', -0.45, FRONT - 0.4, 0, 0.004);
-  b.add('furn/rugDoormat', 0.45, FRONT - 0.4, 0, 0.004);
-  var g = b.group();
-  root.add(g);
-  var back = new Batch();
-  wallRun(back, 'shop', -EDGE, BACK, -SIDE, BACK, 0, 1);
-  wallRun(back, 'shop', SIDE, BACK, EDGE, BACK, 0, 1);
-  var bg = back.group();
-  root.add(bg);
-  outer.push({ g: bg, n: [0, -1], on: function () { return false; } });
+  [-EDGE, EDGE].forEach(function (x) { b.add('shop/column', x, FRONT, 0); });
+  [-SIDE, SIDE].forEach(function (x) { b.add('shop/column', x, FRONT, 0); });
+  [-EDGE, EDGE].forEach(function (x) { b.add('shop/column', x, BACK, 0); });
+  b.add('furn/rugDoormat', -0.5, FRONT - 0.45, 0, 0.004);
+  b.add('furn/rugDoormat', 0.5, FRONT - 0.45, 0, 0.004);
+  // the baskets inside the doors, stacked one in another
+  for (var i = 0; i < 5; i++) b.add('shop/shopping-basket', BASKETS[0], BASKETS[1], 0, i * 0.06);
+  [-4.4, 0, 4.4].forEach(function (x) { b.light(x, -0.3); });
+  root.add(b.group());
+  // a glass front: the camera sees the checkouts through its windows, so it stands at full height
   var front = new Batch();
-  wallRun(front, 'shop', -EDGE, FRONT, -SIDE, FRONT, 0, -1);
-  wallRun(front, 'shop', SIDE, FRONT, EDGE, FRONT, 0, -1);
-  var fg = front.group();
-  root.add(fg);
-  outer.push({ g: fg, n: [0, 1], on: function () { return true; } });
+  [[-EDGE, -SIDE], [SIDE, EDGE]].forEach(function (r) {
+    for (var x = r[0] + 0.5; x < r[1]; x++) front.add('shop/wall-window', x, FRONT, Math.PI);
+  });
+  root.add(front.group());
   [[-1, -EDGE], [1, EDGE]].forEach(function (sd) {
     var w = new Batch();
     wallRun(w, 'shop', sd[1], FRONT, sd[1], BACK, -sd[0], 0);
     var wg = w.group();
     root.add(wg);
-    outer.push({ g: wg, n: [sd[0], 0], on: function () { return true; } });
+    outer.push({ g: wg, n: [sd[0], 0] });
   });
-  var hall = { items: [], shown: -1 };
-  HALL_ITEMS.forEach(function (it) {
-    var m = mesh(it[1], it[2], it[3], it[4]);
-    var l = LAMP[it[1]];
-    if (l) {
-      var bulb = new THREE.Mesh(bulbGeo, bulbMat);
-      bulb.position.set(0, l[0], l[1]);
-      m.add(bulb);
-      var pool = new THREE.Mesh(poolGeo, poolMat);
-      pool.position.set(0, 0.035, l[1]);
-      m.add(pool);
-    }
+  doorSign();
+  var hall = { items: [], shown: -1, add: true, lanes: [], kiosks: [], staff: [] };
+  // the greeter stands by the baskets from the first day
+  var greeter = crew('shop/character-employee', 'idle');
+  greeter.obj.position.set(BASKETS[0] - 0.6, 0, BASKETS[1] - 0.05);
+  greeter.obj.rotation.y = Math.PI / 2;
+  root.add(greeter.obj);
+  hall.items.push({ g: greeter.obj, lv: 0 });
+  hall.staff.push(greeter);
+  LANES.forEach(function (ln, li) {
+    var m = mesh('shop/cash-register', ln.x, 0, 0);
+    var cashier = crew('shop/character-employee', 'idle');
+    cashier.obj.position.set(0.68, 0, 0.15);
+    cashier.obj.rotation.y = -Math.PI / 2;
+    m.add(cashier.obj);
+    // the impulse rack the queue waits beside, the lane number on it, and the baskets left at the end
+    var rack = new Batch();
+    var goods = [];
+    stock(KIND.end, ['food/lollypop', 'food/candy-bar-wrapper'], goods);
+    var rot = -Math.PI / 2;
+    rack.add('shop/shelf-end', -0.2, -0.8, rot);
+    goods.forEach(function (g) {
+      var p = rotY(g[1], g[2], rot);
+      rack.raw(g[0], -0.2 + p[0], -0.8 + p[1], rot + g[3], g[4] - lib.model(g[0]).box.y0 * g[5], g[5]);
+    });
+    for (var bk = 0; bk < 3; bk++) rack.add('shop/shopping-basket', 0.05, 0.72, 0.2, bk * 0.06);
+    m.add(rack.group());
+    var sign = laneSign(li + 1);
+    sign.position.set(0, 1.17, -0.8);
+    m.add(sign);
     m.visible = false;
     root.add(m);
-    hall.items.push({ g: m, lv: it[0] });
+    hall.items.push({ g: m, lv: ln.lv });
+    hall.lanes.push({ x: ln.x - 0.72, lv: ln.lv, q: [], till: [ln.x + 0.2, 0.62, 0.2], cashier: cashier, g: m });
+    hall.staff.push(cashier);
+  });
+  KIOSKS.forEach(function (k) {
+    var m = mesh('shop/cash-register-self', k.x, k.z, Math.PI / 2);
+    m.visible = false;
+    root.add(m);
+    hall.items.push({ g: m, lv: k.lv });
+    hall.kiosks.push({ x: k.x + 0.55, z: k.z, lv: k.lv, busy: null, till: [k.x, 0.7, k.z] });
+  });
+  // the attendant who watches the self checkouts, and the service desk in the south-east corner
+  var att = crew('shop/character-employee', 'idle');
+  att.obj.position.set(6.85, 0, -1.1);
+  att.obj.rotation.y = -Math.PI / 2;
+  att.obj.visible = false;
+  root.add(att.obj);
+  hall.items.push({ g: att.obj, lv: 2 });
+  hall.staff.push(att);
+  var desk = mesh('arcade/cash-register', 6.2, 1.45, Math.PI);
+  var clerk = crew('shop/character-employee', 'idle');
+  clerk.obj.position.set(0, 0, -0.5);
+  desk.add(clerk.obj);
+  desk.visible = false;
+  root.add(desk);
+  hall.items.push({ g: desk, lv: 3 });
+  hall.staff.push(clerk);
+  FRONT_ITEMS.forEach(function (it) {
+    var g;
+    if (it[2] === 'carts') {
+      var cb = new Batch();
+      for (var c = 0; c < 5; c++) cb.add('shop/shopping-cart', -3.6 + c * 0.22, 1.9, -Math.PI / 2);
+      g = cb.group();
+    } else g = mesh(it[1], it[2], it[3], it[4]);
+    g.visible = false;
+    root.add(g);
+    hall.items.push({ g: g, lv: it[0] });
   });
   places.hall = hall;
   addPick('hall', 0, (FRONT + BACK) / 2, EDGE * 2, FRONT - BACK);
@@ -1025,6 +1822,94 @@ function finishPlace(id, batches) {
   return pl;
 }
 
+// The garden center is a fenced yard on the west side of the front, its gate on the lot. Before it is built the
+// corner is a lawn with a bench or two; each level then adds tables of flowers, potted plants, young trees and lights.
+// The fence comes in one unit pieces with a post at each end, so every run, and the gate opening, ends on a post
+var GARDEN = [-12.75, -7.8, -2.1, 2.86];
+var FLOWERS = ['shop/display-flowers', 'shop/display-flowers@7,1>3,1;11,1>15,2', 'shop/display-flowers@7,1>11,1;15,2>2,1',
+  'shop/display-flowers@7,1>9,1;11,1>3,1'];
+
+function buildGarden() {
+  var lv = levels(4);
+  [[-10.2, 1.2], [-11.2, -1.0], [-9.6, -0.2]].forEach(function (p, i) { lv[0].add(i % 2 ? 'nature/flower_yellowA' : 'nature/flower_redA', p[0], p[1], i); });
+  lv[0].add('furn/bench', -10.4, 0.4, -Math.PI / 2);
+  lv[0].add('furn/bench', -10.4, 2.2, -Math.PI / 2);
+  var x0 = GARDEN[0];
+  var x1 = GARDEN[1];
+  var z0 = GARDEN[2];
+  var z1 = GARDEN[3];
+  var step = (x1 - x0) / 5;
+  // the levels add up, so each piece is in the batch of the level that brings it
+  lv[1].slab(flat(GRAVEL), x0, x1, z0, z1, 0.006, 0.02);
+  lv[1].slab(flat(PAVE), x0 + 2 * step, x0 + 3 * step, z1, LOT[0], 0.004, 0.02);
+  for (var i = 0; i < 5; i++) {
+    if (i !== 2) lv[1].add('forest/fence', x0 + (i + 0.5) * step, z1, 0);
+    lv[1].add('forest/fence', x0 + (i + 0.5) * step, z0, 0);
+    lv[1].add('forest/fence', x0, z0 + (i + 0.5) * (z1 - z0) / 5, Math.PI / 2);
+  }
+  // flower displays in pairs, a row more each level, with the gate's path between the two columns
+  [[1, 2.0], [2, 0.6], [3, -0.8]].forEach(function (r, ri) {
+    [-11.55, -9.4].forEach(function (x, ci) {
+      lv[r[0]].add(FLOWERS[(ri + ci) % 4], x - 0.42, r[1], 0);
+      lv[r[0]].add(FLOWERS[(ri + ci + 2) % 4], x + 0.42, r[1], 0);
+    });
+  });
+  for (var t = 0; t < 6; t++) lv[2].add('furn/pottedPlant', -12.0 + t * 0.72, -1.72, t);
+  lv[3].add('nature/tree_small', -8.25, -1.45, 0.3);
+  lv[3].add('nature/tree_small', -8.25, 2.45, 1.2);
+  lamp(lv[4], 'roads/light-square', -12.45, 2.55, 0);
+  lamp(lv[4], 'roads/light-square', -12.45, -1.8, Math.PI);
+  var pl = finishPlace('garden', lv);
+  pl.add = true;
+  pl.pick = addPick('garden', (x0 + x1) / 2, (z0 + z1) / 2, x1 - x0, z1 - z0);
+}
+
+// a pylon sign by the street with the store's name; "Market" until most of the store is open
+function buildPylon() {
+  var g = new THREE.Group();
+  [-1, 1].forEach(function (sd) {
+    var post = new THREE.Mesh(new THREE.BoxGeometry(0.16, 2.4, 0.16), flat(0x50566a));
+    post.position.set(sd * 0.9, 1.2, 0);
+    post.castShadow = true;
+    g.add(post);
+  });
+  var c = document.createElement('canvas');
+  c.width = 512;
+  c.height = 256;
+  var tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  var mat = new THREE.MeshLambertMaterial({ map: tex, emissiveMap: tex, emissive: 0x000000 });
+  var board = new THREE.Mesh(new THREE.BoxGeometry(2.3, 1.15, 0.14), [flat(0x3a3d4a), flat(0x3a3d4a), flat(0x3a3d4a), flat(0x3a3d4a), mat, flat(0x3a3d4a)]);
+  board.position.y = 2.0;
+  board.castShadow = true;
+  g.add(board);
+  g.position.set(12.6, 0, 8.9);
+  root.add(g);
+  pylon = { c: c, tex: tex, mat: mat, big: null };
+}
+var pylon;
+
+function paintPylon() {
+  var big = order.filter(has).length >= 8;
+  if (pylon.big === big) return;
+  pylon.big = big;
+  var x = pylon.c.getContext('2d');
+  x.fillStyle = '#2f3446';
+  x.fillRect(0, 0, 512, 256);
+  x.fillStyle = '#f2c230';
+  x.fillRect(0, 196, 512, 60);
+  x.fillStyle = '#fff6e0';
+  x.font = 'bold 92px sans-serif';
+  x.textAlign = 'center';
+  x.textBaseline = 'middle';
+  x.fillText('MAIN', 256, 58);
+  x.fillText('STREET', 256, 146);
+  x.fillStyle = '#2f3446';
+  x.font = 'bold 42px sans-serif';
+  x.fillText(big ? 'SUPERCENTER' : 'MARKET', 256, 228);
+  pylon.tex.needsUpdate = true;
+}
+
 // in front of the doors: a paved square, then the parking lot with a walkway down its middle, the sidewalk and the
 // street, and across the street a row of houses
 function buildOutside() {
@@ -1045,29 +1930,28 @@ function buildOutside() {
   // trees round the site, thicker further out
   var trees = ['nature/tree_oak', 'nature/tree_default', 'nature/tree_fat', 'nature/tree_detailed', 'nature/tree_pineRoundC'];
   var ti = 0;
-  for (var z = 1.5; z > -30; z -= 3.2) {
-    if (z < -7 || z > 0) b.add(trees[ti++ % 5], EDGE + 2.4, z, ti);
-    b.add(trees[ti++ % 5], -EDGE - 2.4, z, ti);
+  // the furthest the store can reach: its last row and the site behind it
+  var far = rowZ(Math.ceil(BIZ.length / 2)) - 0.6;
+  for (var z = 1.5; z > far; z -= 3.2) {
+    if (z < -7) b.add(trees[ti++ % 5], EDGE + 2.4, z, ti);
+    if (z < GARDEN[2] - 0.8) b.add(trees[ti++ % 5], -EDGE - 2.4, z, ti);
   }
   // woods behind the last row and either side, leaving the loading bay and the lot clear
   var n = 0;
-  for (var gz = 3; gz > -44; gz -= 2.3) {
+  for (var gz = 3; gz > far - 12; gz -= 2.3) {
     for (var gx = -26; gx <= 26; gx += 2.2) {
       n++;
       var jx = gx + Math.sin(n * 12.9) * 0.7;
       var jz = gz + Math.cos(n * 7.3) * 0.7;
       var inner = Math.abs(jx) < EDGE + 3.6;
-      if (inner && jz > -27.5 || Math.abs(jx) < 12.6 && jz > -7.5) continue;
+      if (inner && jz > far - 1 || Math.abs(jx) < 12.6 && jz > -7.5) continue;
       if (Math.sin(n * 3.1) > 0.75) continue;
       b.add(trees[n % 5], jx, jz, n);
     }
   }
-  // a little garden on the west side and the loading bay on the east
-  [[-10.2, 1.2], [-11.2, -1.4], [-9.6, -3.6]].forEach(function (p, i) { b.add(i % 2 ? 'nature/flower_yellowA' : 'nature/flower_redA', p[0], p[1], i); });
-  b.add('furn/bench', -10.4, 0, -Math.PI / 2);
-  b.add('furn/bench', -10.4, -2.4, -Math.PI / 2);
+  // the loading bay on the east
   b.slab(flat(ASPHALT), EDGE + 0.7, 11.2, -6.5, LOT[0], 0, 0.016);
-  b.add('roads/dumpster', EDGE + 1.2, -5.6, Math.PI / 2);
+  b.add('roads/dumpster', EDGE + 1.5, -5.6, Math.PI / 2);
   b.add('furn/cardboardBoxClosed', EDGE + 1.0, -3.6, 0.2);
   b.add('furn/cardboardBoxClosed', EDGE + 1.05, -3.25, -0.3);
   b.add('furn/cardboardBoxOpen', EDGE + 1.4, -3.4, 0.6);
@@ -1075,6 +1959,8 @@ function buildOutside() {
   root.add(b.group());
   buildLot();
   buildTaxi();
+  buildGarden();
+  buildPylon();
 }
 
 // parking bays: two rows either side of the aisle, each split by the walkway; the lot paints more of them at each level
@@ -1124,15 +2010,11 @@ function buildLot() {
   }
   // zebra stripes where the walkway crosses the aisle
   for (var zl = 1; zl <= 4; zl++) for (var zs = -1.2; zs < 1.3; zs += 0.5) lv[zl].slab(paint, zs - 0.16, zs + 0.16, 6.1, 7.5, 0.024, 0.008);
-  [[1, -5.7, 3.9], [1, 5.7, 3.9], [3, -9.9, 3.9], [3, 9.9, 3.9], [4, -5.7, 9.8], [4, 5.7, 9.8]].forEach(function (p) {
+  [[1, -5.7, 3.9], [1, 5.7, 3.9], [3, -8.7, 3.9], [3, 9.9, 3.9], [4, -5.7, 9.8], [4, 5.7, 9.8]].forEach(function (p) {
     for (var u = p[0]; u <= 4; u++) lamp(lv[u], 'roads/light-square', p[1], p[2], p[2] < 5 ? Math.PI : 0);
   });
-  [4].forEach(function (u) {
-    lv[u].add('sub/planter', -1.9, 4.35, 0);
-    lv[u].add('sub/planter', 1.9, 4.35, 0);
-    lv[u].add('sub/planter', -1.9, 9.25, 0);
-    lv[u].add('sub/planter', 1.9, 9.25, 0);
-  });
+  // potted trees along the walkway's edges, clear of the bays beside it
+  [[-1.22, 4.3], [1.22, 4.3], [-1.22, 9.3], [1.22, 9.3]].forEach(function (q, i) { lv[4].add('furn/pottedPlant', q[0], q[1], i); });
   var pl = finishPlace('lot', lv);
   pl.pick = addPick('lot', 0, (LOT[0] + LOT[1]) / 2, 22, LOT[1] - LOT[0]);
 }
@@ -1204,10 +2086,12 @@ function puffsStep(now) {
 
 // pieces and rows that appear grow up out of the floor
 var rising = [];
-function rise(g, now, len) {
+function rise(g, now, len, s, pc) {
   g.visible = true;
   g.scale.y = 0.01;
-  rising.push({ g: g, t0: now, len: len || 500 });
+  shadowDirty = true;
+  if (pc) pc.rising = true;
+  rising.push({ g: g, t0: now, len: len || 500, s: s, pc: pc });
 }
 
 function riseStep(now) {
@@ -1221,6 +2105,10 @@ function riseStep(now) {
       rising.splice(i, 1);
       shadowDirty = true;
       cutaway();
+      if (r.pc) {
+        r.pc.rising = false;
+        if (!r.s.items.some(function (pc) { return pc.rising; })) settle(r.s);
+      }
     }
   }
 }
@@ -1230,10 +2118,10 @@ function syncPlace(id, animate, now) {
   var l = S.pl[id];
   if (l === pl.shown) return;
   pl.items.forEach(function (it) {
-    var want = it.only ? l === it.lv : it.lv <= l && (id === 'hall' || it.lv === l);
+    var want = it.only ? l === it.lv : it.lv <= l && (pl.add || it.lv === l);
     if (want && !it.g.visible && animate && pl.shown >= 0) {
       rise(it.g, now, 450);
-      dustAt(it.g, now, id === 'hall' ? 8 : 20);
+      dustAt(it.g, now, pl.add ? 8 : 20);
     } else it.g.visible = want;
   });
   pl.shown = l;
@@ -1246,7 +2134,7 @@ function sync(animate, now) {
     var on = r.p < nr;
     if (on && !r.shown) {
       r.parts.forEach(function (g, i) {
-        if (i === 4) return;
+        if (i === 3) return;
         if (animate) rise(g, now, 700);
         else g.visible = true;
       });
@@ -1263,22 +2151,39 @@ function sync(animate, now) {
     var open = rows[s.p].shown;
     s.group.visible = open;
     s.pick.visible = open;
+    if (open && !s.built) buildPieces(s);
+    if (!s.built) return;
     var own = has(id);
-    var n = own ? Math.min(s.pieces.length, shape(id)) : 0;
+    var n = own ? shape(id) : 0;
     if (n !== s.shown) {
+      var grew = false;
       s.pieces.forEach(function (pc, i) {
         var want = i < n;
-        if (pc.k === 'glow' || pc.k === 'gold') return;
+        if (pc.b) {
+          if (want && !pc.on && animate && s.shown >= 0) {
+            pc.on = true;
+            pc.g = pc.b.group();
+            s.group.add(pc.g);
+            rise(pc.g, now, 450, s, pc);
+            dustAt(pc.g, now);
+            grew = true;
+          } else pc.on = want;
+          return;
+        }
         if (!pc.g) return;
         if (want && !pc.g.visible && animate && s.shown >= 0) {
           rise(pc.g, now, 450);
           dustAt(pc.g, now);
         } else pc.g.visible = want;
       });
+      if (!grew && !s.items.some(function (pc) { return pc.rising; })) settle(s);
       var glow = n > STEPS.indexOf('glow');
       var gold = n > STEPS.indexOf('gold');
       if (s.signMat && (s.glow !== glow || s.gold !== gold)) {
-        if (s.gold !== gold) s.signMat.map = signTex(BZ[id].name, gold);
+        if (s.gold !== gold) {
+          s.signMat.map.dispose();
+          s.signMat.map = signTex(BZ[id].name, gold);
+        }
         s.signMat.emissive.set(glow ? 0x333333 : 0x000000);
         s.signMat.emissiveMap = glow ? s.signMat.map : null;
         s.signMat.needsUpdate = true;
@@ -1290,19 +2195,37 @@ function sync(animate, now) {
       shadowDirty = true;
     }
     s.vacant.visible = !own;
-    s.counter.visible = own;
     var m = own && managed(id);
-    if (m !== s.clerk.obj.visible) {
-      s.clerk.obj.visible = m;
+    if (m !== s.clerk.f.obj.visible) {
+      s.clerk.f.obj.visible = m;
       shadowDirty = true;
     }
   });
   PLACES.forEach(function (p) { syncPlace(p.id, animate, now); });
-  places.lot.pick.visible = has(PL.lot.after);
-  places.taxi.pick.visible = has(PL.taxi.after);
+  ['lot', 'taxi', 'garden'].forEach(function (id) { places[id].pick.visible = has(PL[id].after); });
+  paintPylon();
   var last = rowZ(nr) - DEPTH - 1;
-  BOUNDS = [-12, 12, last, 15];
+  BOUNDS = [-13, 13, last, 15];
+  fitShadow(last);
   cutaway();
+}
+
+// the sun's shadows cover the store from the street to its back row; past the edge of that box the shadow map
+// smears, so the box grows with the store
+var shadowTo = null;
+function fitShadow(back) {
+  if (shadowTo === back) return;
+  shadowTo = back;
+  var mid = (16 + back) / 2;
+  var half = (16 - back) / 2 + 2;
+  sun.target.position.set(0, 0, mid);
+  sun.position.set(-12, 30, mid + 16);
+  var sc = sun.shadow.camera;
+  sc.top = half * 0.85;
+  sc.bottom = -half * 0.85;
+  sc.far = 60 + half * 2;
+  sc.updateProjectionMatrix();
+  shadowDirty = true;
 }
 
 function pop(now) {
@@ -1375,7 +2298,7 @@ function freeBay() {
 
 function inMall() {
   var n = 0;
-  people.forEach(function (p) { if (p.path && p.shopper) n++; });
+  people.forEach(function (p) { if ((p.path || p.lane) && p.shopper) n++; });
   return n;
 }
 
@@ -1390,7 +2313,7 @@ function trafficStep(dt) {
     trafficT = 2 + Math.random() * 3;
   }
   var room = inMall() < wantPeople();
-  if (carT <= 0 && S.pl.lot > 0 && room && !vanInDrive()) {
+  if (carT <= 0 && S.pl.lot > 0 && room && !vanInDrive() && spare() > 2) {
     var bay = freeBay();
     if (bay) {
       var p = [{ x: 62, z: LANE_W }, { x: DRIVE + 0.6, z: LANE_W, lane: -1 }, { x: DRIVE, z: 10.2 }, { x: DRIVE, z: AISLE + 0.4 }, { x: DRIVE - 0.6, z: AISLE },
@@ -1513,30 +2436,29 @@ function leaveBay(c) {
   setTimeout(function () { if (b.car === c) b.car = null; }, 2500);
 }
 
-// Shoppers come by car, by taxi or on foot, walk in through the doors, look at one of a shop's stands, pay at the
-// counter and go back the way they came. Each open shop draws a few, more as it levels
+// Shoppers come by car, by taxi or on foot, take a basket inside the doors, look round one or two departments, queue
+// at the checkouts and leave with their bags the way they came. Each open department draws a few, more as it levels
 function wantPeople() {
   var n = 0;
   order.forEach(function (id) { if (has(id)) n += Math.min(4, 1 + Math.floor(lv(id) / 15)); });
-  return Math.min(26, n + S.pl.hall * 2);
+  return Math.min(30, n + S.pl.hall * 2);
 }
 
 var walkT = 1;
 var passT = 0;
 
-// a coin that jumps off the counter when a shopper pays
+// a coin that jumps off the till when a shopper pays
 var pops = [];
 var coinGeo = new THREE.CylinderGeometry(0.08, 0.08, 0.03, 14);
 var coinMat = new THREE.MeshLambertMaterial({ color: 0xffd23a, emissive: 0x6a4a00 });
 var tillAt = 0;
 
-function paid(s, now) {
-  var c = s.stack.position;
+function paid(till, now) {
   var m = new THREE.Mesh(coinGeo, coinMat);
   m.rotation.x = Math.PI / 2;
-  m.position.set(c.x, c.y + 0.1, c.z);
+  m.position.set(till[0], till[1] + 0.1, till[2]);
   root.add(m);
-  pops.push({ m: m, t0: now, y: c.y + 0.1 });
+  pops.push({ m: m, t0: now, y: till[1] + 0.1 });
   if (focus.dist < 30 && now - tillAt > 1500 && window.sfx) {
     tillAt = now;
     sfx('till');
@@ -1558,12 +2480,19 @@ function popsStep(now) {
   }
 }
 
+function carried(f, ref, y) {
+  var m = mesh(ref, -0.26, 0.03, 0.3, y);
+  m.traverse(function (o) { o.castShadow = false; });
+  m.visible = false;
+  f.obj.add(m);
+  return m;
+}
+
 function person(i) {
   var f = figure(FOLK[i % FOLK.length], 'walk');
-  var bag = mesh('food/bag', -0.24, 0.02, 0.3, 0.03);
-  bag.traverse(function (o) { o.castShadow = false; });
-  bag.visible = false;
-  f.obj.add(bag);
+  var bag = carried(f, 'food/bag', 0.03);
+  var basket = carried(f, 'shop/shopping-basket*0.62', 0.07);
+  var plant = carried(f, 'furn/plantSmall2*1.6', 0.12);
   var blob = new THREE.Mesh(blobGeo, blobMat);
   blob.rotation.x = -Math.PI / 2;
   blob.position.y = 0.035;
@@ -1571,19 +2500,25 @@ function person(i) {
   f.obj.traverse(function (o) { if (o.isMesh && o !== blob) o.castShadow = false; });
   f.obj.visible = false;
   root.add(f.obj);
-  return { f: f, bag: bag, path: null, i: 0, wait: 0, speed: 1.05 + (i % 5) * 0.08 };
+  return { f: f, bag: bag, basket: basket, plant: plant, path: null, i: 0, wait: 0, speed: 1.05 + (i % 5) * 0.08 };
+}
+
+function spare() {
+  var n = 0;
+  people.forEach(function (p) { if (p.path || p.lane) n++; });
+  return 44 - n;
 }
 
 function idlePerson() {
-  for (var i = 0; i < people.length; i++) if (!people[i].path) return people[i];
-  if (people.length >= 40) return null;
+  for (var i = 0; i < people.length; i++) if (!people[i].path && !people[i].lane) return people[i];
+  if (people.length >= 44) return null;
   var p = person(people.length * 7 + 3);
   people.push(p);
   return p;
 }
 
-function pickShop() {
-  var open = order.filter(function (id) { return has(id) && shops[id].shown > 0 && rows[shops[id].p].shown; });
+function pickShop(not) {
+  var open = order.filter(function (id) { return id !== not && has(id) && shops[id].items.some(function (pc) { return pc.on && pc.spots.length; }) && rows[shops[id].p].shown; });
   if (!open.length) return null;
   var tot = 0;
   var w = open.map(function (id) {
@@ -1599,38 +2534,48 @@ function pickShop() {
   return shops[open[open.length - 1]];
 }
 
-// the walk from the doors to a stand, the counter and back to the doors
-function shopRoute(s, pts) {
-  var shown = s.items.filter(function (it) { return it.g.visible; });
-  var it = shown[Math.floor(Math.random() * shown.length)];
-  var lane = s.sg > 0 ? -0.55 : 0.55;
-  var jx = (Math.random() - 0.5) * 0.5;
-  function at(lx, lz, wait, a, face) {
-    var w = toWorld(s, lx, lz);
-    pts.push({ x: w[0], z: w[1], wait: wait || 0, act: a, face: face });
-  }
-  pts.push({ x: jx, z: FRONT + 0.3 });
-  pts.push({ x: lane + jx * 0.3, z: BACK - 0.3 });
-  pts.push({ x: lane + jx * 0.3, z: s.cz - jx * 0.6 });
-  at(3.3, 0);
-  var a = it.at[1] < 0 ? -0.95 : 0.95;
-  at(1.35, a);
-  at(it.at[0], a);
-  var look = faceRot(s, it.f) + Math.PI;
-  at(it.at[0], it.at[1], s.cfg.play ? 3.5 : 1.6, s.cfg.play ? 'idle' : 'pick-up', look);
-  at(it.at[0], 0.95);
-  at(COUNTER[0] + 0.75, 0.95);
-  at(COUNTER[0] + 0.75, COUNTER[1], 1.2, 'idle', faceRot(s, 'k'));
-  pts[pts.length - 1].pay = s;
-  at(3.3, 0.9);
-  pts.push({ x: -lane + jx * 0.3, z: s.cz + 0.5 });
-  pts.push({ x: -lane * 0.6, z: BACK - 0.3 });
-  pts.push({ x: -jx, z: FRONT + 0.3 });
-  return pts;
+// the main aisle is walked north on its west half and south on its east half
+var IN_X = -0.45;
+var OUT_X = 0.45;
+
+function world(s, q) {
+  var w = toWorld(s, q[0], q[1]);
+  return { x: w[0], z: w[1] };
 }
 
-function walkway(x) {
-  return [{ x: x, z: LOT[0] - 0.2 }];
+// into a department to one of its fixtures, a look at the goods, and back out to the main aisle
+function visit(s, pts, jx) {
+  var shown = s.items.filter(function (pc) { return pc.on && pc.spots.length; });
+  var pc = shown[Math.floor(Math.random() * shown.length)];
+  var sp = pc.spots[Math.floor(Math.random() * pc.spots.length)];
+  var r = route(s, sp.at);
+  var last = pts[pts.length - 1];
+  var lane = (last && world(s, r[0]).z < last.z ? IN_X : OUT_X) + jx;
+  var w = r.map(function (q) { return world(s, q); });
+  pts.push({ x: lane, z: w[0].z });
+  for (var i = 0; i < w.length; i++) pts.push({ x: w[i].x, z: w[i].z });
+  var stand = pts[pts.length - 1];
+  stand.wait = 1.6 + Math.random();
+  stand.act = 'pick-up';
+  stand.face = faceRot(s, sp.f) + Math.PI;
+  for (var j = w.length - 2; j >= 0; j--) pts.push({ x: w[j].x, z: w[j].z });
+  pts.push({ x: lane, z: w[0].z });
+}
+
+// the walk from the doors round the store and down to the front aisle, where the shopper picks a checkout
+function storeRoute(pts) {
+  var jx = (Math.random() - 0.5) * 0.3;
+  var s = pickShop();
+  pts.push({ x: -0.5 + jx, z: FRONT + 0.4 }, { x: -0.5 + jx, z: BASKETS[1] });
+  pts.push({ x: BASKETS[0] + 0.45, z: BASKETS[1], wait: 0.7, act: 'pick-up', face: -Math.PI / 2, basket: true });
+  pts.push({ x: IN_X + jx, z: BASKETS[1] - 0.3 });
+  visit(s, pts, jx);
+  if (Math.random() < 0.4) {
+    var t = pickShop(s.id);
+    if (t) visit(t, pts, jx);
+  }
+  pts.push({ x: OUT_X + jx, z: CROSS, pick: true });
+  return pts;
 }
 
 function start(p, pts, extra) {
@@ -1639,16 +2584,100 @@ function start(p, pts, extra) {
   p.wait = 0;
   p.shopper = true;
   p.car = null;
+  p.lane = null;
+  p.kiosk = null;
+  p.after = null;
   for (var k in extra) p[k] = extra[k];
   p.f.obj.position.set(pts[0].x, 0, pts[0].z);
   p.f.obj.visible = true;
   p.bag.visible = false;
+  p.basket.visible = false;
+  p.plant.visible = false;
   act(p.f, 'walk', 0);
 }
 
+// where a shopper who has paid walks out: down the lane or past the kiosk to the front, along it to the doors
+function leave(p, x, z, exitZ) {
+  var out = [{ x: x, z: z }, { x: x, z: exitZ }, { x: 0.55, z: exitZ }, { x: 0.55, z: FRONT + 0.4 }];
+  p.path = out.concat(p.after);
+  p.i = 1;
+  act(p.f, 'walk', 0.2);
+}
+
+// at the front aisle: a free self checkout if there is one and the lanes are busy, else the shortest open lane
+function checkout(p) {
+  var h = places.hall;
+  var lanes = h.lanes.filter(function (l) { return l.lv <= S.pl.hall; });
+  var lane = lanes[0];
+  lanes.forEach(function (l) { if (l.q.length < lane.q.length) lane = l; });
+  var free = h.kiosks.filter(function (k) { return k.lv <= S.pl.hall && !k.busy; });
+  var o = p.f.obj.position;
+  if (!free.length && lane.q.length >= 4) {
+    p.path = [{ x: o.x, z: o.z }, { x: o.x, z: CROSS - 0.6, wait: 2.5, face: Math.PI }, { x: o.x, z: CROSS, pick: true }];
+    p.i = 1;
+    return;
+  }
+  if (free.length && (lane.q.length > 0 || Math.random() < 0.35)) {
+    var k = free[Math.floor(Math.random() * free.length)];
+    k.busy = p;
+    p.kiosk = k;
+    p.path = [{ x: o.x, z: o.z }, { x: k.x, z: CROSS }, { x: k.x, z: k.z, wait: 2.4, act: 'pick-up', face: -Math.PI / 2, pay: k }];
+    p.i = 1;
+    return;
+  }
+  p.lane = lane;
+  lane.q.push(p);
+  p.path = null;
+  p.paying = 0;
+  p.wx = o.x;
+}
+
+// queues: the one at the till pays, the rest stand behind and step up when it moves
+function queueStep(p, dt) {
+  var ln = p.lane;
+  var o = p.f.obj.position;
+  var slot = ln.q.indexOf(p);
+  var tz = slot === 0 ? 0.15 : -0.85 - 0.5 * (slot - 1);
+  var tx = ln.x;
+  // first along the front aisle to the lane, then down it
+  if (Math.abs(o.x - tx) > 0.01 && o.z < CROSS + 0.05) tz = CROSS;
+  var dx = tx - o.x;
+  var dz = tz - o.z;
+  var d = Math.hypot(dx, dz);
+  if (d > 0.01) {
+    var step = Math.min(d, p.speed * dt);
+    o.x += dx / d * step;
+    o.z += dz / d * step;
+    var want = Math.atan2(dx, dz);
+    p.f.obj.rotation.y += Math.atan2(Math.sin(want - p.f.obj.rotation.y), Math.cos(want - p.f.obj.rotation.y)) * Math.min(1, dt * 10);
+    if (p.f.cur !== p.f.acts.walk) act(p.f, 'walk', 0.2);
+    return;
+  }
+  if (slot !== 0) {
+    if (p.f.cur !== p.f.acts.idle) act(p.f, 'idle', 0.2);
+    p.f.obj.rotation.y = 0;
+    return;
+  }
+  if (!p.paying) {
+    p.paying = 1.4 + Math.random() * 0.8;
+    p.f.obj.rotation.y = Math.PI / 2;
+    act(p.f, 'idle', 0.2);
+    act(ln.cashier, 'pick-up', 0.2);
+    return;
+  }
+  p.paying -= dt;
+  if (p.paying > 0) return;
+  ln.q.shift();
+  act(ln.cashier, 'idle', 0.3);
+  paid(ln.till, performance.now());
+  p.basket.visible = false;
+  p.bag.visible = true;
+  p.lane = null;
+  leave(p, tx, 0.15, EXIT);
+}
+
 function spawnFrom(kind, c, n) {
-  var s = pickShop();
-  var p = s && idlePerson();
+  var p = pickShop() && idlePerson();
   if (!p) {
     if (kind === 'car') leaveBay(c);
     return;
@@ -1659,25 +2688,42 @@ function spawnFrom(kind, c, n) {
     var b = c.bay;
     var ex = b.x + 0.5;
     pts.push({ x: ex, z: b.z }, { x: ex, z: AISLE }, { x: Math.sign(b.x) * 1.0, z: AISLE }, { x: Math.sign(b.x) * 0.7, z: LOT[0] - 0.2 });
-    back = [{ x: Math.sign(b.x) * 0.7, z: LOT[0] - 0.2 }, { x: Math.sign(b.x) * 1.0, z: AISLE }, { x: ex, z: AISLE }, { x: ex, z: b.z }];
+    back = [{ x: 0.7, z: LOT[0] - 0.2 }, { x: Math.sign(b.x) * 1.0, z: AISLE }, { x: ex, z: AISLE }, { x: ex, z: b.z }];
   } else if (kind === 'taxi') {
     var tx = 5.4 + n * 0.5;
     pts.push({ x: tx, z: 10.9 }, { x: tx, z: WALK_N }, { x: 0.9, z: WALK_N }, { x: 0.7, z: LOT[0] - 0.2 });
     back = [{ x: 0.7, z: LOT[0] - 0.2 }, { x: 0.9, z: WALK_N }, { x: 30 + Math.random() * 30, z: WALK_N }];
+  } else if (S.pl.garden > 0 && Math.random() < 0.3) {
+    gardenRoute(p);
+    return;
   } else {
     var sd = Math.random() < 0.5 ? -1 : 1;
     var south = Math.random() < 0.4;
     var wz = south ? WALK_S : WALK_N;
     pts.push({ x: sd * 60, z: wz }, { x: sd * 0.6, z: wz });
     if (south) pts.push({ x: sd * 0.6, z: WALK_N });
-    pts.push({ x: sd * 0.6, z: LOT[0] - 0.2 });
-    back = [{ x: -sd * 0.6, z: LOT[0] - 0.2 }, { x: -sd * 0.6, z: WALK_N }];
-    if (south) back.push({ x: -sd * 0.6, z: WALK_S });
-    back.push({ x: -sd * 60, z: wz });
+    pts.push({ x: -0.6, z: LOT[0] - 0.2 });
+    back = [{ x: 0.6, z: LOT[0] - 0.2 }, { x: sd * 0.6, z: WALK_N }];
+    if (south) back.push({ x: sd * 0.6, z: WALK_S });
+    back.push({ x: sd * 60, z: wz });
   }
-  shopRoute(s, pts);
-  pts = pts.concat(back);
+  storeRoute(pts);
   start(p, pts, { car: kind === 'car' ? c : null });
+  p.after = back;
+}
+
+// Someone on foot who only wants a plant: along the sidewalk, up the grass west of the lot (clear of the cars'
+// exit), in through the garden gate to a flower display, and away again carrying a pot
+function gardenRoute(p) {
+  var sd = Math.random() < 0.5 ? -1 : 1;
+  var gx = (GARDEN[0] + GARDEN[1]) / 2 - 0.2;
+  var rows = [2.0, 0.6, -0.8].slice(0, Math.min(3, S.pl.garden));
+  var z = rows[Math.floor(Math.random() * rows.length)];
+  var west = Math.random() < 0.5;
+  var pts = [{ x: sd * 60, z: WALK_N }, { x: -11.6, z: WALK_N }, { x: -11.6, z: LOT[0] + 0.3 }, { x: gx, z: LOT[0] - 0.1 }, { x: gx, z: z + 0.7 },
+    { x: gx, z: z, wait: 1.8, act: 'pick-up', face: west ? -Math.PI / 2 : Math.PI / 2, plant: true }, { x: gx, z: LOT[0] - 0.1 },
+    { x: -11.6, z: LOT[0] + 0.3 }, { x: -11.6, z: WALK_N }, { x: sd * 60, z: WALK_N }];
+  start(p, pts, { shopper: false });
 }
 
 function crowdStep(dt) {
@@ -1688,7 +2734,7 @@ function crowdStep(dt) {
     walkT = 5 + Math.random() * 4;
   }
   if (passT <= 0) {
-    var p = idlePerson();
+    var p = spare() > 8 && idlePerson();
     if (p) {
       var sd = Math.random() < 0.5 ? -1 : 1;
       var wz = Math.random() < 0.5 ? WALK_N : WALK_S;
@@ -1697,6 +2743,11 @@ function crowdStep(dt) {
     passT = 3 + Math.random() * 3;
   }
   people.forEach(function (p) {
+    if (p.lane) {
+      if (p.f.mixer) p.f.mixer.update(dt);
+      queueStep(p, dt);
+      return;
+    }
     if (!p.path) return;
     var o = p.f.obj;
     var far = Math.abs(o.position.x) > 26;
@@ -1716,56 +2767,67 @@ function crowdStep(dt) {
       var da = Math.atan2(Math.sin(want - o.rotation.y), Math.cos(want - o.rotation.y));
       o.rotation.y += da * Math.min(1, dt * 10);
     }
-    if (d <= step) {
-      o.position.x = q.x;
-      o.position.z = q.z;
-      if (q.wait) {
-        p.wait = q.wait;
-        if (q.face !== undefined) o.rotation.y = q.face;
-        act(p.f, q.act || 'idle', 0.2);
-      }
-      if (q.pay) {
-        p.bag.visible = !q.pay.cfg.play;
-        paid(q.pay, performance.now());
-      }
-      p.i++;
-      if (p.i >= p.path.length) {
-        p.path = null;
-        o.visible = false;
-        if (p.car) leaveBay(p.car);
-      }
+    if (d > step) {
+      o.position.x += dx / d * step;
+      o.position.z += dz / d * step;
       return;
     }
-    o.position.x += dx / d * step;
-    o.position.z += dz / d * step;
+    o.position.x = q.x;
+    o.position.z = q.z;
+    p.i++;
+    if (q.wait) {
+      p.wait = q.wait;
+      if (q.face !== undefined) o.rotation.y = q.face;
+      act(p.f, q.act || 'idle', 0.2);
+    }
+    if (q.basket) p.basket.visible = true;
+    if (q.plant) p.plant.visible = true;
+    if (q.pay) {
+      // the self checkout is free again once this shopper walks off
+      var k = q.pay;
+      paid(k.till, performance.now());
+      p.basket.visible = false;
+      p.bag.visible = true;
+      p.path.length = p.i;
+      p.path.push({ x: k.x, z: EXIT }, { x: 0.55, z: EXIT }, { x: 0.55, z: FRONT + 0.4 });
+      p.path = p.path.concat(p.after);
+      setTimeout(function () { if (k.busy === p) k.busy = null; }, q.wait * 1000 + 600);
+    }
+    if (q.pick) {
+      checkout(p);
+      return;
+    }
+    if (p.i >= p.path.length) {
+      p.path = null;
+      o.visible = false;
+      if (p.car) leaveBay(p.car);
+    }
   });
 }
 
-// the second clerk walks the shop, stopping at a stand now and then to fill it
-function helperStep(s, dt) {
-  var h = s.helper;
-  if (!h || !h.f.obj.parent.visible || !s.group.visible) return;
+// an associate walks the department, stopping at a fixture now and then to fill its shelves
+function staffStep(s, h, dt) {
   if (h.f.mixer) h.f.mixer.update(dt);
   var o = h.f.obj;
   if (!h.path) {
-    var shown = s.items.filter(function (it) { return it.g.visible; });
-    var it = shown[Math.floor(Math.random() * shown.length)];
-    var a = it.at[1] < 0 ? -0.95 : 0.95;
-    var pts = [[1.0, a], [it.at[0], a], [it.at[0], it.at[1]]].map(function (q) { var w = toWorld(s, q[0], q[1]); return { x: w[0], z: w[1] }; });
-    pts[2].wait = 2.5;
-    pts[2].face = faceRot(s, it.f) + Math.PI;
-    var hm = toWorld(s, 1.0, a);
-    if (h.i === 0) o.position.set(hm[0], 0, hm[1]);
+    var shown = s.items.filter(function (pc) { return pc.on && pc.spots.length; });
+    if (!shown.length) return;
+    var pc = shown[Math.floor(Math.random() * shown.length)];
+    var sp = pc.spots[Math.floor(Math.random() * pc.spots.length)];
+    var r = route(s, sp.at).map(function (q) { return world(s, q); });
+    // back out the way it came in, along the main aisle and in to the next fixture
+    var pts = [{ x: o.position.x, z: o.position.z }].concat(h.ret || []);
+    r.forEach(function (q) { pts.push({ x: q.x, z: q.z }); });
+    pts[pts.length - 1].wait = 2.5;
+    pts[pts.length - 1].face = faceRot(s, sp.f) + Math.PI;
+    h.ret = r.slice(0, -1).reverse();
     h.path = pts;
-    h.i = 0;
+    h.i = 1;
     act(h.f, 'walk', 0.2);
   }
   if (h.wait > 0) {
     h.wait -= dt;
-    if (h.wait <= 0) {
-      h.path = null;
-      h.i = 1;
-    }
+    if (h.wait <= 0) h.path = null;
     return;
   }
   var q = h.path[h.i];
@@ -1774,27 +2836,29 @@ function helperStep(s, dt) {
   var d = Math.hypot(dx, dz);
   var step = 0.9 * dt;
   if (d > 0.001) o.rotation.y = Math.atan2(dx, dz);
-  if (d <= step) {
-    o.position.x = q.x;
-    o.position.z = q.z;
-    h.i++;
-    if (q.wait) {
-      h.wait = q.wait;
-      o.rotation.y = q.face;
-      act(h.f, 'pick-up', 0.2);
-    }
-    if (h.i >= h.path.length && !q.wait) h.path = null;
+  if (d > step) {
+    o.position.x += dx / d * step;
+    o.position.z += dz / d * step;
     return;
   }
-  o.position.x += dx / d * step;
-  o.position.z += dz / d * step;
+  o.position.x = q.x;
+  o.position.z = q.z;
+  h.i++;
+  if (q.wait) {
+    h.wait = q.wait;
+    o.rotation.y = q.face;
+    act(h.f, 'pick-up', 0.2);
+  } else if (h.i >= h.path.length) h.path = null;
 }
 
 function resetCrowd() {
   people.forEach(function (p) {
     p.path = null;
+    p.lane = null;
     p.f.obj.visible = false;
   });
+  places.hall.lanes.forEach(function (l) { l.q = []; });
+  places.hall.kiosks.forEach(function (k) { k.busy = null; });
   cars.forEach(function (c) { root.remove(c.o); });
   cars = [];
   bays.forEach(function (b) { b.car = null; });
@@ -1835,7 +2899,7 @@ function makeTags() {
 
 function bstate(id) {
   var p = PL[id];
-  if (p) return { name: p.name, lv: S.pl[id], own: S.pl[id] > 0, price: placeCost(id), avail: has(p.after), frac: 0, wait: 0 };
+  if (p) return { name: p.name, lv: S.pl[id], own: S.pl[id] > 0 || !!p.open, price: placeCost(id), avail: has(p.after), frac: 0, wait: 0 };
   var e = S.b[id];
   return { name: BZ[id].name, lv: e ? e.l : 0, own: !!e, price: cost(id, 1), avail: avail(id),
     frac: e ? (e.w ? 1 : Math.min(1, e.t / cycleAt(id, e.l))) : 0, wait: e ? e.w : 0 };
@@ -1853,12 +2917,13 @@ var sp = { x: 0, y: 0, z: 0 };
 var anchorXY = {};
 
 function anchor(id) {
-  if (id === 'hall') return [0, 1.5, (FRONT + BACK) / 2];
+  if (id === 'hall') return [-4.2, 1.3, -0.6];
   if (id === 'lot') return [-6, 0.8, (LOT[0] + LOT[1]) / 2];
   if (id === 'taxi') return [5.7, 1.2, 10.2];
+  if (id === 'garden') return [(GARDEN[0] + GARDEN[1]) / 2, 1.0, (GARDEN[2] + GARDEN[3]) / 2];
   var s = shops[id];
-  var c = toWorld(s, -0.3, 0);
-  return [c[0], 0.9, c[1]];
+  var c = toWorld(s, 0, -0.3);
+  return [c[0], 1.0, c[1]];
 }
 
 function overlay(now) {
@@ -1869,8 +2934,8 @@ function overlay(now) {
     var a = anchor(id);
     toScreen(a[0], a[1], a[2], sp);
     var open = PL[id] ? st.own || st.avail : rows[s.p].shown;
-    var vis = open && sp.z < 1 && sp.x > -60 && sp.x < cw + 60 && sp.y > IT + 34 && sp.y < ch - IB + 30;
-    if (open && sp.z < 1) anchorXY[id] = { x: sp.x, y: sp.y };
+    var vis = open && sp.z < 1 && sp.x > -60 && sp.x < cw + 60 && sp.y > IT + 34 && sp.y < ch - IB;
+    if (open && sp.z < 1) anchorXY[id] = { x: sp.x, y: sp.y, top: sp.y };
     else delete anchorXY[id];
     var show = vis && (st.own || st.avail || focus.dist < 40);
     if (t.shown !== show) {
@@ -1878,19 +2943,28 @@ function overlay(now) {
       t.el.style.display = show ? '' : 'none';
     }
     if (show) {
-      var line = st.own ? st.name + '  Lv ' + st.lv : st.avail ? st.name + '  $' + short(st.price) : st.name + '  locked';
+      var line = st.own ? (st.lv ? st.name + '  Lv ' + st.lv : st.name) : st.avail ? st.name + '  $' + short(st.price) : st.name + '  locked';
       if (line !== t.text) {
         t.text = line;
         t.line.textContent = line;
+        t.h = t.el.offsetHeight;
       }
       var cls = 'tag' + (st.own ? ' own' : st.avail ? ' buy' : ' lock') + (!st.own && st.avail && S.cash >= st.price ? ' ready' : '');
       if (cls !== t.cls) {
         t.cls = cls;
         t.el.className = cls;
       }
-      if (st.own) t.bar.style.width = (st.frac * 100).toFixed(1) + '%';
-      t.bar.className = st.wait > 0 ? 'full' : '';
-      var sc = Math.max(0.72, Math.min(1.1, 30 / focus.dist + 0.15));
+      var fw = st.own ? (st.frac * 100).toFixed(1) + '%' : '';
+      if (fw !== t.fw) {
+        t.fw = fw;
+        t.bar.style.width = fw;
+      }
+      var full = st.wait > 0 ? 'full' : '';
+      if (full !== t.full) {
+        t.full = full;
+        t.bar.className = full;
+      }
+      var sc = Math.max(0.6, Math.min(1.1, 30 / focus.dist + 0.12));
       var tx = Math.round(sp.x);
       var ty = Math.round(sp.y);
       if (tx !== t.x || ty !== t.y || sc !== t.sc) {
@@ -1899,20 +2973,23 @@ function overlay(now) {
         t.sc = sc;
         t.el.style.transform = 'translate(' + tx + 'px,' + ty + 'px) translate(-50%,-100%) scale(' + sc + ')';
       }
+      anchorXY[id].top = ty - (t.h || 24) * sc;
     }
     if (PL[id]) return;
-    s.stack.visible = st.wait > 0;
-    // the cash waits on the counter
-    var c = s.stack.position;
-    toScreen(c.x, c.y + 0.25, c.z, sp);
-    var coin = st.wait > 0 && open && sp.z < 1 && sp.y > IT + 20 && sp.y < ch - IB + 30;
+    // the cash waits just above the department's tag
+    var coin = show && st.wait > 0;
     if (coin) {
       if (t.wait !== st.wait) {
         t.wait = st.wait;
         t.coin.textContent = '$' + short(st.wait);
+        t.ch = 0;
       }
+      if (t.coin.hidden) t.coin.hidden = false;
+      if (!t.ch) t.ch = t.coin.offsetHeight || 30;
       var bob = Math.sin(now / 260 + sp.x) * 3;
-      t.coin.style.transform = 'translate(' + Math.round(sp.x) + 'px,' + Math.round(sp.y + bob) + 'px) translate(-50%,-50%)';
+      var cy = anchorXY[id].top - t.ch / 2 - 4;
+      t.coin.style.transform = 'translate(' + t.x + 'px,' + Math.round(cy + bob) + 'px) translate(-50%,-50%)';
+      anchorXY[id].top = cy - t.ch / 2;
     }
     if (t.coin.hidden === coin) t.coin.hidden = !coin;
   });
@@ -1921,10 +2998,10 @@ function overlay(now) {
     arrowEl.hidden = true;
     return;
   }
-  var wait = bstate(bestId).wait > 0;
+  // the arrow points down at whatever stands highest over the place: its cash, or else its tag
   var bob2 = Math.abs(Math.sin(now / 260)) * 9;
   var x = a2.x;
-  var y = a2.y - (wait ? 90 : 52) - bob2;
+  var y = a2.top - 22 - bob2;
   var cx = Math.max(24, Math.min(cw - 24, x));
   var cy = Math.max(IT + 24, Math.min(ch - IB - 24, y));
   var rot = 0;
@@ -1948,7 +3025,7 @@ function init(canvas, tap) {
   bind();
   [['turn-l', -1], ['turn-r', 1]].forEach(function (b) {
     document.getElementById(b[0]).addEventListener('click', function () {
-      azGoal = (azGoal === null ? Math.round(focus.az / (Math.PI / 4)) * Math.PI / 4 : azGoal) + b[1] * Math.PI / 4;
+      azGoal = Math.max(-TURN, Math.min(TURN, (azGoal === null ? Math.round(focus.az / TURN) * TURN : azGoal) + b[1] * TURN));
     });
   });
   var bar = document.getElementById('load-bar');
@@ -1958,7 +3035,7 @@ function init(canvas, tap) {
         build();
       } catch (e) {
         console.error(e);
-        fail('The mall could not be built. Please reload.');
+        fail('The store could not be built. Please reload.');
       }
     }, 30);
   });
@@ -1970,9 +3047,9 @@ function fail(msg) {
 
 function build() {
   buildOutside();
-  buildShops();
+  buildDepts();
   buildRows();
-  buildHall();
+  buildFront();
   makeTags();
   sync(false, 0);
   focusNow();
@@ -1997,16 +3074,20 @@ function draw(now) {
   crowdStep(dt);
   doorsStep(dt);
   popsStep(now);
-  var near = focus.dist < 50;
   order.forEach(function (id) {
     var s = shops[id];
-    if (near && s.clerk.obj.visible && s.clerk.mixer && s.group.visible) s.clerk.mixer.update(dt);
-    if (near) helperStep(s, dt);
+    if (!s.group.visible) return;
+    if (s.clerk.f.obj.visible) {
+      if (s.clerk.still) s.clerk.f.mixer.update(dt);
+      else staffStep(s, s.clerk, dt);
+    }
+    if (s.helper && s.helper.f.obj.parent.visible) staffStep(s, s.helper, dt);
   });
+  places.hall.staff.forEach(function (f) { if (f.mixer && f.obj.parent.visible && f.obj.visible) f.mixer.update(dt); });
   puffsStep(now);
   riseStep(now);
   pop(now);
-  if (rising.length || shadowDirty) {
+  if (shadowDirty) {
     renderer.shadowMap.needsUpdate = true;
     shadowDirty = false;
   }
@@ -2032,9 +3113,10 @@ function confetti() {
 
 function spot(id) {
   var s = shops[id];
-  if (s) return { x: s.cx * 0.5, y: s.cz };
+  if (s) return { x: s.cx * 0.8, y: s.cz };
   if (id === 'lot') return { x: 0, y: (LOT[0] + LOT[1]) / 2 };
   if (id === 'taxi') return { x: 4, y: 10 };
+  if (id === 'garden') return { x: (GARDEN[0] + GARDEN[1]) / 2, y: (GARDEN[2] + GARDEN[3]) / 2 };
   return { x: 0, y: (FRONT + BACK) / 2 };
 }
 
@@ -2043,9 +3125,42 @@ function go(x, z) {
 }
 
 // the whole width of the mall, from the street to the newest row
+// the view that shows the store from a little of its building site to the far side of the lot, between the top
+// and bottom bars: the nearest distance at which both ends fit, found by halving
 function home() {
   var nr = shownRows();
-  return { z: (12 + rowZ(nr)) / 2, d: Math.max(fit(EDGE * 2 + 2), Math.min(DMAX, 8 + (12 - rowZ(nr)) * 1.05)) };
+  var back = rowZ(nr) - 1.5;
+  var top = IT + 46;
+  var bot = ch - IB - 8;
+  var keep = [focus.x, focus.z, focus.dist, focus.az];
+  focus.x = 0;
+  focus.az = VIEW_AZ;
+  var lo = fit(EDGE * 2 + 2);
+  var hi = DMAX;
+  var z = (back + LOT[1]) / 2;
+  var best = z;
+  for (var i = 0; i < 16; i++) {
+    focus.dist = (lo + hi) / 2;
+    var yb = 0;
+    var yf = 0;
+    for (var j = 0; j < 4; j++) {
+      focus.z = z;
+      place();
+      yb = toScreen(0, 0, back, sp).y;
+      yf = toScreen(0, 0, LOT[1], sp).y;
+      z -= ((top + bot) / 2 - (yb + yf) / 2) / Math.max(1, yf - yb) * (LOT[1] - back);
+    }
+    if (yb >= top && yf <= bot) {
+      hi = focus.dist;
+      best = z;
+    } else lo = focus.dist;
+  }
+  focus.x = keep[0];
+  focus.z = keep[1];
+  focus.dist = keep[2];
+  focus.az = keep[3];
+  place();
+  return { z: best, d: hi };
 }
 
 function focusNow() {

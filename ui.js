@@ -231,7 +231,7 @@ function upRow(r) {
     set(k, 'lv', r.lv, 'textContent', l ? 'Lv ' + l + '/' + p.cost.length : '');
     flag(k, 'nobar', r.el, 'nobar', true);
     set(k, 'ms', r.ms, 'textContent', open ? 'Each level: income of everything +' + Math.round(p.boost * 100) + '%' : 'Unlock ' + BZ[p.after].name + ' first');
-    set(k, 'up', r.up, 'innerHTML', c ? (l ? 'Upgrade' : 'Build') + '<small>' + money(c) + '</small>' : 'Done<small>all levels</small>');
+    set(k, 'up', r.up, 'innerHTML', c ? (l || p.open ? 'Upgrade' : 'Build') + '<small>' + money(c) + '</small>' : 'Done<small>all levels</small>');
     set(k, 'upd', r.up, 'disabled', !c || S.cash < c);
     flag(k, 'uphl', r.up, 'hl', hl);
     flag(k, 'nomg', r.el, 'nomg', true);
@@ -445,8 +445,8 @@ function bestText(o) {
   var name = (BZ[o.id] || PL[o.id]).name;
   var l = lv(o.id);
   if (o.k === 'mgr') return ['Hire ' + name + ' manager', 'Collects and restarts by itself'];
-  if (o.k === 'place') return [S.pl[o.id] ? name + ' level ' + (S.pl[o.id] + 1) : 'Build the ' + name, 'All income +' + Math.round(PL[o.id].boost * 100) + '%'];
-  if (!l) return ['Unlock ' + name, 'A new shop for the mall'];
+  if (o.k === 'place') return [S.pl[o.id] || PL[o.id].open ? name + ' level ' + (S.pl[o.id] + 1) : 'Build the ' + name, 'All income +' + Math.round(PL[o.id].boost * 100) + '%'];
+  if (!l) return ['Open ' + name, 'A new department for the store'];
   if (o.n > 1) return [name + ': ' + o.n + ' levels', 'Reaches the level ' + o.ms + ' milestone'];
   return ['Level up ' + name, 'Lv ' + l + ' to ' + (l + 1) + ',  +' + money(o.gain) + '/s'];
 }
@@ -510,7 +510,7 @@ function showAway(a) {
   var t = m >= 60 ? Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + (m % 60) + ' min' : '') : m + ' min';
   var txt = 'You were away for ' + t + '.';
   if (a.gain > 0) txt += ' Your managers earned <b>' + money(a.gain) + '</b>.';
-  if (a.ready) txt += ' ' + a.ready + (a.ready === 1 ? ' business has' : ' businesses have') + ' cash waiting.';
+  if (a.ready) txt += ' ' + a.ready + (a.ready === 1 ? ' department has' : ' departments have') + ' cash waiting.';
   $('away-txt').innerHTML = txt;
   $('away-ok').textContent = a.gain > 0 ? 'Collect ' + money(a.gain) : 'OK';
   $('away').hidden = false;
@@ -559,10 +559,10 @@ function openSell() {
   var now = 1 + STAR_BONUS * S.stars;
   var then = 1 + STAR_BONUS * (S.stars + n);
   $('sell-txt').innerHTML = n >= 1 ?
-    'Selling now gives <b>' + n + ' Mall stars</b>. Each star adds ' + Math.round(STAR_BONUS * 100) + '% to all income, forever. Your income goes from x' + now.toFixed(2) + ' to x' + then.toFixed(2) + '.' +
+    'Selling now gives <b>' + n + ' Store stars</b>. Each star adds ' + Math.round(STAR_BONUS * 100) + '% to all income, forever. Your income goes from x' + now.toFixed(2) + ' to x' + then.toFixed(2) + '.' +
     (n < 10 ? ' Waiting for about 10 stars makes the sale worth more.' : '') :
     'You need to earn about ' + money(STAR_DIV) + ' in this run to get the first star. So far: ' + money(S.run) + '.';
-  $('sell-keep').textContent = 'You keep: stars, gems, goals and boosts. Everything else starts again: cash, businesses, managers, and the Parking, Entrance and Taxi Stand.';
+  $('sell-keep').textContent = 'You keep: stars, gems, goals and boosts. Everything else starts again: cash, departments, managers, and the Parking, Checkouts, Taxi Stand and Garden Center.';
   $('sell-ok').textContent = n >= 1 ? 'Sell for ' + n + ' stars' : 'Not yet';
   $('sell-ok').disabled = n < 1;
   $('sell').hidden = false;
@@ -652,7 +652,7 @@ function wire() {
     if (!n) return;
     afterLoad();
     sfx('mile');
-    banner('<b>Mall sold</b><small>+' + n + ' Mall stars, income x' + (1 + STAR_BONUS * S.stars).toFixed(2) + '</small>', 0.2, true);
+    banner('<b>Store sold</b><small>+' + n + ' Store stars, income x' + (1 + STAR_BONUS * S.stars).toFixed(2) + '</small>', 0.2, true);
     nudge();
   });
   $('gear').addEventListener('click', function () {
@@ -695,7 +695,7 @@ function wire() {
       $('m-reset').textContent = 'Tap again to erase';
       setTimeout(function () {
         armed = false;
-        $('m-reset').textContent = 'Reset mall';
+        $('m-reset').textContent = 'Reset store';
       }, 3000);
       return;
     }
@@ -703,7 +703,7 @@ function wire() {
     reset();
     speed = 1;
     afterLoad();
-    $('m-reset').textContent = 'Reset mall';
+    $('m-reset').textContent = 'Reset store';
     $('menu').hidden = true;
     maybeDaily();
   });

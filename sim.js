@@ -1,5 +1,5 @@
-var KEY = 'mainstreet.v6';
-var OLD_KEYS = ['mainstreet.v5', 'mainstreet.v4', 'mainstreet.v3', 'mainstreet.v2', 'mainstreet.v1', 'mainstreet.won'];
+var KEY = 'mainstreet.v7';
+var OLD_KEYS = ['mainstreet.v6', 'mainstreet.v5', 'mainstreet.v4', 'mainstreet.v3', 'mainstreet.v2', 'mainstreet.v1', 'mainstreet.won'];
 var MAX_AWAY = 8 * 3600;
 var START_CASH = 5;
 var STAR_BONUS = 0.02;
@@ -25,9 +25,9 @@ BIZ.forEach(function (b, i) {
 var S = fresh();
 
 function fresh() {
-  var s = { v: 6, cash: START_CASH, gems: 0, stars: 0, run: 0, all: 0, pend: 0, pl: { lot: 0, hall: 0, taxi: 0 }, x2: 0, b: {}, ms: {},
+  var s = { v: 7, cash: START_CASH, gems: 0, stars: 0, run: 0, all: 0, pend: 0, pl: { lot: 0, hall: 0, taxi: 0, garden: 0 }, x2: 0, b: {}, ms: {},
     st: { col: 0, sales: 0 }, goal: [0, 1, 2], gn: 3, gd: {}, day: { n: 0, d: -1 }, ts: clock() };
-  s.b.fruit = { l: 1, m: 0, t: 0, w: 0 };
+  s.b.produce = { l: 1, m: 0, t: 0, w: 0 };
   return s;
 }
 
@@ -135,13 +135,11 @@ function maxBuy(id) {
   return Math.max(0, n);
 }
 
-// what the view of a business shows: how many of its levels of detail are reached
+// how many of a department's pieces are in, one for each STAGE level reached
 function shape(id) {
-  var v = VIEW[id];
-  var at = v ? (v.lv || v) : STAGE;
-  var l = lv(v && v.of ? v.of : id);
+  var l = lv(id);
   var n = 0;
-  for (var i = 0; i < at.length; i++) if (l >= at[i]) n++;
+  while (n < STAGE.length && l >= STAGE[n]) n++;
   return n;
 }
 
@@ -352,14 +350,15 @@ function gCol(n, gems) {
   return gl('Collect cash ' + n + ' times', gems, n, function () { return S.st.col; });
 }
 var GOALS = [
-  gCol(5, 3), gLv('fruit', 10, 3), gLv('bakery', 1, 4), gMgr(1, 5), gCol(25, 3), gLv('bakery', 10, 4), gEarn(1000, 3),
-  gLv('flower', 1, 5), gLv('fruit', 25, 5, 15), gMgr(3, 8), gEarn(1e5, 5), gLv('grocery', 1, 6), gLv('bakery', 25, 6),
-  gCol(100, 5), gLv('frozen', 1, 8), gLv('flower', 25, 8, 30), gMgr(5, 10), gEarn(1e7, 8), gLv('clothes', 1, 10),
-  gl('Open the Entrance', 10, 1, function () { return S.pl.hall; }), gLv('fruit', 100, 12), gLv('gifts', 1, 10), gLv('arcade', 1, 12),
-  gEarn(1e9, 10, 30), gMgr(8, 15), gLv('games', 1, 15), gLv('sports', 1, 20), gEarn(1e11, 15),
-  gl('Upgrade the Entrance to level 3', 12, 3, function () { return S.pl.hall; }), gLv('sports', 25, 15, 30), gLv('arcade', 50, 15),
-  gl('Sell the mall', 30, 1, function () { return S.st.sales; }), gEarn(1e13, 20, 60), gMgr(10, 25),
-  gEarn(1e15, 25), gl('Earn 100 Mall stars', 40, 100, function () { return S.stars; }), gEarn(1e18, 30),
+  gCol(5, 3), gLv('produce', 10, 3), gLv('bakery', 1, 4), gMgr(1, 5), gCol(25, 3), gLv('bakery', 10, 4), gEarn(1000, 3),
+  gLv('dairy', 1, 5), gLv('produce', 25, 5, 15), gMgr(3, 8), gEarn(1e5, 5), gLv('meat', 1, 6), gLv('bakery', 25, 6),
+  gCol(100, 5), gLv('frozen', 1, 8), gLv('dairy', 25, 8, 30), gMgr(5, 10), gEarn(1e7, 8), gLv('pantry', 1, 10),
+  gl('Open more checkouts', 10, 1, function () { return S.pl.hall; }), gLv('produce', 100, 12), gLv('snacks', 1, 10), gLv('toys', 1, 12),
+  gEarn(1e9, 10, 30), gMgr(8, 15), gLv('tech', 1, 15), gLv('kitchen', 1, 20), gEarn(1e11, 15),
+  gl('Checkouts to level 3', 12, 3, function () { return S.pl.hall; }), gLv('kitchen', 25, 15, 30), gLv('toys', 50, 15),
+  gl('Sell the store', 30, 1, function () { return S.st.sales; }), gEarn(1e13, 20, 60), gMgr(10, 25),
+  gLv('clothes', 1, 25), gl('Open the Garden Center', 25, 1, function () { return S.pl.garden; }), gLv('home', 1, 30),
+  gEarn(1e15, 25), gMgr(12, 30), gl('Earn 100 Store stars', 40, 100, function () { return S.stars; }), gEarn(1e18, 30),
   gl('Build the Parking', 4, 1, function () { return S.pl.lot; }), gl('Open the Taxi Stand', 8, 1, function () { return S.pl.taxi; })
 ];
 
@@ -400,8 +399,8 @@ function sell() {
   S.st.sales++;
   S.cash = START_CASH;
   S.run = 0;
-  S.pl = { lot: 0, hall: 0, taxi: 0 };
-  S.b = { fruit: { l: 1, m: 0, t: 0, w: 0 } };
+  S.pl = { lot: 0, hall: 0, taxi: 0, garden: 0 };
+  S.b = { produce: { l: 1, m: 0, t: 0, w: 0 } };
   return n;
 }
 
@@ -462,7 +461,7 @@ function num(v, d) {
 
 // copies what it knows by id; anything unknown is dropped and anything missing starts over
 function validate(o) {
-  if (!o || typeof o !== 'object' || o.v !== 6 || !o.b || typeof o.b !== 'object') return null;
+  if (!o || typeof o !== 'object' || o.v !== 7 || !o.b || typeof o.b !== 'object') return null;
   if (!isFinite(o.cash) || !isFinite(o.ts)) return null;
   var s = fresh();
   s.b = {};
@@ -473,7 +472,7 @@ function validate(o) {
   s.all = Math.max(s.run, num(o.all, 0));
   s.pend = num(o.pend, 0);
   s.x2 = num(o.x2, 0);
-  var pl = o.pl && typeof o.pl === 'object' ? o.pl : { hall: o.hall };
+  var pl = o.pl && typeof o.pl === 'object' ? o.pl : {};
   PLACES.forEach(function (p) { s.pl[p.id] = Math.min(p.cost.length, Math.floor(num(pl[p.id], 0))); });
   s.ts = o.ts;
   BIZ.forEach(function (z) {
@@ -503,11 +502,25 @@ function validate(o) {
   return s;
 }
 
+// the mall's shops are gone with the store rebuild, but its stars, gems, boosts and daily streak carry over
+function carry(o) {
+  if (!o || typeof o !== 'object') return;
+  S = fresh();
+  S.stars = Math.floor(num(o.stars, 0));
+  S.gems = Math.floor(num(o.gems, 0));
+  S.x2 = num(o.x2, 0);
+  if (o.st) S.st.sales = Math.floor(num(o.st.sales, 0));
+  if (o.day && isFinite(o.day.n) && isFinite(o.day.d)) S.day = { n: Math.floor(o.day.n), d: Math.floor(o.day.d) };
+  save();
+}
+
 // returns the away summary when the save is old enough, else null
 function load() {
   var gone = null;
   try {
+    var mall = localStorage.getItem(KEY) ? null : localStorage.getItem('mainstreet.v6');
     OLD_KEYS.forEach(function (k) { localStorage.removeItem(k); });
+    if (mall) carry(JSON.parse(mall));
     var raw = localStorage.getItem(KEY);
     var o = raw ? validate(JSON.parse(raw)) : null;
     if (o) {
