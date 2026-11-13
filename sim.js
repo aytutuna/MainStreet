@@ -1,10 +1,10 @@
-var KEY = 'mainstreet.v7';
-var OLD_KEYS = ['mainstreet.v6', 'mainstreet.v5', 'mainstreet.v4', 'mainstreet.v3', 'mainstreet.v2', 'mainstreet.v1', 'mainstreet.won'];
+var KEY = 'mainstreet.v8';
+var OLD_KEYS = ['mainstreet.v7', 'mainstreet.v6', 'mainstreet.v5', 'mainstreet.v4', 'mainstreet.v3', 'mainstreet.v2', 'mainstreet.v1', 'mainstreet.won'];
 var MAX_AWAY = 8 * 3600;
 var START_CASH = 5;
 var STAR_BONUS = 0.02;
 var STAR_DIV = 1e13;
-var MGR_WEIGHT = 0.5;
+var HALL_BOOST = 0.1;
 var X2_COST = 20;
 var X2_SECS = 1800;
 var WARP_COST = 50;
@@ -13,9 +13,27 @@ var DAILY = [
   { cash: 10 }, { gems: 5 }, { x2: 30 }, { cash: 30 }, { gems: 10 }, { cash: 60 }, { gems: 25, x2: 60, cash: 120 }
 ];
 
+// shoppers a second: on foot (more for a bigger store and the garden), by car for each Parking level, by taxi for
+// each Taxi Stand level, and garden visitors who only buy a plant
+var WALK0 = 0.1;
+var PER_DEPT = 0.01;
+var PER_LOT = 0.04;
+var PER_TAXI = 0.025;
+var PER_GARDEN = 0.02;
+var GARDEN_IN = 0.03;
+// seconds at the till for one shopper at Checkouts level 0, each level a little faster; GAP is the walk up to it
+var LANE_T = 5;
+var SELF_T = 8;
+var PLANT_T = 3;
+var GAP = { lane: 1, self: 2, garden: 1.5 };
+var CAP = 4;
+var PATIENCE = 6;
+var SHOP_T = 30;
+var PLANT = 0.3;
+
 var speed = 1;
 var clock = function () { return Date.now(); };
-var onPay = null;
+var onShopper = null;
 var BZ = {};
 BIZ.forEach(function (b, i) {
   b.i = i;
@@ -25,9 +43,9 @@ BIZ.forEach(function (b, i) {
 var S = fresh();
 
 function fresh() {
-  var s = { v: 7, cash: START_CASH, gems: 0, stars: 0, run: 0, all: 0, pend: 0, pl: { lot: 0, hall: 0, taxi: 0, garden: 0 }, x2: 0, b: {}, ms: {},
-    st: { col: 0, sales: 0 }, goal: [0, 1, 2], gn: 3, gd: {}, day: { n: 0, d: -1 }, ts: clock() };
-  s.b.produce = { l: 1, m: 0, t: 0, w: 0 };
+  var s = { v: 8, cash: START_CASH, gems: 0, stars: 0, run: 0, all: 0, pend: 0, pl: { lot: 0, hall: 0, taxi: 0, garden: 0 }, x2: 0, b: {}, ms: {},
+    st: { srv: 0, lost: 0, sales: 0 }, goal: [0, 1, 2], gn: 3, gd: {}, day: { n: 0, d: -1 }, ts: clock() };
+  s.b.produce = { l: 1 };
   return s;
 }
 
@@ -53,11 +71,7 @@ function has(id) {
   return lv(id) > 0;
 }
 
-function managed(id) {
-  return !!S.b[id] && !!S.b[id].m;
-}
-
-// a business can be bought once the one before it in the list is owned
+// a department can be opened once the one before it in the list is open
 function avail(id) {
   var i = BZ[id].i;
   return has(id) || i === 0 || has(BIZ[i - 1].id);
@@ -65,61 +79,81 @@ function avail(id) {
 
 function msAt(l) {
   var mul = 1;
-  var spd = 0;
-  for (var i = 0; i < MS.length && l >= MS[i][0]; i++) {
-    mul *= MS[i][1];
-    spd += MS[i][2];
-  }
-  return { mul: mul, spd: spd };
+  for (var i = 0; i < MS.length && l >= MS[i][0]; i++) mul *= MS[i][1];
+  return mul;
 }
 
 function nextMs(l) {
-  for (var i = 0; i < MS.length; i++) if (l < MS[i][0]) return { i: i, lv: MS[i][0], mul: MS[i][1], spd: MS[i][2] };
+  for (var i = 0; i < MS.length; i++) if (l < MS[i][0]) return { i: i, lv: MS[i][0], mul: MS[i][1] };
   return null;
 }
 
 function gmul() {
-  var m = 1 + STAR_BONUS * S.stars;
-  PLACES.forEach(function (p) { m *= 1 + p.boost * S.pl[p.id]; });
-  return m;
+  return (1 + STAR_BONUS * S.stars) * (1 + HALL_BOOST * S.pl.hall);
 }
 
 function bmul() {
   return S.x2 > 0 ? 2 : 1;
 }
 
-function cycleAt(id, l) {
-  return BZ[id].cy / Math.pow(2, msAt(l).spd);
+function spendAt(id, l) {
+  return l > 0 ? BZ[id].s * l * msAt(l) * gmul() : 0;
 }
 
-function revAt(id, l) {
-  return BZ[id].r * l * msAt(l).mul * gmul();
+// what a shopper pays at the till: something from every open department
+function basket() {
+  var v = 0;
+  BIZ.forEach(function (b) { v += spendAt(b.id, lv(b.id)); });
+  return v;
 }
 
-function cycle(id) {
-  return cycleAt(id, lv(id));
+function plant() {
+  return basket() * PLANT;
 }
 
-function rev(id) {
-  return revAt(id, lv(id)) * bmul();
+function opened() {
+  var n = 0;
+  BIZ.forEach(function (b) { if (has(b.id)) n++; });
+  return n;
 }
 
-function perSec(id, l) {
-  return l > 0 ? revAt(id, l) / cycleAt(id, l) : 0;
+function flow() {
+  var p = S.pl;
+  return { walk: WALK0 + PER_DEPT * opened() + PER_GARDEN * p.garden, car: PER_LOT * p.lot, taxi: PER_TAXI * p.taxi, garden: GARDEN_IN * p.garden };
+}
+
+function inRate() {
+  var f = flow();
+  return f.walk + f.car + f.taxi;
+}
+
+function svc(k) {
+  var l = S.pl.hall;
+  return k === 'lane' ? LANE_T * Math.pow(0.9, l) : k === 'self' ? SELF_T * Math.pow(0.93, l) : PLANT_T;
+}
+
+// shoppers a second the open tills can take
+function capacity() {
+  var c = 0;
+  TILLS.forEach(function (t) { if (t.lv <= S.pl.hall) c += 1 / (svc(t.k) + GAP[t.k]); });
+  return c;
+}
+
+function served() {
+  return Math.min(inRate(), capacity());
+}
+
+function gardenServed() {
+  return S.pl.garden ? Math.min(flow().garden, 1 / (svc('garden') + GAP.garden)) : 0;
+}
+
+// income a second while the store runs steady, before the x2 boost
+function baseRate() {
+  return served() * basket() + gardenServed() * plant();
 }
 
 function rate() {
-  var r = 0;
-  BIZ.forEach(function (b) { r += perSec(b.id, lv(b.id)); });
-  return r * bmul();
-}
-
-function autoRate() {
-  var r = 0;
-  BIZ.forEach(function (b) {
-    if (managed(b.id)) r += perSec(b.id, lv(b.id));
-  });
-  return r * bmul();
+  return baseRate() * bmul();
 }
 
 function cost(id, n) {
@@ -171,14 +205,14 @@ function earn(v) {
   S.all += v;
 }
 
-// returns what changed: unlock, milestones crossed and their gems, whether the shop gets a new piece
+// returns what changed: unlock, milestones crossed and their gems, whether the department gets a new piece
 function buy(id, n) {
   n = n || 1;
   if (!avail(id) || n < 1) return null;
   var c = cost(id, n);
   if (c > S.cash) return null;
   S.cash -= c;
-  var b = S.b[id] || (S.b[id] = { l: 0, m: 0, t: 0, w: 0 });
+  var b = S.b[id] || (S.b[id] = { l: 0 });
   var was = b.l;
   var stage = shape(id);
   b.l += n;
@@ -190,18 +224,9 @@ function buy(id, n) {
     S.ms[id] = i + 1;
   }
   for (var j = 0; j < MS.length; j++) {
-    if (was < MS[j][0] && b.l >= MS[j][0]) res.ms.push({ lv: MS[j][0], mul: MS[j][1], spd: MS[j][2] });
+    if (was < MS[j][0] && b.l >= MS[j][0]) res.ms.push({ lv: MS[j][0], mul: MS[j][1] });
   }
   return res;
-}
-
-function hire(id) {
-  var b = S.b[id];
-  if (!b || b.m || S.cash < BZ[id].m) return false;
-  S.cash -= BZ[id].m;
-  b.m = 1;
-  if (b.w) collect(id);
-  return true;
 }
 
 function placeCost(id) {
@@ -218,63 +243,150 @@ function buyPlace(id) {
   return { id: id, place: true };
 }
 
-function collect(id) {
-  var b = S.b[id];
-  if (!b || !b.w) return 0;
-  var v = b.w;
-  b.w = 0;
-  b.t = 0;
-  S.st.col++;
+// Shoppers come in on foot, by car or by taxi, fill a basket and pay at a till, and the money comes in then. A till
+// serves whoever is at its front; a lane holds CAP, a self checkout one. When every line is full a shopper waits a
+// little at the front, then puts the basket back and leaves. The view walks each shopper it has a figure for: it
+// sets v, calls atFront when they reach the checkouts and sets here once they stand at their till. Shoppers are
+// not saved; a loaded store fills again in a few seconds
+var shoppers = [];
+var tills = [];
+var due = {};
+var sid = 0;
+var lostT = 0;
+
+function clearShoppers() {
+  shoppers = [];
+  tills = TILLS.map(function (t, i) { return { i: i, k: t.k, lv: t.lv, q: [], t: 0 }; });
+  tills.push({ i: TILLS.length, k: 'garden', lv: 0, q: [], t: 0 });
+  due = { walk: 0.8, car: 0.4, taxi: 0, garden: 0.5 };
+  lostT = 0;
+}
+clearShoppers();
+
+function tillOpen(t) {
+  return t.k === 'garden' ? S.pl.garden > 0 : t.lv <= S.pl.hall;
+}
+
+function come(by) {
+  var c = { id: ++sid, by: by, garden: by === 'garden', t: by === 'garden' ? SHOP_T / 2 : SHOP_T, age: 0, v: false, here: false, front: false, wait: 0,
+    at: null, done: false };
+  shoppers.push(c);
+  if (onShopper) onShopper('in', c);
+}
+
+// the shortest line with room, or a free self checkout when the lines have people in them
+function join(c) {
+  var lane = null;
+  var free = [];
+  tills.forEach(function (t) {
+    if (!tillOpen(t) || (t.k === 'garden') !== c.garden) return;
+    if (t.k === 'self') {
+      if (!t.q.length) free.push(t);
+    } else if (t.q.length < (t.k === 'garden' ? 2 : CAP) && (!lane || t.q.length < lane.q.length)) lane = t;
+  });
+  var t = lane;
+  if (free.length && (!lane || lane.q.length > 0 || Math.random() < 0.35)) t = free[Math.floor(Math.random() * free.length)];
+  if (!t) return false;
+  t.q.push(c);
+  c.at = t;
+  c.here = false;
+  if (onShopper) onShopper('till', c);
+  return true;
+}
+
+function atFront(c) {
+  if (c.front || c.done) return;
+  c.front = true;
+  c.wait = PATIENCE;
+  join(c);
+}
+
+function gone(c) {
+  c.done = true;
+  c.at = null;
+  var i = shoppers.indexOf(c);
+  if (i >= 0) shoppers.splice(i, 1);
+}
+
+function pay(c, t) {
+  var v = (c.garden ? plant() : basket()) * bmul();
   earn(v);
-  return v;
+  S.st.srv++;
+  gone(c);
+  if (onShopper) onShopper('paid', c, v, t);
+}
+
+function lose(c) {
+  S.st.lost++;
+  lostT = 20;
+  c.lost = true;
+  gone(c);
+  if (onShopper) onShopper('lost', c);
+}
+
+function serve(t, dt) {
+  while (t.q.length) {
+    var c = t.q[0];
+    if (c.v && !c.here) return;
+    var need = svc(t.k) + (c.v ? 0 : GAP[t.k]) - t.t;
+    if (dt < need) {
+      t.t += dt;
+      return;
+    }
+    dt -= need;
+    t.t = 0;
+    t.q.shift();
+    pay(c, t);
+  }
+}
+
+function linesFull() {
+  return lostT > 0;
 }
 
 function tick(dt) {
   dt *= speed;
-  var bm = bmul();
   if (S.x2 > 0) S.x2 = Math.max(0, S.x2 - dt);
-  for (var i = 0; i < BIZ.length; i++) {
-    var id = BIZ[i].id;
-    var b = S.b[id];
-    if (!b || b.w) continue;
-    var cy = cycleAt(id, b.l);
-    b.t += dt;
-    if (b.t < cy) continue;
-    if (b.m) {
-      var n = Math.floor(b.t / cy);
-      b.t -= n * cy;
-      var v = n * revAt(id, b.l) * bm;
-      earn(v);
-      if (onPay) onPay(id, v);
-    } else {
-      b.w = revAt(id, b.l) * bm;
-      b.t = 0;
+  lostT -= dt;
+  var f = flow();
+  for (var k in due) {
+    due[k] += f[k] * dt;
+    while (due[k] >= 1) {
+      due[k]--;
+      come(k);
     }
   }
+  for (var i = shoppers.length - 1; i >= 0; i--) {
+    var c = shoppers[i];
+    c.age += dt;
+    // a figure stuck somewhere lets go, and its shopper carries on unseen
+    if (c.v && c.age > 240) {
+      c.v = false;
+      c.here = true;
+    }
+    if (c.at) continue;
+    if (c.front) {
+      if (join(c)) continue;
+      c.wait -= dt;
+      if (c.wait <= 0) lose(c);
+    } else if (!c.v) {
+      c.t -= dt;
+      if (c.t <= 0) atFront(c);
+    }
+  }
+  tills.forEach(function (t) { serve(t, dt); });
 }
 
-// time away: managed businesses pay, the others are left with cash waiting. The pay is held until claimAway
+// time away: the store runs at its steady rate; the pay is held until claimAway
 function away(sec) {
   var s = Math.max(0, Math.min(sec, MAX_AWAY));
   var xs = Math.min(s, S.x2);
-  var gain = 0;
-  var ready = 0;
-  BIZ.forEach(function (z) {
-    var b = S.b[z.id];
-    if (!b) return;
-    if (b.m) gain += perSec(z.id, b.l) * (s + xs);
-    else if (!b.w) {
-      b.t += s;
-      if (b.t >= cycleAt(z.id, b.l)) {
-        b.w = revAt(z.id, b.l) * (xs >= s ? 2 : 1);
-        b.t = 0;
-        ready++;
-      }
-    }
-  });
+  var gain = baseRate() * (s + xs);
+  var n = Math.floor((served() + gardenServed()) * s);
   S.x2 = Math.max(0, S.x2 - s);
   S.pend += gain;
-  return { secs: s, gain: gain, ready: ready };
+  S.st.srv += n;
+  return { secs: s, gain: gain, n: n };
 }
 
 function claimAway() {
@@ -287,25 +399,38 @@ function claimAway() {
 // every way to spend money, with what it adds per second and the time it takes to wait for it and then pay for itself
 function options() {
   var out = [];
-  var r = Math.max(rate(), 1e-9);
+  var r0 = baseRate();
+  var r = Math.max(r0 * bmul(), 1e-9);
   function add(o) {
     o.wait = Math.max(0, o.cost - S.cash) / r;
     o.T = o.wait + o.cost / Math.max(o.gain, 1e-12);
     out.push(o);
   }
+  // makes the change, measures the rate and takes it back
+  function gain(f) {
+    f(1);
+    var r1 = baseRate();
+    f(-1);
+    return (r1 - r0) * bmul();
+  }
   BIZ.forEach(function (z) {
     var id = z.id;
     var l = lv(id);
     if (!avail(id)) return;
-    var now = perSec(id, l) * bmul();
-    add({ k: 'lv', id: id, n: 1, cost: cost(id, 1), gain: perSec(id, l + 1) * bmul() - now });
+    function by(n) {
+      return function (d) {
+        var b = S.b[id] || (S.b[id] = { l: 0 });
+        b.l += d * n;
+        if (!b.l) delete S.b[id];
+      };
+    }
+    add({ k: 'lv', id: id, n: 1, cost: cost(id, 1), gain: gain(by(1)) });
     var m = nextMs(l);
-    if (m && m.lv - l > 1 && l > 0) add({ k: 'lv', id: id, n: m.lv - l, cost: cost(id, m.lv - l), gain: perSec(id, m.lv) * bmul() - now, ms: m.lv });
-    if (l > 0 && !managed(id)) add({ k: 'mgr', id: id, n: 1, cost: z.m, gain: now * MGR_WEIGHT });
+    if (m && m.lv - l > 1 && l > 0) add({ k: 'lv', id: id, n: m.lv - l, cost: cost(id, m.lv - l), gain: gain(by(m.lv - l)), ms: m.lv });
   });
   PLACES.forEach(function (p) {
     var c = placeCost(p.id);
-    if (c) add({ k: 'place', id: p.id, n: 1, cost: c, gain: r * p.boost / (1 + p.boost * S.pl[p.id]) });
+    if (c) add({ k: 'place', id: p.id, n: 1, cost: c, gain: gain(function (d) { S.pl[p.id] += d; }) });
   });
   return out;
 }
@@ -319,9 +444,7 @@ function best() {
 }
 
 function doOption(o) {
-  if (o.k === 'lv') return buy(o.id, o.n);
-  if (o.k === 'mgr') return hire(o.id) ? { id: o.id, mgr: true } : null;
-  return buyPlace(o.id);
+  return o.k === 'lv' ? buy(o.id, o.n) : buyPlace(o.id);
 }
 
 function buyBest() {
@@ -334,32 +457,27 @@ function gl(t, gems, n, f, x2) {
   return { t: t, g: gems, n: n, f: f, x2: x2 || 0 };
 }
 function gLv(id, n, gems, x2) {
-  return gl(n === 1 ? 'Unlock the ' + BZ[id].name : BZ[id].name + ' to level ' + n, gems, n, function () { return lv(id); }, x2);
+  return gl(n === 1 ? 'Open the ' + BZ[id].name : BZ[id].name + ' to level ' + n, gems, n, function () { return lv(id); }, x2);
 }
 function gEarn(n, gems, x2) {
   return gl('Earn $' + short(n) + ' in total', gems, n, function () { return S.all; }, x2);
 }
-function gMgr(n, gems) {
-  return gl('Hire ' + n + (n === 1 ? ' manager' : ' managers'), gems, n, function () {
-    var c = 0;
-    BIZ.forEach(function (b) { if (managed(b.id)) c++; });
-    return c;
-  });
+function gServe(n, gems, x2) {
+  return gl('Serve ' + n.toLocaleString('en-US') + ' shoppers', gems, n, function () { return S.st.srv; }, x2);
 }
-function gCol(n, gems) {
-  return gl('Collect cash ' + n + ' times', gems, n, function () { return S.st.col; });
+function gPl(id, n, t, gems) {
+  return gl(t, gems, n, function () { return S.pl[id]; });
 }
 var GOALS = [
-  gCol(5, 3), gLv('produce', 10, 3), gLv('bakery', 1, 4), gMgr(1, 5), gCol(25, 3), gLv('bakery', 10, 4), gEarn(1000, 3),
-  gLv('dairy', 1, 5), gLv('produce', 25, 5, 15), gMgr(3, 8), gEarn(1e5, 5), gLv('meat', 1, 6), gLv('bakery', 25, 6),
-  gCol(100, 5), gLv('frozen', 1, 8), gLv('dairy', 25, 8, 30), gMgr(5, 10), gEarn(1e7, 8), gLv('pantry', 1, 10),
-  gl('Open more checkouts', 10, 1, function () { return S.pl.hall; }), gLv('produce', 100, 12), gLv('snacks', 1, 10), gLv('toys', 1, 12),
-  gEarn(1e9, 10, 30), gMgr(8, 15), gLv('tech', 1, 15), gLv('kitchen', 1, 20), gEarn(1e11, 15),
-  gl('Checkouts to level 3', 12, 3, function () { return S.pl.hall; }), gLv('kitchen', 25, 15, 30), gLv('toys', 50, 15),
-  gl('Sell the store', 30, 1, function () { return S.st.sales; }), gEarn(1e13, 20, 60), gMgr(10, 25),
-  gLv('clothes', 1, 25), gl('Open the Garden Center', 25, 1, function () { return S.pl.garden; }), gLv('home', 1, 30),
-  gEarn(1e15, 25), gMgr(12, 30), gl('Earn 100 Store stars', 40, 100, function () { return S.stars; }), gEarn(1e18, 30),
-  gl('Build the Parking', 4, 1, function () { return S.pl.lot; }), gl('Open the Taxi Stand', 8, 1, function () { return S.pl.taxi; })
+  gServe(10, 3), gLv('produce', 10, 3), gLv('bakery', 1, 4), gPl('hall', 1, 'Open lane 2', 5), gPl('lot', 1, 'Build the Parking', 4),
+  gServe(100, 3), gLv('bakery', 10, 4), gEarn(1000, 3), gLv('dairy', 1, 5), gLv('produce', 25, 5, 15), gLv('meat', 1, 6),
+  gEarn(1e5, 5), gLv('bakery', 25, 6), gServe(500, 5), gLv('frozen', 1, 8), gLv('dairy', 25, 8, 30), gPl('taxi', 1, 'Open the Taxi Stand', 8),
+  gPl('hall', 3, 'Put in self checkouts', 10), gEarn(1e7, 8), gLv('pantry', 1, 10), gLv('produce', 100, 12), gLv('snacks', 1, 10),
+  gPl('lot', 3, 'Parking to level 3', 10), gLv('toys', 1, 12), gServe(2000, 10), gEarn(1e9, 10, 30), gLv('tech', 1, 15),
+  gPl('hall', 5, 'Open lane 3', 15), gLv('kitchen', 1, 20), gEarn(1e11, 15), gLv('kitchen', 25, 15, 30), gLv('toys', 50, 15),
+  gl('Sell the store', 30, 1, function () { return S.st.sales; }), gServe(10000, 20), gEarn(1e13, 20, 60), gLv('clothes', 1, 25),
+  gPl('garden', 1, 'Open the Garden Center', 25), gLv('home', 1, 30), gPl('hall', 10, 'Checkouts to level 10', 30), gEarn(1e15, 25),
+  gServe(50000, 30), gl('Earn 100 Store stars', 40, 100, function () { return S.stars; }), gEarn(1e18, 30)
 ];
 
 function goals() {
@@ -400,7 +518,8 @@ function sell() {
   S.cash = START_CASH;
   S.run = 0;
   S.pl = { lot: 0, hall: 0, taxi: 0, garden: 0 };
-  S.b = { produce: { l: 1, m: 0, t: 0, w: 0 } };
+  S.b = { produce: { l: 1 } };
+  clearShoppers();
   return n;
 }
 
@@ -418,7 +537,7 @@ function daily() {
 
 function dailyReward(i) {
   var d = DAILY[i];
-  return { gems: d.gems || 0, x2: d.x2 || 0, cash: d.cash ? Math.max(25, autoRate() * d.cash * 60) : 0 };
+  return { gems: d.gems || 0, x2: d.x2 || 0, cash: d.cash ? Math.max(25, baseRate() * d.cash * 60) : 0 };
 }
 
 function claimDaily() {
@@ -461,7 +580,7 @@ function num(v, d) {
 
 // copies what it knows by id; anything unknown is dropped and anything missing starts over
 function validate(o) {
-  if (!o || typeof o !== 'object' || o.v !== 7 || !o.b || typeof o.b !== 'object') return null;
+  if (!o || typeof o !== 'object' || (o.v !== 7 && o.v !== 8) || !o.b || typeof o.b !== 'object') return null;
   if (!isFinite(o.cash) || !isFinite(o.ts)) return null;
   var s = fresh();
   s.b = {};
@@ -478,14 +597,15 @@ function validate(o) {
   BIZ.forEach(function (z) {
     var e = o.b[z.id];
     if (!e || !(e.l >= 1)) return;
-    s.b[z.id] = { l: Math.floor(e.l), m: e.m ? 1 : 0, t: num(e.t, 0), w: num(e.w, 0) };
+    s.b[z.id] = { l: Math.floor(e.l) };
   });
   BIZ.forEach(function (z) {
     var m = o.ms && o.ms[z.id];
     if (m >= 1) s.ms[z.id] = Math.min(MS.length, Math.floor(m));
   });
   if (o.st) {
-    s.st.col = Math.floor(num(o.st.col, 0));
+    s.st.srv = Math.floor(num(o.st.srv, 0));
+    s.st.lost = Math.floor(num(o.st.lost, 0));
     s.st.sales = Math.floor(num(o.st.sales, 0));
   }
   var gn = Math.min(GOALS.length, Math.floor(num(o.gn, 3)));
@@ -515,21 +635,25 @@ function carry(o) {
 }
 
 // returns the away summary when the save is old enough, else null
+// the store from before shoppers paid at the tills keeps its departments and places
 function load() {
-  var gone = null;
+  var back = null;
   try {
-    var mall = localStorage.getItem(KEY) ? null : localStorage.getItem('mainstreet.v6');
+    var raw = localStorage.getItem(KEY);
+    var old = raw ? null : localStorage.getItem('mainstreet.v7');
+    var mall = raw || old ? null : localStorage.getItem('mainstreet.v6');
     OLD_KEYS.forEach(function (k) { localStorage.removeItem(k); });
     if (mall) carry(JSON.parse(mall));
-    var raw = localStorage.getItem(KEY);
+    raw = raw || old || localStorage.getItem(KEY);
     var o = raw ? validate(JSON.parse(raw)) : null;
     if (o) {
       S = o;
       var sec = (clock() - o.ts) / 1000;
-      if (sec > 60) gone = away(sec);
+      if (sec > 60) back = away(sec);
+      if (old) save();
     }
   } catch (e) {}
-  return gone;
+  return back;
 }
 
 function saved() {
@@ -550,6 +674,7 @@ function importCode(code) {
     if (!o) return false;
     S = o;
     S.ts = clock();
+    clearShoppers();
     save();
     return true;
   } catch (e) {
@@ -559,6 +684,7 @@ function importCode(code) {
 
 function reset() {
   S = fresh();
+  clearShoppers();
   try {
     localStorage.removeItem(KEY);
   } catch (e) {}

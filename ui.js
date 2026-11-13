@@ -20,12 +20,11 @@ var rows = {};
 var bestOpt = null;
 var bestAt = 0;
 var sheetOpen = false;
-var lastPay = {};
 var bq = [];
 var bqBusy = false;
 var testTaps = 0;
 var FREE_KEY = 'mainstreet.free';
-var free = true;
+var free = false;
 var chips = [];
 
 function $(id) {
@@ -197,7 +196,11 @@ function amount(id) {
 function msText(l) {
   var m = nextMs(l);
   if (!m) return 'All milestones reached';
-  return 'Level ' + m.lv + ': income x' + m.mul + (m.spd ? ', twice as fast' : '');
+  return 'Level ' + m.lv + ': sales here x' + m.mul + (m.i === 0 ? ', and a clerk to help' : '');
+}
+
+function perMin(v) {
+  return Math.round(v * 60);
 }
 
 function makeRow(id) {
@@ -206,14 +209,12 @@ function makeRow(id) {
   el.className = 'biz';
   el.innerHTML = '<img class="ic" src="assets/' + b.ic + '.png" alt="">' +
     '<div class="mid"><div class="l1"><b></b><span></span></div><div class="pr"><i></i><em></em></div><div class="l3"></div></div>' +
-    '<div class="btns"><button type="button" class="up"></button><button type="button" class="mg"></button></div>';
+    '<div class="btns"><button type="button" class="up"></button></div>';
   var r = { id: id, el: el, k: {}, nm: el.querySelector('b'), lv: el.querySelector('.l1 span'), bar: el.querySelector('.pr'),
-    fill: el.querySelector('.pr i'), bt: el.querySelector('.pr em'), ms: el.querySelector('.l3'), up: el.querySelector('.up'), mg: el.querySelector('.mg') };
+    fill: el.querySelector('.pr i'), bt: el.querySelector('.pr em'), ms: el.querySelector('.l3'), up: el.querySelector('.up') };
   r.nm.textContent = b.name;
   el.querySelector('.ic').addEventListener('click', function () { focusBiz(id); });
   r.up.addEventListener('click', function () { upgrade(id); });
-  r.mg.addEventListener('click', function () { hireManager(id); });
-  r.bar.addEventListener('click', function () { collectBiz(id, centerOf(r.bar)); });
   return r;
 }
 
@@ -227,45 +228,46 @@ function upRow(r) {
     var c = placeCost(id);
     var l = S.pl[id];
     var open = has(p.after);
+    var hall = id === 'hall';
     flag(k, 'lock', r.el, 'lock', !open);
     set(k, 'lv', r.lv, 'textContent', l ? 'Lv ' + l + '/' + p.cost.length : '');
-    flag(k, 'nobar', r.el, 'nobar', true);
-    set(k, 'ms', r.ms, 'textContent', open ? 'Each level: income of everything +' + Math.round(p.boost * 100) + '%' : 'Unlock ' + BZ[p.after].name + ' first');
+    // the checkouts' bar shows how busy the tills are: shoppers coming in against what the tills can take
+    flag(k, 'nobar', r.el, 'nobar', !hall);
+    flag(k, 'rd', r.el, 'rd', hall && linesFull());
+    if (hall) {
+      r.fill.style.width = Math.min(100, inRate() / capacity() * 100) + '%';
+      set(k, 'bt', r.bt, 'textContent', perMin(inRate()) + ' come in, tills take ' + perMin(capacity()) + ' a min');
+    }
+    set(k, 'ms', r.ms, 'textContent', !open ? 'Open ' + BZ[p.after].name + ' first' : c ? 'Next: ' + p.next[l] : 'Everything is built');
     set(k, 'up', r.up, 'innerHTML', c ? (l || p.open ? 'Upgrade' : 'Build') + '<small>' + money(c) + '</small>' : 'Done<small>all levels</small>');
     set(k, 'upd', r.up, 'disabled', !c || S.cash < c);
     flag(k, 'uphl', r.up, 'hl', hl);
-    flag(k, 'nomg', r.el, 'nomg', true);
     return;
   }
   var e = S.b[id];
   flag(k, 'lock', r.el, 'lock', !e && !avail(id));
   flag(k, 'new', r.el, 'new', !e);
   flag(k, 'nobar', r.el, 'nobar', !e);
-  flag(k, 'nomg', r.el, 'nomg', !e);
   if (!e) {
     var u = cost(id, 1);
     set(k, 'lv', r.lv, 'textContent', '');
-    set(k, 'ms', r.ms, 'textContent', avail(id) ? 'Earns ' + money(revAt(id, 1)) + ' every ' + secs(BZ[id].cy) : 'Unlock ' + BIZ[BZ[id].i - 1].name + ' first');
-    set(k, 'up', r.up, 'innerHTML', 'Unlock<small>' + money(u) + '</small>');
+    set(k, 'ms', r.ms, 'textContent', avail(id) ? 'Every shopper spends ' + money(spendAt(id, 1)) + ' here' : 'Open ' + BIZ[BZ[id].i - 1].name + ' first');
+    set(k, 'up', r.up, 'innerHTML', 'Open<small>' + money(u) + '</small>');
     set(k, 'upd', r.up, 'disabled', !avail(id) || S.cash < u);
     flag(k, 'uphl', r.up, 'hl', hl);
     return;
   }
   var n = amount(id);
   var cc = cost(id, n);
+  var m = nextMs(e.l);
+  var from = m && m.i ? MS[m.i - 1][0] : 0;
   set(k, 'lv', r.lv, 'textContent', 'Lv ' + e.l);
   set(k, 'ms', r.ms, 'textContent', msText(e.l));
   set(k, 'up', r.up, 'innerHTML', 'Level up' + (n > 1 ? ' x' + n : '') + '<small>' + money(cc) + '</small>');
   set(k, 'upd', r.up, 'disabled', S.cash < cc);
-  flag(k, 'uphl', r.up, 'hl', hl && bestOpt.k === 'lv');
-  flag(k, 'rd', r.el, 'rd', e.w > 0);
-  flag(k, 'auto', r.el, 'auto', !!e.m);
-  r.fill.style.width = (e.w > 0 ? 100 : Math.min(100, e.t / cycleAt(id, e.l) * 100)) + '%';
-  set(k, 'bt', r.bt, 'textContent', e.w > 0 ? 'Collect ' + money(e.w) : money(rev(id)) + ' / ' + secs(cycle(id)));
-  if (e.m) set(k, 'mg', r.mg, 'innerHTML', '<img src="assets/ui_boss.png" alt="">Manager');
-  else set(k, 'mg', r.mg, 'innerHTML', 'Manager<small>' + money(BZ[id].m) + '</small>');
-  set(k, 'mgd', r.mg, 'disabled', !!e.m || S.cash < BZ[id].m);
-  flag(k, 'mghl', r.mg, 'hl', hl && bestOpt.k === 'mgr');
+  flag(k, 'uphl', r.up, 'hl', hl);
+  r.fill.style.width = (m ? (e.l - from) / (m.lv - from) * 100 : 100) + '%';
+  set(k, 'bt', r.bt, 'textContent', money(spendAt(id, e.l) * bmul()) + ' a shopper');
 }
 
 function buildList() {
@@ -340,15 +342,15 @@ function afterBuy(res) {
   if (ms.length) {
     var m = ms[ms.length - 1];
     sfx('mile');
-    banner('<b>' + name + ' level ' + m.lv + '!</b><small>Income x' + m.mul + (m.spd ? ', twice as fast' : '') + (res.gems ? '  +' + res.gems + ' gems' : '') + '</small>', t + 0.3, m.lv >= 25);
+    banner('<b>' + name + ' level ' + m.lv + '!</b><small>Sales here x' + m.mul + (ms[0].lv === MS[0][0] ? ', a clerk joins' : '') + (res.gems ? '  +' + res.gems + ' gems' : '') + '</small>', t + 0.3, m.lv >= 25);
     if (res.gems) flyGems(innerWidth / 2, innerHeight * 0.3, Math.min(6, res.gems));
   } else if (res.unlock) {
     sfx('unlock');
-    banner('<b>New: ' + name + '</b><small>Costs ' + money(BZ[res.id].c0) + ', earns while you play</small>', t + 0.3, true);
+    banner('<b>New: ' + name + '</b><small>Every shopper buys here now</small>', t + 0.3, true);
   } else if (res.place) {
     var p = PL[res.id];
     sfx('mile');
-    banner('<b>' + name + ' level ' + S.pl[res.id] + '</b><small>All income +' + Math.round(p.boost * 100) + '%</small>', t + 0.3, S.pl[res.id] === p.cost.length);
+    banner('<b>' + name + ' level ' + S.pl[res.id] + '</b><small>' + p.next[S.pl[res.id] - 1] + '</small>', t + 0.3, S.pl[res.id] === p.cost.length);
   } else sfx('buy');
   buzz();
   nudge();
@@ -369,40 +371,12 @@ function upgrade(id) {
   if (res) afterBuy(res);
 }
 
-function hireManager(id) {
-  wake();
-  if (!hire(id)) return;
-  View.event({ id: id }, performance.now());
-  sfx('done');
-  buzz();
-  banner('<b>' + BZ[id].name + ' manager hired</b><small>It runs by itself now, also while you are away</small>', 0);
-  nudge();
-}
-
-function collectBiz(id, at) {
-  wake();
-  var v = collect(id);
-  if (!v) return;
-  popAt('+' + money(v), at.x, at.y - 10, 'big');
-  flyCoins(at.x, at.y, Math.min(8, 3 + Math.floor(Math.log10(Math.max(10, v)))));
-  sfx('coin');
-  buzz();
-  nudge();
-}
-
 function pressBest() {
   wake();
   var o = best();
   if (!o || o.cost > S.cash) return;
   var res = doOption(o);
-  if (!res) return;
-  if (res.mgr) {
-    View.event({ id: res.id }, performance.now());
-    sfx('done');
-    buzz();
-    banner('<b>' + BZ[res.id].name + ' manager hired</b><small>It runs by itself now, also while you are away</small>', 0);
-    nudge();
-  } else afterBuy(res);
+  if (res) afterBuy(res);
 }
 
 function claimGoalAt(i, el) {
@@ -418,12 +392,10 @@ function claimGoalAt(i, el) {
   updateGoals();
 }
 
-function onPayout(id, v) {
-  var t = performance.now();
-  if (t - (lastPay[id] || 0) < 900) return;
-  lastPay[id] = t;
-  var p = View.screenOf(id);
-  if (p && p.x > 0 && p.x < innerWidth && p.y > 40 && p.y < innerHeight - 100) popAt('+' + money(v), p.x, p.y, 'small');
+// each shopper that pays shows its money over the till, when the till is on screen
+function onSale(ev, c, v, t) {
+  var at = View.shopper(ev, c, t);
+  if (ev === 'paid' && at) popAt('+' + money(v), at.x, at.y, 'small');
 }
 
 function updateHud() {
@@ -444,9 +416,8 @@ function updateBest() {
 function bestText(o) {
   var name = (BZ[o.id] || PL[o.id]).name;
   var l = lv(o.id);
-  if (o.k === 'mgr') return ['Hire ' + name + ' manager', 'Collects and restarts by itself'];
-  if (o.k === 'place') return [S.pl[o.id] || PL[o.id].open ? name + ' level ' + (S.pl[o.id] + 1) : 'Build the ' + name, 'All income +' + Math.round(PL[o.id].boost * 100) + '%'];
-  if (!l) return ['Open ' + name, 'A new department for the store'];
+  if (o.k === 'place') return [S.pl[o.id] || PL[o.id].open ? name + ' level ' + (S.pl[o.id] + 1) : 'Build the ' + name, PL[o.id].next[S.pl[o.id]]];
+  if (!l) return ['Open ' + name, 'A new department: every shopper buys here'];
   if (o.n > 1) return [name + ': ' + o.n + ' levels', 'Reaches the level ' + o.ms + ' milestone'];
   return ['Level up ' + name, 'Lv ' + l + ' to ' + (l + 1) + ',  +' + money(o.gain) + '/s'];
 }
@@ -505,12 +476,10 @@ function updateOpen() {
 }
 
 function showAway(a) {
-  if (a.gain <= 0 && !a.ready) return false;
+  if (a.gain <= 0) return false;
   var m = Math.round(a.secs / 60);
   var t = m >= 60 ? Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + (m % 60) + ' min' : '') : m + ' min';
-  var txt = 'You were away for ' + t + '.';
-  if (a.gain > 0) txt += ' Your managers earned <b>' + money(a.gain) + '</b>.';
-  if (a.ready) txt += ' ' + a.ready + (a.ready === 1 ? ' department has' : ' departments have') + ' cash waiting.';
+  var txt = 'You were away for ' + t + '. The store served ' + a.n.toLocaleString('en-US') + ' shoppers and took <b>' + money(a.gain) + '</b>.';
   $('away-txt').innerHTML = txt;
   $('away-ok').textContent = a.gain > 0 ? 'Collect ' + money(a.gain) : 'OK';
   $('away').hidden = false;
@@ -562,7 +531,7 @@ function openSell() {
     'Selling now gives <b>' + n + ' Store stars</b>. Each star adds ' + Math.round(STAR_BONUS * 100) + '% to all income, forever. Your income goes from x' + now.toFixed(2) + ' to x' + then.toFixed(2) + '.' +
     (n < 10 ? ' Waiting for about 10 stars makes the sale worth more.' : '') :
     'You need to earn about ' + money(STAR_DIV) + ' in this run to get the first star. So far: ' + money(S.run) + '.';
-  $('sell-keep').textContent = 'You keep: stars, gems, goals and boosts. Everything else starts again: cash, departments, managers, and the Parking, Checkouts, Taxi Stand and Garden Center.';
+  $('sell-keep').textContent = 'You keep: stars, gems, goals and boosts. Everything else starts again: cash, departments, and the Parking, Checkouts, Taxi Stand and Garden Center.';
   $('sell-ok').textContent = n >= 1 ? 'Sell for ' + n + ' stars' : 'Not yet';
   $('sell-ok').disabled = n < 1;
   $('sell').hidden = false;
@@ -777,8 +746,7 @@ function paintSpeed() {
 
 function onTap(h) {
   wake();
-  if (h.kind === 'coin') collectBiz(h.id, { x: h.x, y: h.y });
-  else if (h.kind === 'biz') showCard(h.id);
+  if (h.kind === 'biz') showCard(h.id);
   else closeCard();
 }
 
@@ -806,7 +774,7 @@ function loop(t) {
 function start() {
   try {
     snd = localStorage.getItem(SND_KEY) !== '0';
-    free = localStorage.getItem(FREE_KEY) !== '0';
+    free = localStorage.getItem(FREE_KEY) === '1';
     var m = localStorage.getItem(MODE_KEY);
     if (m !== null && [0, 1, 10, 100].indexOf(+m) >= 0) mode = +m;
   } catch (e) {}
@@ -819,7 +787,7 @@ function start() {
   wire();
   setFree(free);
   paintFree();
-  onPay = onPayout;
+  onShopper = onSale;
   var wait = setInterval(function () {
     if (!View.ready()) return;
     clearInterval(wait);

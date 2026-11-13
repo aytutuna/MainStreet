@@ -669,21 +669,6 @@ small {
   font-weight: 700;
 }
 
-.btns .mg {
-  background: var(--blue);
-  border-color: var(--blue2);
-  box-shadow: 0 2px 0 var(--blue2);
-  min-height: 30px;
-}
-
-.btns .mg img {
-  width: 14px;
-  height: 14px;
-  image-rendering: pixelated;
-  vertical-align: -2px;
-  margin-right: 3px;
-}
-
 .btns button:disabled {
   opacity: 0.5;
 }
@@ -715,19 +700,6 @@ small {
 
 .biz.nobar .pr {
   display: none;
-}
-
-.biz.nomg .mg {
-  display: none;
-}
-
-.biz.auto .mg {
-  background: var(--paper2);
-  color: var(--ink);
-  border-color: var(--ink);
-  box-shadow: none;
-  text-shadow: none;
-  opacity: 1;
 }
 
 #banner {
@@ -1012,18 +984,25 @@ small {
   background: #ffd84a;
 }
 
-.coin {
+.tag.alert {
+  background: #d8452f;
+  color: #fff;
+  box-shadow: 0 0 0 1.5px #fff;
+}
+
+.say {
   position: absolute;
   left: 0;
   top: 0;
-  padding: 4px 10px;
+  padding: 3px 8px;
   border: 2px solid #2a1c10;
-  border-radius: 14px;
-  background: #ffd84a;
+  border-radius: 10px;
+  background: #fff;
   color: #2a1c10;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: bold;
-  pointer-events: auto;
+  white-space: nowrap;
+  pointer-events: none;
 }
 
 #arrow {

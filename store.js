@@ -1593,18 +1593,17 @@ function floorLight(s) {
 // on the west side, the cashier stands east of it. Self checkouts face east in two columns, customers east of them.
 // After paying everyone walks out along the exit lane (z 1.1) to the doors; what stands against the front wall stays
 // south of it. Each level of the checkouts adds to what is there; level 0 is the store as it opens
-var LANES = [{ x: -2.3, lv: 0 }, { x: -4.2, lv: 1 }, { x: -6.1, lv: 3 }];
-var KIOSKS = [{ x: 3.0, z: -1.7, lv: 2 }, { x: 3.0, z: -0.6, lv: 2 }, { x: 3.0, z: 0.5, lv: 2 }, { x: 5.3, z: -1.7, lv: 4 }, { x: 5.3, z: -0.6, lv: 4 },
-  { x: 5.3, z: 0.5, lv: 4 }];
+var LANES = [-2.3, -4.2, -6.1];
+var KIOSKS = [[3.0, -1.7], [3.0, -0.6], [3.0, 0.5], [5.3, -1.7], [5.3, -0.6], [5.3, 0.5]];
 var CROSS = -2.3;
 var EXIT = 1.1;
 var BASKETS = [-1.15, 1.8];
 var FRONT_ITEMS = [
-  [1, 'shop/shopping-cart', 'carts'],
-  [3, 'shop/bottle-return', -6.6, 1.95, Math.PI], [3, 'shop/bottle-return', -6.1, 1.95, Math.PI],
-  [4, 'arcade/vending-machine', 3.4, 1.95, Math.PI], [4, 'arcade/vending-machine', 3.95, 1.95, Math.PI], [4, 'arcade/vending-machine', 4.5, 1.95, Math.PI],
-  [4, 'shop/gacha-machine', 2.6, 1.95, Math.PI], [4, 'furn/bench', -4.9, 1.95, Math.PI], [4, 'furn/pottedPlant', -7.0, 1.95, 0],
-  [4, 'furn/pottedPlant', 7.0, 0.3, 0]
+  [2, 'shop/shopping-cart', 'carts'],
+  [4, 'shop/bottle-return', -6.6, 1.95, Math.PI], [4, 'shop/bottle-return', -6.1, 1.95, Math.PI],
+  [8, 'arcade/vending-machine', 3.4, 1.95, Math.PI], [8, 'arcade/vending-machine', 3.95, 1.95, Math.PI], [8, 'arcade/vending-machine', 4.5, 1.95, Math.PI],
+  [8, 'shop/gacha-machine', 2.6, 1.95, Math.PI], [10, 'furn/bench', -4.9, 1.95, Math.PI], [10, 'furn/pottedPlant', -7.0, 1.95, 0],
+  [10, 'furn/pottedPlant', 7.0, 0.3, 0]
 ];
 
 // a lane's number on a small lit box, standing on its impulse rack
@@ -1654,6 +1653,48 @@ function doorSign() {
 }
 var doorMat;
 
+// a staffed lane: the counter, its cashier, the impulse rack the line waits beside with the lane number on it, and
+// the baskets left at the end. Its line runs north up the west side of the counter, the one paying at the front
+function lane(hall, li, lv) {
+  var x = LANES[li];
+  var m = mesh('shop/cash-register', x, 0, 0);
+  var cashier = crew('shop/character-employee', 'idle');
+  cashier.obj.position.set(0.68, 0, 0.15);
+  cashier.obj.rotation.y = -Math.PI / 2;
+  m.add(cashier.obj);
+  var rack = new Batch();
+  var goods = [];
+  stock(KIND.end, ['food/lollypop', 'food/candy-bar-wrapper'], goods);
+  var rot = -Math.PI / 2;
+  rack.add('shop/shelf-end', -0.2, -0.8, rot);
+  goods.forEach(function (g) {
+    var p = rotY(g[1], g[2], rot);
+    rack.raw(g[0], -0.2 + p[0], -0.8 + p[1], rot + g[3], g[4] - lib.model(g[0]).box.y0 * g[5], g[5]);
+  });
+  for (var bk = 0; bk < 3; bk++) rack.add('shop/shopping-basket', 0.05, 0.72, 0.2, bk * 0.06);
+  m.add(rack.group());
+  var sign = laneSign(li + 1);
+  sign.position.set(0, 1.17, -0.8);
+  m.add(sign);
+  m.visible = false;
+  root.add(m);
+  hall.items.push({ g: m, lv: lv });
+  hall.staff.push(cashier);
+  var qx = x - 0.72;
+  return { k: 'lane', till: [x + 0.2, 0.62, 0.2], cashier: cashier,
+    spot: function (n) { return n ? [qx, -0.85 - 0.5 * (n - 1), 0] : [qx, 0.15, Math.PI / 2]; } };
+}
+
+// a self checkout faces east, its shopper standing east of it
+function kiosk(hall, ki, lv) {
+  var k = KIOSKS[ki];
+  var m = mesh('shop/cash-register-self', k[0], k[1], Math.PI / 2);
+  m.visible = false;
+  root.add(m);
+  hall.items.push({ g: m, lv: lv });
+  return { k: 'self', x: k[0] + 0.55, z: k[1], till: [k[0], 0.7, k[1]] };
+}
+
 function buildFront() {
   var b = new Batch();
   floors(b, 'shop/floor', -EDGE, EDGE, BACK, FRONT);
@@ -1680,7 +1721,7 @@ function buildFront() {
     outer.push({ g: wg, n: [sd[0], 0] });
   });
   doorSign();
-  var hall = { items: [], shown: -1, add: true, lanes: [], kiosks: [], staff: [] };
+  var hall = { items: [], shown: -1, add: true, tills: [], staff: [] };
   // the greeter stands by the baskets from the first day
   var greeter = crew('shop/character-employee', 'idle');
   greeter.obj.position.set(BASKETS[0] - 0.6, 0, BASKETS[1] - 0.05);
@@ -1688,47 +1729,18 @@ function buildFront() {
   root.add(greeter.obj);
   hall.items.push({ g: greeter.obj, lv: 0 });
   hall.staff.push(greeter);
-  LANES.forEach(function (ln, li) {
-    var m = mesh('shop/cash-register', ln.x, 0, 0);
-    var cashier = crew('shop/character-employee', 'idle');
-    cashier.obj.position.set(0.68, 0, 0.15);
-    cashier.obj.rotation.y = -Math.PI / 2;
-    m.add(cashier.obj);
-    // the impulse rack the queue waits beside, the lane number on it, and the baskets left at the end
-    var rack = new Batch();
-    var goods = [];
-    stock(KIND.end, ['food/lollypop', 'food/candy-bar-wrapper'], goods);
-    var rot = -Math.PI / 2;
-    rack.add('shop/shelf-end', -0.2, -0.8, rot);
-    goods.forEach(function (g) {
-      var p = rotY(g[1], g[2], rot);
-      rack.raw(g[0], -0.2 + p[0], -0.8 + p[1], rot + g[3], g[4] - lib.model(g[0]).box.y0 * g[5], g[5]);
-    });
-    for (var bk = 0; bk < 3; bk++) rack.add('shop/shopping-basket', 0.05, 0.72, 0.2, bk * 0.06);
-    m.add(rack.group());
-    var sign = laneSign(li + 1);
-    sign.position.set(0, 1.17, -0.8);
-    m.add(sign);
-    m.visible = false;
-    root.add(m);
-    hall.items.push({ g: m, lv: ln.lv });
-    hall.lanes.push({ x: ln.x - 0.72, lv: ln.lv, q: [], till: [ln.x + 0.2, 0.62, 0.2], cashier: cashier, g: m });
-    hall.staff.push(cashier);
-  });
-  KIOSKS.forEach(function (k) {
-    var m = mesh('shop/cash-register-self', k.x, k.z, Math.PI / 2);
-    m.visible = false;
-    root.add(m);
-    hall.items.push({ g: m, lv: k.lv });
-    hall.kiosks.push({ x: k.x + 0.55, z: k.z, lv: k.lv, busy: null, till: [k.x, 0.7, k.z] });
-  });
+  var li = 0;
+  var ki = 0;
+  TILLS.forEach(function (t) { hall.tills.push(t.k === 'lane' ? lane(hall, li++, t.lv) : kiosk(hall, ki++, t.lv)); });
+  hall.tills.push(gardenTill);
+  hall.staff.push(gardenTill.cashier);
   // the attendant who watches the self checkouts, and the service desk in the south-east corner
   var att = crew('shop/character-employee', 'idle');
-  att.obj.position.set(6.85, 0, -1.1);
+  att.obj.position.set(4.6, 0, -1.15);
   att.obj.rotation.y = -Math.PI / 2;
   att.obj.visible = false;
   root.add(att.obj);
-  hall.items.push({ g: att.obj, lv: 2 });
+  hall.items.push({ g: att.obj, lv: 3 });
   hall.staff.push(att);
   var desk = mesh('arcade/cash-register', 6.2, 1.45, Math.PI);
   var clerk = crew('shop/character-employee', 'idle');
@@ -1736,7 +1748,7 @@ function buildFront() {
   desk.add(clerk.obj);
   desk.visible = false;
   root.add(desk);
-  hall.items.push({ g: desk, lv: 3 });
+  hall.items.push({ g: desk, lv: 7 });
   hall.staff.push(clerk);
   FRONT_ITEMS.forEach(function (it) {
     var g;
@@ -1826,6 +1838,9 @@ function finishPlace(id, batches) {
 // corner is a lawn with a bench or two; each level then adds tables of flowers, potted plants, young trees and lights.
 // The fence comes in one unit pieces with a post at each end, so every run, and the gate opening, ends on a post
 var GARDEN = [-12.75, -7.8, -2.1, 2.86];
+var GATE_X = -10.475;
+var TILL_G = [-9.2, 3.4];
+var gardenTill;
 var FLOWERS = ['shop/display-flowers', 'shop/display-flowers@7,1>3,1;11,1>15,2', 'shop/display-flowers@7,1>11,1;15,2>2,1',
   'shop/display-flowers@7,1>9,1;11,1>3,1'];
 
@@ -1861,6 +1876,18 @@ function buildGarden() {
   lamp(lv[4], 'roads/light-square', -12.45, -1.8, Math.PI);
   var pl = finishPlace('garden', lv);
   pl.add = true;
+  // the garden's own till outside the gate, its cashier on the east side and the one paying on the west; the next
+  // in line waits behind on the paving
+  var desk = mesh('arcade/cash-register', TILL_G[0], TILL_G[1], -Math.PI / 2);
+  var cashier = crew('shop/character-employee', 'idle');
+  cashier.obj.position.set(0, 0, -0.5);
+  desk.add(cashier.obj);
+  desk.visible = false;
+  root.add(desk);
+  pl.items.push({ g: desk, lv: 1 });
+  var qx = TILL_G[0] - 0.55;
+  gardenTill = { k: 'garden', till: [TILL_G[0], 0.8, TILL_G[1]], cashier: cashier,
+    spot: function (n) { return n ? [qx, TILL_G[1] + 0.5 * n, Math.PI] : [qx, TILL_G[1], Math.PI / 2]; } };
   pl.pick = addPick('garden', (x0 + x1) / 2, (z0 + z1) / 2, x1 - x0, z1 - z0);
 }
 
@@ -2195,7 +2222,7 @@ function sync(animate, now) {
       shadowDirty = true;
     }
     s.vacant.visible = !own;
-    var m = own && managed(id);
+    var m = lv(id) >= MS[0][0];
     if (m !== s.clerk.f.obj.visible) {
       s.clerk.f.obj.visible = m;
       shadowDirty = true;
@@ -2296,12 +2323,6 @@ function freeBay() {
   return free[0];
 }
 
-function inMall() {
-  var n = 0;
-  people.forEach(function (p) { if ((p.path || p.lane) && p.shopper) n++; });
-  return n;
-}
-
 function trafficStep(dt) {
   trafficT -= dt;
   carT -= dt;
@@ -2312,21 +2333,23 @@ function trafficStep(dt) {
     addCar(CARS[Math.floor(Math.random() * CARS.length)], road(d), 'pass', { lane: d });
     trafficT = 2 + Math.random() * 3;
   }
-  var room = inMall() < wantPeople();
-  if (carT <= 0 && S.pl.lot > 0 && room && !vanInDrive() && spare() > 2) {
+  if (carT <= 0 && carQ.length && !vanInDrive()) {
     var bay = freeBay();
     if (bay) {
       var p = [{ x: 62, z: LANE_W }, { x: DRIVE + 0.6, z: LANE_W, lane: -1 }, { x: DRIVE, z: 10.2 }, { x: DRIVE, z: AISLE + 0.4 }, { x: DRIVE - 0.6, z: AISLE },
         { x: bay.x + 0.6, z: AISLE }, { x: bay.x, z: AISLE + bay.nose * 0.6 }, { x: bay.x, z: bay.z, park: true }];
-      bay.car = addCar(CARS[Math.floor(Math.random() * CARS.length)], p, 'shop', { bay: bay, lane: -1 });
+      bay.car = addCar(CARS[Math.floor(Math.random() * CARS.length)], p, 'shop', { bay: bay, lane: -1, cust: carQ.shift() });
     }
-    carT = 9 / S.pl.lot + Math.random() * 3;
+    carT = 1.2 + Math.random();
   }
-  if (taxiT <= 0 && S.pl.taxi > 0 && cars.filter(function (c) { return c.kind === 'taxi'; }).length < 2) {
-    addCar('car/taxi', [{ x: 62, z: LANE_W }, { x: 5.7, z: LANE_W, stop: room ? 2.2 : 1.2, drop: room ? (Math.random() < 0.4 ? 2 : 1) : 0, lane: -1 }, { x: -62, z: LANE_W, lane: -1 }],
+  // with no bay free the driver parks down the street and walks over
+  if (carQ.length && carQ[0].age > 15) onFoot(carQ.shift());
+  if (taxiT <= 0 && taxiQ.length && cars.filter(function (c) { return c.kind === 'taxi'; }).length < 3) {
+    addCar('car/taxi', [{ x: 62, z: LANE_W }, { x: 5.7, z: LANE_W, stop: 2.2, drop: taxiQ.splice(0, 2), lane: -1 }, { x: -62, z: LANE_W, lane: -1 }],
       'taxi', { lane: -1 });
-    taxiT = 22 / S.pl.taxi + Math.random() * 6;
+    taxiT = 3;
   }
+  if (taxiQ.length && taxiQ[0].age > 25) onFoot(taxiQ.shift());
   if (truckQ > 0 && !cars.some(function (c) { return c.kind === 'truck'; })) {
     truckQ--;
     addCar('car/delivery', [{ x: 62, z: LANE_W }, { x: DRIVE + 0.6, z: LANE_W, lane: -1 }, { x: DRIVE, z: 10.2 }, { x: DRIVE, z: 0.5, stop: 5, unload: true },
@@ -2409,13 +2432,13 @@ function carStep(c, dt) {
     if (q.park) {
       c.parked = true;
       c.speed = 0;
-      spawnFrom('car', c);
+      spawnFrom('car', c, 0, c.cust);
       return false;
     }
     if (q.stop) {
       c.wait = q.stop;
       c.speed = 0;
-      if (q.drop) for (var n = 0; n < q.drop; n++) spawnFrom('taxi', c, n);
+      if (q.drop) q.drop.forEach(function (r, n) { spawnFrom('taxi', c, n, r); });
       if (q.unload) shadowDirty = true;
     }
     return c.i >= c.path.length;
@@ -2436,16 +2459,26 @@ function leaveBay(c) {
   setTimeout(function () { if (b.car === c) b.car = null; }, 2500);
 }
 
-// Shoppers come by car, by taxi or on foot, take a basket inside the doors, look round one or two departments, queue
-// at the checkouts and leave with their bags the way they came. Each open department draws a few, more as it levels
-function wantPeople() {
-  var n = 0;
-  order.forEach(function (id) { if (has(id)) n += Math.min(4, 1 + Math.floor(lv(id) / 15)); });
-  return Math.min(30, n + S.pl.hall * 2);
+// Every shopper the sim lets in gets a figure when one is free. It comes by car, by taxi or on foot, takes a basket
+// inside the doors, looks round one or two departments and goes to the line the sim gives it at the front aisle,
+// and leaves with its bags the way it came. Cars and taxis wait here for a bay or a turn
+var carQ = [];
+var taxiQ = [];
+var passT = 0;
+var seed = 0;
+
+function arrive(c) {
+  if (!ready || speed !== 1) return;
+  c.v = true;
+  if (c.garden) gardenRoute(c);
+  else if (c.by === 'car') carQ.push(c);
+  else if (c.by === 'taxi') taxiQ.push(c);
+  else onFoot(c);
 }
 
-var walkT = 1;
-var passT = 0;
+function onFoot(c) {
+  spawnFrom('walk', null, 0, c);
+}
 
 // a coin that jumps off the till when a shopper pays
 var pops = [];
@@ -2506,12 +2539,12 @@ function person(i) {
 function spare() {
   var n = 0;
   people.forEach(function (p) { if (p.path || p.lane) n++; });
-  return 44 - n;
+  return 56 - n;
 }
 
 function idlePerson() {
   for (var i = 0; i < people.length; i++) if (!people[i].path && !people[i].lane) return people[i];
-  if (people.length >= 44) return null;
+  if (people.length >= 56) return null;
   var p = person(people.length * 7 + 3);
   people.push(p);
   return p;
@@ -2582,10 +2615,10 @@ function start(p, pts, extra) {
   p.path = pts;
   p.i = 1;
   p.wait = 0;
-  p.shopper = true;
   p.car = null;
   p.lane = null;
-  p.kiosk = null;
+  p.hold = false;
+  p.cust = null;
   p.after = null;
   for (var k in extra) p[k] = extra[k];
   p.f.obj.position.set(pts[0].x, 0, pts[0].z);
@@ -2604,43 +2637,45 @@ function leave(p, x, z, exitZ) {
   act(p.f, 'walk', 0.2);
 }
 
-// at the front aisle: a free self checkout if there is one and the lanes are busy, else the shortest open lane
-function checkout(p) {
-  var h = places.hall;
-  var lanes = h.lanes.filter(function (l) { return l.lv <= S.pl.hall; });
-  var lane = lanes[0];
-  lanes.forEach(function (l) { if (l.q.length < lane.q.length) lane = l; });
-  var free = h.kiosks.filter(function (k) { return k.lv <= S.pl.hall && !k.busy; });
+// at the front aisle the sim sends the shopper to a line; while every line is full it steps out of the aisle and waits
+function front(p) {
+  var c = p.cust;
   var o = p.f.obj.position;
-  if (!free.length && lane.q.length >= 4) {
-    p.path = [{ x: o.x, z: o.z }, { x: o.x, z: CROSS - 0.6, wait: 2.5, face: Math.PI }, { x: o.x, z: CROSS, pick: true }];
-    p.i = 1;
-    return;
-  }
-  if (free.length && (lane.q.length > 0 || Math.random() < 0.35)) {
-    var k = free[Math.floor(Math.random() * free.length)];
-    k.busy = p;
-    p.kiosk = k;
-    p.path = [{ x: o.x, z: o.z }, { x: k.x, z: CROSS }, { x: k.x, z: k.z, wait: 2.4, act: 'pick-up', face: -Math.PI / 2, pay: k }];
-    p.i = 1;
-    return;
-  }
-  p.lane = lane;
-  lane.q.push(p);
-  p.path = null;
-  p.paying = 0;
-  p.wx = o.x;
+  if (c.lost) return giveUp(p);
+  if (c.done) return outWith(p);
+  p.path = [{ x: o.x, z: o.z }, c.garden ? { x: o.x, z: o.z, stop: true, face: Math.PI / 2 } : { x: o.x, z: CROSS - 0.45, stop: true, face: 0 }];
+  p.i = 1;
+  if (c.at) toTill(p);
+  else atFront(c);
 }
 
-// queues: the one at the till pays, the rest stand behind and step up when it moves
-function queueStep(p, dt) {
-  var ln = p.lane;
+function toTill(p) {
+  var c = p.cust;
+  var t = places.hall.tills[c.at.i];
   var o = p.f.obj.position;
-  var slot = ln.q.indexOf(p);
-  var tz = slot === 0 ? 0.15 : -0.85 - 0.5 * (slot - 1);
-  var tx = ln.x;
-  // first along the front aisle to the lane, then down it
-  if (Math.abs(o.x - tx) > 0.01 && o.z < CROSS + 0.05) tz = CROSS;
+  p.hold = false;
+  p.path = null;
+  if (t.k !== 'self') {
+    p.lane = t;
+    if (p.f.cur !== p.f.acts.walk) act(p.f, 'walk', 0.2);
+    return;
+  }
+  p.path = [{ x: o.x, z: o.z }, { x: t.x, z: CROSS }, { x: t.x, z: t.z, stop: true, here: true, face: -Math.PI / 2, act: 'pick-up' }];
+  p.i = 1;
+  act(p.f, 'walk', 0.2);
+}
+
+// a line: the one at the front pays, the rest stand behind and step up when it moves. A lane is reached along the
+// front aisle and then down its west side
+function queueStep(p, dt) {
+  var t = p.lane;
+  var c = p.cust;
+  var o = p.f.obj.position;
+  var slot = Math.max(0, c.at ? c.at.q.indexOf(c) : 0);
+  var at = t.spot(slot);
+  var tx = at[0];
+  var tz = at[1];
+  if (t.k === 'lane' && Math.abs(o.x - tx) > 0.01 && o.z < CROSS + 0.05) tz = CROSS;
   var dx = tx - o.x;
   var dz = tz - o.z;
   var d = Math.hypot(dx, dz);
@@ -2653,34 +2688,115 @@ function queueStep(p, dt) {
     if (p.f.cur !== p.f.acts.walk) act(p.f, 'walk', 0.2);
     return;
   }
-  if (slot !== 0) {
-    if (p.f.cur !== p.f.acts.idle) act(p.f, 'idle', 0.2);
-    p.f.obj.rotation.y = 0;
-    return;
+  if (p.f.cur !== p.f.acts.idle) act(p.f, 'idle', 0.2);
+  p.f.obj.rotation.y = at[2];
+  if (slot === 0 && !c.here) {
+    c.here = true;
+    act(t.cashier, 'pick-up', 0.2);
   }
-  if (!p.paying) {
-    p.paying = 1.4 + Math.random() * 0.8;
-    p.f.obj.rotation.y = Math.PI / 2;
-    act(p.f, 'idle', 0.2);
-    act(ln.cashier, 'pick-up', 0.2);
-    return;
-  }
-  p.paying -= dt;
-  if (p.paying > 0) return;
-  ln.q.shift();
-  act(ln.cashier, 'idle', 0.3);
-  paid(ln.till, performance.now());
-  p.basket.visible = false;
-  p.bag.visible = true;
-  p.lane = null;
-  leave(p, tx, 0.15, EXIT);
 }
 
-function spawnFrom(kind, c, n) {
+// paid: a bag instead of the basket (a garden shopper keeps its plant), and out the way it came
+function done(p, t) {
+  var o = p.f.obj.position;
+  p.lane = null;
+  p.hold = false;
+  p.i = 1;
+  if (t.k === 'garden') {
+    act(t.cashier, 'idle', 0.3);
+    p.path = [{ x: o.x, z: o.z }].concat(p.after);
+    act(p.f, 'walk', 0.2);
+    return;
+  }
+  p.basket.visible = false;
+  p.bag.visible = true;
+  if (t.k === 'lane') {
+    act(t.cashier, 'idle', 0.3);
+    leave(p, o.x, o.z, EXIT);
+  } else {
+    p.path = [{ x: o.x, z: o.z }, { x: t.x, z: EXIT }, { x: 0.55, z: EXIT }, { x: 0.55, z: FRONT + 0.4 }].concat(p.after);
+    act(p.f, 'walk', 0.2);
+  }
+}
+
+// paid while nobody watched it (at a test speed): straight out with the bag
+function outWith(p) {
+  var o = p.f.obj.position;
+  p.basket.visible = false;
+  p.bag.visible = !p.cust.garden;
+  leave(p, o.x, o.z, EXIT);
+  if (p.cust.garden) p.path = [{ x: o.x, z: o.z }].concat(p.after);
+}
+
+// the lines stayed full: the basket goes back on the stack inside the doors and the shopper leaves without buying
+function giveUp(p) {
+  var o = p.f.obj.position;
+  p.hold = false;
+  p.lane = null;
+  p.i = 1;
+  say(p, 'Lines too long!');
+  if (p.cust.garden) {
+    p.plant.visible = false;
+    p.path = [{ x: o.x, z: o.z }].concat(p.after);
+  } else {
+    p.path = [{ x: o.x, z: o.z }, { x: OUT_X, z: o.z }, { x: OUT_X, z: EXIT }, { x: BASKETS[0] + 0.45, z: BASKETS[1] + 0.1, wait: 0.7, act: 'pick-up', face: -Math.PI / 2, drop: true },
+      { x: 0.55, z: BASKETS[1] + 0.1 }, { x: 0.55, z: FRONT + 0.4 }].concat(p.after);
+  }
+  act(p.f, 'walk', 0.2);
+}
+
+// what the sim tells the view about its shoppers; for a payment it returns where on screen the till is, if it shows
+function shopperEvent(ev, c, t) {
+  if (ev === 'in') return arrive(c);
+  var p = c.p;
+  if (!p || p.cust !== c) return null;
+  if (ev === 'till') toTill(p);
+  else if (ev === 'lost') giveUp(p);
+  else if (ev === 'paid') {
+    var tt = places.hall.tills[t.i];
+    done(p, tt);
+    paid(tt.till, performance.now());
+    toScreen(tt.till[0], tt.till[1] + 0.45, tt.till[2], sp);
+    if (focus.dist < 45 && sp.z < 1 && sp.x > 20 && sp.x < cw - 20 && sp.y > IT + 20 && sp.y < ch - IB) return { x: sp.x, y: sp.y };
+  }
+  return null;
+}
+
+// a few words over a shopper's head
+var says = [];
+
+function say(p, text) {
+  if (says.length > 2) return;
+  var el = document.createElement('div');
+  el.className = 'say';
+  el.textContent = text;
+  tagsEl.appendChild(el);
+  says.push({ p: p, el: el, t0: performance.now() });
+}
+
+function saysStep(now) {
+  for (var i = says.length - 1; i >= 0; i--) {
+    var w = says[i];
+    var u = (now - w.t0) / 2200;
+    var o = w.p.f.obj.position;
+    toScreen(o.x, 1.7, o.z, sp);
+    if (u >= 1 || !w.p.f.obj.visible || sp.z > 1) {
+      w.el.remove();
+      says.splice(i, 1);
+      continue;
+    }
+    w.el.style.transform = 'translate(' + Math.round(sp.x) + 'px,' + Math.round(sp.y - u * 12) + 'px) translate(-50%,-100%)';
+    w.el.style.opacity = u > 0.8 ? ((1 - u) * 5).toFixed(2) : '1';
+  }
+}
+
+function spawnFrom(kind, c, n, cu) {
+  // with every figure in use the shopper does not come in: nobody unseen stands in a line
   var p = pickShop() && idlePerson();
   if (!p) {
     if (kind === 'car') leaveBay(c);
-    return;
+    gone(cu);
+    return false;
   }
   var pts = [];
   var back = [];
@@ -2693,14 +2809,11 @@ function spawnFrom(kind, c, n) {
     var tx = 5.4 + n * 0.5;
     pts.push({ x: tx, z: 10.9 }, { x: tx, z: WALK_N }, { x: 0.9, z: WALK_N }, { x: 0.7, z: LOT[0] - 0.2 });
     back = [{ x: 0.7, z: LOT[0] - 0.2 }, { x: 0.9, z: WALK_N }, { x: 30 + Math.random() * 30, z: WALK_N }];
-  } else if (S.pl.garden > 0 && Math.random() < 0.3) {
-    gardenRoute(p);
-    return;
   } else {
     var sd = Math.random() < 0.5 ? -1 : 1;
     var south = Math.random() < 0.4;
     var wz = south ? WALK_S : WALK_N;
-    pts.push({ x: sd * 60, z: wz }, { x: sd * 0.6, z: wz });
+    pts.push({ x: sd * (15 + Math.random() * 4), z: wz }, { x: sd * 0.6, z: wz });
     if (south) pts.push({ x: sd * 0.6, z: WALK_N });
     pts.push({ x: -0.6, z: LOT[0] - 0.2 });
     back = [{ x: 0.6, z: LOT[0] - 0.2 }, { x: sd * 0.6, z: WALK_N }];
@@ -2708,37 +2821,50 @@ function spawnFrom(kind, c, n) {
     back.push({ x: sd * 60, z: wz });
   }
   storeRoute(pts);
-  start(p, pts, { car: kind === 'car' ? c : null });
+  start(p, pts, { car: kind === 'car' ? c : null, cust: cu });
+  cu.p = p;
   p.after = back;
+  // the store opens with a few shoppers already inside: one past the baskets, one in a department, one on its way to pay
+  if (seed > 0) {
+    seed--;
+    var k = 0;
+    while (!pts[k].basket) k++;
+    k = [pts.length - 2, Math.round((k + pts.length - 2) / 2), k][seed];
+    p.i = k + 1;
+    p.f.obj.position.set(pts[k].x, 0, pts[k].z);
+    p.basket.visible = true;
+  }
+  return true;
 }
 
-// Someone on foot who only wants a plant: along the sidewalk, up the grass west of the lot (clear of the cars'
-// exit), in through the garden gate to a flower display, and away again carrying a pot
-function gardenRoute(p) {
+// A garden visitor only wants a plant: along the sidewalk, up the grass west of the lot (clear of the cars' exit),
+// in through the gate to a flower display, and out again to pay at the garden's till by the gate
+function gardenRoute(c) {
+  var p = idlePerson();
+  if (!p) {
+    gone(c);
+    return;
+  }
   var sd = Math.random() < 0.5 ? -1 : 1;
-  var gx = (GARDEN[0] + GARDEN[1]) / 2 - 0.2;
+  var gx = GATE_X;
   var rows = [2.0, 0.6, -0.8].slice(0, Math.min(3, S.pl.garden));
   var z = rows[Math.floor(Math.random() * rows.length)];
   var west = Math.random() < 0.5;
   var pts = [{ x: sd * 60, z: WALK_N }, { x: -11.6, z: WALK_N }, { x: -11.6, z: LOT[0] + 0.3 }, { x: gx, z: LOT[0] - 0.1 }, { x: gx, z: z + 0.7 },
-    { x: gx, z: z, wait: 1.8, act: 'pick-up', face: west ? -Math.PI / 2 : Math.PI / 2, plant: true }, { x: gx, z: LOT[0] - 0.1 },
-    { x: -11.6, z: LOT[0] + 0.3 }, { x: -11.6, z: WALK_N }, { x: sd * 60, z: WALK_N }];
-  start(p, pts, { shopper: false });
+    { x: gx, z: z, wait: 1.8, act: 'pick-up', face: west ? -Math.PI / 2 : Math.PI / 2, plant: true }, { x: gx, z: GARDEN[3] + 0.45, pick: true }];
+  start(p, pts, { cust: c });
+  c.p = p;
+  p.after = [{ x: gx, z: LOT[0] - 0.1 }, { x: -11.6, z: LOT[0] + 0.3 }, { x: -11.6, z: WALK_N }, { x: sd * 60, z: WALK_N }];
 }
 
 function crowdStep(dt) {
-  walkT -= dt;
   passT -= dt;
-  if (walkT <= 0) {
-    if (inMall() < wantPeople()) spawnFrom('walk');
-    walkT = 5 + Math.random() * 4;
-  }
   if (passT <= 0) {
     var p = spare() > 8 && idlePerson();
     if (p) {
       var sd = Math.random() < 0.5 ? -1 : 1;
       var wz = Math.random() < 0.5 ? WALK_N : WALK_S;
-      start(p, [{ x: sd * 60, z: wz + (Math.random() - 0.5) * 0.3 }, { x: -sd * 60, z: wz }], { shopper: false });
+      start(p, [{ x: sd * 60, z: wz + (Math.random() - 0.5) * 0.3 }, { x: -sd * 60, z: wz }]);
     }
     passT = 3 + Math.random() * 3;
   }
@@ -2746,6 +2872,10 @@ function crowdStep(dt) {
     if (p.lane) {
       if (p.f.mixer) p.f.mixer.update(dt);
       queueStep(p, dt);
+      return;
+    }
+    if (p.hold) {
+      if (p.f.mixer) p.f.mixer.update(dt);
       return;
     }
     if (!p.path) return;
@@ -2781,24 +2911,24 @@ function crowdStep(dt) {
       act(p.f, q.act || 'idle', 0.2);
     }
     if (q.basket) p.basket.visible = true;
+    if (q.drop) p.basket.visible = false;
     if (q.plant) p.plant.visible = true;
-    if (q.pay) {
-      // the self checkout is free again once this shopper walks off
-      var k = q.pay;
-      paid(k.till, performance.now());
-      p.basket.visible = false;
-      p.bag.visible = true;
-      p.path.length = p.i;
-      p.path.push({ x: k.x, z: EXIT }, { x: 0.55, z: EXIT }, { x: 0.55, z: FRONT + 0.4 });
-      p.path = p.path.concat(p.after);
-      setTimeout(function () { if (k.busy === p) k.busy = null; }, q.wait * 1000 + 600);
-    }
     if (q.pick) {
-      checkout(p);
+      front(p);
+      return;
+    }
+    // standing at a self checkout, or out of the aisle waiting for room in a line
+    if (q.stop) {
+      p.path = null;
+      p.hold = true;
+      o.rotation.y = q.face;
+      act(p.f, q.act || 'idle', 0.2);
+      if (q.here) p.cust.here = true;
       return;
     }
     if (p.i >= p.path.length) {
       p.path = null;
+      p.cust = null;
       o.visible = false;
       if (p.car) leaveBay(p.car);
     }
@@ -2855,10 +2985,14 @@ function resetCrowd() {
   people.forEach(function (p) {
     p.path = null;
     p.lane = null;
+    p.hold = false;
+    p.cust = null;
     p.f.obj.visible = false;
   });
-  places.hall.lanes.forEach(function (l) { l.q = []; });
-  places.hall.kiosks.forEach(function (k) { k.busy = null; });
+  carQ = [];
+  taxiQ = [];
+  says.forEach(function (w) { w.el.remove(); });
+  says = [];
   cars.forEach(function (c) { root.remove(c.o); });
   cars = [];
   bays.forEach(function (b) { b.car = null; });
@@ -2876,18 +3010,8 @@ function makeTags() {
     el.className = 'tag';
     el.innerHTML = '<b></b><i><u></u></i>';
     el.addEventListener('click', function () { onTap({ kind: 'biz', id: id }); });
-    var coin = document.createElement('button');
-    coin.type = 'button';
-    coin.className = 'coin';
-    coin.hidden = true;
-    coin.addEventListener('click', function (e) {
-      var r = coin.getBoundingClientRect();
-      e.stopPropagation();
-      onTap({ kind: 'coin', id: id, x: r.left + r.width / 2, y: r.top + r.height / 2 });
-    });
     tagsEl.appendChild(el);
-    tagsEl.appendChild(coin);
-    var t = { el: el, coin: coin, text: '', wait: -1, x: 0, y: 0, line: el.firstChild, bar: el.querySelector('u'), cls: '' };
+    var t = { el: el, text: '', x: 0, y: 0, line: el.firstChild, bar: el.querySelector('u'), cls: '' };
     (shops[id] || places[id]).tag = t;
   });
   arrowEl = document.createElement('div');
@@ -2899,10 +3023,15 @@ function makeTags() {
 
 function bstate(id) {
   var p = PL[id];
-  if (p) return { name: p.name, lv: S.pl[id], own: S.pl[id] > 0 || !!p.open, price: placeCost(id), avail: has(p.after), frac: 0, wait: 0 };
+  if (p) {
+    var busy = id === 'hall' ? Math.min(1, inRate() / capacity()) : 0;
+    return { name: p.name, lv: S.pl[id], own: S.pl[id] > 0 || !!p.open, price: placeCost(id), avail: has(p.after), frac: busy, alert: id === 'hall' && linesFull() };
+  }
   var e = S.b[id];
-  return { name: BZ[id].name, lv: e ? e.l : 0, own: !!e, price: cost(id, 1), avail: avail(id),
-    frac: e ? (e.w ? 1 : Math.min(1, e.t / cycleAt(id, e.l))) : 0, wait: e ? e.w : 0 };
+  var l = e ? e.l : 0;
+  var m = nextMs(l);
+  var from = m && m.i ? MS[m.i - 1][0] : 0;
+  return { name: BZ[id].name, lv: l, own: !!e, price: cost(id, 1), avail: avail(id), frac: !e ? 0 : m ? (l - from) / (m.lv - from) : 1 };
 }
 
 function toScreen(x, y, z, out) {
@@ -2943,13 +3072,13 @@ function overlay(now) {
       t.el.style.display = show ? '' : 'none';
     }
     if (show) {
-      var line = st.own ? (st.lv ? st.name + '  Lv ' + st.lv : st.name) : st.avail ? st.name + '  $' + short(st.price) : st.name + '  locked';
+      var line = st.alert ? st.name + '  Lines full!' : st.own ? (st.lv ? st.name + '  Lv ' + st.lv : st.name) : st.avail ? st.name + '  $' + short(st.price) : st.name + '  locked';
       if (line !== t.text) {
         t.text = line;
         t.line.textContent = line;
         t.h = t.el.offsetHeight;
       }
-      var cls = 'tag' + (st.own ? ' own' : st.avail ? ' buy' : ' lock') + (!st.own && st.avail && S.cash >= st.price ? ' ready' : '');
+      var cls = 'tag' + (st.own ? ' own' : st.avail ? ' buy' : ' lock') + (!st.own && st.avail && S.cash >= st.price ? ' ready' : '') + (st.alert ? ' alert' : '');
       if (cls !== t.cls) {
         t.cls = cls;
         t.el.className = cls;
@@ -2959,7 +3088,7 @@ function overlay(now) {
         t.fw = fw;
         t.bar.style.width = fw;
       }
-      var full = st.wait > 0 ? 'full' : '';
+      var full = st.frac >= 1 ? 'full' : '';
       if (full !== t.full) {
         t.full = full;
         t.bar.className = full;
@@ -2975,30 +3104,13 @@ function overlay(now) {
       }
       anchorXY[id].top = ty - (t.h || 24) * sc;
     }
-    if (PL[id]) return;
-    // the cash waits just above the department's tag
-    var coin = show && st.wait > 0;
-    if (coin) {
-      if (t.wait !== st.wait) {
-        t.wait = st.wait;
-        t.coin.textContent = '$' + short(st.wait);
-        t.ch = 0;
-      }
-      if (t.coin.hidden) t.coin.hidden = false;
-      if (!t.ch) t.ch = t.coin.offsetHeight || 30;
-      var bob = Math.sin(now / 260 + sp.x) * 3;
-      var cy = anchorXY[id].top - t.ch / 2 - 4;
-      t.coin.style.transform = 'translate(' + t.x + 'px,' + Math.round(cy + bob) + 'px) translate(-50%,-50%)';
-      anchorXY[id].top = cy - t.ch / 2;
-    }
-    if (t.coin.hidden === coin) t.coin.hidden = !coin;
   });
   var a2 = bestId && anchorXY[bestId];
   if (!a2) {
     arrowEl.hidden = true;
     return;
   }
-  // the arrow points down at whatever stands highest over the place: its cash, or else its tag
+  // the arrow points down at the place's tag
   var bob2 = Math.abs(Math.sin(now / 260)) * 9;
   var x = a2.x;
   var y = a2.top - 22 - bob2;
@@ -3074,6 +3186,7 @@ function draw(now) {
   crowdStep(dt);
   doorsStep(dt);
   popsStep(now);
+  saysStep(now);
   order.forEach(function (id) {
     var s = shops[id];
     if (!s.group.visible) return;
@@ -3191,6 +3304,8 @@ function refresh() {
   PLACES.forEach(function (p) { places[p.id].shown = -1; });
   sync(false, 0);
   resetCrowd();
+  seed = 3;
+  for (var i = 0; i < 3; i++) come('walk');
 }
 
 window.View = {
@@ -3213,5 +3328,6 @@ window.View = {
     return a ? { x: a.x, y: a.y } : null;
   },
   spot: spot,
-  setBest: function (id) { bestId = id; }
+  setBest: function (id) { bestId = id; },
+  shopper: shopperEvent
 };
