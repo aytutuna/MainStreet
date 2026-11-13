@@ -3,7 +3,7 @@ var OLD_KEYS = ['mainstreet.v7', 'mainstreet.v6', 'mainstreet.v5', 'mainstreet.v
 var MAX_AWAY = 8 * 3600;
 var START_CASH = 5;
 var STAR_BONUS = 0.02;
-var STAR_DIV = 1e13;
+var STAR_DIV = 1e15;
 var HALL_BOOST = 0.1;
 var X2_COST = 20;
 var X2_SECS = 1800;
@@ -16,11 +16,11 @@ var DAILY = [
 // shoppers a second: on foot (more for a bigger store and the garden), by car for each Parking level, by taxi for
 // each Taxi Stand level, and garden visitors who only buy a plant
 var WALK0 = 0.1;
-var PER_DEPT = 0.01;
-var PER_LOT = 0.04;
-var PER_TAXI = 0.025;
-var PER_GARDEN = 0.02;
-var GARDEN_IN = 0.03;
+var PER_DEPT = 0.006;
+var PER_LOT = 0.035;
+var PER_TAXI = 0.02;
+var PER_GARDEN = 0.015;
+var GARDEN_IN = 0.025;
 // seconds at the till for one shopper at Checkouts level 0, each level a little faster; GAP is the walk up to it
 var LANE_T = 5;
 var SELF_T = 8;
