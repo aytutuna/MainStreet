@@ -1,11 +1,11 @@
-var CACHE = 'mainstreet-6e662a88';
+var CACHE = 'mainstreet-8d5cfcc2';
 var FILES = [
   './',
   'data.js',
   'index.html',
-  'mall.js',
   'manifest.webmanifest',
   'sim.js',
+  'store.js',
   'style.css',
   'ui.js',
   'icons/apple-touch-icon.png',
@@ -69,7 +69,6 @@ var FILES = [
   'assets/models/food/License.txt',
   'assets/models/food/Textures/colormap.png',
   'assets/models/food/apple.glb',
-  'assets/models/food/bag-flat.glb',
   'assets/models/food/bag.glb',
   'assets/models/food/cake.glb',
   'assets/models/food/candy-bar.glb',
