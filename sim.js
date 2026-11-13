@@ -608,7 +608,12 @@ function validate(o) {
     s.st.lost = Math.floor(num(o.st.lost, 0));
     s.st.sales = Math.floor(num(o.st.sales, 0));
   }
-  var gn = Math.min(GOALS.length, Math.floor(num(o.gn, 3)));
+  // the goal list was rewritten with the tills, so a v7 save starts it again
+  var gn = o.v === 7 ? 3 : Math.min(GOALS.length, Math.floor(num(o.gn, 3)));
+  if (o.v === 7) {
+    o.goal = [0, 1, 2];
+    o.gd = null;
+  }
   var seen = {};
   s.goal = (Array.isArray(o.goal) ? o.goal : []).filter(function (i) {
     var ok = i >= 0 && i < gn && !seen[i];
