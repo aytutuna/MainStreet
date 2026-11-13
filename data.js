@@ -12,7 +12,13 @@ var BIZ = [
   { id: 'tech', name: 'Electronics', ic: 'furn/televisionModern', c0: 6e8, g: 1.09, s: 4.29e6 },
   { id: 'kitchen', name: 'Kitchen', ic: 'food/frying-pan', c0: 6e9, g: 1.08, s: 3.66e7 },
   { id: 'clothes', name: 'Clothing', ic: 'shop/clothing-rack', c0: 6e10, g: 1.07, s: 3.13e8 },
-  { id: 'home', name: 'Home', ic: 'furn/loungeSofa', c0: 6e11, g: 1.07, s: 2.65e9 }
+  { id: 'home', name: 'Home', ic: 'furn/loungeSofa', c0: 6e11, g: 1.07, s: 2.65e9 },
+  { id: 'office', name: 'Books & Office', ic: 'furn/books', c0: 6e12, g: 1.07, s: 2.25e10 },
+  { id: 'pets', name: 'Pets', ic: 'pets/animal-dog', c0: 6e13, g: 1.07, s: 1.9e11 },
+  { id: 'sports', name: 'Sports & Outdoors', ic: 'surv/tent-canvas', c0: 6e14, g: 1.06, s: 1.6e12 },
+  { id: 'tools', name: 'Hardware', ic: 'surv/tool-hammer', c0: 6e15, g: 1.06, s: 1.4e13 },
+  { id: 'auto', name: 'Auto', ic: 'car/wheel-default', c0: 6e16, g: 1.06, s: 1.2e14 },
+  { id: 'seasonal', name: 'Seasonal', ic: 'holiday/tree-decorated', c0: 6e17, g: 1.06, s: 1e15 }
 ];
 
 // milestones: [level, sales x]. Each level in STAGE also puts one more thing in the department

@@ -24,7 +24,7 @@ var AISLE = 6.8;
 var DRIVE = 10.6;
 
 // the kits are drawn at different sizes; these bring them to the shop kit's people
-var SCALE = { car: 0.47, roads: 3, nature: 1.4, furn: 0.9, food: 0.5, sub: 3.2, toy: 1.1, forest: 0.9 };
+var SCALE = { car: 0.47, roads: 3, nature: 1.4, furn: 0.9, food: 0.5, sub: 3.2, toy: 1.1, forest: 0.9, golf: 0.45, pets: 0.08 };
 
 var FOLK = 'abcdef'.split('').reduce(function (a, c) { return a.concat(['chars/character-female-' + c, 'chars/character-male-' + c]); }, []);
 var CARS = ['car/sedan', 'car/suv', 'car/suv-luxury', 'car/hatchback-sports', 'car/van'];
@@ -45,6 +45,7 @@ var KIND = {
   cooler: { ref: 'shop/freezers-standing', rows: [0.1, 0.5], x: [-0.42, 0.42], z: [-0.44, -0.16] },
   coolerW: { ref: 'shop/freezers-standing' + WHITE, rows: [0.1, 0.5], x: [-0.42, 0.42], z: [-0.44, -0.16] },
   coolerR: { ref: 'shop/freezers-standing' + RED, rows: [0.1, 0.5], x: [-0.42, 0.42], z: [-0.44, -0.16] },
+  tank: { ref: 'shop/freezers-standing@13,3>15,3;3,2>6,1', rows: [0.2, 0.6], x: [-0.42, 0.42], z: [-0.44, -0.16] },
   chest: { ref: 'shop/freezer', top: 0.06, x: [-0.34, 0.34], z: [-0.25, 0.25], flat: true },
   bunker: { ref: 'shop/freezer', top: 0.06, x: [-0.34, 0.34], z: [-0.25, 0.25], flat: true, open: true },
   stock: { ref: 'skate/pallet', top: 0.16, x: [-0.24, 0.24], z: [-0.24, 0.24], none: true }
@@ -254,6 +255,99 @@ var DEPTS = {
       ['furn/sideTableDrawers', 0.5, RB, 's', null, [['furn/pillowBlue', 0, 0, 0.1, 0.342], ['furn/pillow', 0.15, 0.02, -0.2, 0.342]], 2],
       ['furn/rugRound%=e6b8a8', -0.7, RC, 'n', null, null, 1, 'staff'], ['furn/lampSquareFloor', 1.9, RB, 's', null, null, 2]],
     promo: ['furn/pottedPlant', 1.9, RC, 'n', null, null, 2]
+  },
+  office: {
+    floor: 'shop/floor%=e3dccf', aisles: AISLES, decor: STRIP,
+    feature: ['end', 2.65, RA, 'b', ['furn/books', BOX[2]]],
+    fix: [['end', -2.2, -2.3, 's', ['furn/books', BOX[1]]], ['end', -1.4, -2.3, 's', [CARTON[1], 'furn/books']],
+      ['shelf', -1.1, RA, 's', [[['furn/books', BOX[0]], ['furn/books', CARTON[1]]], [[BOX[2], 'furn/books'], [CARTON[0], 'furn/books']]], null, 2],
+      ['end', -0.6, -2.3, 's', ['furn/books', BOX[3]]], ['shelf', 0.5, RA, 's', [[['furn/books', CARTON[2]], [BOX[4], 'furn/books']], [['furn/books', BOX[5]], [CARTON[3], 'furn/books']]], null, 2],
+      ['end', 0.2, -2.3, 's', ['furn/computerMouse*1.6', 'furn/books']], ['furn/chairDesk', 1.9, RA, 's', null, null, 2],
+      ['shelf', -1.1, RB, 's', [[[BOX[1], 'furn/books'], [CARTON[4], 'furn/books']], [['furn/books', BOX[3]], ['furn/books', CARTON[2]]]], null, 2],
+      ['end', 1.0, -2.3, 's', [BOX[4], CARTON[0]]], ['shelf', 0.5, RB, 's', [[['furn/books', BOX[2]], ['furn/books', CARTON[3]]], [[BOX[0], 'furn/books'], [CARTON[1], 'furn/books']]], null, 2],
+      ['furn/desk', 1.9, RB, 's', null, [['furn/lampSquareTable', -0.17, 0, 0, 0.343], ['furn/laptop*1.3', 0.13, 0.02, -0.2, 0.343]], 1],
+      ['pallet', -1.6, RC, 'n', [BOX[1]]], ['end', 1.8, -2.3, 's', ['furn/books', BOX[5]]],
+      ['furn/table', -0.7, RC, 'n', null, [['furn/books', -0.2, -0.08, 0.2, 0.297], ['furn/books', 0.02, -0.06, -0.3, 0.297], ['furn/books', 0.22, -0.08, 0.1, 0.297],
+        ['furn/books', -0.1, 0.1, -0.2, 0.297], ['furn/books', 0.13, 0.1, 0.3, 0.297]]],
+      ['furn/table', 0.2, RC, 'n', null, [['furn/books', -0.2, -0.08, -0.1, 0.297], ['furn/books', 0.0, -0.07, 0.25, 0.297], ['furn/books', -0.12, 0.1, 0.3, 0.297],
+        ['furn/lampRoundTable', 0.2, 0.04, 0, 0.297]]],
+      ['crate', 1.05, RC, 'n', ['furn/books']]],
+    promo: ['pallet', 1.9, RC, 'n', [CARTON[3]]]
+  },
+  pets: {
+    floor: 'shop/floor%=dfe9d6', aisles: AISLES, decor: STRIP,
+    feature: ['end', 2.65, RA, 'b', [BAG[1], CAN[1]]],
+    fix: [['tank', -2.1, BL, 's', [['pets/animal-fish', 'pets/animal-fish'], ['pets/animal-fish', 'pets/animal-fish']]],
+      ['tank', -1.1, BL, 's', [['pets/animal-fish', 'pets/animal-fish'], ['pets/animal-fish', 'pets/animal-fish']]],
+      ['shelf', -1.1, RA, 's', [[[BAG[0], CAN[0]], [BAG[1], CAN[2]]], [[BAG[2], CAN[1]], [BAG[3], CAN[4]]]], null, 2],
+      ['tank', -0.1, BL, 's', [['pets/animal-fish', 'pets/animal-fish'], ['pets/animal-fish', 'pets/animal-fish']]],
+      ['shelf', 0.5, RA, 's', [[[CAN[3], BAG[4]], [CAN[0], BAG[5]]], [[CAN[2], BAG[0]], [CAN[4], BAG[2]]]], null, 2],
+      ['end', 0.8, -2.3, 's', [BAG[3], BAG[5]]], ['pallet', 1.9, RA, 's', [BAG[4]]],
+      ['table', -1.2, RB, 's', [[BOX[1], BOX[4]], [BOX[2], BOX[5]]], null, 2],
+      ['end', 1.6, -2.3, 's', [CAN[1], CAN[3]]], ['shelf', 0.5, RB, 's', [[[BAG[1], CAN[4]], [BAG[2], CAN[0]]], [[BAG[5], CAN[3]], [BAG[0], CAN[1]]]], null, 2],
+      ['pallet', 1.9, RB, 's', [BAG[2]]], ['crate', -1.6, RC, 'n', ['golf/ball-red*2']], ['end', 2.4, -2.3, 's', [BAG[0], CAN[2]]],
+      ['crate', -0.7, RC, 'n', ['golf/ball-blue*2']], ['table', 0.2, RC, 'n', [BAG[3], BAG[5]]], ['crate', 1.05, RC, 'n', ['golf/ball-green*2']]],
+    promo: ['furn/rugRound%=e6b8a8', 1.9, RC, 'n', null, [['pets/animal-dog', -0.13, 0, 0.6, 0.006], ['pets/animal-cat', 0.15, 0.05, -0.5, 0.006]]]
+  },
+  sports: {
+    floor: 'shop/floor%=d9e4ee', aisles: AISLES, decor: STRIP,
+    feature: ['end', 2.65, RA, 'b', ['skate/skateboard*0.4', 'surv/bedroll-packed']],
+    fix: [['surv/tent-canvas', -2.15, -2.22, 's'], ['end', -1.4, -2.3, 's', ['surv/bedroll-packed', 'surv/bucket']],
+      ['shelf', -1.1, RA, 's', [[['surv/bottle', BOX[2]], ['surv/bedroll-packed', BOX[4]]], [[BOX[0], 'surv/bottle'], [BOX[3], 'surv/bedroll-packed']]], null, 2],
+      ['surv/tent-canvas', -0.6, -2.22, 's'], ['shelf', 0.5, RA, 's', [[['skate/skateboard*0.4', BOX[1]], ['surv/bottle', BOX[5]]], [[BOX[2], 'skate/skateboard*0.4'], [BOX[4], 'surv/bucket']]], null, 2],
+      ['end', 0.2, -2.3, 's', ['surv/bucket', 'skate/skateboard*0.4']], ['pallet', 1.9, RA, 's', ['surv/bedroll-packed']],
+      ['shelf', -1.1, RB, 's', [[['surv/bedroll-packed', BOX[1]], [BOX[3], 'surv/bottle']], [[BOX[5], 'surv/bedroll-packed'], ['surv/bucket', BOX[0]]]], null, 2],
+      ['surv/tent-canvas', 1.0, -2.22, 's'], ['shelf', 0.5, RB, 's', [[['surv/bottle', BOX[4]], ['skate/skateboard*0.4', BOX[2]]], [[BOX[1], 'surv/bucket'], [BOX[3], 'skate/skateboard*0.4']]], null, 2],
+      ['pallet', 1.9, RB, 's', ['surv/bucket']], ['crate', -1.6, RC, 'n', ['golf/ball-red*2']], ['end', 1.8, -2.3, 's', ['surv/bedroll-packed', 'surv/bottle']],
+      ['crate', -0.7, RC, 'n', ['golf/ball-green*2']], ['crate', 0.2, RC, 'n', ['surv/bottle']], ['crate', 1.05, RC, 'n', ['golf/ball-blue*2']]],
+    promo: ['surv/tent-canvas', 1.9, RC, 'n']
+  },
+  tools: {
+    floor: 'shop/floor%=e2e2dc', aisles: AISLES, decor: STRIP,
+    feature: ['end', 2.65, RA, 'b', ['surv/tool-hammer*1.4', TIN[2]]],
+    fix: [['end', -2.2, -2.3, 's', ['surv/tool-hammer*1.4', 'surv/tool-axe']], ['end', -1.4, -2.3, 's', ['surv/tool-shovel', 'surv/tool-pickaxe']],
+      ['shelf', -1.1, RA, 's', [[[TIN[0], BOX[1]], [TIN[1], 'surv/bucket']], [[TIN[2], BOX[3]], ['surv/bucket', TIN[3]]]], null, 2],
+      ['end', -0.6, -2.3, 's', ['surv/tool-hoe', 'surv/tool-hammer*1.4']], ['shelf', 0.5, RA, 's', [[[BOX[0], TIN[3]], [BOX[2], TIN[0]]], [[BOX[4], TIN[1]], [BOX[5], TIN[2]]]], null, 2],
+      ['end', 0.2, -2.3, 's', ['surv/tool-axe', 'surv/tool-shovel']], ['pallet', 1.9, RA, 's', ['surv/resource-planks']],
+      ['shelf', -1.1, RB, 's', [[['surv/bucket', TIN[2]], [BOX[1], TIN[0]]], [[TIN[3], BOX[2]], [TIN[1], 'surv/bucket']]], null, 2],
+      ['end', 1.0, -2.3, 's', ['surv/tool-pickaxe', 'surv/tool-hoe']], ['shelf', 0.5, RB, 's', [[[TIN[1], BOX[4]], [TIN[3], BOX[0]]], [[TIN[0], BOX[5]], [TIN[2], BOX[3]]]], null, 2],
+      ['pallet', 1.9, RB, 's', ['surv/barrel']], ['pallet', -1.6, RC, 'n', ['surv/resource-planks']], ['end', 1.8, -2.3, 's', ['surv/tool-hammer*1.4', 'surv/tool-shovel']],
+      ['pallet', -0.7, RC, 'n', [TIN[1]]], ['pallet', 0.2, RC, 'n', ['surv/bucket']], ['pallet', 1.05, RC, 'n', ['surv/workbench']]],
+    promo: ['pallet', 1.9, RC, 'n', [TIN[3]]]
+  },
+  auto: {
+    floor: 'shop/floor%=d5d5d8', aisles: AISLES, decor: STRIP,
+    feature: ['end', 2.65, RA, 'b', [BOTTLE[1], TIN[2]]],
+    fix: [['end', -2.2, -2.3, 's', ['car/wheel-default', 'car/wheel-dark']], ['end', -1.4, -2.3, 's', ['car/wheel-racing', 'car/wheel-default']],
+      ['shelf', -1.1, RA, 's', [[[BOTTLE[0], TIN[1]], [BOX[1], BOTTLE[2]]], [[TIN[0], BOX[2]], [BOTTLE[3], TIN[3]]]], null, 2],
+      ['end', -0.6, -2.3, 's', ['car/wheel-dark', 'car/wheel-racing']], ['shelf', 0.5, RA, 's', [[[BOX[0], BOTTLE[1]], [TIN[2], BOX[4]]], [[BOTTLE[4], TIN[0]], [BOX[5], BOTTLE[0]]]], null, 2],
+      ['end', 0.2, -2.3, 's', [BOTTLE[2], TIN[1]]], ['pallet', 1.9, RA, 's', ['car/wheel-dark']],
+      ['shelf', -1.1, RB, 's', [[[TIN[3], BOX[3]], [BOTTLE[1], TIN[1]]], [[BOX[1], BOTTLE[3]], [TIN[2], BOX[0]]]], null, 2],
+      ['end', 1.0, -2.3, 's', ['car/wheel-default', 'car/wheel-racing']], ['shelf', 0.5, RB, 's', [[[BOTTLE[4], BOX[2]], [TIN[0], BOTTLE[2]]], [[BOX[4], TIN[3]], [BOTTLE[0], BOX[5]]]], null, 2],
+      ['pallet', 1.9, RB, 's', ['car/wheel-default']], ['pallet', -1.6, RC, 'n', ['car/cone']], ['end', 1.8, -2.3, 's', [TIN[2], BOTTLE[3]]],
+      ['pallet', -0.7, RC, 'n', ['car/wheel-racing']], ['pallet', 0.2, RC, 'n', [BOX[3]]], ['pallet', 1.05, RC, 'n', [TIN[0]]]],
+    promo: ['car/kart-oobi', 1.9, RC, 'n']
+  },
+  seasonal: {
+    floor: 'shop/floor%=f1e2e2', aisles: AISLES, decor: STRIP,
+    feature: ['end', 2.65, RA, 'b', ['holiday/present-a-cube*0.35', 'holiday/candy-cane-red*0.4']],
+    fix: [['holiday/tree-decorated*0.4', -2.2, -2.22, 's'], ['end', -1.4, -2.3, 's', ['holiday/wreath-decorated*0.4', 'holiday/sock-red*0.4']],
+      ['shelf', -1.1, RA, 's', [[['holiday/present-a-cube*0.35', 'holiday/candy-cane-red*0.4'], ['holiday/present-b-round*0.35', 'holiday/gingerbread-man*0.4']],
+        [['holiday/present-a-round*0.35', 'holiday/candy-cane-green*0.4'], ['holiday/present-b-cube*0.35', 'holiday/gingerbread-woman*0.4']]], null, 2],
+      ['holiday/tree-decorated*0.4', -0.6, -2.22, 's'],
+      ['shelf', 0.5, RA, 's', [[['holiday/sock-green*0.4', 'holiday/present-a-rectangle*0.3'], ['holiday/nutcracker*0.3', 'holiday/present-b-round*0.35']],
+        [['holiday/sock-red*0.4', 'holiday/present-a-cube*0.35'], ['holiday/lantern*0.2', 'holiday/present-a-round*0.35']]], null, 2],
+      ['end', 0.2, -2.3, 's', ['holiday/nutcracker*0.3', 'holiday/wreath-decorated*0.4']], ['furn/table', 1.9, RA, 's', null, [['holiday/snowman*0.4', 0, 0, 0.3, 0.297]]],
+      ['shelf', -1.1, RB, 's', [[['holiday/candy-cane-green*0.4', 'holiday/present-b-cube*0.35'], ['holiday/gingerbread-woman*0.4', 'holiday/present-a-cube*0.35']],
+        [['holiday/candy-cane-red*0.4', 'holiday/present-a-rectangle*0.3'], ['holiday/gingerbread-man*0.4', 'holiday/present-b-round*0.35']]], null, 2],
+      ['holiday/tree-decorated*0.4', 1.0, -2.22, 's'],
+      ['shelf', 0.5, RB, 's', [[['holiday/lantern*0.2', 'holiday/sock-green*0.4'], ['holiday/present-a-round*0.35', 'holiday/nutcracker*0.3']],
+        [['holiday/present-b-cube*0.35', 'holiday/sock-red*0.4'], ['holiday/present-a-rectangle*0.3', 'holiday/lantern*0.2']]], null, 2],
+      ['furn/table', 1.9, RB, 's', null, [['holiday/reindeer*0.4', 0, 0, -0.4, 0.297]]], ['holiday/sled*0.45', -1.6, RC, 'n'],
+      ['end', 1.8, -2.3, 's', ['holiday/sock-green*0.4', 'holiday/wreath-decorated*0.4']],
+      ['crate', -0.7, RC, 'n', ['holiday/present-b-round*0.35']], ['crate', 0.2, RC, 'n', ['holiday/present-a-cube*0.35']],
+      ['furn/table', 1.05, RC, 'n', null, [['holiday/nutcracker*0.4', -0.15, 0, 0, 0.297], ['holiday/lantern*0.25', 0.15, 0, 0, 0.297]]]],
+    promo: ['holiday/tree-decorated*0.6', 1.9, RC, 'n', null, [['holiday/present-a-cube*0.35', 0.4, 0.25, 0.4, 0], ['holiday/present-b-round*0.35', -0.38, 0.3, 0, 0]]]
   }
 };
 
@@ -345,6 +439,8 @@ var BARE = { 'shop/shelf-boxes': 1, 'shop/shelf-bags': 1, 'shop/shelf-end': 1, '
 // its own see-through material, the body face behind it goes, and a lit inner box closes the opening
 var glassMat = new THREE.MeshLambertMaterial({ color: 0xd8eef8, transparent: true, opacity: 0.25, depthWrite: false });
 var innerMat = new THREE.MeshLambertMaterial({ color: 0xe6eef6, side: THREE.BackSide });
+var waterMat = new THREE.MeshLambertMaterial({ color: 0x7fc8e8, transparent: true, opacity: 0.35, depthWrite: false });
+var tankMat = new THREE.MeshLambertMaterial({ color: 0x4fa6c8, side: THREE.BackSide });
 var shelfMat = new THREE.MeshLambertMaterial({ color: 0xc9d3de });
 var COOLER = {
   'shop/freezers-standing': { face: 2, at: -0.055, inner: [-0.5, 0.5, 0.1, 0.9, -0.5, -0.06], shelf: 0.49 },
@@ -522,7 +618,9 @@ function loadModels(list, progress, done) {
       if (cool) {
         var oc = openCooler(geom, cool);
         if (r.cells) recolour(oc.body, r.cells);
-        parts.push({ geom: oc.body, mat: material(o.material, kit, tint) }, { geom: oc.glass, mat: glassMat }, { geom: oc.inner, mat: innerMat });
+        // glass recoloured blue holds water: a fish tank
+        var wet = !!r.cells && r.cells.some(function (c) { return c[0][0] === 3 && c[0][1] === 2; });
+        parts.push({ geom: oc.body, mat: material(o.material, kit, tint) }, { geom: oc.glass, mat: wet ? waterMat : glassMat }, { geom: oc.inner, mat: wet ? tankMat : innerMat });
         if (oc.shelf) parts.push({ geom: oc.shelf, mat: shelfMat });
       } else parts.push({ geom: geom, mat: material(o.material, kit, tint) });
     });
@@ -1164,7 +1262,8 @@ var HEAP = { can: 1, apple: 1, orange: 1, lemon: 1, tomato: 1, onion: 1, coconut
 var CAP = { watermelon: 4, grapes: 6, pineapple: 8, cheese: 4, strawberry: 4, can: 12, 'soda-bottle': 16, lollypop: 12, popsicle: 16, mussel: 16,
   'vehicle-suv': 2, 'vehicle-racer': 2, 'vehicle-truck': 2, 'vehicle-monster-truck': 2, 'vehicle-speedster': 2, 'vehicle-vintage-racer': 2,
   'train-locomotive': 2, 'train-wagon': 2, 'train-tender': 2, 'cake-birthday': 1, cake: 1, pie: 1, turkey: 1, 'whole-ham': 2, broccoli: 6,
-  cauliflower: 6, cabbage: 6 };
+  cauliflower: 6, cabbage: 6, 'animal-fish': 3, 'tent-canvas': 1, 'resource-planks': 2, barrel: 4, workbench: 1,
+  'kart-oobi': 1, snowman: 2, reindeer: 2, nutcracker: 4, 'wheel-default': 6, 'wheel-dark': 6, 'wheel-racing': 6, cone: 6, lantern: 4 };
 
 function base(ref) {
   return parseRef(ref.replace(/^\w+:/, '')).file.split('/')[1];

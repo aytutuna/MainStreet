@@ -476,8 +476,9 @@ var GOALS = [
   gPl('lot', 3, 'Parking to level 3', 10), gLv('toys', 1, 12), gServe(2000, 10), gEarn(1e9, 10, 30), gLv('tech', 1, 15),
   gPl('hall', 5, 'Open lane 3', 15), gLv('kitchen', 1, 20), gEarn(1e11, 15), gLv('kitchen', 25, 15, 30), gLv('toys', 50, 15),
   gl('Sell the store', 30, 1, function () { return S.st.sales; }), gServe(10000, 20), gEarn(1e13, 20, 60), gLv('clothes', 1, 25),
-  gPl('garden', 1, 'Open the Garden Center', 25), gLv('home', 1, 30), gPl('hall', 10, 'Checkouts to level 10', 30), gEarn(1e15, 25),
-  gServe(50000, 30), gl('Earn 100 Store stars', 40, 100, function () { return S.stars; }), gEarn(1e18, 30)
+  gPl('garden', 1, 'Open the Garden Center', 25), gLv('home', 1, 30), gLv('office', 1, 30), gPl('hall', 10, 'Checkouts to level 10', 30),
+  gLv('pets', 1, 35), gEarn(1e15, 25), gLv('sports', 1, 35), gServe(50000, 30), gLv('tools', 1, 40), gLv('auto', 1, 40),
+  gl('Earn 100 Store stars', 40, 100, function () { return S.stars; }), gLv('seasonal', 1, 50), gEarn(1e21, 30)
 ];
 
 function goals() {
