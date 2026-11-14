@@ -6,10 +6,17 @@ var SND = {
   till: ['sine', 0.05, 0.12, [1568, 2093]],
   done: ['triangle', 0.1, 0.25, [523, 659, 784, 1047]],
   mile: ['triangle', 0.08, 0.22, [523, 659, 784, 1047, 1319, 1568]],
-  unlock: ['triangle', 0.09, 0.2, [392, 523, 659, 784]]
+  unlock: ['triangle', 0.09, 0.2, [392, 523, 659, 784]],
+  tap: ['sine', 0.04, 0.05, [1000]],
+  stock: ['sine', 0.06, 0.1, [196]]
 };
+var VOL = { till: 0.3, stock: 0.4, tap: 0.5, buy: 0.6, done: 0.6, unlock: 0.6, mile: 0.6 };
+var BUZZ_KEY = 'mainstreet.buzz';
+var buf = {};
+var out = null;
 var ac = null;
 var snd = true;
+var vib = true;
 var cardId = null;
 var cardRow = null;
 var lastTick = 0;
@@ -38,12 +45,38 @@ function money(v) {
 function wake() {
   if (!snd) return;
   if (navigator.audioSession) navigator.audioSession.type = 'ambient';
-  if (!ac && window.AudioContext) ac = new AudioContext();
+  if (!ac && window.AudioContext) {
+    ac = new AudioContext();
+    out = ac.createGain();
+    out.connect(ac.destination);
+    Object.keys(VOL).forEach(loadSound);
+  }
   if (ac && ac.state !== 'running') ac.resume();
 }
 
+function loadSound(name) {
+  var req = new XMLHttpRequest();
+  req.open('GET', 'assets/sounds/' + name + '.wav');
+  req.responseType = 'arraybuffer';
+  req.onload = function () {
+    if (req.status !== 200) return;
+    ac.decodeAudioData(req.response, function (b) { buf[name] = b; }, function () {});
+  };
+  req.send();
+}
+
 function sfx(name) {
-  if (!ac || !snd || ac.state !== 'running') return;
+  if (!ac || !snd || document.hidden || ac.state !== 'running') return;
+  if (buf[name]) {
+    var s = ac.createBufferSource();
+    var v = ac.createGain();
+    v.gain.value = VOL[name];
+    s.buffer = buf[name];
+    s.connect(v);
+    v.connect(out);
+    s.start();
+    return;
+  }
   var t = ac.currentTime;
   var c = SND[name];
   c[3].forEach(function (f, i) {
@@ -62,10 +95,12 @@ function sfx(name) {
   });
 }
 
-function buzz() {
-  if (navigator.vibrate) navigator.vibrate(10);
+function buzz(kind) {
+  if (!vib) return;
+  kind = kind || 'light';
+  if (navigator.vibrate) navigator.vibrate(kind === 'success' ? [12, 40, 12] : kind === 'medium' ? 20 : 10);
   else if (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.buzz) {
-    window.webkit.messageHandlers.buzz.postMessage(10);
+    window.webkit.messageHandlers.buzz.postMessage(kind);
   }
 }
 
@@ -358,7 +393,7 @@ function afterBuy(res) {
     sfx('mile');
     banner('<b>' + name + ' level ' + S.pl[res.id] + '</b><small>' + p.next[S.pl[res.id] - 1] + '</small>', t + 0.3, S.pl[res.id] === p.cost.length);
   } else sfx('buy');
-  buzz();
+  buzz(ms.length || res.unlock || res.place ? 'medium' : 'light');
   nudge();
 }
 
@@ -393,7 +428,7 @@ function claimGoalAt(i, el) {
   flyGems(c.x, c.y + 10, Math.min(8, g.gems));
   if (g.x2) banner('<b>Goal done</b><small>Income x2 for ' + g.x2 + ' min</small>', 0);
   sfx('done');
-  buzz();
+  buzz('success');
   nudge();
   updateGoals();
 }
@@ -545,6 +580,7 @@ function openSell() {
 
 function setSound() {
   $('m-snd').textContent = 'Sound: ' + (snd ? 'on' : 'off');
+  $('m-buzz').textContent = 'Vibration: ' + (vib ? 'on' : 'off');
 }
 
 function flash(id, text, old) {
@@ -564,8 +600,14 @@ function afterLoad() {
 function wire() {
   $('best').addEventListener('click', pressBest);
   $('card-x').addEventListener('click', closeCard);
-  $('t-biz').addEventListener('click', openSheet);
-  $('sheet-x').addEventListener('click', closeSheet);
+  $('t-biz').addEventListener('click', function () {
+    sfx('tap');
+    openSheet();
+  });
+  $('sheet-x').addEventListener('click', function () {
+    sfx('tap');
+    closeSheet();
+  });
   [].forEach.call(document.querySelectorAll('#modes button'), function (b) {
     b.addEventListener('click', function () { setMode(+b.dataset.m); });
   });
@@ -601,6 +643,7 @@ function wire() {
     }
     if (r.gems) flyGems(c.x, c.y, Math.min(8, r.gems));
     sfx('done');
+    buzz('success');
     $('daily').hidden = true;
     nudge();
     updateGoals();
@@ -627,6 +670,7 @@ function wire() {
     if (!n) return;
     afterLoad();
     sfx('mile');
+    buzz('success');
     banner('<b>Store sold</b><small>+' + n + ' Store stars, income x' + (1 + STAR_BONUS * S.stars).toFixed(2) + '</small>', 0.2, true);
     nudge();
   });
@@ -634,7 +678,10 @@ function wire() {
     setSound();
     $('menu').hidden = false;
   });
-  $('m-ok').addEventListener('click', function () { $('menu').hidden = true; });
+  $('m-ok').addEventListener('click', function () {
+    sfx('tap');
+    $('menu').hidden = true;
+  });
   $('m-snd').addEventListener('click', function () {
     snd = !snd;
     try {
@@ -642,6 +689,14 @@ function wire() {
     } catch (e) {}
     wake();
     setSound();
+  });
+  $('m-buzz').addEventListener('click', function () {
+    vib = !vib;
+    try {
+      localStorage.setItem(BUZZ_KEY, vib ? '1' : '0');
+    } catch (e) {}
+    setSound();
+    buzz();
   });
   $('m-copy').addEventListener('click', function () {
     var code = exportCode();
@@ -780,6 +835,7 @@ function loop(t) {
 function start() {
   try {
     snd = localStorage.getItem(SND_KEY) !== '0';
+    vib = localStorage.getItem(BUZZ_KEY) !== '0';
     free = localStorage.getItem(FREE_KEY) === '1';
     var m = localStorage.getItem(MODE_KEY);
     if (m !== null && [0, 1, 10, 100].indexOf(+m) >= 0) mode = +m;

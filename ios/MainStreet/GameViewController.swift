@@ -4,7 +4,14 @@ import WebKit
 // Not the view controller, so the web view's content controller holds nothing that leads back to it.
 private final class BuzzHandler: NSObject, WKScriptMessageHandler {
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        switch message.body as? String {
+        case "medium":
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        case "success":
+            UINotificationFeedbackGenerator().notificationOccurred(.success)
+        default:
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        }
     }
 }
 
@@ -13,7 +20,7 @@ private final class BundleHandler: NSObject, WKURLSchemeHandler {
     private static let types = [
         "html": "text/html", "js": "text/javascript", "css": "text/css", "json": "application/json",
         "webmanifest": "application/manifest+json", "png": "image/png", "glb": "model/gltf-binary",
-        "gltf": "model/gltf+json", "bin": "application/octet-stream",
+        "gltf": "model/gltf+json", "bin": "application/octet-stream", "wav": "audio/wav",
     ]
 
     func webView(_ webView: WKWebView, start urlSchemeTask: WKURLSchemeTask) {
