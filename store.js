@@ -97,7 +97,7 @@ var DEPTS = {
       ['stand', -0.45, RB, 's', ['food/eggplant', 'food/onion']], ['end', 0.2, BL, 's', ['food/corn~z', 'food/mushroom']],
       ['stand', 0.5, RB, 's', ['food/paprika@15,2>11,2', 'food/paprika@15,2>9,2']], ['crate', -1.6, RC, 'n', ['flat:food/strawberry']],
       ['pallet', 1.9, RB, 's', ['food/watermelon']], ['crate', -0.7, RC, 'n', ['food/apple@15,2>9,2']],
-      ['end', 1.0, BL, 's', ['food/leek~z*0.6', 'food/coconut']], ['shop/display-fruit', 0.2, RC, 'n']],
+      ['end', 1.0, BL, 's', ['food/leek~z*0.6', 'food/coconut']], ['crate', 0.2, RC, 'n', ['food/orange']]],
     promo: ['pallet', 1.9, RC, 'n', ['food/pumpkin']]
   },
   bakery: {
@@ -985,30 +985,36 @@ function Batch() {
   var q = new THREE.Quaternion();
   var up = new THREE.Vector3(0, 1, 0);
   var one = new THREE.Vector3(1, 1, 1);
-  function put(geom, mat, x, y, z, rot, k, goods) {
+  // goods carry a rank from 0 to 1: a department draws the ones below how full its shelves are. A rank of -1 stays
+  // on the shelf whatever the stock
+  function put(geom, mat, x, y, z, rot, k, rank) {
+    var goods = rank !== undefined;
     var key = mat.uuid + (geom.index ? 'i' : 'n') + Object.keys(geom.attributes).sort().join() + (goods ? 'g' : '');
-    if (!sets[key]) sets[key] = { mat: mat, list: [], goods: goods };
+    if (!sets[key]) sets[key] = { mat: mat, list: [], goods: goods, rank: [] };
     q.setFromAxisAngle(up, rot || 0);
     mtx.compose(new THREE.Vector3(x, y, z), q, k ? new THREE.Vector3(k, k, k) : one);
     sets[key].list.push(geom.clone().applyMatrix4(mtx));
+    if (goods) sets[key].rank.push(rank);
   }
   this.sets = sets;
   this.add = function (ref, x, z, rot, y, skip) {
     var m = lib.model(ref);
     m.parts.forEach(function (p) { if (p.mat !== skip) put(p.geom, p.mat, x, (y || 0) - Math.min(0, m.box.y0), z, rot); });
   };
-  this.plane = function (mat, w, h, x, y, z, rot) {
+  this.plane = function (mat, w, h, x, y, z, rot, rank) {
     var g = new THREE.PlaneGeometry(w, h);
-    put(g, mat, x, y, z, rot);
+    put(g, mat, x, y, z, rot, 0, rank);
   };
-  this.raw = function (ref, x, z, rot, y, k) {
-    lib.model(ref).parts.forEach(function (p) { put(p.geom, p.mat, x, y, z, rot, k, true); });
+  this.raw = function (ref, x, z, rot, y, k, rank) {
+    lib.model(ref).parts.forEach(function (p) { put(p.geom, p.mat, x, y, z, rot, k, rank === undefined ? -1 : rank); });
   };
   this.take = function (o) {
     Object.keys(o.sets).forEach(function (key) {
-      if (!sets[key]) sets[key] = { mat: o.sets[key].mat, list: [] };
-      sets[key].goods = o.sets[key].goods;
-      sets[key].list = sets[key].list.concat(o.sets[key].list);
+      var from = o.sets[key];
+      if (!sets[key]) sets[key] = { mat: from.mat, list: [], rank: [] };
+      sets[key].goods = from.goods;
+      sets[key].list = sets[key].list.concat(from.list);
+      sets[key].rank = sets[key].rank.concat(from.rank);
     });
   };
   // a flat slab of one colour, for paving, asphalt and paint
@@ -1029,13 +1035,50 @@ function Batch() {
   this.group = function (shadow) {
     var g = new THREE.Group();
     Object.keys(sets).forEach(function (k) {
-      var o = new THREE.Mesh(mergeGeometries(sets[k].list, false), sets[k].mat);
+      var list = sets[k].list;
+      var o;
+      if (sets[k].goods) {
+        // lowest rank first, so the mesh can draw just the first part of its index
+        var ord = list.map(function (x, i) { return i; }).sort(function (a, c) { return sets[k].rank[a] - sets[k].rank[c]; });
+        var cum = [0];
+        list = ord.map(function (i) {
+          cum.push(cum[cum.length - 1] + (list[i].index ? list[i].index.count : list[i].attributes.position.count));
+          return list[i];
+        });
+        o = new THREE.Mesh(mergeGeometries(list, false), sets[k].mat);
+        o.userData.shelf = { rank: ord.map(function (i) { return sets[k].rank[i]; }), cum: cum };
+      } else o = new THREE.Mesh(mergeGeometries(list, false), sets[k].mat);
       o.castShadow = shadow !== false && !sets[k].goods && !sets[k].mat.transparent && sets[k].mat !== poolMat && sets[k].mat !== bulbMat && sets[k].mat !== innerMat;
       o.receiveShadow = true;
       g.add(o);
     });
     return g;
   };
+}
+
+// draws the goods whose rank is below how full the shelves are. The sim's fill is read off window, since this module
+// has a function of that name
+function shelve(g, f) {
+  g.traverse(function (o) {
+    var sh = o.userData.shelf;
+    if (!sh) return;
+    var lo = 0;
+    var hi = sh.rank.length;
+    while (lo < hi) {
+      var mid = (lo + hi) >> 1;
+      if (sh.rank[mid] < f) lo = mid + 1;
+      else hi = mid;
+    }
+    if (o.geometry.drawRange.count !== sh.cum[lo]) o.geometry.setDrawRange(0, sh.cum[lo]);
+  });
+}
+
+function shelves(s) {
+  var f = window.fill[s.id];
+  if (f === s.stocked) return;
+  s.stocked = f;
+  if (s.merged) shelve(s.merged, f);
+  s.items.forEach(function (pc) { if (pc.g) shelve(pc.g, f); });
 }
 
 var bulbMat = new THREE.MeshLambertMaterial({ color: 0xfff3d0, emissive: 0x000000 });
@@ -1303,6 +1346,8 @@ function composite(ref) {
   return { parts: parts, box: hb };
 }
 
+var item = 0;
+
 // Goods on a flat surface: as many of one item as fit in the rectangle x0..x1, z0..z1 (in the fixture's own frame,
 // front toward +z), at height y. Round produce gets a second layer in the hollows of the first. Long items are turned
 // if more of them fit that way, and an item too tall for its shelf or too big for its section is shrunk to fit
@@ -1344,28 +1389,31 @@ function fill(out, ref, x0, x1, z0, z1, y, heap, room) {
   var c = turn ? rotY((b.x0 + b.x1) / 2 * k, (b.z0 + b.z1) / 2 * k, Math.PI / 2) : [(b.x0 + b.x1) / 2 * k, (b.z0 + b.z1) / 2 * k];
   var r = turn ? Math.PI / 2 : 0;
   var count = 0;
-  function put(x, z, yy, rr) {
+  // every item is numbered, and a piled item carries its layer, so a department can take whole items off its shelves
+  function put(x, z, yy, rr, layer) {
+    var num = item++;
     if (!comp) {
-      out.push([ref, x, z, rr, yy, k]);
+      out.push([ref, x, z, rr, yy, k, num, layer]);
       return;
     }
     comp.parts.forEach(function (p) {
       var q = rotY(p[1] * k, p[2] * k, rr);
-      out.push([p[0], x + q[0], z + q[1], rr + p[3], yy + p[4] * k, k * p[5]]);
+      out.push([p[0], x + q[0], z + q[1], rr + p[3], yy + p[4] * k, k * p[5], num, layer]);
     });
   }
+  var piled = heap && HEAP[name];
   for (var i = 0; i < n[0] && count < cap; i++) {
     for (var j = 0; j < n[1] && count < cap; j++) {
-      put(ax + iw / 2 + i * (iw + gap) - c[0], az + id / 2 + j * (id + gap) - c[1], y, r);
+      put(ax + iw / 2 + i * (iw + gap) - c[0], az + id / 2 + j * (id + gap) - c[1], y, r, piled ? 0 : undefined);
       count++;
     }
   }
-  if (!heap || !HEAP[name]) return;
+  if (!piled) return;
   var h = (b.h - b.y0) * k * 0.55;
   for (var i2 = 0; i2 < n[0] - 1 && count < cap * 1.6; i2++) {
     for (var j2 = 0; j2 < Math.max(1, n[1] - 1) && count < cap * 1.6; j2++) {
       var dz = n[1] > 1 ? id / 2 + gap / 2 : 0;
-      put(ax + iw + i2 * (iw + gap) + gap / 2 - c[0], az + id / 2 + dz + j2 * (id + gap) - c[1], y + h, r + 0.6);
+      put(ax + iw + i2 * (iw + gap) + gap / 2 - c[0], az + id / 2 + dz + j2 * (id + gap) - c[1], y + h, r + 0.6, 1);
       count++;
     }
   }
@@ -1437,8 +1485,17 @@ var screenMat = (function () {
   return new THREE.MeshBasicMaterial({ map: t });
 })();
 
+// where an item goes when the shelves empty: the golden ratio spreads neighbours apart, and each fixture starts its
+// sequence somewhere else. A piled item's rank keeps the second layer after the first, so nothing is left floating
+function shelfRank(s, fx, num, layer) {
+  var r = (num + 1) * 0.6180339887 + s.k * 0.37 + Math.abs(fx[1]) * 3.7 + Math.abs(fx[2]) * 5.3;
+  r -= Math.floor(r);
+  return layer === undefined ? r : (layer + r) / 2;
+}
+
 // one fixture (or a row of n alike) with its goods, merged into a batch, and the places shoppers stand to look at it
 function fixture(s, fx) {
+  item = 0;
   var b = new Batch();
   var kd = KIND[fx[0]];
   var ref = kd ? kd.ref : fx[0];
@@ -1462,16 +1519,17 @@ function fixture(s, fx) {
     b.add(ref, ox, oz, rot, 0, kd && kd.open ? glassMat : null);
     var goods = [];
     if (kd) stock(kd, copies > 1 ? fx[4] && fx[4][ci] : fx[4], goods);
-    (fx[5] || []).forEach(function (e) { goods.push(e); });
+    (fx[5] || []).forEach(function (e) { goods.push(e.slice(0, 5).concat([e[5] || 1, item++])); });
     // goods are given by the height of the surface they stand on
     goods.forEach(function (g) {
       var p = rotY(g[1], g[2], rot);
       var k = g[5] || 1;
       var gb = lib.model(g[0]).box;
-      b.raw(g[0], ox + p[0], oz + p[1], rot + g[3], g[4] - gb.y0 * k, k);
+      var rk = kd && kd.none || fx[7] === 'staff' ? -1 : shelfRank(s, fx, g[6], g[7]);
+      b.raw(g[0], ox + p[0], oz + p[1], rot + g[3], g[4] - gb.y0 * k, k, rk);
       if (g[0].indexOf('televisionModern') >= 0) {
         var sp = rotY(g[1], g[2] + gb.z1 * k + 0.004, rot);
-        b.plane(screenMat, (gb.x1 - gb.x0) * k * 0.86, (gb.h - gb.y0) * k * 0.62, ox + sp[0], g[4] + (gb.h - gb.y0) * k * 0.58, oz + sp[1], rot + g[3]);
+        b.plane(screenMat, (gb.x1 - gb.x0) * k * 0.86, (gb.h - gb.y0) * k * 0.62, ox + sp[0], g[4] + (gb.h - gb.y0) * k * 0.58, oz + sp[1], rot + g[3], rk);
       }
     });
     if (kd && kd.none || fx[7] === 'staff') continue;
@@ -1621,6 +1679,7 @@ function settle(s) {
   if (!any) return;
   s.merged = all.group();
   s.group.add(s.merged);
+  s.stocked = -1;
   shadowDirty = true;
 }
 
@@ -2313,6 +2372,7 @@ function sync(animate, now) {
             pc.on = true;
             pc.g = pc.b.group();
             s.group.add(pc.g);
+            s.stocked = -1;
             rise(pc.g, now, 450, s, pc);
             dustAt(pc.g, now);
             grew = true;
@@ -3572,6 +3632,7 @@ function draw(now) {
   order.forEach(function (id) {
     var s = shops[id];
     if (!s.group.visible) return;
+    shelves(s);
     if (s.clerk.f.obj.visible) {
       if (s.clerk.still) s.clerk.f.mixer.update(dt);
       else staffStep(s, s.clerk, dt);
