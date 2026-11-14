@@ -56,6 +56,7 @@ function tints(ref, from, to) {
   return to.map(function (c) { return ref + '@' + from + '>' + c; });
 }
 var BOX = tints('shop/shelf-boxes.box', '15,2', ['15,2', '3,1', '4,1', '12,2', '8,1', '0,1']);
+var PARCEL = 'shop/shelf-boxes.box@2,2>10,2;3,2>11,2;15,2>8,2~x';
 var CARTON = tints('shop/shelf-boxes.carton', '7,1', ['7,1', '2,1', '12,2', '14,2', '10,1']);
 var BAG = tints('shop/shelf-bags.bag', '15,2', ['15,2', '3,1', '4,1', '12,2', '10,1', '0,1']);
 var BOTTLE = tints('shop/shelf-end.bottle', '7,1', ['7,1', '2,1', '12,2', '8,1', '14,2']);
@@ -675,7 +676,7 @@ function modelList() {
   walk(FLOWERS);
   walk(OVERSTOCK.boxes);
   walk(['food/plate-rectangle*0.55', 'skate/pallet', 'shop/character-employee@5,3>2,2', 'shop/freezers-standing@13,3>2,2',
-    'shop/freezers-standing@13,3>2,1']);
+    'shop/freezers-standing@13,3>2,1', PARCEL, STAFF]);
   Object.keys(KIND).forEach(function (k) { seen[KIND[k].ref] = 1; });
   ['shop/wall', 'shop/wall-window', 'shop/column', 'shop/floor', 'shop/cash-register', 'shop/cash-register-self', 'shop/character-employee', 'arcade/cash-register',
     'shop/hand-truck', 'shop/shopping-basket', 'shop/shopping-basket*0.62', 'furn/cardboardBoxClosed', 'furn/cardboardBoxOpen', 'furn/rugDoormat',
@@ -1078,10 +1079,11 @@ var DIRT = 0x9b7b55;
 var PAINT = 0xf4f2ea;
 
 // a straight run of wall from (x0, z0) to (x1, z1), one piece per unit, decorated side toward `inX, inZ`
-function wallRun(b, kit, x0, z0, x1, z1, inX, inZ) {
+function wallRun(b, kit, x0, z0, x1, z1, inX, inZ, gap) {
   var n = Math.round(Math.hypot(x1 - x0, z1 - z0));
   var rot = Math.atan2(inX, inZ);
   for (var i = 0; i < n; i++) {
+    if (i === gap) continue;
     var u = (i + 0.5) / n;
     b.add(kit + '/wall', x0 + (x1 - x0) * u, z0 + (z1 - z0) * u, rot);
   }
@@ -1814,8 +1816,10 @@ function buildFront() {
   root.add(front.group());
   [[-1, -EDGE], [1, EDGE]].forEach(function (sd) {
     var w = new Batch();
-    wallRun(w, 'shop', sd[1], FRONT, sd[1], BACK, -sd[0], 0);
+    wallRun(w, 'shop', sd[1], FRONT, sd[1], BACK, -sd[0], 0, sd[0] > 0 ? 4 : -1);
+    if (sd[0] > 0) doorFrame(w);
     var wg = w.group();
+    if (sd[0] > 0) doorLeaf(wg);
     root.add(wg);
     outer.push({ g: wg, n: [sd[0], 0] });
   });
@@ -2078,13 +2082,15 @@ function buildOutside() {
   // the loading bay on the east
   b.slab(flat(ASPHALT), EDGE + 0.7, 11.2, -6.5, LOT[0], 0, 0.016);
   b.add('roads/dumpster', EDGE + 1.5, -5.6, Math.PI / 2);
-  b.add('furn/cardboardBoxClosed', EDGE + 1.0, -3.6, 0.2);
-  b.add('furn/cardboardBoxClosed', EDGE + 1.05, -3.25, -0.3);
-  b.add('furn/cardboardBoxOpen', EDGE + 1.4, -3.4, 0.6);
-  b.add('shop/hand-truck', EDGE + 1.1, -2.6, 1.2);
+  b.add('furn/cardboardBoxClosed', 10.45, -6.05, 0.2);
+  b.add('furn/cardboardBoxClosed', 10.95, -6.0, -0.3);
+  b.add('furn/cardboardBoxOpen', 10.7, -6.2, 0.6);
+  // the apron the stockers step out onto from the stock door
+  b.slab(flat(PAVE), EDGE + 0.3, EDGE + 0.7, DOORZ - 0.6, DOORZ + 0.6, 0, 0.02);
   root.add(b.group());
   buildLot();
   buildTaxi();
+  buildDock();
   buildGarden();
   buildPylon();
 }
@@ -2167,6 +2173,23 @@ function buildTaxi() {
   lv[4].add('nature/flower_yellowA', 8.0, 9.95, 0, 0.18);
   var pl = finishPlace('taxi', lv);
   pl.pick = addPick('taxi', 5.7, 10.4, 3.4, 1.6);
+}
+
+// the stockroom on the loading bay: the dollies the stockers push, and a stack of boxes on the bay for each level that
+// loads them heavier. A new stocker shows by itself, with a puff, where it waits
+function buildDock() {
+  dollies = [0, 1, 2, 3, 4, 5].map(dollyGroup);
+  shadows = new THREE.InstancedMesh(blobGeo, blobMat, 8);
+  shadows.count = 0;
+  shadows.frustumCulled = false;
+  root.add(shadows);
+  var lv = levels(10);
+  [[3, -5.2], [6, -4.5], [9, -3.8]].forEach(function (p) {
+    for (var i = 0; i < 6; i++) lv[p[0]].add(PARCEL, 10.7 + (i % 2 - 0.5) * 0.36, p[1] + (i % 3 - 1) * 0.1, (i % 3 - 1) * 0.15, (i >> 1) * 0.1);
+  });
+  var pl = finishPlace('dock', lv);
+  pl.add = true;
+  pl.pick = addPick('dock', 9.7, -3.3, 3.2, 6);
 }
 
 var puffMat = new THREE.MeshBasicMaterial({ color: 0xf2efe8, transparent: true, opacity: 0.8, depthWrite: false });
@@ -2409,6 +2432,7 @@ var trafficT = 0;
 var carT = 4;
 var taxiT = 8;
 var truckQ = 0;
+var truckT = 25;
 
 function truckFor() {
   truckQ = Math.min(2, truckQ + 1);
@@ -2426,6 +2450,7 @@ function trafficStep(dt) {
   trafficT -= dt;
   carT -= dt;
   taxiT -= dt;
+  truckT -= dt;
   var through = cars.filter(function (c) { return c.kind === 'pass'; }).length;
   if (trafficT <= 0 && through < 5) {
     var d = Math.random() < 0.5 ? 1 : -1;
@@ -2449,6 +2474,10 @@ function trafficStep(dt) {
     taxiT = 3;
   }
   if (taxiQ.length && taxiQ[0].age > 25) onFoot(taxiQ.shift());
+  if (truckT <= 0) {
+    truckFor();
+    truckT = 60;
+  }
   if (truckQ > 0 && !cars.some(function (c) { return c.kind === 'truck'; })) {
     truckQ--;
     addCar('car/delivery', [{ x: 62, z: LANE_W }, { x: DRIVE + 0.6, z: LANE_W, lane: -1 }, { x: DRIVE, z: 10.2 }, { x: DRIVE, z: 0.5, stop: 5, unload: true },
@@ -3085,7 +3114,252 @@ function staffStep(s, h, dt) {
   } else if (h.i >= h.path.length) h.path = null;
 }
 
+// The stock door is in the east wall of the front, and the stockers come out of it from the loading bay. A stocker's
+// place on its trip comes from the sim's clock for it, so the walk takes as long as the sim says at any speed
+var DOORZ = -1.95;
+var STRIP_Z = -2.38;
+var AISLE_X = 1.0;
+var GATE = { x: EDGE + 1.0, z: DOORZ };
+var STAFF = 'shop/character-employee@5,3>4,2';
+// where the stockers wait on the bay: a line facing west, the dolly in front. They walk west to the lane at LANE_X
+// and along it to the gate
+var LANE_X = 9.25;
+var STAND = [-0.9, -1.45, -2.0, -2.55, -3.1, -3.65, -4.2, -4.75].map(function (z) {
+  return { x: 10.15, z: z, face: -Math.PI / 2 };
+});
+// where the dolly stands beside a stocker working a shelf, in his own frame, in the order tried
+var PARK = [[0.5, 0.02], [-0.5, 0.02], [0, -0.45], [0.45, -0.3], [-0.45, -0.3]];
+var DOOR_C = 0x8d93a6;
+var LEAF_C = 0xe0823d;
+var stockers = [];
+var dollies = [];
+var stockN = -1;
+// the stockers' ground shadows are one instanced mesh, to keep the draw calls down
+var shadows;
+var blobAt = new THREE.Matrix4();
+var sdoor = { open: 0, leaf: null };
+
+function doorFrame(w) {
+  var c = flat(DOOR_C);
+  w.slab(c, EDGE - 0.3, EDGE + 0.3, -2.5, DOORZ - 0.3, 1, 1);
+  w.slab(c, EDGE - 0.3, EDGE + 0.3, DOORZ + 0.3, -1.5, 1, 1);
+  w.slab(c, EDGE - 0.3, EDGE + 0.3, DOORZ - 0.3, DOORZ + 0.3, 1, 0.12);
+}
+
+// one leaf hinged at the south jamb on the outer face, swinging out onto the bay. It hangs off the wall's group, so
+// it drops with the wall when the camera looks at that wall from outside
+function doorLeaf(wg) {
+  var g = new THREE.Group();
+  g.position.set(EDGE + 0.2, 0, DOORZ + 0.3);
+  var m = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.86, 0.6), flat(LEAF_C));
+  m.position.set(0, 0.43, -0.3);
+  m.castShadow = true;
+  g.add(m);
+  wg.add(g);
+  sdoor.leaf = g;
+}
+
+function stockDoorStep(dt, near) {
+  var want = near ? 1 : 0;
+  if (want === sdoor.open) return;
+  sdoor.open = want > sdoor.open ? Math.min(1, sdoor.open + dt * 3) : Math.max(0, sdoor.open - dt * 1.2);
+  var e = sdoor.open * sdoor.open * (3 - 2 * sdoor.open);
+  sdoor.leaf.rotation.y = -e * 1.6;
+  // the shadow map is redrawn once the leaf stops, not on every frame of the swing
+  if (sdoor.open === 0 || sdoor.open === 1) shadowDirty = true;
+}
+
+// a dolly with n boxes stacked on it, drawn as one mesh
+function dollyGroup(n) {
+  var b = new Batch();
+  b.add('shop/hand-truck', 0, 0, 0);
+  for (var i = 0; i < n; i++) b.add(PARCEL, 0, 0, 0, 0.07 + i * 0.1);
+  return b.group(false);
+}
+
+function newStocker(i) {
+  var f = figure(STAFF, 'idle');
+  var hold = new THREE.Group();
+  var rig = dollies.map(function (g) {
+    var c = g.clone();
+    c.visible = false;
+    hold.add(c);
+    return c;
+  });
+  f.obj.add(hold);
+  f.obj.visible = false;
+  root.add(f.obj);
+  return { f: f, hold: hold, rig: rig, n: -1, i: i, id: null, t: 0, park: PARK[0], shown: false };
+}
+
+// the way out for one trip: bay, stock door, along the front strip, up the main aisle and into the department to a
+// fixture. The stocker picks the fixture once and keeps it until the trip ends
+function plan(k, w) {
+  var s = shops[w.id];
+  var shown = s.items.filter(function (pc) { return pc.on && pc.spots.length; });
+  var sp = { at: [3.2, s.cfg.aisles[0]], f: 'k' };
+  var r;
+  // a fixture with room for the dolly beside it, when there is one among the first few picks
+  for (var tries = 0; tries < 8; tries++) {
+    if (shown.length) {
+      var pc = shown[Math.floor(Math.random() * shown.length)];
+      sp = pc.spots[Math.floor(Math.random() * pc.spots.length)];
+    }
+    r = route(s, sp.at).map(function (q) { return world(s, q); });
+    k.face = faceRot(s, sp.f) + Math.PI;
+    if (parkAt(k, s, r[r.length - 1])) break;
+  }
+  var h = STAND[k.i];
+  var raw = [h, { x: LANE_X, z: h.z }, { x: LANE_X, z: DOORZ }, GATE, { x: EDGE - 0.6, z: DOORZ }, { x: 6.4, z: STRIP_Z }, { x: AISLE_X, z: STRIP_Z }, { x: AISLE_X, z: r[0].z }].concat(r);
+  var pts = [raw[0]];
+  var cum = [0];
+  raw.forEach(function (q, j) {
+    var a = pts[pts.length - 1];
+    var d = Math.hypot(q.x - a.x, q.z - a.z);
+    if (j && d > 0.01) {
+      pts.push(q);
+      cum.push(cum[cum.length - 1] + d);
+    }
+  });
+  k.pts = pts;
+  k.cum = cum;
+}
+
+// the first of PARK that clears the department's fixtures for a stocker standing at `end`; sets k.park, and says
+// whether there was one
+function parkAt(k, s, end) {
+  var cs = Math.cos(k.face);
+  var sn = Math.sin(k.face);
+  k.park = PARK[0];
+  return PARK.some(function (q) {
+    var dx = end.x + q[0] * cs + q[1] * sn;
+    var dz = end.z - q[0] * sn + q[1] * cs;
+    var clear = s.items.every(function (o) {
+      if (!o.on) return true;
+      var xs = [s.cx + s.sg * o.foot[0], s.cx + s.sg * o.foot[1]];
+      return dx + 0.2 < Math.min(xs[0], xs[1]) || dx - 0.2 > Math.max(xs[0], xs[1]) || dz + 0.2 < s.cz + o.foot[2] || dz - 0.2 > s.cz + o.foot[3];
+    });
+    if (clear) k.park = q;
+    return clear;
+  });
+}
+
+// where on the path, and which way it runs there
+function along(k, d) {
+  var c = k.cum;
+  var i = 1;
+  while (i < c.length - 1 && c[i] < d) i++;
+  var a = k.pts[i - 1];
+  var b = k.pts[i];
+  var u = Math.max(0, Math.min(1, (d - c[i - 1]) / ((c[i] - c[i - 1]) || 1)));
+  k.x = a.x + (b.x - a.x) * u;
+  k.z = a.z + (b.z - a.z) * u;
+  k.dx = b.x - a.x;
+  k.dz = b.z - a.z;
+}
+
+// a box set down on a shelf, heard when that stocker is on screen and the camera is close
+var thudAt = 0;
+function thud(p) {
+  var now = performance.now();
+  if (focus.dist > 30 || now - thudAt < 1500 || !window.sfx) return;
+  toScreen(p.x, 0.8, p.z, sp);
+  if (sp.z > 1 || sp.x < 0 || sp.x > cw || sp.y < IT || sp.y > ch - IB) return;
+  thudAt = now;
+  sfx('stock');
+}
+
+function stockerStep(k, w, dt) {
+  var o = k.f.obj;
+  if (w.id && (k.id !== w.id || w.t < k.t)) plan(k, w);
+  k.id = w.id;
+  k.t = w.t;
+  var home = STAND[k.i];
+  var head = home.face;
+  var x = home.x;
+  var z = home.z;
+  var boxes = crewAt()[1];
+  var park = 0;
+  var clip = 'idle';
+  var rate = 1;
+  var shelving = false;
+  var back = w.T - w.out - SHELVE;
+  if (w.id) {
+    if (w.t < w.out) {
+      along(k, k.cum[k.cum.length - 1] * w.t / w.out);
+      head = Math.atan2(k.dx, k.dz);
+      park = Math.max(0, 1 - (w.out - w.t) / 0.8);
+      clip = 'walk';
+      rate = k.cum[k.cum.length - 1] / w.out;
+    } else if (w.t < w.out + SHELVE) {
+      along(k, k.cum[k.cum.length - 1]);
+      head = k.face;
+      park = 1;
+      clip = 'pick-up';
+      shelving = true;
+      boxes = Math.ceil(boxes * (1 - (w.t - w.out) / SHELVE));
+    } else {
+      along(k, k.cum[k.cum.length - 1] * (1 - (w.t - w.out - SHELVE) / back));
+      head = Math.atan2(-k.dx, -k.dz);
+      park = Math.max(0, 1 - (w.t - w.out - SHELVE) / 0.8);
+      clip = 'walk';
+      boxes = 0;
+      rate = k.cum[k.cum.length - 1] / back;
+    }
+    x = k.x;
+    z = k.z;
+  }
+  o.position.set(x, 0, z);
+  if (shelving && !k.sh) thud(o.position);
+  k.sh = shelving;
+  if (!k.shown) {
+    k.shown = true;
+    o.rotation.y = head;
+  }
+  o.rotation.y += Math.atan2(Math.sin(head - o.rotation.y), Math.cos(head - o.rotation.y)) * Math.min(1, dt * 8);
+  var e = park * park * (3 - 2 * park);
+  k.hold.position.set(k.park[0] * e, 0, 0.42 * (1 - e) + k.park[1] * e);
+  if (boxes !== k.n) {
+    k.n = boxes;
+    k.rig.forEach(function (g, j) { g.visible = j === boxes; });
+  }
+  act(k.f, clip, 0.2);
+  if (k.f.mixer) k.f.mixer.update(dt * (clip === 'walk' ? Math.max(0.6, Math.min(2.2, rate / 1.1)) : 1));
+}
+
+function crewStep(dt, now) {
+  var live = window.crew;
+  var n = live.length;
+  if (stockN >= 1 && n > stockN) {
+    for (var j = stockN; j < n; j++) dust(STAND[j].x - 0.3, STAND[j].x + 0.3, STAND[j].z - 0.3, STAND[j].z + 0.3, now, 10);
+  }
+  stockN = n;
+  var near = false;
+  for (var i = 0; i < Math.max(n, stockers.length); i++) {
+    var k = stockers[i];
+    if (i >= n) {
+      if (k) {
+        k.f.obj.visible = false;
+        k.shown = false;
+        k.id = null;
+      }
+      continue;
+    }
+    if (!k) k = stockers[i] = newStocker(i);
+    k.f.obj.visible = true;
+    stockerStep(k, live[i], dt);
+    var p = k.f.obj.position;
+    if (Math.hypot(p.x - EDGE, p.z - DOORZ) < 1.1) near = true;
+    blobAt.makeRotationX(-Math.PI / 2).setPosition(p.x, 0.035, p.z);
+    shadows.setMatrixAt(i, blobAt);
+  }
+  shadows.count = n;
+  shadows.instanceMatrix.needsUpdate = true;
+  stockDoorStep(dt, near);
+}
+
 function resetCrowd() {
+  stockN = -1;
   people.forEach(function (p) {
     p.path = null;
     p.lane = null;
@@ -3128,14 +3402,17 @@ function makeTags() {
 function bstate(id) {
   var p = PL[id];
   if (p) {
-    var busy = id === 'hall' ? Math.min(1, inRate() / capacity()) : 0;
-    return { name: p.name, lv: S.pl[id], own: S.pl[id] > 0 || !!p.open, price: placeCost(id), avail: has(p.after), frac: busy, alert: id === 'hall' && linesFull() };
+    var busy = id === 'hall' ? Math.min(1, inRate() / capacity()) : id === 'dock' ? Math.min(1, served() / stockCap()) : 0;
+    var out = id === 'hall' ? linesFull() : id === 'dock' && shelvesOut();
+    return { name: p.name, lv: S.pl[id], own: S.pl[id] > 0 || !!p.open, price: placeCost(id), avail: has(p.after), frac: busy, alert: out,
+      said: id === 'dock' ? 'Shelves empty!' : 'Lines full!' };
   }
   var e = S.b[id];
   var l = e ? e.l : 0;
   var m = nextMs(l);
   var from = m && m.i ? MS[m.i - 1][0] : 0;
-  return { name: BZ[id].name, lv: l, own: !!e, price: cost(id, 1), avail: avail(id), frac: !e ? 0 : m ? (l - from) / (m.lv - from) : 1 };
+  return { name: BZ[id].name, lv: l, own: !!e, price: cost(id, 1), avail: avail(id), frac: !e ? 0 : m ? (l - from) / (m.lv - from) : 1,
+    alert: !!e && window.fill[id] <= 0, said: 'Sold out' };
 }
 
 function toScreen(x, y, z, out) {
@@ -3153,6 +3430,7 @@ function anchor(id) {
   if (id === 'hall') return [-4.2, 1.3, -0.6];
   if (id === 'lot') return [-6, 0.8, (LOT[0] + LOT[1]) / 2];
   if (id === 'taxi') return [5.7, 1.2, 10.2];
+  if (id === 'dock') return [6.2, 1.0, -1.0];
   if (id === 'garden') return [(GARDEN[0] + GARDEN[1]) / 2, 1.0, (GARDEN[2] + GARDEN[3]) / 2];
   var s = shops[id];
   var c = toWorld(s, 0, -0.3);
@@ -3176,7 +3454,7 @@ function overlay(now) {
       t.el.style.display = show ? '' : 'none';
     }
     if (show) {
-      var line = st.alert ? st.name + '  Lines full!' : st.own ? (st.lv ? st.name + '  Lv ' + st.lv : st.name) : st.avail ? st.name + '  $' + short(st.price) : st.name + '  locked';
+      var line = st.alert ? st.name + '  ' + st.said : st.own ? (st.lv ? st.name + '  Lv ' + st.lv : st.name) : st.avail ? st.name + '  $' + short(st.price) : st.name + '  locked';
       if (line !== t.text) {
         t.text = line;
         t.line.textContent = line;
@@ -3301,6 +3579,7 @@ function draw(now) {
     if (s.helper && s.helper.f.obj.parent.visible) staffStep(s, s.helper, dt);
   });
   places.hall.staff.forEach(function (f) { if (f.mixer && f.obj.parent.visible && f.obj.visible) f.mixer.update(dt); });
+  crewStep(dt, now);
   puffsStep(now);
   riseStep(now);
   pop(now);
@@ -3333,6 +3612,7 @@ function spot(id) {
   if (s) return { x: s.cx * 0.8, y: s.cz };
   if (id === 'lot') return { x: 0, y: (LOT[0] + LOT[1]) / 2 };
   if (id === 'taxi') return { x: 4, y: 10 };
+  if (id === 'dock') return { x: 8.5, y: -3.4 };
   if (id === 'garden') return { x: (GARDEN[0] + GARDEN[1]) / 2, y: (GARDEN[2] + GARDEN[3]) / 2 };
   return { x: 0, y: (FRONT + BACK) / 2 };
 }

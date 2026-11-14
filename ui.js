@@ -200,7 +200,8 @@ function msText(l) {
 }
 
 function perMin(v) {
-  return Math.round(v * 60);
+  v = Math.round(v * 60);
+  return v >= 1000 ? short(v) : v;
 }
 
 function makeRow(id) {
@@ -229,14 +230,19 @@ function upRow(r) {
     var l = S.pl[id];
     var open = has(p.after);
     var hall = id === 'hall';
+    var dock = id === 'dock';
     flag(k, 'lock', r.el, 'lock', !open);
     set(k, 'lv', r.lv, 'textContent', l ? 'Lv ' + l + '/' + p.cost.length : '');
     // the checkouts' bar shows how busy the tills are: shoppers coming in against what the tills can take
-    flag(k, 'nobar', r.el, 'nobar', !hall);
-    flag(k, 'rd', r.el, 'rd', hall && linesFull());
+    flag(k, 'nobar', r.el, 'nobar', !hall && !dock);
+    flag(k, 'rd', r.el, 'rd', hall && linesFull() || dock && shelvesOut());
     if (hall) {
       r.fill.style.width = Math.min(100, inRate() / capacity() * 100) + '%';
       set(k, 'bt', r.bt, 'textContent', perMin(inRate()) + ' come in, tills take ' + perMin(capacity()) + ' a min');
+    }
+    if (dock) {
+      r.fill.style.width = Math.min(100, served() / stockCap() * 100) + '%';
+      set(k, 'bt', r.bt, 'textContent', perMin(served()) + ' shop, shelves for ' + perMin(stockCap()) + ' a min');
     }
     set(k, 'ms', r.ms, 'textContent', !open ? 'Open ' + BZ[p.after].name + ' first' : c ? 'Next: ' + p.next[l] : 'Everything is built');
     set(k, 'up', r.up, 'innerHTML', c ? (l || p.open ? 'Upgrade' : 'Build') + '<small>' + money(c) + '</small>' : 'Done<small>all levels</small>');

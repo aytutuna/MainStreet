@@ -26,8 +26,9 @@ var MS = [[10, 2], [25, 4], [50, 3], [100, 4], [200, 3], [300, 3], [400, 3]];
 var MS_GEMS = [1, 2, 3, 5, 8, 10, 15];
 var STAGE = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 16, 18, 20, 25, 50, 100, 200, 300, 400];
 
-// places round the departments. Parking, the taxi stand and the garden bring shoppers; the checkouts take their
-// money. `after` must be open first, `open` places stand from the start, and `next` names what each level adds
+// places round the departments. Parking, the taxi stand and the garden bring shoppers, the stockroom keeps the
+// shelves full and the checkouts take the money. `after` must be open first, `open` places stand from the start, and
+// `next` names what each level adds
 var PLACES = [
   { id: 'lot', name: 'Parking', ic: 'car/sedan', after: 'bakery', cost: [500, 5e4, 5e6, 5e8],
     next: ['A parking lot: shoppers come by car', 'More parking bays', 'More parking bays', 'The whole lot, with planters'] },
@@ -35,6 +36,10 @@ var PLACES = [
     cost: [300, 3e4, 3e6, 3e8, 3e10, 3e12, 3e14, 3e16, 3e18, 3e20],
     next: ['Lane 2, with a cashier', 'A row of shopping carts', 'Two self checkouts and an attendant', 'Bottle returns', 'Lane 3, with a cashier',
       'Two more self checkouts', 'A service desk', 'Vending machines', 'Two more self checkouts', 'A bench and plants'] },
+  { id: 'dock', name: 'Stockroom', ic: 'shop/hand-truck', after: 'produce', open: true,
+    cost: [150, 1.5e4, 1.5e6, 1.5e8, 1.5e10, 1.5e12, 1.5e14, 1.5e16, 1.5e18, 1.5e20],
+    next: ['A second stocker', 'A third stocker', 'A box more on every dolly', 'A fourth stocker', 'A fifth stocker',
+      'A box more on every dolly', 'A sixth stocker', 'A seventh stocker', 'A box more on every dolly', 'An eighth stocker'] },
   { id: 'taxi', name: 'Taxi Stand', ic: 'car/taxi', after: 'frozen', cost: [2e6, 2e8, 2e10, 2e12],
     next: ['A taxi stand: shoppers come by taxi', 'More taxis', 'More taxis', 'A taxi every few seconds'] },
   { id: 'garden', name: 'Garden Center', ic: 'shop/display-flowers', after: 'kitchen', cost: [2e10, 2e12, 2e14, 2e16],
@@ -46,3 +51,6 @@ PLACES.forEach(function (p) { PL[p.id] = p; });
 // the tills in the order they open, with the Checkouts level that adds each: staffed lanes and self checkouts
 var TILLS = [{ k: 'lane', lv: 0 }, { k: 'lane', lv: 1 }, { k: 'self', lv: 3 }, { k: 'self', lv: 3 }, { k: 'lane', lv: 5 },
   { k: 'self', lv: 6 }, { k: 'self', lv: 6 }, { k: 'self', lv: 9 }, { k: 'self', lv: 9 }];
+
+// the stockers at each Stockroom level, and how many boxes each one's dolly carries
+var CREW = [[1, 2], [2, 2], [3, 2], [3, 3], [4, 3], [5, 3], [5, 4], [6, 4], [7, 4], [7, 5], [8, 5]];
