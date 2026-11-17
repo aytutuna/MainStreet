@@ -13,7 +13,7 @@ var X2_SECS = 1800;
 var WARP_COST = 50;
 var WARP_SECS = 3600;
 var DAILY = [
-  { cash: 10 }, { gems: 5 }, { x2: 30 }, { cash: 30 }, { gems: 10 }, { cash: 60 }, { gems: 25, x2: 60, cash: 120 }
+  { cash: 2 }, { gems: 5 }, { x2: 30 }, { cash: 30 }, { gems: 10 }, { cash: 60 }, { gems: 25, x2: 60, cash: 120 }
 ];
 
 // shoppers a second: on foot (more for a bigger store and the garden), by car for each Parking level, by taxi for
@@ -89,18 +89,26 @@ function noPlaces(s) {
   });
 }
 
-// numbers: 1.2K, 3.4M, 5.6B, 7.8T, then aa, ab, ...
+// numbers: 1.2K, 3.4M, 5.6B, 7.8T and so on up to Dc, then 1.5e42
+var SUFFIX = ['', 'K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc'];
+
 function short(v) {
-  if (!isFinite(v)) return '999zz';
+  if (!isFinite(v)) return '∞';
   if (v < 1000) return v < 10 && v !== Math.floor(v) ? String(Math.round(v * 10) / 10) : String(Math.floor(v));
-  var i = Math.min(Math.floor(Math.log10(v) / 3), 5 + 26 * 26);
+  var i = Math.floor(Math.log10(v) / 3);
   var x = v / Math.pow(1000, i);
-  if (x >= 999.95) {
+  if (x >= 999.5) {
     x /= 1000;
     i++;
   }
-  var tag = i < 5 ? ' KMBT'.charAt(i) : String.fromCharCode(97 + Math.floor((i - 5) / 26)) + String.fromCharCode(97 + (i - 5) % 26);
-  return Number(x.toPrecision(3)) + tag;
+  if (i < SUFFIX.length) return Number(x.toPrecision(3)) + SUFFIX[i];
+  var e = Math.floor(Math.log10(v));
+  var m = Number((v / Math.pow(10, e)).toPrecision(2));
+  if (m >= 10) {
+    m = 1;
+    e++;
+  }
+  return m + 'e' + e;
 }
 
 function lv(id) {
@@ -601,7 +609,7 @@ function away(sec) {
   S.x2 = Math.max(0, S.x2 - s);
   S.pend += gain;
   S.st.srv += n;
-  return { secs: s, gain: gain, n: n };
+  return { secs: s, real: sec, gain: gain, n: n };
 }
 
 function claimAway() {
@@ -683,8 +691,14 @@ function buyBest() {
 function gl(t, gems, n, f, x2) {
   return { t: t, g: gems, n: n, f: f, x2: x2 || 0 };
 }
+// to is the department or place a goal is about, and j the item of a place
+function goTo(g, id, j) {
+  g.to = id;
+  g.j = j;
+  return g;
+}
 function gLv(id, n, gems, x2) {
-  return gl(n === 1 ? 'Open the ' + BZ[id].name : BZ[id].name + ' to level ' + n, gems, n, function () { return lv(id); }, x2);
+  return goTo(gl(n === 1 ? 'Open the ' + BZ[id].name : BZ[id].name + ' to level ' + n, gems, n, function () { return lv(id); }, x2), id);
 }
 function gEarn(n, gems, x2) {
   return gl('Earn $' + short(n) + ' in total', gems, n, function () { return S.all; }, x2);
@@ -693,11 +707,11 @@ function gServe(n, gems, x2) {
   return gl('Serve ' + n.toLocaleString('en-US') + ' shoppers', gems, n, function () { return S.st.srv; }, x2);
 }
 function gPl(id, n, t, gems) {
-  return gl(t, gems, n, function () { return S.pl[id]; });
+  return goTo(gl(t, gems, n, function () { return S.pl[id]; }), id);
 }
 // a goal on one item of a place, since the place's level also counts its other items
 function gIt(id, j, n, t, gems) {
-  return gl(t, gems, n, function () { return S.pi[id][j]; });
+  return goTo(gl(t, gems, n, function () { return S.pi[id][j]; }), id, j);
 }
 // a goal added with the stockroom
 function nw(g) {
@@ -712,11 +726,11 @@ var GOALS = [
   gIt('hall', 1, 1, 'Put in self checkouts', 10), nw(gPl('dock', 3, 'Stockroom to level 3', 10)), gEarn(1e7, 8), gLv('pantry', 1, 10), gLv('produce', 30, 12), gLv('snacks', 1, 10),
   gPl('lot', 3, 'Parking to level 3', 10), gLv('toys', 1, 12), gServe(2000, 10), gEarn(1e9, 10, 30), gLv('tech', 1, 15),
   gIt('hall', 0, 2, 'Open lane 3', 15), gLv('kitchen', 1, 20), gEarn(1e11, 15), gLv('kitchen', 20, 15, 30), gLv('toys', 25, 15),
-  gl('Move to a new store', 30, 1, function () { return S.store - 1; }), gServe(10000, 20), gEarn(1e13, 20, 60), gLv('clothes', 1, 25),
+  goTo(gl('Move to a new store', 30, 1, function () { return S.store - 1; }), 'sell'), gServe(10000, 20), gEarn(1e13, 20, 60), gLv('clothes', 1, 25),
   gPl('garden', 1, 'Open the Garden Center', 25), gLv('home', 1, 30), gLv('office', 1, 30), gPl('hall', 10, 'Checkouts to level 10', 30),
   nw(gPl('dock', 10, 'Stockroom to level 10', 30)),
   gLv('pets', 1, 35), gEarn(1e15, 25), gLv('sports', 1, 35), gServe(50000, 30), gLv('tools', 1, 40), gLv('auto', 1, 40),
-  gl('Reach store #3', 40, 2, function () { return S.store - 1; }), gLv('seasonal', 1, 50), gEarn(1e21, 30)
+  goTo(gl('Reach store #3', 40, 2, function () { return S.store - 1; }), 'sell'), gLv('seasonal', 1, 50), gEarn(1e21, 30)
 ];
 
 // a v8 save's goal numbers, moved to where those goals are now; the new ones before them are passed over
@@ -738,7 +752,7 @@ function goals() {
   return S.goal.map(function (i) {
     var g = GOALS[i];
     var v = Math.min(g.n, g.f());
-    return { i: i, t: g.t, n: g.n, v: v, done: v >= g.n || !!S.gd[i], gems: g.g, x2: g.x2 };
+    return { i: i, t: g.t, n: g.n, v: v, done: v >= g.n || !!S.gd[i], gems: g.g, x2: g.x2, to: g.to, j: g.j };
   });
 }
 
@@ -792,11 +806,12 @@ function dayNum(ms) {
   return Math.floor((ms - d.getTimezoneOffset() * 60000) / 86400000);
 }
 
-// the streak goes on when the last claim was yesterday, and starts again after a missed day
+// the streak goes on when the last claim was yesterday, and starts again after a missed day. A clock set back keeps
+// the streak and claims nothing until its day comes round
 function daily() {
   var today = dayNum(clock());
   var d = S.day;
-  return { can: d.d !== today, idx: d.d === today - 1 || d.d === today ? d.n % 7 : 0 };
+  return { can: d.d < today, idx: d.d >= today - 1 ? d.n % 7 : 0 };
 }
 
 function dailyReward(i) {

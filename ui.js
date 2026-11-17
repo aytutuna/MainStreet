@@ -33,6 +33,9 @@ var testTaps = 0;
 var FREE_KEY = 'mainstreet.free';
 var free = false;
 var chips = [];
+var HINT_KEY = 'mainstreet.hints';
+var hinted = {};
+var dailyAsked = -1;
 
 function $(id) {
   return document.getElementById(id);
@@ -113,6 +116,7 @@ function clock2(v) {
 function fitInsets() {
   var top = $('meters').getBoundingClientRect().bottom + 6;
   var bot = innerHeight - (sheetOpen ? $('sheet').getBoundingClientRect().top : $('bottom').getBoundingClientRect().top) + 6;
+  if (cardId && !sheetOpen) bot += 25;
   if (top !== insets[0] || bot !== insets[1]) {
     insets = [top, bot];
     View.inset(top, bot);
@@ -138,9 +142,11 @@ function popAt(text, x, y, cls) {
   var d = document.createElement('div');
   d.className = 'pop ' + (cls || '');
   d.textContent = text;
-  d.style.left = x + 'px';
-  d.style.top = y + 'px';
   $('fly').appendChild(d);
+  // the text grows by about 15% while it pops
+  var half = d.offsetWidth * 0.58 + 4;
+  d.style.left = Math.max(half, Math.min($('fly').clientWidth - half, x)) + 'px';
+  d.style.top = Math.max(70, y) + 'px';
   var a = d.animate([{ transform: 'translate(-50%, 0) scale(0.6)', opacity: 0 }, { transform: 'translate(-50%, -14px) scale(1.15)', opacity: 1, offset: 0.2 },
     { transform: 'translate(-50%, -52px) scale(1)', opacity: 0 }], { duration: 1100, easing: 'ease-out' });
   a.onfinish = function () { d.remove(); };
@@ -230,9 +236,45 @@ function placeIcon(id, k) {
   return View.placeIcon(id, k) || 'assets/' + PL[id].ic + '.png';
 }
 
+// a rate a second as a number a minute, with a decimal under 10 so a small one never reads 0
 function perMin(v) {
-  v = Math.round(v * 60);
-  return v >= 1000 ? short(v) : v;
+  v *= 60;
+  if (v >= 1000) return short(v);
+  if (v >= 10) return String(Math.round(v));
+  var r = Math.round(v * 10) / 10;
+  return r ? String(r) : v > 0 ? '<0.1' : '0';
+}
+
+function plural(n, word) {
+  return short(n) + ' ' + word + (n === 1 ? '' : 's');
+}
+
+// how many of the departments are open, which is also the one that opens next
+function nextDept() {
+  for (var i = 0; i < BIZ.length; i++) if (!has(BIZ[i].id)) return i;
+  return BIZ.length;
+}
+
+// a department two or more places past the next one to open keeps its price to itself
+function far(id) {
+  return BZ[id].i - nextDept() >= 2;
+}
+
+// a button's price, or why it cannot be bought: locked, or too dear for now
+function buyBtn(k, b, label, c, locked) {
+  var poor = !locked && S.cash < c;
+  set(k, 'up', b, 'innerHTML', locked ? 'Locked' : label + '<small>' + money(c) + '</small>');
+  set(k, 'upd', b, 'disabled', locked || poor);
+  flag(k, 'lk', b, 'lk', locked);
+  flag(k, 'poor', b, 'poor', poor);
+}
+
+// the first purchase is what the opening prompt waits for
+function started() {
+  var n = 0;
+  BIZ.forEach(function (b) { n += lv(b.id); });
+  PLACES.forEach(function (p) { n += S.pl[p.id]; });
+  return n > 1 || S.store > 1 || S.day.n > 0;
 }
 
 function makeRow(id) {
@@ -256,7 +298,7 @@ function makeRow(id) {
 
 function starRow(n) {
   var out = '';
-  for (var i = 0; i < STAR_AT.length; i++) out += '<i' + (i < n ? ' class="on"' : '') + '>\u2605</i>';
+  for (var i = 0; i < STAR_AT.length; i++) out += i < n ? '<i class="on">\u2605</i>' : '<i>\u2606</i>';
   return out;
 }
 
@@ -265,21 +307,32 @@ function room(id) {
   return BZ[id] ? has(id) : !!PL[id].open || S.pl[id] > 0;
 }
 
-// what one more level of an item does, and what that adds to income a second
+// what one more level of an item does, as the one thing it changes
 function effect(id, x, j) {
+  if (BZ[id]) return stat(id, x);
+  var was = [inRate(), capacity(), stockCap()];
+  S.pi[id][j]++;
+  S.pl[id]++;
+  var now = [inRate(), capacity(), stockCap()];
+  S.pi[id][j]--;
+  S.pl[id]--;
+  // past the shoppers who come there is nothing more for tills or stockers to do
+  var want = id === 'hall' ? inRate() : served();
+  var up = Math.min(want, id === 'hall' ? now[1] : now[2]) - Math.min(want, id === 'hall' ? was[1] : was[2]);
+  if (id === 'hall' && up > 0) return '+' + perMin(up) + ' shoppers/min at the tills';
+  if (id === 'dock' && up > 0) return 'Restocks +' + perMin(up) + ' shoppers/min';
+  if (id === 'dock' && now[2] > was[2]) return 'Restocks ' + perMin(was[2]) + ' to ' + perMin(now[2]) + ' shoppers/min';
+  if (now[0] > was[0]) return '+' + perMin(now[0] - was[0]) + ' shoppers/min';
   var g = gains[id + ':' + j];
-  // with the shelves empty an item can add nothing for now; a row of "+$0/s" reads as broken
-  var out = g > 0.005 ? '+' + money(g) + '/s' : '';
-  var st = stat(id, x);
-  return out && st ? out + ' \u00b7 ' + st : out || st;
+  if (g > 0.005) return '+' + money(g) + '/s';
+  return id === 'hall' ? '+' + HALL_BOOST * 100 + '% sales' : '';
 }
 
 // what a department item's level changes for each shopper or stocker
 function stat(id, x) {
-  if (!BZ[id]) return '';
-  if (x.stat === 'sell') return '+' + money(perSell(id) * bmul()) + '/shopper';
-  if (x.stat === 'draw') return '+' + (DRAW * 60).toFixed(DRAW * 60 < 1 ? 2 : 1) + '/min';
-  return '-' + Math.round((1 - STAFF) * 100) + '% stocking';
+  if (x.stat === 'sell') return '+' + money(perSell(id) * bmul()) + ' a shopper';
+  if (x.stat === 'draw') return '+' + (DRAW * 60).toFixed(DRAW * 60 < 1 ? 2 : 1) + ' shoppers/min';
+  return '-' + Math.round((1 - STAFF) * 100) + '% stocking time';
 }
 
 // an open room's card: a department's stars or a place's load, and a row for each of its items
@@ -288,9 +341,9 @@ function makeRoom(id) {
   var el = document.createElement('div');
   el.className = 'dept';
   el.innerHTML = '<div class="biz dh"><img class="ic" src="assets/' + b.ic + '.png" alt="">' +
-    '<div class="mid"><div class="l1"><b></b><span></span></div><div class="pr"><i></i><em></em></div></div></div><div class="its"></div>';
+    '<div class="mid"><div class="l1"><b></b><span></span></div><div class="pr"><i></i><em></em></div><div class="l3 hint" hidden></div></div></div><div class="its"></div>';
   var r = { id: id, kind: 'room', el: el, k: {}, nm: el.querySelector('b'), lv: el.querySelector('.l1 span'), bar: el.querySelector('.pr'),
-    fill: el.querySelector('.pr i'), bt: el.querySelector('.pr em'), its: [] };
+    fill: el.querySelector('.pr i'), bt: el.querySelector('.pr em'), hint: el.querySelector('.hint'), its: [] };
   r.nm.textContent = b.name;
   el.querySelector('.ic').addEventListener('click', function () { focusBiz(id); });
   b.items.forEach(function (x, j) {
@@ -333,19 +386,28 @@ function placeHead(r) {
   var id = r.id;
   var k = r.k;
   var p = PL[id];
-  var hall = id === 'hall';
-  var dock = id === 'dock';
+  var box = r.el.firstChild;
   set(k, 'lv', r.lv, 'textContent', 'Lv ' + S.pl[id] + '/' + p.cost.length);
-  flag(k, 'nobar', r.el.firstChild, 'nobar', !hall && !dock);
-  flag(k, 'rd', r.el.firstChild, 'rd', hall && linesFull() || dock && shelvesOut());
-  if (hall) {
-    r.fill.style.width = Math.min(100, inRate() / capacity() * 100) + '%';
-    set(k, 'bt', r.bt, 'textContent', perMin(inRate()) + ' come in, tills take ' + perMin(capacity()) + ' a min');
-  }
-  if (dock) {
-    r.fill.style.width = Math.min(100, served() / stockCap() * 100) + '%';
-    set(k, 'bt', r.bt, 'textContent', perMin(served()) + ' shop, shelves for ' + perMin(stockCap()) + ' a min');
-  }
+  flag(k, 'nobar', box, 'nobar', id !== 'hall' && id !== 'dock');
+  var hint = loadBar(r, box, id);
+  set(k, 'hh', r.hint, 'hidden', !hint);
+  set(k, 'ht', r.hint, 'textContent', hint);
+}
+
+// the bar of Checkouts and the Stockroom: the shoppers asked of them against what they can take, red when that is
+// the limit. Returns what to do about it, or '' when it is not
+function loadBar(r, box, id) {
+  var k = r.k;
+  var hall = id === 'hall';
+  if (!hall && id !== 'dock') return '';
+  var n = hall ? inRate() : served();
+  var cap = hall ? capacity() : stockCap();
+  r.fill.style.width = Math.min(100, n / cap * 100) + '%';
+  set(k, 'bt', r.bt, 'textContent', 'Shoppers ' + perMin(n) + '/min \u00b7 ' + (hall ? 'tills ' : 'restock ') + perMin(cap) + '/min');
+  flag(k, 'rd', box, 'rd', hall && linesFull() || !hall && shelvesOut());
+  var lim = cap < n;
+  flag(k, 'lim', box, 'lim', lim);
+  return lim ? (hall ? 'Add lanes or self checkouts' : 'Hire stockers') : '';
 }
 
 // the piece an item adds next, or -1 when it is done
@@ -395,8 +457,12 @@ function upRoom(r) {
     set(qk, 'fx', q.fx, 'textContent', done ? '' : effect(id, x, j));
     set(qk, 'nx', q.nx, 'textContent', done ? 'Complete' : 'Next: ' + name);
     if (set(qk, 'pc', q.pic, 'title', name)) q.pic.src = p ? placeIcon(id, piece + 1) : upIcon(id, piece);
-    set(qk, 'up', q.up, 'innerHTML', done ? 'Done' : 'Buy<small>' + money(c) + '</small>');
-    set(qk, 'upd', q.up, 'disabled', done || !c || S.cash < c);
+    if (done || !c) {
+      set(qk, 'up', q.up, 'innerHTML', 'Done');
+      set(qk, 'upd', q.up, 'disabled', true);
+      flag(qk, 'lk', q.up, 'lk', false);
+      flag(qk, 'poor', q.up, 'poor', false);
+    } else buyBtn(qk, q.up, 'Buy', c, false);
     flag(qk, 'uphl', q.up, 'hl', hl);
   });
 }
@@ -422,25 +488,20 @@ function upRow(r) {
     var dock = id === 'dock';
     flag(k, 'lock', r.el, 'lock', !open);
     set(k, 'lv', r.lv, 'textContent', l ? 'Lv ' + l + '/' + p.cost.length : '');
-    // the checkouts' bar shows how busy the tills are: shoppers coming in against what the tills can take
     flag(k, 'nobar', r.el, 'nobar', !hall && !dock);
-    flag(k, 'rd', r.el, 'rd', hall && linesFull() || dock && shelvesOut());
-    if (hall) {
-      r.fill.style.width = Math.min(100, inRate() / capacity() * 100) + '%';
-      set(k, 'bt', r.bt, 'textContent', perMin(inRate()) + ' come in, tills take ' + perMin(capacity()) + ' a min');
-    }
-    if (dock) {
-      r.fill.style.width = Math.min(100, served() / stockCap() * 100) + '%';
-      set(k, 'bt', r.bt, 'textContent', perMin(served()) + ' shop, shelves for ' + perMin(stockCap()) + ' a min');
-    }
-    set(k, 'ms', r.ms, 'textContent', !open ? 'Open ' + BZ[p.after].name + ' first' : !built ? 'Next: ' + p.next[0] : c ? p.items.map(function (x) { return x.name; }).join(', ') : 'Everything is built');
+    var hint = loadBar(r, r.el, id);
+    set(k, 'ms', r.ms, 'textContent', !open ? 'Open ' + BZ[p.after].name + ' first' : !built ? 'Next: ' + p.next[0] : hint ? hint : c ? p.items.map(function (x) { return x.name; }).join(', ') : 'Everything is built');
     var newLv = set(k, 'nxl', r.nx.dataset, 'lv', open && !built ? 1 : '');
     if (set(k, 'nxk', r.nx, 'title', open && !built ? p.next[0] : '') || newLv) {
       if (open && !built) r.nx.src = placeIcon(id, 1);
       else r.nx.removeAttribute('src');
     }
-    set(k, 'up', r.up, 'innerHTML', built ? 'Items' : 'Build<small>' + money(c) + '</small>');
-    set(k, 'upd', r.up, 'disabled', built ? false : !open || S.cash < c);
+    if (built) {
+      set(k, 'up', r.up, 'innerHTML', 'Items');
+      set(k, 'upd', r.up, 'disabled', false);
+      flag(k, 'lk', r.up, 'lk', false);
+      flag(k, 'poor', r.up, 'poor', false);
+    } else buyBtn(k, r.up, 'Build', c, !open);
     flag(k, 'uphl', r.up, 'hl', hl);
     return;
   }
@@ -451,13 +512,12 @@ function upRow(r) {
   if (!e) {
     var u = cost(id, 1);
     set(k, 'lv', r.lv, 'textContent', '');
-    set(k, 'ms', r.ms, 'textContent', avail(id) ? upName(id, 0) + ': every shopper buys here' : 'Open ' + BIZ[BZ[id].i - 1].name + ' first');
+    set(k, 'ms', r.ms, 'textContent', avail(id) ? upName(id, 0) + ': every shopper buys here' : far(id) ? 'Opens later' : 'Open ' + BIZ[BZ[id].i - 1].name + ' first');
     if (set(k, 'nxk', r.nx, 'title', avail(id) ? upName(id, 0) : '')) {
       if (avail(id)) r.nx.src = upIcon(id, 0);
       else r.nx.removeAttribute('src');
     }
-    set(k, 'up', r.up, 'innerHTML', 'Open<small>' + money(u) + '</small>');
-    set(k, 'upd', r.up, 'disabled', !avail(id) || S.cash < u);
+    buyBtn(k, r.up, 'Open', u, !avail(id));
     flag(k, 'uphl', r.up, 'hl', hl);
     return;
   }
@@ -469,6 +529,8 @@ function upRow(r) {
   if (set(k, 'nxk', r.nx, 'title', '')) r.nx.removeAttribute('src');
   set(k, 'up', r.up, 'innerHTML', 'Items');
   set(k, 'upd', r.up, 'disabled', false);
+  flag(k, 'lk', r.up, 'lk', false);
+  flag(k, 'poor', r.up, 'poor', false);
   flag(k, 'uphl', r.up, 'hl', hl);
   r.fill.style.width = (n >= STAR_AT.length ? 100 : (e.l - from) / (STAR_AT[n] - from) * 100) + '%';
   set(k, 'bt', r.bt, 'textContent', money(spendAt(id) * bmul()) + ' a shopper');
@@ -487,13 +549,13 @@ function buildList() {
   });
 }
 
-function openSheet() {
+function openSheet(id) {
   closeCard();
   sheetOpen = true;
   $('app').classList.add('sheet-open');
   $('sheet').hidden = false;
   $('list').scrollTop = 0;
-  var o = bestOpt && rows[bestOpt.id];
+  var o = rows[id] || bestOpt && rows[bestOpt.id];
   if (o) $('list').scrollTop = Math.max(0, o.el.offsetTop - 70);
   fitInsets();
 }
@@ -573,7 +635,11 @@ function upgrade(id, j) {
   if (!res) return;
   afterBuy(res);
   var at = View.pieceScreen(res.id, res.piece);
-  if (at) popAt(gain || '+ ' + x.name, at.x, at.y - 46, 'item');
+  if (!at) return;
+  // above whatever panel is open, so the text is never under it
+  var pane = sheetOpen ? $('sheet') : $('card').hidden ? $('bottom') : $('card');
+  var top = pane.getBoundingClientRect().top - $('app').getBoundingClientRect().top;
+  popAt(gain || '+ ' + x.name, at.x, Math.min(at.y - 46, top - 40), 'item');
 }
 
 function claimGoalAt(i, el) {
@@ -596,17 +662,20 @@ function onSale(ev, c, v, t) {
 }
 
 function updateHud() {
-  set(shown, 'cash', $('cash-n'), 'textContent', free ? 'Unlimited' : money(S.cash));
+  var cash = free ? 'Unlimited' : money(S.cash);
+  set(shown, 'cash', $('cash-n'), 'textContent', cash);
+  flag(shown, 'cl', $('cash'), 'long', cash.length > 6);
   set(shown, 'rate', $('rate'), 'textContent', '+' + money(rate()) + '/s');
-  set(shown, 'gems', $('gem-n'), 'textContent', String(S.gems));
-  set(shown, 'stars', $('star-n'), 'textContent', rating() + '/' + gate());
-  set(shown, 'store', $('store-n'), 'textContent', '#' + S.store);
+  set(shown, 'gems', $('gem-n'), 'textContent', short(S.gems));
+  set(shown, 'stars', $('star-n'), 'textContent', Math.min(rating(), gate()) + '/' + gate());
+  set(shown, 'store', $('store-n'), 'textContent', 'Store ' + S.store);
   var x = $('x2');
   set(shown, 'x2h', x, 'hidden', !(S.x2 > 0));
   if (S.x2 > 0) set(shown, 'x2t', x, 'textContent', 'x2  ' + clock2(S.x2));
 }
 
-function meter(id, v, k) {
+// each meter shows its rate a minute, or what is wrong when it is the limit
+function meter(id, v, k, val, word) {
   var b = $(id);
   // a sliver stays in the track so an empty meter still reads as red
   var w = Math.max(4, Math.round(Math.max(0, Math.min(1, v)) * 100));
@@ -616,15 +685,38 @@ function meter(id, v, k) {
     k[id] = w;
     b.querySelector('u').style.width = w + '%';
   }
+  set(k, id + 't', b.querySelector('em'), 'textContent', v < 0.8 ? word : val);
+  if (v < 0.8) meterHint(id);
+}
+
+var METER_HINT = {
+  'm-in': ['Few shoppers', 'Tap Shoppers to bring more in'],
+  'm-tills': ['The checkouts are the limit', 'Tap Checkouts to open more tills'],
+  'm-shelf': ['The shelves are the limit', 'Tap Shelves to hire stockers']
+};
+
+// the first time a meter runs low, once ever, and not over a box or before the first purchase
+function meterHint(id) {
+  if (hinted[id] || !started() || veilUp()) return;
+  hinted[id] = 1;
+  try {
+    localStorage.setItem(HINT_KEY, JSON.stringify(hinted));
+  } catch (e) {}
+  banner('<b>' + METER_HINT[id][0] + '</b><small>' + METER_HINT[id][1] + '</small>', 0.5);
+}
+
+function veilUp() {
+  return !!document.querySelector('.veil:not([hidden])');
 }
 
 function updateMeters() {
   var k = shown;
   var cap = capacity();
   var inr = inRate();
-  meter('m-in', inr / cap, k);
-  meter('m-tills', cap / inr, k);
-  meter('m-shelf', stockCap() / served(), k);
+  var st = stockCap();
+  meter('m-in', inr / cap, k, perMin(inr) + '/min', 'Too few');
+  meter('m-tills', cap / inr, k, perMin(cap) + '/min', 'Too slow');
+  meter('m-shelf', st / served(), k, perMin(st) + '/min', 'Low');
 }
 
 // what brings the most shoppers for the money: Parking, the Taxi Stand or the cheapest draw item in a department
@@ -653,6 +745,11 @@ function openPlace(id, j) {
   showCard(id);
   focusBiz(id);
   if (j === undefined || !cardRow.its) return;
+  // the row that gets the ping is the selected one too, so the picture marks the same item
+  if (nextOf(id, j) >= 0) {
+    cardSel = j;
+    upRoom(cardRow);
+  }
   var el = cardRow.its[j].el;
   el.scrollIntoView({ block: 'center' });
   el.classList.remove('ping');
@@ -695,18 +792,33 @@ function buildGoals() {
     c.type = 'button';
     c.className = 'chip';
     c.innerHTML = '<span></span><i><u></u></i><em></em>';
+    c.dataset.k = i;
     c.addEventListener('click', function () {
-      if (this.dataset.i !== '' && this.classList.contains('done')) claimGoalAt(+this.dataset.i, this);
+      var g = chips[+this.dataset.k].g;
+      if (!g) return;
+      if (g.done) claimGoalAt(g.i, this);
+      else goalTo(g);
     });
-    chips.push({ el: c, k: {}, t: c.querySelector('span'), bar: c.querySelector('u'), tag: c.querySelector('em') });
+    chips.push({ el: c, k: {}, g: null, t: c.querySelector('span'), bar: c.querySelector('u'), tag: c.querySelector('em') });
     $('goals').appendChild(c);
   }
+}
+
+// an unfinished goal takes the player to what it is about: the card, or the list while that is still locked
+function goalTo(g) {
+  var id = g.to;
+  if (!id) return;
+  sfx('tap');
+  if (id === 'sell') openSell();
+  else if (BZ[id] ? !avail(id) : !has(PL[id].after)) openSheet(id);
+  else openPlace(id, g.j);
 }
 
 function updateGoals() {
   var gs = goals();
   chips.forEach(function (c, i) {
     var g = gs[i];
+    c.g = g;
     set(c.k, 'h', c.el, 'hidden', !g);
     if (!g) return;
     c.el.dataset.i = g.i;
@@ -728,13 +840,23 @@ function updateOpen() {
   if (!$('boost').hidden) paintBoost();
 }
 
+function hours(secs) {
+  var m = Math.round(secs / 60);
+  return m >= 60 ? Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + (m % 60) + ' min' : '') : m + ' min';
+}
+
+// the box for what the store took while the player was away, or what is still waiting from before; a is the new
+// time away if there is one
 function showAway(a) {
-  if (a.gain <= 0) return false;
-  var m = Math.round(a.secs / 60);
-  var t = m >= 60 ? Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + (m % 60) + ' min' : '') : m + ' min';
-  var txt = 'You were away for ' + t + '. The store served ' + a.n.toLocaleString('en-US') + ' shoppers and took <b>' + money(a.gain) + '</b>.';
+  if (S.pend <= 0) return false;
+  var txt = 'Earnings from last time are still waiting: <b>' + money(S.pend) + '</b>.';
+  if (a) {
+    txt = 'You were away for ' + hours(a.real) + '. The store served ' + a.n.toLocaleString('en-US') + ' shoppers and took <b>' + money(a.gain) + '</b>.';
+    if (S.pend - a.gain > 0.5) txt += ' <b>' + money(S.pend - a.gain) + '</b> from before is still waiting.';
+    if (a.real > MAX_AWAY) txt += ' It only earns for ' + MAX_AWAY / 3600 + ' h while you are away.';
+  }
   $('away-txt').innerHTML = txt;
-  $('away-ok').textContent = a.gain > 0 ? 'Collect ' + money(a.gain) : 'OK';
+  $('away-ok').textContent = 'Collect ' + money(S.pend);
   $('away').hidden = false;
   return true;
 }
@@ -765,15 +887,39 @@ function openDaily() {
   $('daily').hidden = false;
 }
 
+// the reward opens by itself once a day, after the first purchase and never over another box
+function autoDaily() {
+  var day = dayNum(clock());
+  if (dailyAsked === day || !started() || !daily().can || veilUp()) return;
+  dailyAsked = day;
+  openDaily();
+}
+
+// before the first purchase a line says what to tap
+function updateHint() {
+  var h = $('hint');
+  var on = !started() && !sheetOpen && (!cardId || cardId === 'produce');
+  set(shown, 'hh', h, 'hidden', !on);
+  if (on) set(shown, 'ht', h, 'textContent', cardId ? 'Tap the glowing Buy button' : 'Tap Produce to buy your first stand');
+}
+
+function gemsLeft(cost) {
+  return S.gems < cost ? 'Need ' + plural(cost - S.gems, 'more gem') + '.' : '';
+}
+
 function paintBoost() {
-  $('boost-gems').textContent = 'You have ' + S.gems + ' gems.';
+  $('boost-gems').textContent = 'You have ' + plural(S.gems, 'gem') + '.';
   $('x2-txt').textContent = S.x2 > 0 ? 'Active: ' + clock2(S.x2) + ' left. Buying adds 30 min.' : 'All income x2 for 30 minutes.';
+  $('x2-need').textContent = gemsLeft(X2_COST);
   $('b-x2').innerHTML = '<img src="assets/ui_gem.png" alt="">' + X2_COST;
   $('b-x2').disabled = S.gems < X2_COST;
-  var v = Math.min(rate() * WARP_SECS, Math.max(S.run, 100));
-  $('warp-txt').textContent = 'Get ' + money(v) + ' now, up to 1 hour of income.';
+  var full = rate() * WARP_SECS;
+  var v = Math.min(full, Math.max(S.run, 100));
+  var weak = v < rate() * 600 || v <= 0;
+  $('warp-txt').textContent = 'Get ' + money(v) + ' now' + (v < full ? ', as much as this store has earned so far.' : ', an hour of income.');
+  $('warp-need').textContent = gemsLeft(WARP_COST) || (weak ? 'Worth less than 10 minutes of income. Better later.' : '');
   $('b-warp').innerHTML = '<img src="assets/ui_gem.png" alt="">' + WARP_COST;
-  $('b-warp').disabled = S.gems < WARP_COST;
+  $('b-warp').disabled = S.gems < WARP_COST || weak;
 }
 
 function storeMul(n) {
@@ -783,20 +929,28 @@ function storeMul(n) {
 function openSell() {
   var r = rating();
   var g = gate();
-  var open = BIZ.filter(function (b) { return has(b.id); }).length;
+  var open = opened();
   var ok = canMove();
-  $('sell-txt').innerHTML = 'Store #' + S.store + ' is rated <b>' + r + ' of ' + g + ' stars</b>. ' +
-    (ok ? 'Ready to move.' : open < BIZ.length ? 'Open all ' + BIZ.length + ' departments and reach ' + g + ' stars to move.' : 'Reach ' + g + ' stars to move.') +
-    ' Store #' + (S.store + 1) + ' earns <b>x' + storeMul(S.store + 1) + '</b> income, up from x' + storeMul(S.store) + '.';
-  $('sell-keep').textContent = 'You keep gems, goals and boosts. Everything else starts again: cash, departments, and the Parking, Checkouts, Taxi Stand and Garden Center. Department stars pay gems again.';
-  $('sell-ok').textContent = ok ? 'Move to store #' + (S.store + 1) : open < BIZ.length ? 'Open all departments' : 'Needs ' + g + ' stars';
-  $('sell-ok').disabled = !ok;
+  $('sell-txt').innerHTML = 'Open: <b>' + open + ' of ' + BIZ.length + '</b> departments \u00b7 stars <b>' + Math.min(r, g) + ' of ' + g + '</b>' +
+    (r > g ? ' (+' + (r - g) + ' extra)' : '') + '. ' + (ok ? 'Ready to move.' : 'Open every department and reach ' + g + ' stars to move.') +
+    ' Store ' + (S.store + 1) + ' earns <b>x' + storeMul(S.store + 1) + '</b> income, up from x' + storeMul(S.store) + '.';
+  $('sell-keep').textContent = 'You keep your ' + plural(S.gems, 'gem') + ', goals and boosts. Everything else starts again: cash, departments, and the Parking, Checkouts, Taxi Stand and Garden Center. Department stars pay gems again.';
+  $('sell-ok').textContent = ok ? 'Move to store ' + (S.store + 1) : 'See departments';
+  $('sell-ok').classList.toggle('alt', !ok);
   $('sell').hidden = false;
 }
 
 function setSound() {
   $('m-snd').textContent = 'Sound: ' + (snd ? 'on' : 'off');
   $('m-buzz').textContent = 'Vibration: ' + (vib ? 'on' : 'off');
+}
+
+function codeOk(code) {
+  try {
+    return !!validate(JSON.parse(atob(code.trim())));
+  } catch (e) {
+    return false;
+  }
 }
 
 function flash(id, text, old) {
@@ -867,6 +1021,11 @@ function wire() {
   });
   $('sell-ok').addEventListener('click', function () {
     var b = $('sell-ok');
+    if (!canMove()) {
+      $('sell').hidden = true;
+      openSheet();
+      return;
+    }
     if (!b.dataset.armed) {
       b.dataset.armed = '1';
       b.textContent = 'Tap again to move';
@@ -883,7 +1042,7 @@ function wire() {
     afterLoad();
     sfx('mile');
     buzz('success');
-    banner('<b>Welcome to store #' + S.store + '</b><small>Income x' + storeMul(S.store) + '</small>', 0.2, true);
+    banner('<b>Welcome to store ' + S.store + '</b><small>Income x' + storeMul(S.store) + '</small>', 0.2, true);
     nudge();
   });
   $('gear').addEventListener('click', function () {
@@ -923,10 +1082,29 @@ function wire() {
       $('m-code').select();
     }
   });
+  var loadArmed = false;
+  var help = $('m-help').textContent;
   $('m-load').addEventListener('click', function () {
-    var ok = importCode($('m-code').value);
-    flash('m-load', ok ? 'Loaded' : 'Not a code', 'Load code');
-    if (!ok) return;
+    if (!codeOk($('m-code').value)) {
+      loadArmed = false;
+      flash('m-load', 'Not a code', 'Load code');
+      return;
+    }
+    if (!loadArmed) {
+      loadArmed = true;
+      $('m-load').textContent = 'Tap again';
+      $('m-help').textContent = 'Loading replaces this game with the one in the code.';
+      setTimeout(function () {
+        loadArmed = false;
+        $('m-load').textContent = 'Load code';
+        $('m-help').textContent = help;
+      }, 3000);
+      return;
+    }
+    loadArmed = false;
+    importCode($('m-code').value);
+    $('m-load').textContent = 'Load code';
+    $('m-help').textContent = help;
     afterLoad();
     $('menu').hidden = true;
   });
@@ -934,20 +1112,20 @@ function wire() {
   $('m-reset').addEventListener('click', function () {
     if (!armed) {
       armed = true;
-      $('m-reset').textContent = 'Tap again to erase';
+      $('m-reset').textContent = 'Tap again: erases gems, stores and streak';
       setTimeout(function () {
         armed = false;
-        $('m-reset').textContent = 'Reset store';
+        $('m-reset').textContent = 'Erase all progress';
       }, 3000);
       return;
     }
     armed = false;
     reset();
     speed = 1;
+    dailyAsked = -1;
     afterLoad();
-    $('m-reset').textContent = 'Reset store';
+    $('m-reset').textContent = 'Erase all progress';
     $('menu').hidden = true;
-    maybeDaily();
   });
   // the test menu: five taps on the title
   $('m-title').addEventListener('click', function () {
@@ -990,7 +1168,6 @@ function wire() {
       sfx('mile');
     }
     nudge();
-    maybeDaily();
   });
   document.addEventListener('pointerup', wake);
   window.addEventListener('resize', fitInsets);
@@ -1005,7 +1182,10 @@ function wire() {
     var sec = (Date.now() - hiddenAt) / 1000;
     hiddenAt = 0;
     lastTick = performance.now();
-    if (sec > 60 && showAway(away(sec))) updateBest();
+    if (sec > 60) {
+      var a = away(sec);
+      if (showAway(a)) updateBest();
+    }
   });
 }
 
@@ -1023,10 +1203,6 @@ function onTap(h) {
   else closeCard();
 }
 
-function maybeDaily() {
-  if (daily().can && $('away').hidden) openDaily();
-}
-
 function loop(t) {
   requestAnimationFrame(loop);
   tick(Math.min(1, (t - lastTick) / 1000));
@@ -1036,7 +1212,9 @@ function loop(t) {
     bestAt = t;
     updateBest();
     updateGoals();
+    autoDaily();
     updateMeters();
+    updateHint();
     fitInsets();
   }
   View.draw(t);
@@ -1049,6 +1227,7 @@ function start() {
     snd = localStorage.getItem(SND_KEY) !== '0';
     vib = localStorage.getItem(BUZZ_KEY) !== '0';
     free = localStorage.getItem(FREE_KEY) === '1';
+    hinted = JSON.parse(localStorage.getItem(HINT_KEY)) || {};
   } catch (e) {}
   var gone = load();
   View.init($('view'), onTap);
@@ -1058,6 +1237,7 @@ function start() {
   wire();
   setFree(free);
   paintFree();
+  $('stars').addEventListener('click', openSell);
   $('m-in').addEventListener('click', openDraw);
   $('m-tills').addEventListener('click', function () { openItem('hall', 0, 1); });
   $('m-shelf').addEventListener('click', function () { openItem('dock', 0, 1); });
@@ -1069,8 +1249,7 @@ function start() {
     updateBest();
     View.focusNow();
     updateGoals();
-    var shownAway = gone ? showAway(gone) : false;
-    if (!shownAway) maybeDaily();
+    showAway(gone);
     lastTick = performance.now();
     requestAnimationFrame(loop);
     setInterval(save, 5000);
