@@ -62,7 +62,7 @@ var ITEMS = {
     of: '200040002523113111142233544423' },
   sports: { it: [['Tents', 'sell'], ['Camp gear', 'sell'], ['Balls & boards', 'sell'], ['Signs & lights', 'draw'], ['Decor', 'draw'], ['Staff', 'staff']],
     of: '202031011524243441434021534123' },
-  tools: { it: [['Hammers & workbench', 'sell'], ['Hand tools', 'sell'], ['Paint', 'sell'], ['Hardware shelves', 'sell'], ['Signs & lights', 'draw'], ['Staff', 'staff']],
+  tools: { it: [['Hammers & workbench', 'sell'], ['Hand tools', 'sell'], ['Paint', 'sell'], ['Fixings & racks', 'sell'], ['Signs & lights', 'draw'], ['Staff', 'staff']],
     of: '002043122533320014243420513431' },
   auto: { it: [['Oil & care', 'sell'], ['Parts shelves', 'sell'], ['Tires & wheels', 'sell'], ['Signs & lights', 'draw'], ['Decor', 'draw'], ['Staff', 'staff']],
     of: '120230112502442440033444511423' },

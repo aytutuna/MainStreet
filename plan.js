@@ -613,40 +613,66 @@ AREAS.office = {
     up('Big monitor', { sign: 'gold' }, on('furn/computerScreen*2', -2.85, -12.8, 0.9))])
 };
 
-var TOOLP = [TIN[0], BOX[1], 'surv/bucket', TIN[2], BOX[3], TIN[1], BOX[0], 'surv/bucket', TIN[3], BOX[5]];
-var TOOLL = lane(-15.0, ['Hammers', 'Paint cans', 'Screws and nails', 'Hand tools', 'Buckets', 'Tape and glue'], TOOLP);
+// a pegboard panel on the area's north line with tools hung in rows: [model, across, height, size, turn]
+function peg(x, list) {
+  var out = [{ box: [x - 0.38, x + 0.38, -15.33, -15.29, 0.8, 1.7], c: 0x6f7f95, flat: 1 }, { box: [x - 0.39, x + 0.39, -15.34, -15.28, 1.66, 1.7], c: 0x434d5e, flat: 1 }];
+  list.forEach(function (t) { out.push(on(t[0], x + t[1], -15.26, t[2], t[3], t[4])); });
+  return out;
+}
+function pegrack(name, x, list) {
+  return up.apply(null, [name].concat(peg(x, list)));
+}
+// a crate on a shelf top with loose fasteners lying on it
+function bin(name, x, ref, k, bits) {
+  var out = [name, on('furn/cardboardBoxOpen', x, -15.0, 0.8, 1.1)];
+  bits.forEach(function (b, i) { out.push(on(ref, x + b[0], -15.0 + b[1], 1.0, k, b[2])); });
+  return up.apply(null, out);
+}
+var HAM = 'tool/hammer-';
+var TOOLL = [
+  unit('Hammers', -6.05, -15.0, sf(HAM + 'simple~x', HAM + 'plastic~x', HAM + 'rectangle~x', HAM + 'ouch~x')),
+  unit('Paint cans', -5.25, -15.0, sf(TIN[1], 'tool/brush~x', TIN[2], TIN[0])),
+  unit('Screws and nails', -4.45, -15.0, sf(BOX[0], 'tool/bolt-s*3', CARTON[0], 'tool/nut-l*5')),
+  unit('Screwdrivers and pliers', -3.65, -15.0, sf('tool/screwdriver-poke~x', 'tool/pliers-dull~x', 'tool/pliers-sharp~x', 'tool/screwdriver-slap~x')),
+  unit('Buckets', -2.85, -15.0, sf('surv/bucket', TIN[3], BOX[3], TIN[1])),
+  unit('Tape and glue', -2.05, -15.0, sf(TIN[2], BOX[5], 'surv/bucket', CARTON[2]))
+];
 AREAS.tools = {
   cx: -4.1, cz: -15.0, vacant: [-6.9, -1.25, -16.1, -13.9], sign: [-3.2, -15.85, 1.9],
   floor: [{ poly: rbox(-6.9, -1.25, -16.1, -13.9, 0.5), finish: 0xe2e2dc }],
   ups: ups([
     TOOLL[0],
-    cap('Hammer end', -6.65, -15.0, 'k', ['surv/tool-hammer*1.4', 'surv/tool-axe']),
+    cap('Hammer end', -6.65, -15.0, 'k', [HAM + 'bangpop~x', HAM + 'smallhit~x']),
     TOOLL[1],
-    fx('Workbench', 'surv/workbench*1.6', -7.6, -14.6, 'k'),
+    fx('Workbench', 'surv/workbench*1.6', -7.6, -14.6, 'k', null, [[HAM + 'plastic~x', -0.1, 0.05, 0.5, 0.46], ['tool/saw-small-highcount~x*0.7', 0.02, -0.1, 0.1, 0.46]]),
     TOOLL[2],
     TOOLL[3],
-    fx('Paint barrel', 'surv/barrel*1.3', -7.6, -15.4, 'k'),
+    fx('Paint barrel', 'surv/barrel*1.3', -7.6, -15.4, 'k', null, [['tool/brush~x', 0, 0, 0.6, 0.45]]),
     TOOLL[4],
     TOOLL[5],
-    cap('Shovel end', -1.45, -15.0, 'b', ['surv/tool-shovel', 'surv/tool-pickaxe']),
-    perch('Bucket stack', 'surv/bucket', -4.6, -15.0, 0.8, 1.3),
+    cap('Axe and pick end', -1.45, -15.0, 'b', ['tool/axe~x', 'tool/cylinder-long~x']),
+    bin('Bolt bin', -4.45, 'tool/bolt-l~x*2.5', 1, [[-0.08, 0, 0.3], [0.03, 0.03, -0.6], [0.08, -0.03, 1.2]]),
     perch('Paint tin', TIN[1], -5.25, -15.0, 0.8, 2),
-    perch('Axe', 'surv/tool-axe*1.4', -6.2, -15.0, 0.8),
-    perch('Hammer rack', 'surv/tool-hammer*1.4', -3.8, -15.0, 0.8, 1.5),
+    pegrack('Mallet rack', -5.25, [[HAM + 'kindathor', -0.25, 0.88, 0.9], [HAM + 'ouch', 0, 0.88, 0.9], [HAM + 'rocket', 0.25, 0.88, 0.9],
+      [HAM + 'beemboom', -0.25, 1.27, 0.9], [HAM + 'cool', 0, 1.27, 0.9], [HAM + 'rectangle', 0.25, 1.27, 0.9]]),
+    pegrack('Plier rack', -4.45, [['tool/pliers-dull', -0.25, 0.88, 1], ['tool/pliers-sharp', 0, 0.88, 1], ['tool/pliers-dull', 0.25, 0.88, 1],
+      ['tool/screwdriver-poke', -0.28, 1.27, 1], ['tool/screwdriver-slap', -0.09, 1.27, 1], ['tool/screwdriver-poke', 0.09, 1.27, 1], ['tool/screwdriver-slap', 0.28, 1.27, 1]]),
     board('Tool deal', 'TOOLS 20% OFF', -6.8, -14.4, 1.0),
-    perch('Primer tin', TIN[3], -3.0, -15.0, 0.8, 2),
-    perch('Plank stack', 'surv/resource-planks', -2.25, -15.0, 0.8, 1.0),
+    perch('Primer tin', TIN[3], -2.9, -15.0, 0.8, 2),
+    bin('Nail bin', -2.45, 'tool/nail-l~x*1.6', 1, [[-0.08, -0.02, 0.5], [0.02, 0.03, -0.3], [0.08, -0.02, 1.4]]),
     board('Paint deal', 'PAINT 2 FOR 30', -6.8, -15.8, 1.0),
-    perch('Cone on shelf', 'car/cone', -5.25, -15.0, 0.95, 0.8),
-    perch('Tool case', CARTON[2], -5.9, -15.0, 0.8, 1.2),
-    perch('Paint pail', 'surv/bucket', -3.5, -15.0, 0.8, 1.6),
-    perch('Boxed tools', BOX[5], -4.3, -15.0, 0.8, 1.1),
+    up('Brush pot', on('surv/bucket', -5.9, -15.0, 0.8, 1.2), on('tool/brush*0.8', -5.94, -15.0, 0.88), on('tool/brush*0.8', -5.86, -15.02, 0.88)),
+    pegrack('Claw hammer rack', -3.65, [[HAM + 'simple', -0.25, 0.88, 0.9], [HAM + 'plastic', 0, 0.88, 0.9], [HAM + 'simple', 0.25, 0.88, 0.9],
+      [HAM + 'plastic', -0.25, 1.27, 0.9], [HAM + 'simple', 0, 1.27, 0.9], [HAM + 'plastic', 0.25, 1.27, 0.9]]),
+    pegrack('Hand saw rack', -2.85, [['tool/saw-big*0.8', 0, 0.86, 1], ['tool/saw-small-highcount*0.9', 0, 1.14, 1], ['tool/saw-precision*0.8', 0, 1.42, 1]]),
+    bin('Nut bin', -2.05, 'tool/nut-l*5', 1, [[-0.08, 0, 0], [0.06, 0.03, 0.4]]),
     mat('Workshop mat', -6.5, -5, -14.55, -13.45, 0xd0d0c6),
-    perch('Spare shovel', 'surv/tool-shovel*1.4', -1.9, -15.0, 0.8)
+    pegrack('Axe and crowbar rack', -2.05, [['tool/axe~z', 0, 0.86, 1], ['tool/crowbar~z', 0, 1.14, 1], ['tool/cylinder-long~z', 0, 1.36, 1]])
   ], [SIGN, up('Tool desk', till(-0.85, -14.2, 'k'), { staff: [-0.4, -14.2, 'k'] }),
-    up('Tool wall', on('surv/tool-hammer*3', -6.65, -15.15, 1.05), on('surv/tool-axe*3', -6.65, -15.0, 1.05, 1, 0.5), on('surv/tool-shovel*3', -6.65, -14.85, 1.05)),
+    pegrack('Tool wall', -6.05, [[HAM + 'simple', -0.27, 0.88, 0.8], [HAM + 'plastic', -0.09, 0.88, 0.8], [HAM + 'rectangle', 0.09, 0.88, 0.8], [HAM + 'ouch', 0.27, 0.88, 0.8],
+      [HAM + 'bangpop', -0.27, 1.27, 0.8], [HAM + 'smallhit', -0.09, 1.27, 0.8], [HAM + 'cool', 0.09, 1.27, 0.8], ['tool/axe', 0.27, 1.27, 0.6]]),
     lights([[-5, -15], [-2.8, -15]]), HELP,
-    up('Lumber stack', { sign: 'gold' }, on('surv/resource-planks*1.5', -3.65, -15.0, 0.9))])
+    up('Lumber and crosscut saw', { sign: 'gold' }, on('surv/resource-planks*1.5', -3.65, -15.0, 0.9), on('tool/saw-bandsaw~x*0.8', -3.65, -14.95, 1.2))])
 };
 
 var KITP = [COOK[0], COOK[3], COOK[1], COOK[4], COOK[2], COOK[5], COOK[10], COOK[6], COOK[7], COOK[0]];
