@@ -811,10 +811,7 @@ DECOR.stock = cat(
   [hi(-2.65, -2.15, -26.9, -26.3, 0.06, 0.3, 0xf2c230), hi(-2.65, -2.15, -27.1, -26.9, 0.06, 0.36, 0x3a3d4a), hi(-2.65, -2.15, -26.75, -26.45, 0.55, 0.58, 0x3a3d4a),
     hi(-2.64, -2.61, -26.7, -26.5, 0.3, 0.55, 0x3a3d4a), hi(-2.19, -2.16, -26.7, -26.5, 0.3, 0.55, 0x3a3d4a),
     hi(-2.6, -2.2, -26.28, -26.23, 0.06, 0.7, 0x50566a), hi(-2.58, -2.52, -26.25, -25.8, 0.06, 0.1, 0x8d93a6), hi(-2.28, -2.22, -26.25, -25.8, 0.06, 0.1, 0x8d93a6)],
-  // the break corner and the lockers on the west wall
-  [{ m: 'furn/table', x: -13.4, z: -26.2, k: 1.2 }, { m: 'furn/chair', x: -14.15, z: -26.2, r: Math.PI / 2, k: 1.4 }, { m: 'furn/chair', x: -12.65, z: -26.2, r: -Math.PI / 2, k: 1.4 },
-    { m: 'furn/chair', x: -13.4, z: -25.55, r: Math.PI, k: 1.4 }, { m: 'furn/kitchenCoffeeMachine', x: -13.2, z: -26.2, y: 0.44, k: 1.4, flat: 1 },
-    { m: 'furn/radio', x: -13.7, z: -26.2, y: 0.44, k: 1.6, flat: 1 }],
+  // the lockers on the west wall
   line(4, 0, -26.9, 0, 0.42, function (x, z, i) { return cab(-14.5, z, 0.36, 0.38, 0.72, [0x4a6fa5, 0x5b8a5b, 0xb5574b, 0x8a6bb0][i]); }),
   // bales and bins by the baler
   [hi(11.2, 11.9, -27.3, -26.7, 0, 0.3, 0xb08a5a), hi(11.2, 11.9, -27.3, -26.7, 0.3, 0.6, 0xa67f50), hi(11.2, 11.9, -26.55, -25.95, 0, 0.3, 0xb08a5a),
@@ -853,7 +850,7 @@ DECOR.out = cat(
   [{ slab: [23.15, 23.2, -38, 9.5, 0.02, 0.01], c: 0xf4f2ea }, { slab: [26.3, 26.35, -38, 9.5, 0.02, 0.01], c: 0xf4f2ea }],
   DOCKS.map(function (d) { return { slab: [d - 1.2, d - 1.15, -38, -29.5, 0.02, 0.01], c: 0xf4f2ea }; }),
   DOCKS.map(function (d) { return { slab: [d + 1.15, d + 1.2, -38, -29.5, 0.02, 0.01], c: 0xf4f2ea }; }),
-  [[22.4, 4, 0], [22.4, -10, 0], [22.4, -24, 0], [-10, -39.2, Math.PI], [0, -39.2, Math.PI], [12, -39.2, Math.PI], [-26.6, 0, 0], [-26.6, -14, 0]].map(function (q) {
+  [[22.9, 4, 0], [22.9, -10, 0], [22.9, -24, 0], [-10, -39.2, Math.PI], [0, -39.2, Math.PI], [12, -39.2, Math.PI], [-26.6, 0, 0], [-26.6, -14, 0]].map(function (q) {
     return { lamp: 'roads/light-curved', x: q[0], z: q[1], r: q[2] };
   }),
   // the yard: staff cars, a fenced pallet cage and bins
@@ -866,6 +863,30 @@ DECOR.out = cat(
   [['stock', 15.6, -32.4, 's', 'boxes'], ['stock', 16.5, -32.4, 's', 'boxes'], ['stock', 18.5, -33.0, 's', 'boxes'], ['stock', 19.6, -34.2, 's', 'boxes'],
     ['stock', 15.8, -34.2, 's', 'boxes']],
   [cab(-20.2, -31.4, 0.7, 0.45, 0.45, 0x3f7a4a), cab(-20.2, -32.1, 0.7, 0.45, 0.45, 0x3c63a8), cab(-20.2, -32.8, 0.7, 0.45, 0.45, 0x8d93a6)]
+);
+
+// The east wing: four rooms along the east wall, x 15.3 to 21.5 inside, the store's wall at x 15 and the wing's own at
+// x 21.8. Customer service and the Restrooms open from the front band of the sales floor through a doorway in the wall at
+// z 1; the break room and the head office are reached from the stockroom by a door at z -23. Each room is a place whose
+// levels are the ups below; visit lists the spots where a shopper stands and the piece that has to be in for it.
+// walls between the rooms stay low so the camera sees in
+function low(x0, x1, z0, z1) {
+  return [hi(x0, x1, z0, z1, 0, 0.3, 0xa9aebd), det(x0, x1, z0, z1, 0.3, 0.35, 0x7f8597)];
+}
+function room(x0, x1, z0, z1, finish) {
+  return { patch: [[x0, z1], [x1, z1], [x1, z0], [x0, z0]], finish: finish };
+}
+
+
+var WING = {};
+
+DECOR.wing = cat(
+  [room(15.3, 21.5, -2.9, 2.2, 'lino'), room(15.3, 21.5, -7.9, -3.1, 'tile'), room(15.3, 21.5, -13.9, -8.1, 'boards'), room(15.3, 21.5, -28.2, -14.1, 'carpet')],
+  // dividers: a door at the west end of the first and the third
+  low(15.3, 15.9, -3.1, -2.9), low(17.1, 21.5, -3.1, -2.9), low(15.3, 21.5, -8.1, -7.9), low(15.3, 15.9, -14.1, -13.9), low(17.1, 21.5, -14.1, -13.9),
+  // above the doorway from the sales floor
+  [det(14.7, 15.3, 0.5, 1.5, 0.82, 1.0, 0x7f8597), bd('CUSTOMER SERVICE\nRESTROOMS', 14.68, 1.0, 1.1, 0.3, 0.9, -Math.PI / 2)],
+  [{ light: [[18.4, 0], [18.4, -5.5], [18.4, -11], [18.4, -17], [18.4, -23], [18.4, -27]] }]
 );
 
 export var PLAN = {
@@ -883,10 +904,11 @@ export var PLAN = {
     [4, 'pw/TrashRecycle_Station_01', 13.4, 2.1, Math.PI], [4, 'pw/TrashRecycle_Station_01', 14.0, 2.1, Math.PI],
     [8, 'pw/VendingMachine_Drink_01', -14.3, 1.95, Math.PI], [8, 'pw/VendingMachine_Snack_01', -13.75, 1.95, Math.PI], [8, 'pw/VendingMachine_Drink_01', -13.2, 1.95, Math.PI],
     [8, 'pw/NewspaperRack_01', -12.5, 1.95, Math.PI], [10, 'pw/DiningBench_01', -6.1, 1.95, Math.PI], [10, 'pw/Planter_Tall_01', -7.0, 1.95, 0], [10, 'pw/Planter_Tall_01', -5.15, 1.95, 0]],
-  desk: { x: 12.0, z: 0.9, n: 3 },
+  desk: { x: 11.55, z: 0.9, n: 2 },
   // the stockroom: where stockers wait, by the stock doors
   idle: [0.7, -7, 8.5, -10, -1.7, 7, -8.5, 10].map(function (x) { return [x, -23.8]; }),
   decor: DECOR,
+  wing: WING,
   areas: AREAS,
   order: Object.keys(AREAS)
 };

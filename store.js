@@ -10,6 +10,7 @@ var TILT = 52 * Math.PI / 180;
 // The store is one open sales floor in a complete building, laid out in plan.js: x -15..15, z 2.5 (the glass front)
 // back to -22.5, and the stockroom behind it to -28.5. In front: the parking lot, the sidewalk and the street.
 var FRONT = 2.5;
+var WING_X = 21.8;
 var BACK = -22.5;
 var EDGE = 15;
 var SB = -28.5;
@@ -622,6 +623,7 @@ function cutaway() {
   var sz = Math.cos(focus.az);
   outer.forEach(function (w) {
     var d = w.n[0] * sx + w.n[1] * sz;
+    if (w.both) d = Math.abs(d);
     var s = d > 0.3 ? 0.12 : 1;
     if (w.g.scale.y !== s) {
       w.g.scale.y = s;
@@ -1306,6 +1308,7 @@ var WOODMAT;
 var CARPET;
 var POLISH;
 var VINYL;
+var ROOMMAT = {};
 
 function tiled(c, unit) {
   var t = new THREE.CanvasTexture(c);
@@ -1350,6 +1353,30 @@ function finishMat(f) {
       VINYL = tiled(vc, 1.4);
     }
     return VINYL;
+  }
+  if (f === 'lino' || f === 'tile' || f === 'boards') {
+    if (!ROOMMAT[f]) {
+      var rc = document.createElement('canvas');
+      rc.width = rc.height = 128;
+      var q = rc.getContext('2d');
+      if (f === 'boards') {
+        q.fillStyle = '#b98f63';
+        q.fillRect(0, 0, 128, 128);
+        for (var r = 0; r < 4; r++) {
+          q.fillStyle = r % 2 ? '#d2aa7b' : '#c69d6e';
+          q.fillRect(2 + (r % 2) * 40, r * 32 + 2, 84, 28);
+          q.fillRect(86 + (r % 2) * 40 - 128 * (r % 2), r * 32 + 2, 40, 28);
+        }
+      } else {
+        q.fillStyle = f === 'tile' ? '#e4f1f3' : '#d4dae6';
+        q.fillRect(0, 0, 128, 128);
+        q.fillStyle = f === 'tile' ? '#bcdde4' : '#c4ccdc';
+        var n = f === 'tile' ? 4 : 2;
+        for (var a = 0; a < n; a++) for (var c = 0; c < n; c++) if ((a + c) % 2) q.fillRect(a * 128 / n, c * 128 / n, 128 / n, 128 / n);
+      }
+      ROOMMAT[f] = tiled(rc, f === 'tile' ? 0.8 : f === 'boards' ? 1.6 : 1.4);
+    }
+    return ROOMMAT[f];
   }
   if (f === 'polish') {
     if (!POLISH) {
@@ -1956,6 +1983,7 @@ function buildAreas() {
   var fl = new Batch();
   floors(fl, 'shop/floor', -EDGE, EDGE, BACK, FRONT);
   floors(fl, 'shop/floor%=d5d5d8', -EDGE, EDGE, SB, BACK);
+  floors(fl, 'shop/floor%=d5d5d8', EDGE, WING_X + 0.2, SB, FRONT);
   root.add(fl.group());
   var lp = new THREE.Mesh(patch([[-9.6, -1.2], [9.6, -1.2], [9.6, -21.7], [-9.6, -21.7]], [hole(1.25, 6.9), hole(-6.9, -1.25)]), finishMat('polish'));
   lp.position.y = 0.026;
@@ -2127,6 +2155,7 @@ function buildShell() {
   var cols = [];
   [2.5, -2.5, -7.5, -12.5, -15.5, -18.5, -22.5, -28.5].forEach(function (z) { cols.push([-EDGE, z]); });
   [2.5, -2.5, -7.5, -12.5, -17.5, -22.5, -28.5].forEach(function (z) { cols.push([EDGE, z]); });
+  [2.5, -3, -8, -14, -28.5].forEach(function (z) { cols.push([WING_X, z]); });
   PLAN.entrances.forEach(function (en) { cols.push([en.x - en.w / 2, FRONT], [en.x + en.w / 2, FRONT]); });
   PLAN.docks.forEach(function (d) { cols.push([d - 1, SB], [d + 1, SB]); });
   cols.forEach(function (c) { cb.add('shop/column', c[0], c[1], 0); });
@@ -2137,7 +2166,11 @@ function buildShell() {
   var north = new Batch();
   var glassWall = new Batch();
   wallPieces(west, -EDGE, FRONT, -EDGE, SB, 1, 0, [[PLAN.tireBay.z, PLAN.tireBay.w]]);
-  wallPieces(east, EDGE, FRONT, EDGE, SB, -1, 0, []);
+  wallPieces(east, EDGE, FRONT, EDGE, SB, -1, 0, [[1.0, 1], [-23.0, 1]]);
+  var wingE = new Batch();
+  wallPieces(wingE, WING_X, FRONT, WING_X, SB, -1, 0, []);
+  wallPieces(north, EDGE, SB, WING_X + 0.3, SB, 0, 1, []);
+  wallPieces(glassWall, EDGE, FRONT, WING_X + 0.3, FRONT, 0, -1, [], 'shop/wall-window');
   wallPieces(back, -EDGE, BACK, EDGE, BACK, 0, 1, PLAN.doors.map(function (d) { return [d, 1]; }));
   wallPieces(north, -EDGE, SB, EDGE, SB, 0, 1, PLAN.docks.map(function (d) { return [d, 2]; }));
   wallPieces(glassWall, -EDGE, FRONT, EDGE, FRONT, 0, -1, PLAN.entrances.map(function (en) { return [en.x, en.w]; }), 'shop/wall-window');
@@ -2149,8 +2182,9 @@ function buildShell() {
   var eg = east.group();
   var fg = glassWall.group();
   fg.scale.y = 0.55;
-  root.add(wg, eg, north.group(), fg);
-  outer.push({ g: wg, n: [-1, 0] }, { g: eg, n: [1, 0] });
+  var weg = wingE.group();
+  root.add(wg, eg, weg, north.group(), fg);
+  outer.push({ g: wg, n: [-1, 0] }, { g: eg, n: [1, 0], both: 1 }, { g: weg, n: [1, 0] });
   // the wall between the sales floor and the stockroom stays low, so the camera sees into the stockroom
   var bg = back.group();
   bg.scale.y = 0.12;
@@ -2169,7 +2203,7 @@ function buildShell() {
     if (z < -14.5 && z > -20.2) continue;
     hb.add('nature/plant_bushLarge', -EDGE - 0.65, z, z * 1.7);
   }
-  for (z = -3.1; z > BACK + 0.4; z -= 1.1) hb.add('nature/plant_bush', EDGE + 0.65, z, z * 1.7);
+  for (z = 1.9; z > SB + 0.4; z -= 1.1) hb.add('nature/plant_bush', WING_X + 0.85, z, z * 1.7);
   root.add(hb.group());
   PLAN.entrances.forEach(function (en) { doorSign(en); });
 }
@@ -2238,7 +2272,7 @@ function buildFront() {
   var desk = new THREE.Group();
   for (var di = 0; di < PLAN.desk.n; di++) {
     var dm = mesh('pw/ServiceDesk_20', PLAN.desk.x + di * 1.0, PLAN.desk.z, Math.PI);
-    if (di !== 1) {
+    if (PLAN.desk.n < 3 || di !== 1) {
       var cl = crew('shop/character-employee', 'idle');
       cl.obj.position.set(0, 0, -0.42);
       dm.add(cl.obj);
@@ -2246,7 +2280,7 @@ function buildFront() {
     }
     desk.add(dm);
   }
-  desk.add(board({ text: 'SERVICE', x: PLAN.desk.x + 1.0, z: 0.1, y: 1.7, w: 1.6, h: 0.45, post: true }));
+  desk.add(board({ text: 'SERVICE', x: PLAN.desk.x + (PLAN.desk.n - 1) / 2, z: 0.1, y: 1.7, w: 1.6, h: 0.45, post: true }));
   desk.visible = false;
   root.add(desk);
   hall.items.push({ g: desk, lv: 7 });
@@ -2413,6 +2447,13 @@ function buildGarden() {
   pl.pick = addPick('garden', (x0 + x1) / 2, (z0 + z1) / 2, x1 - x0, z1 - z0);
 }
 
+// The east wing: the floors, dividers and signs of the four rooms along the east wall
+var WING_IDS = [];
+
+function buildWing() {
+  decor(PLAN.decor.wing, true);
+}
+
 // a pylon sign by the street with the store's name; "Market" until most of the store is open
 function buildPylon() {
   var g = new THREE.Group();
@@ -2500,7 +2541,7 @@ function paintPylon() {
 function buildOutside() {
   var b = new Batch();
   b.slab(flat(GRASS), -150, 150, -150, 150, -0.03, 0.02);
-  b.slab(flat(PAVE), -EDGE - 3, EDGE + 3, FRONT, LOT[0], 0, 0.02);
+  b.slab(flat(PAVE), -EDGE - 3, 22.9, FRONT, LOT[0], 0, 0.02);
   b.slab(flat(PAVE), -60, 60, LOT[1], 10.5, 0, 0.02);
   b.slab(flat(PAVE), -60, 60, 13.5, 14.4, 0, 0.02);
   b.slab(flat(ASPHALT), -60, 60, 10.5, 13.5, 0, 0.015);
@@ -2745,7 +2786,7 @@ function puffsStep(now) {
 // The sales floor as a grid of 0.25 cells, blocked where a wall, a counter or a fixture stands, grown by about half a
 // person. Shoppers, staff and stockers find their way on it with A*, pulled straight where the floor is open
 var NC = 0.25;
-var NX = 120;
+var NX = 148;
 var NZ = 100;
 var NX0 = -15;
 var NZ0 = -22.5;
@@ -2793,7 +2834,8 @@ function navBuild() {
   nav.cache = {};
   nav.dirty = false;
   markRect(-16, -14.7, -23, 3);
-  markRect(14.7, 16, -23, 3);
+  markRect(14.7, 15.3, -23, 3);
+  markRect(21.5, 22.4, -23, 3);
   var x = -16;
   PLAN.doors.concat([16.5]).forEach(function (d) {
     markRect(x, d === 16.5 ? 16 : d - 0.5, -22.8, -22.2);
@@ -2801,7 +2843,7 @@ function navBuild() {
   });
   x = -16;
   PLAN.entrances.concat([{ x: 17.5, w: 0 }]).forEach(function (en) {
-    markRect(x, en.w ? en.x - en.w / 2 + 0.36 : 16, FRONT - 0.3, FRONT + 0.3);
+    markRect(x, en.w ? en.x - en.w / 2 + 0.36 : 22.4, FRONT - 0.3, FRONT + 0.3);
     x = en.x + en.w / 2 - 0.36;
   });
   order.forEach(function (id) {
@@ -2815,6 +2857,20 @@ function navBuild() {
   });
   places.hall.solids.forEach(function (q) { if (placeHas('hall', q.lv - 1)) markRect(q.r[0], q.r[1], q.r[2], q.r[3]); });
   fixed.forEach(markObb);
+  // the doorway from the sales floor into the wing
+  carve(14.3, 15.9, 0.55, 1.45);
+}
+
+// opens the cells whose middle lies in a rectangle, for a doorway
+function carve(x0, x1, z0, z1) {
+  for (var i = 0; i < NX; i++) {
+    var cx = NX0 + (i + 0.5) * NC;
+    if (cx < x0 || cx > x1) continue;
+    for (var j = 0; j < NZ; j++) {
+      var cz = NZ0 + (j + 0.5) * NC;
+      if (cz >= z0 && cz <= z1) nav.b[j * NX + i] = 0;
+    }
+  }
 }
 
 function blockedAt(x, z) {
@@ -4346,6 +4402,7 @@ function build() {
   buildAreas();
   buildShell();
   buildFront();
+  buildWing();
   root.add(still.b.group(), still.x);
   makeTags();
   fitShadow();
