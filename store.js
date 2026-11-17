@@ -1996,8 +1996,9 @@ var pylon;
 
 function paintPylon() {
   var big = order.filter(has).length >= 8;
-  if (pylon.big === big) return;
-  pylon.big = big;
+  var key = (big ? 'b' : 's') + S.store;
+  if (pylon.big === key) return;
+  pylon.big = key;
   var x = pylon.c.getContext('2d');
   x.fillStyle = '#2f3446';
   x.fillRect(0, 0, 512, 256);
@@ -2011,7 +2012,7 @@ function paintPylon() {
   x.fillText('STREET', 256, 146);
   x.fillStyle = '#2f3446';
   x.font = 'bold 42px sans-serif';
-  x.fillText(big ? 'SUPERCENTER' : 'MARKET', 256, 228);
+  x.fillText((big ? 'SUPERCENTER' : 'MARKET') + (S.store > 1 ? ' #' + S.store : ''), 256, 228);
   pylon.tex.needsUpdate = true;
 }
 
