@@ -149,46 +149,52 @@ AREAS.produce = {
     up('Showcase', { sign: 'gold' }, pw('ProduceTable_15', 13.1, -0.55, 's', { stock: 'Apples' }))])
 };
 
-// bakery: cases along the east wall facing the lane, bread racks opposite, ovens behind the counter
-function rack(name, z, a, b) {
-  return up(name, ['shelf', 10.9, z, 'b', [a, b]]);
+// a tiered promo table with goods of another kit on its three tiers: front row, middle row, back, left to right
+var TIER = [[-0.2, 0.12, 0.2], [0, 0.12, 0.2], [0.2, 0.12, 0.2], [-0.1, 0, 0.29], [0.1, 0, 0.29], [0, -0.13, 0.38]];
+function tt(name, x, z, face, goods) {
+  var on = goods.map(function (g, i) {
+    var t = TIER[i % 6];
+    return [g, t[0], t[1], i * 0.7, t[2]];
+  });
+  return up(name, pw('Table_Promo_Tiered_01', x, z, face, { on: on }));
 }
 // something standing on top of a fixture that is already there
 function top(name, ref, x, z, y, k) {
   return up(name, { m: ref, x: x, z: z, r: 0, k: k || 1, y: y, flat: 1 });
 }
+// bakery: tables and cases along the east wall facing the lane, bread racks opposite, a counter with ovens behind
 AREAS.bakery = {
   cx: 12.2, cz: -12.3, vacant: [9.7, 14.7, -14.4, -10.4], sign: [11.7, -10.9, 1.9],
   floor: [{ poly: rbox(9.7, 14.7, -14.3, -10.4, 0.9), finish: 0xf0d9aa }],
   ups: ups([
-    up('Donut case', ['chest', 13.1, -11.3, 'k', ['food/donut-sprinkles', 'food/muffin', 'food/donut-chocolate']]),
-    up('Baguette basket', ['crate', 13.1, -12.15, 'k', ['food/loaf-baguette']]),
-    rack('Bread rack', -11.2, [['food/loaf', 'food/loaf-round'], ['food/loaf-baguette', 'food/loaf']], [['food/croissant', 'food/bread'], ['food/loaf-round', 'food/croissant']]),
-    rack('Roll rack', -12.0, [['food/croissant', 'food/bread'], ['food/loaf', 'food/loaf-round']], [['food/bread', 'food/loaf-baguette'], ['food/croissant', 'food/loaf']]),
-    up('Muffin case', ['chest', 13.1, -13.0, 'k', ['food/muffin', 'food/donut-sprinkles']]),
-    up('Pie basket', ['crate', 13.1, -13.85, 'k', ['food/pie*0.55']]),
-    rack('Bagel rack', -12.8, [['food/loaf-round', 'food/bread'], ['food/croissant', 'food/loaf']], [['food/loaf-baguette', 'food/croissant'], ['food/bread', 'food/loaf-round']]),
-    rack('Sliced loaves', -13.6, [['food/bread', 'food/loaf'], ['food/loaf-round', 'food/croissant']], [['food/loaf', 'food/loaf-baguette'], ['food/croissant', 'food/bread']]),
-    up('Cake case', ['coolerW', 14.45, -11.2, 'k', [['food/cake*0.75', 'food/cake-birthday*0.8'], ['food/pie*0.55', 'food/cake*0.75']], null, 1, 'staff']),
-    up('Bread oven', ['furn/kitchenStove', 14.45, -13.5, 'k', [], null, 2, 'staff']),
-    up('Pastry fridge', ['furn/kitchenFridgeLarge', 14.45, -12.3, 'k', null, null, 1, 'staff']),
-    up('Prep cabinet', ['furn/kitchenCabinet', 13.62, -10.59, 's', null, [['food/bowl*0.6', 0, 0, 0, 0.405], ['food/rollingPin*0.6', 0, -0.1, 0.3, 0.405]], 3, 'staff']),
-    top('Cake stand', 'food/cake*0.75', 13.1, -11.3, 0.34),
-    top('Flour sacks', 'food/bag', 10.9, -13.6, 0.8, 1.2),
-    top('Bread boxes', 'furn/cardboardBoxOpen', 10.9, -11.2, 0.8, 0.9),
-    top('Warm lamp', 'furn/lampRoundTable', 10.9, -12.0, 0.8),
-    top('Bakery plant', 'furn/plantSmall1', 10.9, -12.8, 0.8),
-    top('Croissant display', 'food/croissant', 13.1, -13.85, 0.5),
-    top('Bread tray', 'food/plate-rectangle*0.55', 13.1, -12.15, 0.5),
+    tt('Donut table', 13.1, -10.95, 'k', ['food/donut-sprinkles*1.5', 'food/donut-chocolate*1.5', 'food/donut-sprinkles*1.5', 'food/muffin*1.5', 'food/donut-chocolate*1.5', 'food/muffin*1.5']),
+    tt('Baguette table', 13.1, -11.6, 'k', ['pw/Bread_Round_01*1.8', 'pw/Bread_Loaf_Bag_01*1.8', 'pw/Bread_Round_01*1.8', 'pw/Bread_Loaf_Bag_01*1.8', 'pw/Bread_Round_01*1.8', 'pw/Bread_Loaf_Bag_01*1.8']),
+    up('Bread rack', pw('BakeryRack_15', 10.9, -11.2, 'b', { stock: 1 })),
+    up('Roll rack', pw('BakeryRack_15', 10.9, -12.0, 'b', { stock: 1 })),
+    up('Muffin case', pw('BakeryCase_SelfServe_10', 13.1, -12.25, 'k', { stock: 1 })),
+    tt('Pie table', 13.1, -12.9, 'k', ['food/pie*0.55', 'food/pie*0.55', 'food/croissant', 'food/croissant', 'food/pie*0.55', 'food/croissant']),
+    up('Bagel case', pw('BakeryCase_SelfServe_10', 10.9, -12.75, 'b', { stock: 1 })),
+    up('Loaf rack', pw('BakeryRack_15', 10.9, -13.5, 'b', { stock: 1 })),
+    up('Cake case', pw('DisplayCase_Bakery_10', 14.4, -10.95, 'k', { spots: 0 })),
+    up('Bread oven', pw('Oven_Convection_10', 14.4, -13.45, 'k', { spots: 0 })),
+    up('Pastry fridge', pw('Freezer_Upright_01', 14.45, -11.55, 'k', { spots: 0 })),
+    up('Sample cart', pw('SampleCart_01', 13.7, -10.6, 's', { spots: 0 })),
+    top('Cake boxes', 'pw/Cake_Box_01', 13.1, -10.95, 0.38, 1.6),
+    up('Bread crates', pw('BreadCrate_Stack_01', 10.2, -11.6, 'b', { spots: 0 })),
+    top('Bread box', 'pw/BreadBox_01', 10.9, -12.0, 0.9, 1.4),
+    top('Loaf bags', 'pw/Bread_Loaf_Bag_01', 10.9, -12.9, 0.9, 2),
+    up('Bakery plant', pw('Planter_Tall_01', 10.2, -13.4, 0, { spots: 0 })),
+    top('Donut tray', 'pw/Donut_Tray_01', 13.1, -12.9, 0.3, 1.4),
+    top('Baguette basket', 'pw/Baguette_Basket_01', 13.1, -11.6, 0.3, 1.4),
     board('Menu board', 'COFFEE 2.00', 10.6, -10.7, 0.9),
     up('Baking rug', { patch: rbox(11.5, 12.5, -13.8, -11.0, 0.3), finish: 0xd8b585 }),
     board('Fresh baked board', 'FRESH BAKED', 12.6, -10.55, 1.0),
-    top('Coffee machine', 'furn/kitchenCoffeeMachine', 14.45, -12.3, 0.83),
+    up('Coffee station', pw('CoffeeStation_15', 14.4, -12.3, 'k', { spots: 0 })),
     board('Cake sale board', 'CAKES 2 FOR 9', 9.95, -14.2, 0.9)
   ], [SIGN, clerk(13.85, -11.9, 'k'),
-    up('Cake display', ['table', 11.5, -14.45, 's', ['food/cake*0.75', 'food/cake-birthday*0.8']]),
+    up('Cake display', pw('BakeryCase_SelfServe_10', 12.6, -14.05, 's', { stock: 1 })),
     lights([[11.8, -11.6], [11.8, -13.2]]), HELP,
-    up('Showcase', { sign: 'gold' }, { m: 'food/cake-birthday*1.3', x: 14.45, z: -11.2, r: 0, k: 1, y: 0.9, flat: 1 })])
+    up('Showcase', { sign: 'gold' }, { m: 'food/cake-birthday*1.3', x: 14.4, z: -10.95, r: 0, k: 1, y: 0.7, flat: 1 })])
 };
 
 // shelf faces taken from a pool of goods: unit i shows four neighbours of it
