@@ -1872,10 +1872,8 @@ function entry(pc, s, e) {
     pc.staff = f;
     pc.foot.push({ x: e.staff[0], z: e.staff[1], hw: 0.2, hd: 0.2, a: 0 });
   } else if (e.helper) {
-    var h = { f: crew('shop/character-employee', 'walk'), i: 0, wait: 0, path: null };
-    if (nav.dirty) navBuild();
-    var c = nearFree(s.a.cx, s.a.cz);
-    h.f.obj.position.set(c < 0 ? s.a.cx : NX0 + (c % NX + 0.5) * NC, 0, c < 0 ? s.a.cz : NZ0 + (((c / NX) | 0) + 0.5) * NC);
+    var h = { f: crew('shop/character-employee', 'walk'), i: 0, wait: 0, path: null, placed: false };
+    h.f.obj.position.set(s.a.cx, 0, s.a.cz);
     pc.x.add(h.f.obj);
     pc.helper = h;
   } else if (e.lights) {
@@ -1901,6 +1899,14 @@ function makePiece(s, k) {
   u.piece.forEach(function (e) { entry(pc, s, e); });
   pc.x.visible = false;
   return pc;
+}
+
+// a helper starts on the free floor nearest the middle of its area, found when its piece turns on
+function startHelper(s, h) {
+  if (nav.dirty) navBuild();
+  var c = nearFree(s.a.cx, s.a.cz);
+  if (c >= 0) h.f.obj.position.set(NX0 + (c % NX + 0.5) * NC, 0, NZ0 + (((c / NX) | 0) + 0.5) * NC);
+  h.placed = true;
 }
 
 function pieceOf(s, k) {
@@ -3144,6 +3150,7 @@ function syncArea(s, animate, now) {
     if (!pc) continue;
     if (inn && !pc.on && animate && s.shown >= 0) {
       pc.on = true;
+      if (pc.helper && !pc.helper.placed) startHelper(s, pc.helper);
       pc.x.visible = true;
       pc.gb = pc.b.group();
       pc.g = new THREE.Group();
@@ -3155,6 +3162,7 @@ function syncArea(s, animate, now) {
       grew = true;
     } else if (inn) {
       pc.on = true;
+      if (pc.helper && !pc.helper.placed) startHelper(s, pc.helper);
       pc.x.visible = true;
       if (!pc.g && !pc.x.parent) s.group.add(pc.x);
     } else {
@@ -4404,7 +4412,7 @@ function overlay(now) {
       anchorXY[id].top = ty - (t.h || 24) * sc;
     }
   });
-  var a2 = bestId && anchorXY[bestId];
+  var a2 = bestId && bestId !== selId && anchorXY[bestId];
   if (!a2) {
     arrowEl.hidden = true;
     return;
@@ -4542,10 +4550,6 @@ function spot(id) {
   if (id === 'garden') return { x: (GARDEN[0] + GARDEN[1]) / 2, y: (GARDEN[2] + GARDEN[3]) / 2 };
   if (PLAN.wing[id]) return { x: (PLAN.wing[id].rect[0] + PLAN.wing[id].rect[1]) / 2, y: (PLAN.wing[id].rect[2] + PLAN.wing[id].rect[3]) / 2 };
   return { x: 0, y: 0.5 };
-}
-
-function go(x, z) {
-  flyTo(x, z, Math.min(focus.dist, fit(11)));
 }
 
 // the start view: the grocery entrance and the produce market at the phone's portrait width
@@ -4727,7 +4731,15 @@ function pieceBox(id, k) {
     var g = pc.b.group();
     box = boxOf(g);
     g.traverse(function (o) { if (o.geometry) o.geometry.dispose(); });
-  } else if (places[id] && places[id].items[k + 1]) box = boxOf(places[id].items[k + 1].g);
+  } else if (places[id] && places[id].items[k + 1]) {
+    // a level that is still rising is squashed flat, so measure it at full height
+    var ig = places[id].items[k + 1].g;
+    var sy = ig.scale.y;
+    ig.scale.y = 1;
+    box = boxOf(ig);
+    ig.scale.y = sy;
+    ig.updateMatrixWorld(true);
+  }
   var out;
   if (!box.isEmpty() && box.getSize(new THREE.Vector3()).length() < 10) out = { x0: box.min.x, x1: box.max.x, z0: box.min.z, z1: box.max.z, top: box.max.y };
   else {
@@ -4835,13 +4847,28 @@ function flashStep(now) {
   }
 }
 
-// where a piece is on the screen, kept inside the part of it the game uses
+// where a piece is on the screen once the camera has arrived, or null when that is outside the part the game uses
 function pieceScreen(id, k) {
   if (!shops[id] && !places[id]) return null;
   var b = pieceBox(id, k);
+  var was = null;
+  if (goal) {
+    was = { x: focus.x, z: focus.z, dist: focus.dist };
+    focus.x = goal.x;
+    focus.z = goal.z;
+    focus.dist = goal.k;
+    clamp();
+    place();
+  }
   toScreen((b.x0 + b.x1) / 2, Math.min(1.4, b.top * 0.6), (b.z0 + b.z1) / 2, sp);
-  if (sp.z > 1) return null;
-  return { x: Math.max(40, Math.min(cw - 40, sp.x)), y: Math.max(IT + 90, Math.min(ch - IB - 30, sp.y)) };
+  if (was) {
+    focus.x = was.x;
+    focus.z = was.z;
+    focus.dist = was.dist;
+    place();
+  }
+  if (sp.z > 1 || sp.x < 40 || sp.x > cw - 40 || sp.y < IT + 90 || sp.y > ch - IB - 30) return null;
+  return { x: sp.x, y: sp.y };
 }
 
 // each upgrade shows: its piece rises, its name pops over it, and the camera goes to it, closer for a small piece
@@ -4860,9 +4887,12 @@ function event(res, now) {
     var size = pc ? pieceSize(pc) : 1;
     var close = fit(size < 0.6 ? 6 : size < 1.5 ? 8 : 11);
     if (!onScreen(at[0], at[1]) || !framed && (res.unlock || focus.dist > close * 1.2)) out = flyTo(at[0], at[1], Math.min(focus.dist, close)) + 0.1;
-  } else if (res.place && !framed) {
-    var p = spot(res.id);
-    out = flyTo(p.x, p.y, Math.min(focus.dist, fit(PLAN.wing[res.id] ? 11 : EDGE * 2 + 2))) + 0.1;
+  } else if (res.place) {
+    var pb = pieceBox(res.id, res.piece);
+    if (!framed) {
+      var p = spot(res.id);
+      out = flyTo(p.x, p.y, Math.min(focus.dist, fit(PLAN.wing[res.id] ? 11 : EDGE * 2 + 2))) + 0.1;
+    } else if (!onScreen((pb.x0 + pb.x1) / 2, (pb.z0 + pb.z1) / 2)) out = flyTo((pb.x0 + pb.x1) / 2, (pb.z0 + pb.z1) / 2, Math.min(focus.dist, fit(11))) + 0.1;
   }
   return out;
 }
@@ -4973,6 +5003,7 @@ function upIcon(id, k) {
   var seen = figs.length;
   var sm = s.signMat;
   var pc = makePiece(s, k);
+  var made = s.signMat !== sm ? s.signMat : null;
   figs.length = seen;
   s.signMat = sm;
   var g = new THREE.Group();
@@ -4989,6 +5020,10 @@ function upIcon(id, k) {
   }
   var url = snap(g, box);
   g.traverse(function (o) { if (o.geometry) o.geometry.dispose(); });
+  if (made) {
+    made.map.dispose();
+    made.dispose();
+  }
   icons[key] = url;
   return url;
 }
@@ -5093,7 +5128,6 @@ window.View = {
   },
   ready: function () { return ready; },
   event: event,
-  go: go,
   refresh: refresh,
   confetti: confetti,
   populate: function () { sync(true, performance.now()); },
