@@ -86,7 +86,7 @@ var goal = null;
 var azGoal = null;
 var DMIN = 8;
 var DMAX = 80;
-var BOUNDS = [-26, 26, -36, 14];
+var BOUNDS = [-30, 32, -42, 16];
 var bump = {};
 var tagsEl;
 var arrowEl;
@@ -637,11 +637,19 @@ function cutaway() {
 // everything in the store faces the doors, so the camera turns no more than an eighth either way
 var TURN = Math.PI / 4;
 
+// the middle of the view stays far enough in that its edges don't run past the dressed ground, so the room to pan grows
+// as the camera comes in
 function clamp() {
   focus.az = Math.max(-TURN, Math.min(TURN, focus.az));
   focus.dist = Math.max(DMIN, Math.min(DMAX, focus.dist));
-  focus.x = Math.max(BOUNDS[0], Math.min(BOUNDS[1], focus.x));
-  focus.z = Math.max(BOUNDS[2], Math.min(BOUNDS[3], focus.z));
+  var hw = (focus.dist - 2) * Math.tan(Math.atan(Math.tan(cam.fov * Math.PI / 360) * cw / ch));
+  var lim = function (v, lo, hi, m) {
+    lo += m;
+    hi -= m;
+    return lo > hi ? (lo + hi) / 2 : Math.max(lo, Math.min(hi, v));
+  };
+  focus.x = lim(focus.x, BOUNDS[0], BOUNDS[1], hw * 0.5);
+  focus.z = lim(focus.z, BOUNDS[2], BOUNDS[3], hw * 0.7);
 }
 
 function under(sx, sy, out) {
@@ -1934,23 +1942,18 @@ function sharedWithLater(s, x, z) {
   });
 }
 
-// an area that is not open yet: bare concrete fenced off along the edges that open onto aisles, a pallet of boxes, a
-// hand truck and a coming soon board
+// an area that is not open yet: plain floor behind a low hoarding in the department's colour along the edges that open
+// onto aisles, and an opening soon board
 function vacantSite(s) {
   var r = s.a.vacant;
   var g = new THREE.Group();
   var b = new Batch();
-  b.slab(flat(0xb9b6ae), r[0], r[1], r[2], r[3], 0.012, 0.01);
+  b.slab(flat(0xcdcac2), r[0], r[1], r[2], r[3], 0.012, 0.01);
   var mx = (r[0] + r[1]) / 2;
   var mz = (r[2] + r[3]) / 2;
-  b.add('skate/pallet', mx - 0.9, mz, 0.3);
-  var pb = [];
-  stock(KIND.stock, 'boxes', pb);
-  pb.forEach(function (q) {
-    var p = rotY(q[1], q[2], 0.3);
-    b.raw(q[0], mx - 0.9 + p[0], mz + p[1], 0.3 + q[3], q[4] - lib.model(q[0]).box.y0 * q[5], q[5]);
-  });
-  b.add('shop/hand-truck', mx + 0.8, mz + 0.3, 0.5);
+  var stripe = flat(parseInt(DEPT[s.id].slice(1), 16));
+  var panel = flat(0xe4e7ef);
+  var postC = flat(0x8d93a6);
   var edges = [[r[0], r[2], r[1], r[2], 0], [r[0], r[3], r[1], r[3], 0], [r[0], r[2], r[0], r[3], 1], [r[1], r[2], r[1], r[3], 1]];
   edges.forEach(function (e) {
     var len = Math.hypot(e[2] - e[0], e[3] - e[1]);
@@ -1959,12 +1962,32 @@ function vacantSite(s) {
       var x = e[0] + (e[2] - e[0]) * (i + 0.5) / n;
       var z = e[1] + (e[3] - e[1]) * (i + 0.5) / n;
       if (x < -14.4 || x > 14.4 || z < BACK + 0.3 || sharedWithLater(s, x, z)) continue;
-      b.add('roads/construction-barrier', x, z, e[4] ? 0 : Math.PI / 2);
+      var hx = e[4] ? 0.04 : 0.38;
+      var hz = e[4] ? 0.38 : 0.04;
+      b.block(panel, x - hx, x + hx, z - hz, z + hz, 0.02, 0.4);
+      b.block(stripe, x - hx, x + hx, z - hz, z + hz, 0.4, 0.45);
+      if (e[4]) b.block(postC, x - 0.05, x + 0.05, z - hz - 0.04, z - hz + 0.04, 0.02, 0.5);
+      else b.block(postC, x - hx - 0.04, x - hx + 0.04, z - 0.05, z + 0.05, 0.02, 0.5);
     }
   });
   g.add(b.group());
-  g.add(board({ text: 'COMING SOON\n' + BZ[s.id].name.toUpperCase(), x: mx, z: mz + 0.9, y: 0.6, w: 1.2, h: 0.5, post: true }));
+  g.add(board({ text: 'OPENING SOON\n' + BZ[s.id].name.toUpperCase(), x: mx, z: mz + 0.6, y: 0.6, w: 1.2, h: 0.5, post: true }));
   return g;
+}
+
+// the plain rectangle round a rounded one, so a department's floor meets the aisles and walls squarely
+function square(poly) {
+  var x0 = 1e9;
+  var x1 = -1e9;
+  var z0 = 1e9;
+  var z1 = -1e9;
+  poly.forEach(function (p) {
+    x0 = Math.min(x0, p[0]);
+    x1 = Math.max(x1, p[0]);
+    z0 = Math.min(z0, p[1]);
+    z1 = Math.max(z1, p[1]);
+  });
+  return [[x0, z1], [x1, z1], [x1, z0], [x0, z0]];
 }
 
 function buildAreas() {
@@ -1981,7 +2004,7 @@ function buildAreas() {
     s.vacant = vacantSite(s);
     s.group.add(s.vacant);
     var fb = new Batch();
-    a.floor.forEach(function (f, j) { fb.geom(patch(f.poly), finishMat(f.finish), 0.02 + j * 0.002); });
+    a.floor.forEach(function (f, j) { fb.geom(patch(square(f.poly)), finishMat(f.finish), 0.02 + j * 0.002); });
     s.floorG = fb.group(false);
     s.group.add(s.floorG);
     s.lights = new Batch();
@@ -2259,13 +2282,12 @@ function buildFront() {
   // the first till stands at the east end, by the grocery entrance
   var cx = bk.x + TILLS.reduce(function (w, t) { return w + (t.k === 'lane' ? 1.9 : 1.3); }, 0);
   TILLS.forEach(function (t) {
-    if (t.k === 'lane') {
-      cx -= 1.9;
-      hall.tills.push(lane(hall, li++, t.lv, cx + 0.95));
-    } else {
-      cx -= 1.3;
-      hall.tills.push(kiosk(hall, ki++, t.lv, cx + 0.35));
-    }
+    var tw = t.k === 'lane' ? 1.9 : 1.3;
+    cx -= tw;
+    // the floor of the bank grows with its tills
+    hall.lv[t.lv] = hall.lv[t.lv] || new Batch();
+    hall.lv[t.lv].geom(patch(square([[cx, -1.25], [cx + tw, 1.35]])), finishMat(0xc4cad8), 0.045);
+    hall.tills.push(t.k === 'lane' ? lane(hall, li++, t.lv, cx + 0.95) : kiosk(hall, ki++, t.lv, cx + 0.35));
   });
   hall.tills.push(gardenTill);
   hall.staff.push(gardenTill.cashier);
@@ -2316,7 +2338,7 @@ function buildFront() {
   places.hall = hall;
   addPick('hall', 0, 0.5, EDGE * 2, 3.2);
   buildDoors();
-  decor(PLAN.decor.front, true);
+  decor(PLAN.decor.front.filter(function (e) { return !(e.patch && e.finish === 0xc4cad8); }), true);
 }
 
 // glass doors that slide apart when someone comes near; a fixed pane either side, a rail across the top
@@ -4552,13 +4574,13 @@ function spot(id) {
   return { x: 0, y: 0.5 };
 }
 
-// the start view: the grocery entrance and the produce market at the phone's portrait width
+// the start view: the grocery entrance, the produce market and the east wing at the phone's portrait width
 function focusNow() {
   goal = null;
   azGoal = null;
-  focus.x = 9;
-  focus.z = -3.5;
-  focus.dist = fit(16);
+  focus.x = 10.5;
+  focus.z = -4.5;
+  focus.dist = fit(19);
   focus.az = VIEW_AZ;
   clamp();
   place();
