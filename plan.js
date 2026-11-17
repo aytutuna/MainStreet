@@ -149,46 +149,52 @@ AREAS.produce = {
     up('Showcase', { sign: 'gold' }, pw('ProduceTable_15', 13.1, -0.55, 's', { stock: 'Apples' }))])
 };
 
-// bakery: cases along the east wall facing the lane, bread racks opposite, ovens behind the counter
-function rack(name, z, a, b) {
-  return up(name, ['shelf', 10.9, z, 'b', [a, b]]);
+// a tiered promo table with goods of another kit on its three tiers: front row, middle row, back, left to right
+var TIER = [[-0.2, 0.12, 0.2], [0, 0.12, 0.2], [0.2, 0.12, 0.2], [-0.1, 0, 0.29], [0.1, 0, 0.29], [0, -0.13, 0.38]];
+function tt(name, x, z, face, goods) {
+  var on = goods.map(function (g, i) {
+    var t = TIER[i % 6];
+    return [g, t[0], t[1], i * 0.7, t[2]];
+  });
+  return up(name, pw('Table_Promo_Tiered_01', x, z, face, { on: on }));
 }
 // something standing on top of a fixture that is already there
 function top(name, ref, x, z, y, k) {
   return up(name, { m: ref, x: x, z: z, r: 0, k: k || 1, y: y, flat: 1 });
 }
+// bakery: tables and cases along the east wall facing the lane, bread racks opposite, a counter with ovens behind
 AREAS.bakery = {
   cx: 12.2, cz: -12.3, vacant: [9.7, 14.7, -14.4, -10.4], sign: [11.7, -10.9, 1.9],
   floor: [{ poly: rbox(9.7, 14.7, -14.3, -10.4, 0.9), finish: 0xf0d9aa }],
   ups: ups([
-    up('Donut case', ['chest', 13.1, -11.3, 'k', ['food/donut-sprinkles', 'food/muffin', 'food/donut-chocolate']]),
-    up('Baguette basket', ['crate', 13.1, -12.15, 'k', ['food/loaf-baguette']]),
-    rack('Bread rack', -11.2, [['food/loaf', 'food/loaf-round'], ['food/loaf-baguette', 'food/loaf']], [['food/croissant', 'food/bread'], ['food/loaf-round', 'food/croissant']]),
-    rack('Roll rack', -12.0, [['food/croissant', 'food/bread'], ['food/loaf', 'food/loaf-round']], [['food/bread', 'food/loaf-baguette'], ['food/croissant', 'food/loaf']]),
-    up('Muffin case', ['chest', 13.1, -13.0, 'k', ['food/muffin', 'food/donut-sprinkles']]),
-    up('Pie basket', ['crate', 13.1, -13.85, 'k', ['food/pie*0.55']]),
-    rack('Bagel rack', -12.8, [['food/loaf-round', 'food/bread'], ['food/croissant', 'food/loaf']], [['food/loaf-baguette', 'food/croissant'], ['food/bread', 'food/loaf-round']]),
-    rack('Sliced loaves', -13.6, [['food/bread', 'food/loaf'], ['food/loaf-round', 'food/croissant']], [['food/loaf', 'food/loaf-baguette'], ['food/croissant', 'food/bread']]),
-    up('Cake case', ['coolerW', 14.45, -11.2, 'k', [['food/cake*0.75', 'food/cake-birthday*0.8'], ['food/pie*0.55', 'food/cake*0.75']], null, 1, 'staff']),
-    up('Bread oven', ['furn/kitchenStove', 14.45, -13.5, 'k', [], null, 2, 'staff']),
-    up('Pastry fridge', ['furn/kitchenFridgeLarge', 14.45, -12.3, 'k', null, null, 1, 'staff']),
-    up('Prep cabinet', ['furn/kitchenCabinet', 13.62, -10.59, 's', null, [['food/bowl*0.6', 0, 0, 0, 0.405], ['food/rollingPin*0.6', 0, -0.1, 0.3, 0.405]], 3, 'staff']),
-    top('Cake stand', 'food/cake*0.75', 13.1, -11.3, 0.34),
-    top('Flour sacks', 'food/bag', 10.9, -13.6, 0.8, 1.2),
-    top('Bread boxes', 'furn/cardboardBoxOpen', 10.9, -11.2, 0.8, 0.9),
-    top('Warm lamp', 'furn/lampRoundTable', 10.9, -12.0, 0.8),
-    top('Bakery plant', 'furn/plantSmall1', 10.9, -12.8, 0.8),
-    top('Croissant display', 'food/croissant', 13.1, -13.85, 0.5),
-    top('Bread tray', 'food/plate-rectangle*0.55', 13.1, -12.15, 0.5),
+    tt('Donut table', 13.1, -10.95, 'k', ['food/donut-sprinkles*1.5', 'food/donut-chocolate*1.5', 'food/donut-sprinkles*1.5', 'food/muffin*1.5', 'food/donut-chocolate*1.5', 'food/muffin*1.5']),
+    tt('Baguette table', 13.1, -11.6, 'k', ['pw/Bread_Round_01*1.8', 'pw/Bread_Loaf_Bag_01*1.8', 'pw/Bread_Round_01*1.8', 'pw/Bread_Loaf_Bag_01*1.8', 'pw/Bread_Round_01*1.8', 'pw/Bread_Loaf_Bag_01*1.8']),
+    up('Bread rack', pw('BakeryRack_15', 10.9, -11.2, 'b', { stock: 1 })),
+    up('Roll rack', pw('BakeryRack_15', 10.9, -12.0, 'b', { stock: 1 })),
+    up('Muffin case', pw('BakeryCase_SelfServe_10', 13.1, -12.25, 'k', { stock: 1 })),
+    tt('Pie table', 13.1, -12.9, 'k', ['food/pie*0.55', 'food/pie*0.55', 'food/croissant', 'food/croissant', 'food/pie*0.55', 'food/croissant']),
+    up('Bagel case', pw('BakeryCase_SelfServe_10', 10.9, -12.75, 'b', { stock: 1 })),
+    up('Loaf rack', pw('BakeryRack_15', 10.9, -13.5, 'b', { stock: 1 })),
+    up('Cake case', pw('DisplayCase_Bakery_10', 14.4, -10.95, 'k', { spots: 0 })),
+    up('Bread oven', pw('Oven_Convection_10', 14.4, -13.45, 'k', { spots: 0 })),
+    up('Pastry fridge', pw('Freezer_Upright_01', 14.45, -11.55, 'k', { spots: 0 })),
+    up('Sample cart', pw('SampleCart_01', 13.7, -10.6, 's', { spots: 0 })),
+    top('Cake boxes', 'pw/Cake_Box_01', 13.1, -10.95, 0.38, 1.6),
+    up('Bread crates', pw('BreadCrate_Stack_01', 10.2, -11.6, 'b', { spots: 0 })),
+    top('Bread box', 'pw/BreadBox_01', 10.9, -12.0, 0.9, 1.4),
+    top('Loaf bags', 'pw/Bread_Loaf_Bag_01', 10.9, -12.9, 0.9, 2),
+    up('Bakery plant', pw('Planter_Tall_01', 10.2, -13.4, 0, { spots: 0 })),
+    top('Donut tray', 'pw/Donut_Tray_01', 13.1, -12.9, 0.3, 1.4),
+    top('Baguette basket', 'pw/Baguette_Basket_01', 13.1, -11.6, 0.3, 1.4),
     board('Menu board', 'COFFEE 2.00', 10.6, -10.7, 0.9),
     up('Baking rug', { patch: rbox(11.5, 12.5, -13.8, -11.0, 0.3), finish: 0xd8b585 }),
     board('Fresh baked board', 'FRESH BAKED', 12.6, -10.55, 1.0),
-    top('Coffee machine', 'furn/kitchenCoffeeMachine', 14.45, -12.3, 0.83),
+    up('Coffee station', pw('CoffeeStation_15', 14.4, -12.3, 'k', { spots: 0 })),
     board('Cake sale board', 'CAKES 2 FOR 9', 9.95, -14.2, 0.9)
   ], [SIGN, clerk(13.85, -11.9, 'k'),
-    up('Cake display', ['table', 11.5, -14.45, 's', ['food/cake*0.75', 'food/cake-birthday*0.8']]),
+    up('Cake display', pw('BakeryCase_SelfServe_10', 12.6, -14.05, 's', { stock: 1 })),
     lights([[11.8, -11.6], [11.8, -13.2]]), HELP,
-    up('Showcase', { sign: 'gold' }, { m: 'food/cake-birthday*1.3', x: 14.45, z: -11.2, r: 0, k: 1, y: 0.9, flat: 1 })])
+    up('Showcase', { sign: 'gold' }, { m: 'food/cake-birthday*1.3', x: 14.4, z: -10.95, r: 0, k: 1, y: 0.7, flat: 1 })])
 };
 
 // shelf faces taken from a pool of goods: unit i shows four neighbours of it
@@ -266,70 +272,124 @@ AREAS.pets = {
       up('Showcase', { sign: 'gold' }, ['tank', 5.5, -18.0, 's', FISH], ['tank', 6.4, -18.0, 's', FISH])])
 };
 
-// the power wall: coolers along the back wall, low open freezers as islands in front of them
-function wall(names, kind, x0, goods) {
-  return names.map(function (n, i) { return f(n, kind, x0 + i, -21.96, 's', goods[i % goods.length]); });
+// the power wall: coolers along the back wall, open freezers and wells as islands in front of them
+// two rows of three goods in the well of an open island, left to right, back row first
+function well(refs, y, k) {
+  var out = [];
+  for (var i = 0; i < 6; i++) out.push([refs[i % refs.length], (i % 3 - 1) * 0.28, i < 3 ? -0.1 : 0.1, i * 0.9, y, k || 1]);
+  return out;
 }
-function island(names, kind, x0, goods) {
-  return names.map(function (n, i) { return f(n, kind, x0 + i, -19.7, 's', goods[i % goods.length]); });
+function dairyIsland(name, x, refs, k) {
+  return up(name, pw('IslandFreezer_Open_20', x, -19.7, 's', { on: well(refs, 0.3, k) }));
 }
-var DAIRYG = [[[MILK[0], MILK[1]], [MILK[2], MILK[0]]], [[SMALL[0], 'food/pudding'], [MILK[3], SMALL[1]]], [['flat:food/egg', 'flat:food/egg'], [MILK[1], MILK[4]]],
-  [['food/pudding', SMALL[3]], [MILK[0], MILK[2]]], [[MILK[4], MILK[3]], ['flat:food/egg', SMALL[0]]], [[MILK[2], MILK[1]], ['food/pudding', SMALL[1]]],
-  [[SMALL[2], MILK[0]], [MILK[3], 'flat:food/egg']]];
+function cooler(name, kind, x) {
+  return up(name, pw(kind, x, -21.97, 's', { stock: 1 }));
+}
+var CHEESE = 'food/cheese*0.3';
+var PUD = 'food/pudding';
 AREAS.dairy = {
   cx: 4.0, cz: -21.0, vacant: [0.1, 8.0, -22.2, -18.9], sign: [4.0, -20.5, 1.8],
   floor: [{ poly: rbox(0.1, 7.9, -21.7, -19.5, 0.5), finish: 0xc2dcf2 }],
-  ups: ups([].concat(
-    wall(['Milk cooler', 'Yogurt cooler', 'Egg cooler', 'Pudding cooler', 'Cream cooler', 'Butter cooler', 'Juice cooler'], 'coolerW', 1, DAIRYG),
-    island(['Cheese bunker', 'Dessert bunker', 'Dip bunker', 'Spread bunker', 'Sour cream bunker', 'Snack cheese'], 'bunker', 1.5,
-      [['food/cheese*0.6'], [SMALL[2]], ['food/pudding'], [SMALL[3]], [SMALL[1]], ['food/cheese*0.6']]),
-    [board('Fresh dairy board', 'FRESH DAIRY', 4.0, -18.9, 1.1), d('Dairy bin', 'furn/trashcan', 6.18, -20.81, 0, 1.5), d('Dairy plant', 'furn/pottedPlant', 0.26, -18.69, 0, 1),
-      d('Hand truck', 'shop/hand-truck', 8.12, -21.42, 1.2), pal('Juice box pallet', 8.5, -19.35, 0.1, [SMALL[0], SMALL[2]]), d('Stock cartons', 'furn/cardboardBoxClosed', 8.37, -18.69, 0.5, 1.1),
-      d('Dairy cart', 'shop/shopping-cart', 0.75, -20.8, 0.3), d('Basket stack', 'shop/shopping-basket', -0.22, -19.08, 0.2),
-      board('Milk deal', 'MILK 2 FOR 6', 7.0, -18.9, 1.0), mat('Dairy mat', 1.4, 2.9, -21.0, -19.9, 0xd7e6f6), board('Cheese deals', 'CHEESE 2 FOR 5', 2.4, -18.9, 1.0)]),
-    [SIGN, clerk(7.6, -20.5, 'k'), f('Cheese display', 'bunker', 7.5, -19.5, 's', ['food/cheese*0.6']), lights([[2.5, -20.6], [5.5, -20.6]]), HELP,
-      up('Showcase', { sign: 'gold' }, ['bunker', 0.6, -19.7, 's', ['food/cheese*0.6', SMALL[2]]])])
+  ups: ups([
+    cooler('Milk cooler', 'Multideck_Open_20', 1.1),
+    cooler('Yogurt cooler', 'Multideck_Open_20', 2.1),
+    cooler('Egg cooler', 'CoolerDoors_2Door_15', 2.975),
+    cooler('Pudding cooler', 'Multideck_Open_20', 3.85),
+    cooler('Cream cooler', 'CoolerDoors_2Door_15', 4.725),
+    cooler('Butter cooler', 'DrinkCooler_Upright_01', 5.275),
+    cooler('Juice cooler', 'DrinkCooler_Upright_01', 5.675),
+    dairyIsland('Cheese island', 1.4, [CHEESE, PUD, 'pw/Carton_Milk_01', PUD], 1.6),
+    dairyIsland('Dessert island', 2.4, [PUD, 'pw/Yogurt_4Pack_01', PUD], 1.8),
+    dairyIsland('Dip island', 3.4, ['pw/Yogurt_4Pack_01', PUD, 'pw/Carton_Milk_01'], 1.8),
+    dairyIsland('Spread island', 4.4, ['pw/Carton_Eggs_01', 'pw/Carton_Milk_01', 'pw/Jug_Milk_01'], 1.6),
+    dairyIsland('Sour cream island', 5.4, ['pw/Yogurt_4Pack_01', 'pw/Carton_Milk_01', PUD], 1.8),
+    dairyIsland('Snack cheese', 6.4, ['pw/Carton_JuiceBox_3Pack_01', PUD, 'pw/Carton_Milk_01'], 1.8),
+    board('Fresh dairy board', 'FRESH DAIRY', 4.0, -18.9, 1.1),
+    up('Recycling', pw('TrashRecycle_Station_01', 7.2, -21.6, 's', { spots: 0 })),
+    up('Dairy plant', pw('Planter_Tall_01', 0.3, -18.7, 0, { spots: 0 })),
+    up('Hand truck', pw('DeliveryBoxes_Dolly_01', 8.2, -21.4, 0.2, { spots: 0 })),
+    up('Juice end cap', pw('Gondola_EndCap_Low_10', 8.55, -19.4, 's', { stock: 1 })),
+    up('Stock pallet', pw('PalletLoad_Cases_01', 8.9, -20.4, 0.1, { spots: 0 })),
+    up('Full basket', pw('Basket_Hand_Full_01', 0.75, -20.8, 0.3, { spots: 0 })),
+    up('Basket stack', pw('Basket_Stack_01', -0.2, -19.1, 0.2, { spots: 0 })),
+    board('Milk deal', 'MILK 2 FOR 6', 7.0, -18.9, 1.0),
+    mat('Dairy mat', 1.4, 2.9, -21.0, -19.9, 0xd7e6f6),
+    board('Cheese deals', 'CHEESE 2 FOR 5', 2.4, -18.9, 1.0)
+  ], [SIGN, clerk(7.6, -20.5, 'k'), dairyIsland('Cheese display', 7.4, [CHEESE, PUD, 'pw/Carton_JuiceBox_3Pack_01', PUD], 1.6), lights([[2.5, -20.6], [5.5, -20.6]]), HELP,
+    up('Showcase', { sign: 'gold' }, pw('IceCream_Chest_01', 0.45, -19.7, 's', { on: [[CHEESE, -0.1, 0, 0.5, 0.3], [CHEESE, 0.1, 0, 1.4, 0.3], ['pw/Yogurt_4Pack_01', 0, 0.05, 0, 0.35, 1.6]] }))])
 };
 
+function freezer(name, kind, x) {
+  return up(name, pw(kind, x, -19.7, 's', { stock: 1 }));
+}
 AREAS.frozen = {
   cx: -4.5, cz: -21.0, vacant: [-8.0, -1.0, -22.2, -18.9], sign: [-4.5, -20.5, 1.8],
   floor: [{ poly: rbox(-7.9, -1.1, -21.7, -19.5, 0.5), finish: 0xafcdee }],
-  ups: ups([].concat(
-    wall(['Ice cream cooler', 'Pizza cooler', 'Veg cooler', 'Popsicle cooler', 'Dinner cooler', 'Fries cooler'], 'cooler', -7,
-      [[['food/ice-cream-cup', SMALL[1]], [PIZZA[0], 'food/bag-flat']], [[SMALL[2], 'food/ice-cream-cup'], ['food/bag-flat', PIZZA[1]]],
-        [['food/ice-cream-cup', SMALL[0]], ['food/popsicle', PIZZA[1]]], [['food/popsicle', 'food/ice-cream-cup'], [SMALL[3], 'food/popsicle-chocolate']],
-        [[PIZZA[0], 'food/bag-flat'], [SMALL[2], 'food/ice-cream-cup']], [['food/popsicle-chocolate', SMALL[1]], ['food/bag-flat', PIZZA[0]]]]),
-    island(['Ice cream chest', 'Pizza chest', 'Pops chest', 'Bagged veg chest', 'Waffle chest'], 'chest', -6.5,
-      [['food/ice-cream-cup', 'food/popsicle'], [PIZZA[1]], [SMALL[3]], ['food/bag-flat'], ['food/ice-cream-cup']]),
-    [board('Ice cream deal', 'ICE CREAM 2 FOR 6', -2.9, -18.9, 1.1), d('Frozen bin', 'furn/trashcan', -5.9, -20.8, 0, 1.5), d('Frozen plant', 'furn/pottedPlant', -8.18, -18.47, 0, 1),
-      d('Frozen cart', 'shop/shopping-cart', -7.1, -20.35, 0.4), board('Pizza deal', 'PIZZA 3 FOR 10', -6.3, -18.9, 1.0), d('Basket stack', 'shop/shopping-basket', -2.55, -20.82, 0.2),
-      d('Empty crates', 'furn/cardboardBoxOpen', -4.65, -20.84, 0.3, 1.1), board('Frozen veg deal', 'FROZEN VEG 4 FOR 5', -4.6, -18.9, 1.1),
-      up('Ice chest', ['chest', -7.0, -18.95, 's', ['food/bag-flat']]), board('Frozen specials', 'FROZEN SPECIALS', -2.4, -21.35, 1.0), d('Dolly', 'shop/hand-truck', -3.6, -20.84, 0.2), board('Bagged ice deal', 'BAGGED ICE 2 FOR 5', -1.1, -18.85, 1.0), mat('Cold floor mat', -3.4, -1.8, -20.9, -19.9, 0xc7dcf0)]),
-    [SIGN, clerk(-1.5, -20.5, 'k'), f('Ice cream island', 'chest', -1.52, -19.55, 's', ['food/ice-cream-cup', 'food/popsicle']), lights([[-6, -20.6], [-3, -20.6]]), HELP,
-      up('Showcase', { sign: 'gold' }, ['chest', -7.4, -19.7, 's', [PIZZA[1], SMALL[3]]])])
+  ups: ups([
+    up('Ice cream cooler', pw('FreezerDoors_2Door_15', -7.5, -21.97, 's', { stock: 1 })),
+    up('Pizza cooler', pw('FreezerDoors_2Door_15', -6.75, -21.97, 's', { stock: 1 })),
+    up('Veg cooler', pw('FreezerDoors_2Door_15', -6, -21.97, 's', { stock: 1 })),
+    up('Popsicle cooler', pw('FreezerDoors_2Door_15', -5.25, -21.97, 's', { stock: 1 })),
+    up('Dinner cooler', pw('FreezerDoors_2Door_15', -4.5, -21.97, 's', { stock: 1 })),
+    up('Fries cooler', pw('FreezerDoors_2Door_15', -3.75, -21.97, 's', { stock: 1 })),
+    freezer('Ice cream chest', 'IslandFreezer_Coffin_20', -6.4),
+    freezer('Pizza chest', 'IslandFreezer_Open_20', -5.4),
+    freezer('Pops chest', 'IslandFreezer_Coffin_20', -4.4),
+    freezer('Bagged veg chest', 'IslandFreezer_Open_20', -3.4),
+    freezer('Waffle chest', 'IslandFreezer_Coffin_20', -2.4),
+    board('Ice cream deal', 'ICE CREAM 2 FOR 6', -2.9, -18.9, 1.1),
+    up('Recycling', pw('TrashRecycle_Station_01', -1.7, -21.65, 's', { spots: 0 })),
+    up('Frozen plant', pw('Planter_Tall_01', -8.1, -18.6, 0, { spots: 0 })),
+    up('Full basket', pw('Basket_Hand_Full_01', -2.0, -20.9, 0.4, { spots: 0 })),
+    board('Pizza deal', 'PIZZA 3 FOR 10', -6.3, -18.9, 1.0),
+    up('Basket stack', pw('Basket_Stack_01', -1.2, -21.6, 0.2, { spots: 0 })),
+    up('Ice bags', pw('IceBag_01', -3.05, -21.6, 0, { n: 3, spots: 0 })),
+    board('Frozen veg deal', 'FROZEN VEG 4 FOR 5', -4.6, -18.9, 1.1),
+    up('Tub chest', pw('IceCream_Chest_01', -2.4, -21.6, 's', { on: [['pw/Tub_IceCream_01', -0.12, 0, 0, 0.43, 2.4], ['pw/Tub_IceCream_01', 0.02, 0, 1, 0.43, 2.4], ['pw/Tub_IceCream_01', 0.14, 0, 2, 0.43, 2.4]] })),
+    board('Frozen specials', 'FROZEN SPECIALS', -8.0, -20.3, 1.0),
+    up('Dolly', pw('DeliveryBoxes_Dolly_01', -8.15, -21.3, 0.2, { spots: 0 })),
+    board('Bagged ice deal', 'BAGGED ICE 2 FOR 5', -1.1, -18.85, 1.0),
+    mat('Cold floor mat', -3.4, -1.8, -20.9, -19.9, 0xc7dcf0)
+  ], [SIGN, clerk(-1.5, -20.5, 'k'), up('Ice cream island', pw('IslandFreezer_End_10', -1.45, -19.55, 's', { stock: 1 })), lights([[-6, -20.6], [-3, -20.6]]), HELP,
+    up('Showcase', { sign: 'gold' }, pw('IslandFreezer_Coffin_20', -7.4, -19.7, 's', { stock: 1 }))])
 };
 
-var MEATG = [[['food/turkey*0.6', 'food/whole-ham*0.7'], ['food/sausage', 'food/hot-dog-raw']], [['food/meat-raw', 'food/meat-patty'], ['food/bacon-raw', 'food/meat-ribs']],
-  [['food/fish~z*0.8', 'food/mussel'], ['food/meat-sausage', 'food/sausage']], [['food/meat-ribs', 'food/bacon-raw'], ['food/meat-patty', 'food/whole-ham*0.7']]];
-function deli(name, z, goods) {
-  return f(name, 'chest', 13.1, z, 'k', goods);
+function deli(name, z) {
+  return up(name, pw('SelfServe_Meat_20', 13.2, z, 'k', { stock: 1 }));
+}
+function meatWall(name, kind, x) {
+  return up(name, pw(kind, x, -21.97, 's', { stock: 1 }));
+}
+function meatChest(name, z, refs) {
+  return up(name, pw('IslandFreezer_Open_20', 11.3, z, 'k', { on: well(refs, 0.3, 1.6) }));
 }
 AREAS.meat = {
   cx: 12.0, cz: -18.4, vacant: [9.7, 14.7, -22.2, -14.4], sign: [12.0, -20.5, 2.2],
   floor: [{ poly: rbox(9.7, 14.7, -18.4, -14.4, 0.6), finish: 0xf2ddd8 }, { poly: rbox(9.1, 14.7, -21.7, -19.5, 0.4), finish: 0xf2ddd8 }],
-  ups: ups([].concat(
-    [deli('Beef case', -15.0, ['food/meat-raw']), deli('Rib case', -15.85, ['food/meat-ribs']), deli('Sausage case', -16.7, ['food/meat-sausage']), deli('Fish case', -17.55, ['food/fish~z*0.8'])],
-    wall(['Turkey cooler', 'Burger cooler', 'Seafood cooler', 'Rib cooler', 'Ham cooler'], 'coolerR', 10, MEATG),
-    [up('Meat fridge', ['furn/kitchenFridge', 14.45, -15.5, 'k', null, null, 2, 'staff']),
-      up('Deli prep cabinet', ['furn/kitchenCabinet', 13.44, -20.37, 'k', null, [['food/cutting-board*0.6', 0, 0, 0.2, 0.405], ['food/knife-block*0.6', 0.1, -0.1, 0, 0.405]], 3, 'staff']),
-      up('Slicer counter', ['furn/kitchenCabinet', 9.69, -15.97, 's', null, [['food/knife-block*0.6', 0, 0, 0, 0.405]], 3, 'staff']),
-      up('Bacon chest', ['chest', 11.3, -15.3, 'k', ['food/bacon-raw']]), up('Ham chest', ['chest', 11.3, -16.3, 'k', ['food/whole-ham*0.7']]),
-      up('Sausage chest', ['chest', 11.3, -17.3, 'k', ['food/hot-dog-raw']]), board('Deli board', 'FRESH DELI', 12.5, -14.7, 1.0),
-      up('Meat floor', { patch: rbox(10.2, 12.6, -17.8, -14.6, 0.3), finish: 0xe9c9c2 }), d('Brine barrel', 'surv/barrel', 9.85, -14.83, 0, 1.3),
-      up('Butcher block', m('furn/table', 9.9, -18.0, 0, 1.2), { m: 'food/cutting-board*0.8', x: 9.8, z: -18.0, r: 0.4, k: 1, y: 0.35, flat: 1 }, { m: 'food/knife-block*0.6', x: 10.1, z: -17.9, r: 0, k: 1, y: 0.35, flat: 1 }), d('Meat boxes', 'furn/cardboardBoxClosed', 14.4, -18.1, 0.2, 1.1), d('Hand truck', 'shop/hand-truck', 14.4, -19.2, 0.6),
-      board('Seafood deals', 'FISH 2 FOR 9', 12.21, -18.99, 1.0), d('Basket stack', 'shop/shopping-basket', 10.43, -20.42, 0.3), d('Ice bucket', 'surv/bucket', 14.4, -18.3, 0, 1.4)]),
-    [SIGN, clerk(13.85, -16.2, 'k'), up('Meat island', ['chest', 11.59, -19.51, 's', [['food/meat-ribs'], ['food/bacon-raw']], null, 2]), lights([[11.8, -20.6], [13.5, -16.5]]), HELP,
-      up('Showcase', { sign: 'gold' }, ['end', 9.5, -19.7, 'b', [['food/bottle-ketchup', 'food/bottle-musterd']]])])
+  ups: ups([
+    deli('Beef case', -15.0), deli('Rib case', -16.0), deli('Sausage case', -17.0), deli('Fish case', -18.0),
+    meatWall('Turkey cooler', 'Multideck_Open_20', 10.2),
+    meatWall('Burger cooler', 'Multideck_Open_20', 11.2),
+    meatWall('Seafood cooler', 'Multideck_Open_20', 12.2),
+    meatWall('Rib cooler', 'Multideck_Open_20', 13.2),
+    meatWall('Ham cooler', 'CoolerDoors_2Door_15', 14.1),
+    up('Meat fridge', pw('Freezer_Upright_01', 14.45, -15.5, 'k', { spots: 0 })),
+    up('Seafood case', pw('ServiceCase_Seafood_20', 13.2, -19.5, 'k')),
+    up('Slicer cart', pw('SampleCart_01', 9.95, -15.97, 's', { spots: 0, on: [['pw/DeliScale_Printer_01', 0, 0, 0, 0.48]] })),
+    meatChest('Bacon chest', -15.3, ['pw/Tray_Meat_01', 'food/bacon-raw*0.5', 'pw/Tray_Meat_01']),
+    meatChest('Ham chest', -16.3, ['food/whole-ham*0.4', 'pw/Tray_Meat_01', 'food/whole-ham*0.4']),
+    meatChest('Sausage chest', -17.3, ['food/hot-dog-raw*0.7', 'pw/Tray_Meat_01', 'food/sausage*0.7']),
+    board('Deli board', 'FRESH DELI', 12.5, -14.7, 1.0),
+    up('Meat floor', { patch: rbox(10.2, 12.6, -17.8, -14.6, 0.3), finish: 0xe9c9c2 }),
+    up('Brine tubs', pw('FoodTub_Stack_01', 9.95, -14.85, 0, { spots: 0 })),
+    up('Butcher case', pw('ServiceCase_Meat_20', 9.95, -18.4, 'b')),
+    up('Meat tubs', pw('FoodTub_Stack_01', 14.35, -18.0, 0.2, { n: 2, spots: 0 })),
+    up('Dolly', pw('DeliveryBoxes_Dolly_01', 14.3, -19.4, 0.6, { spots: 0 })),
+    board('Seafood deals', 'FISH 2 FOR 9', 12.21, -18.99, 1.0),
+    up('Basket stack', pw('Basket_Stack_01', 10.4, -20.5, 0.3, { spots: 0 })),
+    up('Ice bags', pw('IceBag_01', 14.4, -20.6, 0, { n: 2, spots: 0 }))
+  ], [SIGN, clerk(13.85, -16.2, 'k'), up('Meat island', pw('SelfServe_Meat_20', 11.4, -19.6, 's', { stock: 1 })), lights([[11.8, -20.6], [13.5, -16.5]]), HELP,
+    up('Showcase', { sign: 'gold' }, pw('DrinkCooler_Upright_01', 9.95, -20.5, 's', { stock: 1 }))])
 };
 
 // general merchandise, west

@@ -34,9 +34,9 @@ var STAR_MUL = 4;
 var ITEMS = {
   produce: { it: [['Fruit tables', 'sell'], ['Veg & flower stands', 'sell'], ['Barrels & bins', 'sell'], ['Signs & lights', 'draw'], ['Decor', 'draw'], ['Staff', 'staff']],
     of: '020030120532110221132023544443' },
-  bakery: { it: [['Bread racks', 'sell'], ['Cases & baskets', 'sell'], ['Cake case & ovens', 'sell'], ['Signs & decor', 'draw'], ['Staff', 'staff']],
+  bakery: { it: [['Bread racks', 'sell'], ['Tables & cases', 'sell'], ['Counter & ovens', 'sell'], ['Signs & decor', 'draw'], ['Staff', 'staff']],
     of: '110031100422221100030113433232' },
-  dairy: { it: [['Wall coolers', 'sell'], ['Bunkers & pallets', 'sell'], ['Signs & lights', 'draw'], ['Decor', 'draw'], ['Staff', 'staff']],
+  dairy: { it: [['Wall coolers', 'sell'], ['Open islands', 'sell'], ['Signs & lights', 'draw'], ['Decor', 'draw'], ['Staff', 'staff']],
     of: '000020001411111123323133432322' },
   meat: { it: [['Deli cases', 'sell'], ['Meat coolers', 'sell'], ['Butcher counter', 'sell'], ['Signs & lights', 'draw'], ['Decor', 'draw'], ['Staff', 'staff']],
     of: '000031111512220000334424543441' },
