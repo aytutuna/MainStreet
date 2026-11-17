@@ -1441,8 +1441,11 @@ function boardAtlas(b, e) {
   b.geom(g, BA.mat, 0);
 }
 
+// a sign stand: a base plate with a post up the board's back
 function post(b, e) {
-  b.block(flat(0x50566a), e.x - 0.02, e.x + 0.02, e.z - 0.05, e.z - 0.01, 0, e.y - e.h / 2);
+  var c = boardKind(e.text, true) === 'chalk' ? 0x7d5129 : 0x50566a;
+  b.block(flat(c), e.x - 0.1, e.x + 0.1, e.z - 0.12, e.z + 0.06, 0, 0.03);
+  b.block(flat(c), e.x - 0.025, e.x + 0.025, e.z - 0.06, e.z - 0.01, 0.03, e.y);
 }
 
 function board(e) {
@@ -1544,7 +1547,7 @@ function entry(pc, s, e) {
     boardAtlas(b, e);
     if (e.post) {
       post(b, e);
-      pc.foot.push({ x: e.x, z: e.z, hw: 0.06, hd: 0.06, a: 0 });
+      pc.foot.push({ x: e.x, z: e.z - 0.03, hw: 0.1, hd: 0.09, a: 0 });
     }
   } else if (e.slab) {
     var sl = e.slab;
