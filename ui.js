@@ -102,13 +102,6 @@ function buzz(kind) {
   }
 }
 
-function secs(v) {
-  if (v < 10) return (Math.round(v * 10) / 10) + 's';
-  if (v < 60) return Math.round(v) + 's';
-  var m = Math.floor(v / 60);
-  return m + 'm' + (Math.round(v % 60) ? ' ' + Math.round(v % 60) + 's' : '');
-}
-
 function clock2(v) {
   var m = Math.floor(v / 60);
   var s = Math.floor(v % 60);
@@ -424,14 +417,6 @@ function upgrade(id) {
   if (res) afterBuy(res);
 }
 
-function pressBest() {
-  wake();
-  var o = best();
-  if (!o || o.cost > S.cash) return;
-  var res = doOption(o);
-  if (res) afterBuy(res);
-}
-
 function claimGoalAt(i, el) {
   var g = claimGoal(i);
   if (!g) return;
@@ -464,31 +449,6 @@ function updateHud() {
 function updateBest() {
   bestOpt = best();
   View.setBest(bestOpt ? bestOpt.id : null);
-}
-
-function bestText(o) {
-  var name = (BZ[o.id] || PL[o.id]).name;
-  var l = lv(o.id);
-  if (o.k === 'place') return [S.pl[o.id] || PL[o.id].open ? name + ' level ' + (S.pl[o.id] + 1) : 'Build the ' + name, PL[o.id].next[S.pl[o.id]]];
-  if (!l) return ['Open ' + name, upName(o.id, 1) + ': a new department'];
-  var m = nextMs(l);
-  return [name + ': ' + upName(o.id, l + 1), '+' + money(o.gain) + '/s' + (m && m.lv === l + 1 ? ', sales here x' + m.mul : '')];
-}
-
-function paintBest() {
-  var o = bestOpt;
-  var b = $('best');
-  set(shown, 'bestH', b, 'hidden', !o);
-  if (!o) return;
-  var ok = S.cash >= o.cost;
-  var t = bestText(o);
-  var wait = ok ? '' : '  -  ' + secs(Math.max(1, (o.cost - S.cash) / Math.max(rate(), 1e-9))) + ' to go';
-  set(shown, 'bestT', $('best-txt'), 'innerHTML', '<b>' + t[0] + '</b><small>' + t[1] + wait + '</small>');
-  set(shown, 'bestC', $('best-cost'), 'textContent', money(o.cost));
-  if (set(shown, 'bestI', $('best-ic'), 'title', t[0])) $('best-ic').src = o.k === 'place' ? placeIcon(o.id, S.pl[o.id] + 1) : upIcon(o.id, lv(o.id) + 1);
-  flag(shown, 'bestW', b, 'wait', !ok);
-  set(shown, 'bestD', b, 'disabled', !ok);
-  $('best-fill').style.width = (ok ? 0 : Math.min(100, S.cash / o.cost * 100)) + '%';
 }
 
 function buildGoals() {
@@ -611,7 +571,6 @@ function afterLoad() {
 }
 
 function wire() {
-  $('best').addEventListener('click', pressBest);
   $('card-x').addEventListener('click', closeCard);
   $('t-biz').addEventListener('click', function () {
     sfx('tap');
@@ -838,7 +797,6 @@ function loop(t) {
   }
   View.draw(t);
   updateHud();
-  paintBest();
   updateOpen();
 }
 
