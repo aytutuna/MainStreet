@@ -504,7 +504,8 @@ function modelList() {
   walk(OVERSTOCK.boxes);
   walk(['food/plate-rectangle*0.55', 'skate/pallet', 'shop/character-employee@5,3>2,2', 'shop/freezers-standing@13,3>2,2',
     'shop/freezers-standing@13,3>2,1', PARCEL, STAFF]);
-  ['shop/wall', 'shop/wall-window', 'shop/column', 'shop/floor', 'shop/floor%=d5d5d8', 'shop/cash-register', 'shop/cash-register-self', 'shop/character-employee', 'arcade/cash-register',
+  ['shop/wall', 'shop/wall-window', 'shop/column', 'shop/floor', 'shop/floor%=d5d5d8', 'shop/cash-register', 'shop/character-employee', 'arcade/cash-register', 'pw/Checkout_Lane_30', 'pw/LaneLight_Pole_01',
+    'pw/Basket_Stack_01', 'pw/SelfCheckout_Kiosk_01', 'pw/SelfCheckout_Attendant_01', 'pw/ServiceDesk_20', 'pw/CartCorral_Indoor_20', 'pw/ShoppingCart_Nested_3_01',
     'shop/hand-truck', 'shop/shopping-basket', 'shop/shopping-basket*0.62', 'furn/cardboardBoxClosed', 'furn/cardboardBoxOpen', 'furn/rugDoormat',
     'furn/bench', 'furn/trashcan', 'furn/pottedPlant', 'sub/planter', 'roads/road-straight', 'roads/road-crossing', 'roads/light-square',
     'roads/light-curved', 'roads/construction-fence', 'roads/construction-light', 'roads/construction-barrier', 'roads/construction-cone',
@@ -2088,30 +2089,26 @@ var doorMats = [];
 // the baskets left at the end. Its line runs north up the west side of the counter, the one paying at the front
 function lane(hall, li, lv, x) {
   var zc = PLAN.bank.z;
-  var m = mesh('shop/cash-register', x, zc, 0);
+  var m = new THREE.Group();
+  m.position.set(x, 0, zc);
+  // the belt runs south toward the cashier's end, so the shopper pays at the south end of the lane's west side
+  m.add(mesh('pw/Checkout_Lane_30', -0.15, -0.35, -Math.PI / 2));
   var cashier = crew('shop/character-employee', 'idle');
-  cashier.obj.position.set(0.68, 0, 0.15);
+  cashier.obj.position.set(0.4, 0, -0.1);
   cashier.obj.rotation.y = -Math.PI / 2;
   m.add(cashier.obj);
   var rack = new Batch();
-  var goods = [];
-  stock(KIND.end, ['food/lollypop', 'food/candy-bar-wrapper'], goods);
-  var rot = -Math.PI / 2;
-  rack.add('shop/shelf-end', -0.2, -0.8, rot);
-  goods.forEach(function (g) {
-    var p = rotY(g[1], g[2], rot);
-    rack.raw(g[0], -0.2 + p[0], -0.8 + p[1], rot + g[3], g[4] - lib.model(g[0]).box.y0 * g[5], g[5]);
-  });
-  for (var bk = 0; bk < 3; bk++) rack.add('shop/shopping-basket', 0.05, 0.72, 0.2, bk * 0.06);
+  rack.add('pw/LaneLight_Pole_01', -0.4, -1.12, 0);
+  rack.add('pw/Basket_Stack_01', -0.15, 0.55, 0);
   m.add(rack.group());
   var sign = laneSign(li + 1);
-  sign.position.set(0, 1.17, -0.8);
+  sign.position.set(-0.4, 1.1, -1.12);
   m.add(sign);
   m.visible = false;
   root.add(m);
   hall.items.push({ g: m, lv: lv });
   hall.staff.push(cashier);
-  hall.solids.push({ r: [x - 0.45, x + 0.5, zc - 0.4, zc + 0.45], lv: lv }, { r: [x + 0.5, x + 0.85, zc - 0.1, zc + 0.4], lv: lv }, { r: [x - 0.4, x, zc - 1.25, zc - 0.35], lv: lv });
+  hall.solids.push({ r: [x - 0.35, x + 0.05, zc - 1.05, zc + 0.75], lv: lv }, { r: [x + 0.25, x + 0.6, zc - 0.3, zc + 0.2], lv: lv });
   var qx = x - 0.72;
   return { k: 'lane', x: qx, till: [x + 0.2, 0.62, zc + 0.2], cashier: cashier, head: [x + 0.68, zc + 0.15],
     spot: function (n) { return n ? [qx, zc - 0.85 - 0.5 * (n - 1), 0] : [qx, zc + 0.15, Math.PI / 2]; } };
@@ -2121,8 +2118,8 @@ function lane(hall, li, lv, x) {
 function kiosk(hall, ki, lv, x) {
   var zc = PLAN.bank.z;
   hall.lv[lv] = hall.lv[lv] || new Batch();
-  hall.lv[lv].add('shop/cash-register-self', x, zc, Math.PI / 2);
-  hall.solids.push({ r: [x - 0.3, x + 0.25, zc - 0.45, zc + 0.45], lv: lv });
+  hall.lv[lv].add('pw/SelfCheckout_Kiosk_01', x, zc, Math.PI / 2);
+  hall.solids.push({ r: [x - 0.2, x + 0.2, zc - 0.35, zc + 0.35], lv: lv });
   return { k: 'self', x: x + 0.55, z: zc, till: [x, 0.7, zc] };
 }
 
@@ -2199,7 +2196,7 @@ function buildFront() {
   var hall = { items: [], shown: -1, add: true, tills: [], staff: [], solids: [], lv: {} };
   PLAN.entrances.forEach(function (en) {
     [-0.5, 0.5].forEach(function (o) { b.add('furn/rugDoormat', en.x + o, FRONT - 0.45, 0, 0.004); });
-    for (var i = 0; i < 5; i++) b.add('shop/shopping-basket', en.basket[0], en.basket[1], 0, i * 0.06);
+    b.add('pw/Basket_Stack_01', en.basket[0], en.basket[1], 0);
     b.light(en.x, -0.3);
     hall.solids.push({ r: [en.basket[0] - 0.2, en.basket[0] + 0.2, en.basket[1] - 0.2, en.basket[1] + 0.2], lv: 0 });
     // the greeter stands by the baskets from the first day
@@ -2231,18 +2228,20 @@ function buildFront() {
   // the attendant who watches the self checkouts, and the service desk by the grocery entrance
   var att = crew('shop/character-employee', 'idle');
   att.obj.position.set(-7.0, 0, 0.3);
-  att.obj.rotation.y = -Math.PI / 2;
+  att.obj.rotation.y = Math.PI / 2;
   att.obj.visible = false;
   root.add(att.obj);
   hall.items.push({ g: att.obj, lv: 3 });
   hall.staff.push(att);
-  hall.solids.push({ r: [-7.2, -6.8, 0.1, 0.5], lv: 3 });
+  hall.solids.push({ r: [-7.2, -6.85, 0.1, 0.5], lv: 3 });
+  hall.lv[3] = hall.lv[3] || new Batch();
+  hall.lv[3].add('pw/SelfCheckout_Attendant_01', -6.72, 0.3, -Math.PI / 2);
   var desk = new THREE.Group();
   for (var di = 0; di < PLAN.desk.n; di++) {
-    var dm = mesh('arcade/cash-register', PLAN.desk.x + di * 0.9, PLAN.desk.z, Math.PI);
+    var dm = mesh('pw/ServiceDesk_20', PLAN.desk.x + di * 0.9, PLAN.desk.z, Math.PI);
     if (di !== 1) {
       var cl = crew('shop/character-employee', 'idle');
-      cl.obj.position.set(0, 0, -0.5);
+      cl.obj.position.set(0, 0, -0.42);
       dm.add(cl.obj);
       hall.staff.push(cl);
     }
@@ -2257,7 +2256,8 @@ function buildFront() {
     var w = 0.5;
     hall.lv[it[0]] = hall.lv[it[0]] || new Batch();
     if (it[1] === 'carts') {
-      for (var c = 0; c < 5; c++) hall.lv[it[0]].add('shop/shopping-cart', it[2] + c * 0.22, it[3], -Math.PI / 2);
+      hall.lv[it[0]].add('pw/CartCorral_Indoor_20', it[2] + 0.5, it[3], 0);
+      hall.lv[it[0]].add('pw/ShoppingCart_Nested_3_01', it[2] + 0.5, it[3], Math.PI / 2);
       w = 1.2;
     } else hall.lv[it[0]].add(it[1], it[2], it[3], it[4]);
     hall.solids.push({ r: [it[2] - 0.3, it[2] + w - 0.1, it[3] - 0.3, it[3] + 0.3], lv: it[0] });

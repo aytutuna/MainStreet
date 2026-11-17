@@ -741,10 +741,10 @@ AREAS.kitchen = {
 function bd(text, x, z, w, h, y, r) {
   return { text: text, x: x, z: z, r: r || 0, y: y, w: w, h: h };
 }
+// a corral of nested carts, n is how many fit of the old row
 function carts(x, z, n) {
-  var out = [];
-  for (var i = 0; i < n; i++) out.push({ m: 'shop/shopping-cart', x: x + i * 0.14, z: z, r: -Math.PI / 2, flat: 1 });
-  return out;
+  return [{ m: 'pw/CartCorral_Outdoor_30', x: x + 0.75, z: z, flat: 1 }, { m: 'pw/ShoppingCart_Nested_3_01', x: x + 0.4, z: z, r: Math.PI / 2, flat: 1 },
+    { m: 'pw/ShoppingCart_Nested_3_01', x: x + 1.1, z: z, r: Math.PI / 2, flat: 1 }];
 }
 // a row of n things along x or z with the given gap
 function line(n, x, z, dx, dz, f) {
@@ -784,8 +784,8 @@ DECOR.front = cat([
   { m: 'sub/planter', x: -2.9, z: 1.95, k: 0.6 }, { m: 'nature/plant_bushLarge', x: -2.9, z: 1.95, y: 0.4, k: 1.1, flat: 1 },
   { m: 'sub/planter', x: 2.9, z: 1.95, k: 0.6 }, { m: 'nature/plant_bushLarge', x: 2.9, z: 1.95, y: 0.4, k: 1.1, flat: 1 },
   { m: 'furn/bench', x: -0.9, z: 2.0, r: Math.PI, k: 1.5 }, { m: 'furn/bench', x: 0.9, z: 2.0, r: Math.PI, k: 1.5 },
-  { m: 'arcade/claw-machine', x: 3.75, z: 2.0, r: Math.PI }, { m: 'arcade/vending-machine', x: 4.35, z: 2.0, r: Math.PI },
-  { m: 'arcade/vending-machine', x: -3.6, z: 2.0, r: Math.PI }, { m: 'arcade/claw-machine', x: -4.25, z: 2.0, r: Math.PI },
+  { m: 'arcade/claw-machine', x: 3.75, z: 2.0, r: Math.PI }, { m: 'pw/VendingMachine_Drink_01', x: 4.35, z: 2.0, r: Math.PI },
+  { m: 'pw/VendingMachine_Snack_01', x: -3.6, z: 2.0, r: Math.PI }, { m: 'arcade/claw-machine', x: -4.25, z: 2.0, r: Math.PI },
   // a floor sign at each entrance and a scrubber parked by the wall
   { m: 'roads/construction-cone', x: -8.3, z: 0.6, k: 0.7 }, { m: 'roads/construction-cone', x: 8.3, z: 0.6, k: 0.7 }
 ]);
@@ -878,10 +878,10 @@ export var PLAN = {
   // the checkout bank runs from bank.x, its counters on bank.z; shoppers cross the front aisle at cross
   bank: { x: -6.75, z: 0.5, cross: -2.3, exit: 1.3 },
   // what each Checkouts level adds besides tills: [level, model, x, z, turn], carts as a row of five
-  front: [[2, 'carts', -14.0, 1.9], [2, 'carts', -7.0, 1.9], [2, 'carts', 5.0, 1.9], [2, 'carts', 11.6, 1.9],
-    [4, 'shop/bottle-return', 13.4, 2.1, Math.PI], [4, 'shop/bottle-return', 14.0, 2.1, Math.PI],
-    [8, 'arcade/vending-machine', -14.3, 1.95, Math.PI], [8, 'arcade/vending-machine', -13.75, 1.95, Math.PI], [8, 'arcade/vending-machine', -13.2, 1.95, Math.PI],
-    [8, 'shop/gacha-machine', -12.5, 1.95, Math.PI], [10, 'furn/bench', -5.0, 1.95, Math.PI], [10, 'furn/pottedPlant', -5.8, 1.95, 0], [10, 'furn/pottedPlant', -4.2, 1.95, 0]],
+  front: [[2, 'carts', -14.0, 1.9], [2, 'carts', -7.0, 1.9], [2, 'carts', 5.0, 1.9], [2, 'carts', 10.4, 1.9],
+    [4, 'pw/TrashRecycle_Station_01', 13.4, 2.1, Math.PI], [4, 'pw/TrashRecycle_Station_01', 14.0, 2.1, Math.PI],
+    [8, 'pw/VendingMachine_Drink_01', -14.3, 1.95, Math.PI], [8, 'pw/VendingMachine_Snack_01', -13.75, 1.95, Math.PI], [8, 'pw/VendingMachine_Drink_01', -13.2, 1.95, Math.PI],
+    [8, 'pw/NewspaperRack_01', -12.5, 1.95, Math.PI], [10, 'pw/DiningBench_01', -5.0, 1.95, Math.PI], [10, 'pw/Planter_Tall_01', -5.8, 1.95, 0], [10, 'pw/Planter_Tall_01', -4.2, 1.95, 0]],
   desk: { x: 12.0, z: 0.9, n: 3 },
   // the stockroom: where stockers wait, by the stock doors
   idle: [0.7, -7, 8.5, -10, -1.7, 7, -8.5, 10].map(function (x) { return [x, -23.8]; }),
