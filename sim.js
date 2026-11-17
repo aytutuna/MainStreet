@@ -93,7 +93,7 @@ function noPlaces(s) {
 var SUFFIX = ['', 'K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc'];
 
 function short(v) {
-  if (!isFinite(v)) return '999Dc';
+  if (!isFinite(v)) return '∞';
   if (v < 1000) return v < 10 && v !== Math.floor(v) ? String(Math.round(v * 10) / 10) : String(Math.floor(v));
   var i = Math.floor(Math.log10(v) / 3);
   var x = v / Math.pow(1000, i);
