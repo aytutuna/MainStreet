@@ -1304,6 +1304,7 @@ function fixture(fx, k) {
 var WOODMAT;
 var CARPET;
 var POLISH;
+var VINYL;
 
 function tiled(c, unit) {
   var t = new THREE.CanvasTexture(c);
@@ -1334,6 +1335,20 @@ function finishMat(f) {
       WOODMAT = tiled(wc, 2);
     }
     return WOODMAT;
+  }
+  if (f === 'vinyl') {
+    if (!VINYL) {
+      var vc = document.createElement('canvas');
+      vc.width = vc.height = 128;
+      var v = vc.getContext('2d');
+      v.fillStyle = '#dfe8d0';
+      v.fillRect(0, 0, 128, 128);
+      v.fillStyle = '#c5d6b6';
+      v.fillRect(0, 0, 64, 64);
+      v.fillRect(64, 64, 64, 64);
+      VINYL = tiled(vc, 1.4);
+    }
+    return VINYL;
   }
   if (f === 'polish') {
     if (!POLISH) {

@@ -32,7 +32,7 @@ var STAR_AT = [10, 20, 30];
 var STAR_GEMS = [6, 10, 13];
 var STAR_MUL = 4;
 var ITEMS = {
-  produce: { it: [['Fruit stands', 'sell'], ['Veg & flower stands', 'sell'], ['Crates & pallets', 'sell'], ['Signs & lights', 'draw'], ['Decor', 'draw'], ['Staff', 'staff']],
+  produce: { it: [['Fruit tables', 'sell'], ['Veg & flower stands', 'sell'], ['Barrels & bins', 'sell'], ['Signs & lights', 'draw'], ['Decor', 'draw'], ['Staff', 'staff']],
     of: '020030120532110221132023544443' },
   bakery: { it: [['Bread racks', 'sell'], ['Cases & baskets', 'sell'], ['Cake case & ovens', 'sell'], ['Signs & decor', 'draw'], ['Staff', 'staff']],
     of: '110031100422221100030113433232' },
