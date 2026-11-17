@@ -1,5 +1,4 @@
 var SND_KEY = 'mainstreet.snd';
-var MODE_KEY = 'mainstreet.mode';
 var SND = {
   buy: ['triangle', 0.07, 0.16, [523, 784]],
   coin: ['square', 0.05, 0.1, [880, 1175]],
@@ -22,7 +21,6 @@ var cardRow = null;
 var lastTick = 0;
 var shown = {};
 var insets = [0, 0];
-var mode = 1;
 var rows = {};
 var bestOpt = null;
 var bestAt = 0;
@@ -224,14 +222,22 @@ function nextBanner() {
   }, q.d * 1000);
 }
 
-function amount(id) {
-  return mode === 0 ? Math.max(1, maxBuy(id)) : mode;
+// what the next upgrade adds and its picture; the view draws them from the store's own pieces
+function upName(id, k) {
+  return View.upName(id, k);
 }
 
-function msText(l) {
+function upIcon(id, k) {
+  return View.upIcon(id, k) || 'assets/' + BZ[id].ic + '.png';
+}
+
+function placeIcon(id, k) {
+  return View.placeIcon(id, k) || 'assets/' + PL[id].ic + '.png';
+}
+
+function nextText(id, l) {
   var m = nextMs(l);
-  if (!m) return 'All milestones reached';
-  return 'Level ' + m.lv + ': sales here x' + m.mul + (m.i === 0 ? ', and a clerk to help' : '');
+  return 'Next: ' + upName(id, l + 1) + (m && m.lv === l + 1 ? ', sales here x' + m.mul : '');
 }
 
 function perMin(v) {
@@ -244,10 +250,11 @@ function makeRow(id) {
   var el = document.createElement('div');
   el.className = 'biz';
   el.innerHTML = '<img class="ic" src="assets/' + b.ic + '.png" alt="">' +
-    '<div class="mid"><div class="l1"><b></b><span></span></div><div class="pr"><i></i><em></em></div><div class="l3"></div></div>' +
+    '<div class="mid"><div class="l1"><b></b><span></span></div><div class="pr"><i></i><em></em></div><div class="l3"><img alt=""><span></span></div></div>' +
     '<div class="btns"><button type="button" class="up"></button></div>';
   var r = { id: id, el: el, k: {}, nm: el.querySelector('b'), lv: el.querySelector('.l1 span'), bar: el.querySelector('.pr'),
-    fill: el.querySelector('.pr i'), bt: el.querySelector('.pr em'), ms: el.querySelector('.l3'), up: el.querySelector('.up') };
+    fill: el.querySelector('.pr i'), bt: el.querySelector('.pr em'), ms: el.querySelector('.l3 span'), nx: el.querySelector('.l3 img'),
+    up: el.querySelector('.up') };
   r.nm.textContent = b.name;
   el.querySelector('.ic').addEventListener('click', function () { focusBiz(id); });
   r.up.addEventListener('click', function () { upgrade(id); });
@@ -280,6 +287,11 @@ function upRow(r) {
       set(k, 'bt', r.bt, 'textContent', perMin(served()) + ' shop, shelves for ' + perMin(stockCap()) + ' a min');
     }
     set(k, 'ms', r.ms, 'textContent', !open ? 'Open ' + BZ[p.after].name + ' first' : c ? 'Next: ' + p.next[l] : 'Everything is built');
+    var newLv = set(k, 'nxl', r.nx.dataset, 'lv', open && c ? l : '');
+    if (set(k, 'nxk', r.nx, 'title', open && c ? p.next[l] : '') || newLv) {
+      if (open && c) r.nx.src = placeIcon(id, l + 1);
+      else r.nx.removeAttribute('src');
+    }
     set(k, 'up', r.up, 'innerHTML', c ? (l || p.open ? 'Upgrade' : 'Build') + '<small>' + money(c) + '</small>' : 'Done<small>all levels</small>');
     set(k, 'upd', r.up, 'disabled', !c || S.cash < c);
     flag(k, 'uphl', r.up, 'hl', hl);
@@ -292,20 +304,28 @@ function upRow(r) {
   if (!e) {
     var u = cost(id, 1);
     set(k, 'lv', r.lv, 'textContent', '');
-    set(k, 'ms', r.ms, 'textContent', avail(id) ? 'Every shopper spends ' + money(spendAt(id, 1)) + ' here' : 'Open ' + BIZ[BZ[id].i - 1].name + ' first');
+    set(k, 'ms', r.ms, 'textContent', avail(id) ? upName(id, 1) + ': every shopper buys here' : 'Open ' + BIZ[BZ[id].i - 1].name + ' first');
+    if (set(k, 'nxk', r.nx, 'title', avail(id) ? upName(id, 1) : '')) {
+      if (avail(id)) r.nx.src = upIcon(id, 1);
+      else r.nx.removeAttribute('src');
+    }
     set(k, 'up', r.up, 'innerHTML', 'Open<small>' + money(u) + '</small>');
     set(k, 'upd', r.up, 'disabled', !avail(id) || S.cash < u);
     flag(k, 'uphl', r.up, 'hl', hl);
     return;
   }
-  var n = amount(id);
-  var cc = cost(id, n);
+  var all = e.l >= UPS;
+  var cc = cost(id, 1);
   var m = nextMs(e.l);
   var from = m && m.i ? MS[m.i - 1][0] : 0;
-  set(k, 'lv', r.lv, 'textContent', 'Lv ' + e.l);
-  set(k, 'ms', r.ms, 'textContent', msText(e.l));
-  set(k, 'up', r.up, 'innerHTML', 'Level up' + (n > 1 ? ' x' + n : '') + '<small>' + money(cc) + '</small>');
-  set(k, 'upd', r.up, 'disabled', S.cash < cc);
+  set(k, 'lv', r.lv, 'textContent', 'Lv ' + e.l + '/' + UPS);
+  set(k, 'ms', r.ms, 'textContent', all ? 'Every upgrade is in' : nextText(id, e.l));
+  if (set(k, 'nxk', r.nx, 'title', all ? '' : upName(id, e.l + 1))) {
+    if (all) r.nx.removeAttribute('src');
+    else r.nx.src = upIcon(id, e.l + 1);
+  }
+  set(k, 'up', r.up, 'innerHTML', all ? 'Done<small>all upgrades</small>' : 'Upgrade<small>' + money(cc) + '</small>');
+  set(k, 'upd', r.up, 'disabled', all || S.cash < cc);
   flag(k, 'uphl', r.up, 'hl', hl);
   r.fill.style.width = (m ? (e.l - from) / (m.lv - from) * 100 : 100) + '%';
   set(k, 'bt', r.bt, 'textContent', money(spendAt(id, e.l) * bmul()) + ' a shopper');
@@ -342,14 +362,6 @@ function closeSheet() {
   fitInsets();
 }
 
-function setMode(m) {
-  mode = m;
-  try {
-    localStorage.setItem(MODE_KEY, String(m));
-  } catch (e) {}
-  [].forEach.call(document.querySelectorAll('#modes button'), function (b) { b.classList.toggle('on', +b.dataset.m === m); });
-}
-
 function showCard(id) {
   closeSheet();
   cardId = id;
@@ -383,11 +395,11 @@ function afterBuy(res) {
   if (ms.length) {
     var m = ms[ms.length - 1];
     sfx('mile');
-    banner('<b>' + name + ' level ' + m.lv + '!</b><small>Sales here x' + m.mul + (ms[0].lv === MS[0][0] ? ', a clerk joins' : '') + (res.gems ? '  +' + res.gems + ' gems' : '') + '</small>', t + 0.3, m.lv >= 25);
+    banner('<b>' + name + ': ' + upName(res.id, m.lv) + '</b><small>Sales here x' + m.mul + (res.gems ? '  +' + res.gems + ' gems' : '') + '</small>', t + 0.3, m.lv >= 25);
     if (res.gems) flyGems(innerWidth / 2, innerHeight * 0.3, Math.min(6, res.gems));
   } else if (res.unlock) {
     sfx('unlock');
-    banner('<b>New: ' + name + '</b><small>Every shopper buys here now</small>', t + 0.3, true);
+    banner('<b>New: ' + name + '</b><small>' + upName(res.id, 1) + ', and every shopper buys here now</small>', t + 0.3, true);
   } else if (res.place) {
     var p = PL[res.id];
     sfx('mile');
@@ -408,7 +420,7 @@ function upgrade(id) {
   wake();
   var res;
   if (PL[id]) res = buyPlace(id);
-  else res = buy(id, has(id) ? amount(id) : 1);
+  else res = buy(id, 1);
   if (res) afterBuy(res);
 }
 
@@ -458,9 +470,9 @@ function bestText(o) {
   var name = (BZ[o.id] || PL[o.id]).name;
   var l = lv(o.id);
   if (o.k === 'place') return [S.pl[o.id] || PL[o.id].open ? name + ' level ' + (S.pl[o.id] + 1) : 'Build the ' + name, PL[o.id].next[S.pl[o.id]]];
-  if (!l) return ['Open ' + name, 'A new department: every shopper buys here'];
-  if (o.n > 1) return [name + ': ' + o.n + ' levels', 'Reaches the level ' + o.ms + ' milestone'];
-  return ['Level up ' + name, 'Lv ' + l + ' to ' + (l + 1) + ',  +' + money(o.gain) + '/s'];
+  if (!l) return ['Open ' + name, upName(o.id, 1) + ': a new department'];
+  var m = nextMs(l);
+  return [name + ': ' + upName(o.id, l + 1), '+' + money(o.gain) + '/s' + (m && m.lv === l + 1 ? ', sales here x' + m.mul : '')];
 }
 
 function paintBest() {
@@ -473,6 +485,7 @@ function paintBest() {
   var wait = ok ? '' : '  -  ' + secs(Math.max(1, (o.cost - S.cash) / Math.max(rate(), 1e-9))) + ' to go';
   set(shown, 'bestT', $('best-txt'), 'innerHTML', '<b>' + t[0] + '</b><small>' + t[1] + wait + '</small>');
   set(shown, 'bestC', $('best-cost'), 'textContent', money(o.cost));
+  if (set(shown, 'bestI', $('best-ic'), 'title', t[0])) $('best-ic').src = o.k === 'place' ? placeIcon(o.id, S.pl[o.id] + 1) : upIcon(o.id, lv(o.id) + 1);
   flag(shown, 'bestW', b, 'wait', !ok);
   set(shown, 'bestD', b, 'disabled', !ok);
   $('best-fill').style.width = (ok ? 0 : Math.min(100, S.cash / o.cost * 100)) + '%';
@@ -607,9 +620,6 @@ function wire() {
   $('sheet-x').addEventListener('click', function () {
     sfx('tap');
     closeSheet();
-  });
-  [].forEach.call(document.querySelectorAll('#modes button'), function (b) {
-    b.addEventListener('click', function () { setMode(+b.dataset.m); });
   });
   $('t-boost').addEventListener('click', function () {
     paintBoost();
@@ -837,14 +847,11 @@ function start() {
     snd = localStorage.getItem(SND_KEY) !== '0';
     vib = localStorage.getItem(BUZZ_KEY) !== '0';
     free = localStorage.getItem(FREE_KEY) === '1';
-    var m = localStorage.getItem(MODE_KEY);
-    if (m !== null && [0, 1, 10, 100].indexOf(+m) >= 0) mode = +m;
   } catch (e) {}
   var gone = load();
   View.init($('view'), onTap);
   buildList();
   buildGoals();
-  setMode(mode);
   paintSpeed();
   wire();
   setFree(free);

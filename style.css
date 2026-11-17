@@ -408,6 +408,18 @@ small {
   position: relative;
 }
 
+#best-ic {
+  position: relative;
+  flex: none;
+  width: 46px;
+  height: 46px;
+  object-fit: contain;
+}
+
+#best-ic:not([src]) {
+  display: none;
+}
+
 #best-txt {
   flex: 1;
   min-width: 0;
@@ -522,26 +534,6 @@ small {
   flex: 1;
 }
 
-#modes {
-  display: flex;
-  gap: 4px;
-}
-
-#modes button {
-  border: 2px solid var(--ink);
-  border-radius: 10px;
-  background: var(--paper2);
-  font-weight: 800;
-  font-size: 13px;
-  height: 32px;
-  min-width: 38px;
-  padding: 0 6px;
-}
-
-#modes button.on {
-  background: var(--gold);
-}
-
 #sheet-x {
   width: 32px;
   height: 32px;
@@ -637,9 +629,23 @@ small {
 }
 
 .l3 {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   font-size: 11px;
   color: var(--muted);
   line-height: 1.15;
+}
+
+.l3 img {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+}
+
+.l3 img:not([src]) {
+  display: none;
 }
 
 .btns {
