@@ -340,13 +340,14 @@ small {
 }
 
 #meters span {
+  flex: none;
   white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 #meters em {
-  flex: none;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
   font-style: normal;
   font-weight: 700;
   color: var(--muted);
