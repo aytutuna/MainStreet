@@ -76,7 +76,7 @@ var ITEMS = {
 // each level of `next` belongs to, so a level is always a piece of one item
 var PLACES = [
   { id: 'lot', name: 'Parking', ic: 'car/sedan', after: 'bakery', cost: [500, 5e4, 5e6, 5e8],
-    next: ['A parking lot: shoppers come by car', 'More parking bays', 'More parking bays', 'The whole lot, with planters'],
+    next: ['A parking lot for shoppers who drive', 'More parking bays', 'More parking bays', 'The whole lot, with planters'],
     it: ['Parking lot'], of: '0000' },
   { id: 'hall', name: 'Checkouts', ic: 'shop/cash-register', after: 'produce', open: true,
     cost: [300, 3e4, 3e6, 3e8, 3e10, 3e12, 3e14, 3e16, 3e18, 3e20],
@@ -89,7 +89,7 @@ var PLACES = [
       'A box more on every dolly', 'A sixth stocker', 'A seventh stocker', 'A box more on every dolly', 'An eighth stocker'],
     it: ['Stockers', 'Dollies'], of: '0010010010' },
   { id: 'taxi', name: 'Taxi Stand', ic: 'car/taxi', after: 'frozen', cost: [2e6, 2e8, 2e10, 2e12],
-    next: ['A taxi stand: shoppers come by taxi', 'More taxis', 'More taxis', 'A taxi every few seconds'],
+    next: ['A taxi stand for shoppers who ride', 'More taxis', 'More taxis', 'A taxi every few seconds'],
     it: ['Taxis'], of: '0000' },
   { id: 'garden', name: 'Garden Center', ic: 'shop/display-flowers', after: 'kitchen', cost: [2e10, 2e12, 2e14, 2e16],
     next: ['A fenced garden with a till', 'More flower displays', 'Potted plants and more displays', 'Trees and lamps'],
