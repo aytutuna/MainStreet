@@ -1,4 +1,4 @@
-var CACHE = 'mainstreet-9e6b6159';
+var CACHE = 'mainstreet-eace15c3';
 var FILES = [
   './',
   'data.js',
@@ -248,7 +248,6 @@ var FILES = [
   'assets/models/pets/animal-cat.glb',
   'assets/models/pets/animal-dog.glb',
   'assets/models/pets/animal-fish.glb',
-  'assets/models/pw/BananaStand_01.glb',
   'assets/models/pw/Basket_Stack_01.glb',
   'assets/models/pw/CartCorral_Indoor_20.glb',
   'assets/models/pw/CartCorral_Outdoor_30.glb',
@@ -268,7 +267,6 @@ var FILES = [
   'assets/models/pw/ProduceStand_Tiered_10_Stocked.glb',
   'assets/models/pw/ProduceTable_15.glb',
   'assets/models/pw/ProduceTable_15_Apples.glb',
-  'assets/models/pw/ProduceTable_15_Mixed.glb',
   'assets/models/pw/ProduceTray_Avocados_01.glb',
   'assets/models/pw/ProduceTray_Bananas_01.glb',
   'assets/models/pw/ProduceTray_Carrots_01.glb',
@@ -286,7 +284,6 @@ var FILES = [
   'assets/models/pw/TrashRecycle_Station_01.glb',
   'assets/models/pw/VendingMachine_Drink_01.glb',
   'assets/models/pw/VendingMachine_Snack_01.glb',
-  'assets/models/pw/WatermelonBin_01.glb',
   'assets/models/roads/License.txt',
   'assets/models/roads/Textures/colormap.png',
   'assets/models/roads/construction-barrier.glb',
