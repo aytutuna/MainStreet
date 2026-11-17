@@ -1227,6 +1227,36 @@ small {
   opacity: 0.4;
 }
 
+.tag.dot {
+  min-width: 0;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  border-radius: 50%;
+  box-shadow: 0 0 0 2px #fff;
+}
+
+.tag.dot b,
+.tag.dot i {
+  display: none;
+}
+
+.tag.dot.own {
+  background: #3f9e47;
+}
+
+.tag.dot.buy {
+  background: #8d93a6;
+}
+
+.tag.dot.ready {
+  background: #f0c040;
+}
+
+.tag.dot.alert {
+  background: #d8452f;
+}
+
 .say {
   position: absolute;
   left: 0;

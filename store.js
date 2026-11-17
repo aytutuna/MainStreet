@@ -4381,7 +4381,39 @@ function anchor(id) {
   return [s.cx, 0.2, Math.max(s.a.vacant[3] - 0.2, s.a.sign[1] + 1.1)];
 }
 
+// the rotate buttons sit over the picture, so a tag keeps out from under them
+var btnRects = [];
+var btnAt = -1e9;
+function buttonRects(now) {
+  if (now - btnAt < 1000) return btnRects;
+  btnAt = now;
+  var o = tagsEl.getBoundingClientRect();
+  btnRects = ['turn-l', 'turn-r'].map(function (id) {
+    var r = document.getElementById(id).getBoundingClientRect();
+    return { x0: r.left - o.left - 4, x1: r.right - o.left + 4, y0: r.top - o.top - 4, y1: r.bottom - o.top + 4 };
+  });
+  return btnRects;
+}
+
+function tagText(id, st, mode) {
+  if (st.alert) return st.name + '  ' + st.said;
+  if (st.own) {
+    if (!st.lv) return st.name;
+    return mode ? st.name + ' ' + st.lv : st.name + '  Lv ' + st.lv + (PL[id] ? '' : '/' + UPS + '  ' + '★'.repeat(st.stars));
+  }
+  return st.avail ? st.name + '  $' + short(st.price) : st.name + '  locked';
+}
+
+function clash(a, b) {
+  return a.x0 < b.x1 && a.x1 > b.x0 && a.y0 < b.y1 && a.y1 > b.y0;
+}
+
+// Tags read in full close up, short at the start view and as a dot far out. When two would overlap the more urgent one
+// stays: the open card's, then an alert, a department ready to buy, an open one, one for sale
 function overlay(now) {
+  var mode = focus.dist < 36 ? 0 : focus.dist < 66 ? 1 : 2;
+  var sc = Math.max(0.6, Math.min(1.1, 30 / focus.dist + 0.12));
+  var list = [];
   tagIds().forEach(function (id) {
     var s = shops[id] || places[id];
     var t = s.tag;
@@ -4392,47 +4424,68 @@ function overlay(now) {
     var vis = open && sp.z < 1 && sp.x > -60 && sp.x < cw + 60 && sp.y > IT + 34 && sp.y < ch - IB;
     if (open && sp.z < 1) anchorXY[id] = { x: sp.x, y: sp.y, top: sp.y };
     else delete anchorXY[id];
-    var show = vis && (st.own || st.avail || focus.dist < 40) && !says.some(function (w) { return w.id === id; });
+    var want = vis && (st.own || st.avail || focus.dist < 40) && !says.some(function (w) { return w.id === id; });
+    var ready = !st.own && st.avail && S.cash >= st.price;
+    list.push({ id: id, t: t, st: st, x: sp.x, y: sp.y, want: want, ready: ready, below: selId === id,
+      pri: selId === id ? 5 : st.alert ? 4 : ready ? 3 : st.own ? 2 : st.avail ? 1 : 0 });
+  });
+  var taken = buttonRects(now).slice();
+  list.sort(function (p, q) { return q.pri - p.pri || q.y - p.y; });
+  list.forEach(function (e) {
+    var t = e.t;
+    var st = e.st;
+    var show = e.want;
+    var dot = mode === 2;
+    var line = tagText(e.id, st, mode);
+    var w = dot ? 14 : t.w || Math.max(82, line.length * 6.4 + 18);
+    var h = dot ? 14 : t.h || 24;
+    var tx = Math.round(Math.max(w * sc / 2 + 4, Math.min(cw - w * sc / 2 - 4, e.x)));
+    var ty = Math.round(e.y);
+    var oy = dot ? ty + h * sc / 2 : e.below ? ty + 8 + h * sc : ty;
+    var box = { x0: tx - w * sc / 2, x1: tx + w * sc / 2, y0: oy - h * sc, y1: oy };
+    if (show && e.pri < 5 && taken.some(function (q) { return clash(q, box); })) show = false;
+    if (show) taken.push(box);
     if (t.shown !== show) {
       t.shown = show;
       t.el.style.display = show ? '' : 'none';
     }
-    if (show) {
-      var line = st.alert ? st.name + '  ' + st.said : st.own ? (st.lv ? st.name + '  Lv ' + st.lv + (PL[id] ? '' : '/' + UPS + '  ' + '★'.repeat(st.stars)) : st.name) : st.avail ? st.name + '  $' + short(st.price) : st.name + '  locked';
-      if (line !== t.text) {
-        t.text = line;
-        t.line.textContent = line;
-        t.h = t.el.offsetHeight;
-      }
-      var cls = 'tag' + (st.own ? ' own' : st.avail ? ' buy' : ' lock') + (!st.own && st.avail && S.cash >= st.price ? ' ready' : '') + (st.alert ? ' alert' : '') + (selId ? (selId === id ? ' sel' : ' dim') : '');
-      if (cls !== t.cls) {
-        t.cls = cls;
-        t.el.className = cls;
-      }
-      var fw = st.own ? (st.frac * 100).toFixed(1) + '%' : '';
-      if (fw !== t.fw) {
-        t.fw = fw;
-        t.bar.style.width = fw;
-      }
-      var full = st.frac >= 1 ? 'full' : '';
-      if (full !== t.full) {
-        t.full = full;
-        t.bar.className = full;
-      }
-      var sc = Math.max(0.6, Math.min(1.1, 30 / focus.dist + 0.12));
-      var tx = Math.round(sp.x);
-      var ty = Math.round(sp.y);
-      var below = selId === id;
-      if (tx !== t.x || ty !== t.y || sc !== t.sc || below !== t.below) {
-        t.x = tx;
-        t.y = ty;
-        t.sc = sc;
-        t.below = below;
-        // the open card's tag hangs under the outline, clear of the pieces inside it
-        t.el.style.transform = 'translate(' + tx + 'px,' + ty + 'px) translate(-50%,' + (below ? '8px' : '-100%') + ') scale(' + sc + ')';
-      }
-      anchorXY[id].top = ty - (t.h || 24) * sc;
+    if (!show) return;
+    if (line !== t.text) {
+      t.text = line;
+      t.line.textContent = line;
+      t.w = 0;
     }
+    var cls = 'tag' + (st.own ? ' own' : st.avail ? ' buy' : ' lock') + (e.ready ? ' ready' : '') + (st.alert ? ' alert' : '') + (selId ? (selId === e.id ? ' sel' : ' dim') : '') + (dot ? ' dot' : '');
+    if (cls !== t.cls) {
+      t.cls = cls;
+      t.el.className = cls;
+      t.w = 0;
+    }
+    if (!t.w) {
+      t.w = t.el.offsetWidth;
+      t.h = t.el.offsetHeight;
+    }
+    var fw = st.own ? (st.frac * 100).toFixed(1) + '%' : '';
+    if (fw !== t.fw) {
+      t.fw = fw;
+      t.bar.style.width = fw;
+    }
+    var full = st.frac >= 1 ? 'full' : '';
+    if (full !== t.full) {
+      t.full = full;
+      t.bar.className = full;
+    }
+    var below = e.below;
+    if (tx !== t.x || ty !== t.y || sc !== t.sc || below !== t.below || dot !== t.dot) {
+      t.x = tx;
+      t.y = ty;
+      t.sc = sc;
+      t.below = below;
+      t.dot = dot;
+      // the open card's tag hangs under the outline, clear of the pieces inside it; a dot sits on its spot
+      t.el.style.transform = 'translate(' + tx + 'px,' + ty + 'px) translate(-50%,' + (dot ? '-50%' : below ? '8px' : '-100%') + ') scale(' + sc + ')';
+    }
+    anchorXY[e.id].top = ty - (dot ? 7 : t.h || 24) * sc;
   });
   var a2 = bestId && bestId !== selId && anchorXY[bestId];
   if (!a2) {
