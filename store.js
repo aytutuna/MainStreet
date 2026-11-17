@@ -1457,44 +1457,131 @@ function board(e) {
   return o;
 }
 
-function signTex(name, gold) {
-  var c = document.createElement('canvas');
-  c.width = 512;
-  c.height = 136;
-  var x = c.getContext('2d');
-  x.fillStyle = gold ? '#e0b43a' : '#2f3446';
-  x.fillRect(0, 0, 512, 136);
-  x.fillStyle = gold ? '#fff2c2' : '#f2c230';
-  x.fillRect(0, 124, 512, 12);
-  x.fillStyle = gold ? '#3a2a08' : '#fff6e0';
-  x.textAlign = 'center';
-  x.textBaseline = 'middle';
-  var t = name.toUpperCase();
-  x.font = 'bold 64px sans-serif';
-  if (x.measureText(t).width > 480) {
-    var w = t.split(' ');
+// each department's own colour on its sign
+var DEPT = { produce: '#3f9e47', bakery: '#d98a3d', dairy: '#4a8fd6', meat: '#c8453d', frozen: '#4cb6d8', pantry: '#a87a3d',
+  snacks: '#e0592f', toys: '#e04a8e', tech: '#5d6ad6', kitchen: '#d9a21f', clothes: '#a05cc4', home: '#7a9a5a', office: '#3a7a9a',
+  pets: '#e8855a', sports: '#2f9e8a', tools: '#d96a20', auto: '#5c6270', seasonal: '#c43a4a' };
+var signIcons = {};
+
+function star(g, x, y, r) {
+  g.beginPath();
+  for (var i = 0; i < 10; i++) {
+    var a = -Math.PI / 2 + i * Math.PI / 5;
+    var d = i % 2 ? r * 0.45 : r;
+    g.lineTo(x + Math.cos(a) * d, y + Math.sin(a) * d);
+  }
+  g.closePath();
+}
+
+function paintSign(g, id, gold, im) {
+  var W = 768, H = 204, e = 10, bh = 34;
+  rr(g, 0, 0, W, H, 36);
+  var gr = g.createLinearGradient(0, 0, 0, H);
+  gr.addColorStop(0, gold ? '#ffe27a' : '#3b4258');
+  gr.addColorStop(1, gold ? '#c4931a' : '#262b3b');
+  g.fillStyle = gr;
+  g.fill();
+  g.strokeStyle = gold ? '#7a5a10' : '#171a24';
+  g.lineWidth = 4;
+  g.stroke();
+  rr(g, e, e, W - 2 * e, H - 2 * e, 28);
+  gr = g.createLinearGradient(0, 0, 0, H);
+  gr.addColorStop(0, gold ? '#fff0b0' : '#fffaf0');
+  gr.addColorStop(1, gold ? '#f3d37a' : '#f2e4c0');
+  g.fillStyle = gr;
+  g.fill();
+  g.save();
+  g.clip();
+  g.fillStyle = gold ? '#e0b43a' : DEPT[id];
+  g.fillRect(0, H - e - bh, W, bh);
+  g.fillStyle = 'rgba(255,255,255,0.35)';
+  g.fillRect(0, H - e - bh, W, 3);
+  rr(g, e + 6, e + 6, W - 2 * e, H - 2 * e, 28);
+  g.strokeStyle = 'rgba(70,40,0,0.16)';
+  g.lineWidth = 12;
+  g.stroke();
+  g.restore();
+  if (gold) {
+    g.fillStyle = '#fff2a8';
+    g.strokeStyle = '#8a6410';
+    g.lineWidth = 3;
+    for (var i = -1; i <= 1; i++) {
+      star(g, W / 2 + i * 44, H - e - bh / 2, 14);
+      g.fill();
+      g.stroke();
+    }
+  }
+  var cy = (e + H - e - bh) / 2;
+  g.beginPath();
+  g.arc(100, cy, 66, 0, Math.PI * 2);
+  g.fillStyle = '#fff';
+  g.fill();
+  g.beginPath();
+  g.arc(100, cy, 58, 0, Math.PI * 2);
+  g.fillStyle = DEPT[id];
+  g.fill();
+  if (im) {
+    g.imageSmoothingEnabled = false;
+    g.drawImage(im, 100 - 44, cy - 44, 88, 88);
+  }
+  var t = BZ[id].name.toUpperCase();
+  var lines = [t];
+  var fs = fitFont(g, lines, 550, 100);
+  var w = t.split(' ');
+  if (fs < 56 && w.length > 1) {
     var half = Math.ceil(w.length / 2);
-    x.font = 'bold 50px sans-serif';
-    x.fillText(w.slice(0, half).join(' '), 256, 36);
-    x.fillText(w.slice(half).join(' '), 256, 92);
-  } else x.fillText(t, 256, 64);
+    lines = [w.slice(0, half).join(' '), w.slice(half).join(' ')];
+    fs = fitFont(g, lines, 550, 70);
+  }
+  g.textAlign = 'center';
+  g.textBaseline = 'middle';
+  g.fillStyle = '#2a2f40';
+  lines.forEach(function (l, i) { g.fillText(l, 460, cy + 3 + (i + 0.5 - lines.length / 2) * fs * 1.05); });
+}
+
+function signTex(id, gold) {
+  var c = document.createElement('canvas');
+  c.width = 768;
+  c.height = 204;
   var tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.anisotropy = 4;
+  var ic = BZ[id].ic;
+  var im = signIcons[ic];
+  if (!im) {
+    im = signIcons[ic] = new Image();
+    im.src = 'assets/' + ic + '.png';
+  }
+  paintSign(c.getContext('2d'), id, gold, im.complete ? im : null);
+  if (!im.complete) im.addEventListener('load', function () {
+    paintSign(c.getContext('2d'), id, gold, im);
+    tex.needsUpdate = true;
+  });
   return tex;
 }
 
-// the department's name on a plate hung from a thin pole at about 1.7 high; the pole and the plate's back go into the
-// piece's batch, the face is one plane
+// the department's name on a plate hung from the ceiling on two cables and tilted a little toward the camera; the
+// cables go into the piece's batch, the plate is one box
+var SIGN_Y = 1.75;
+var SIGN_TILT = -0.22;
 function makeSign(s, b) {
   var sg = s.a.sign;
   var w = sg[2];
   var h = w * 0.266;
-  b.block(flat(0x50566a), sg[0] - w / 2 - 0.055, sg[0] - w / 2 - 0.005, sg[1] - 0.025, sg[1] + 0.025, 0, 1.7 + h / 2);
-  b.block(flat(0x2f3446), sg[0] - w / 2 - 0.02, sg[0] + w / 2 + 0.02, sg[1] - 0.045, sg[1] - 0.015, 1.7 - h / 2 - 0.02, 1.7 + h / 2 + 0.02);
-  var mat = new THREE.MeshLambertMaterial({ map: signTex(BZ[s.id].name, false) });
-  var face = new THREE.Mesh(new THREE.PlaneGeometry(w, h), mat);
-  face.position.set(sg[0], 1.7, sg[1] - 0.012);
+  var x = sg[0];
+  var z = sg[1];
+  var top = SIGN_Y + Math.cos(SIGN_TILT) * h / 2;
+  var tz = z + Math.sin(SIGN_TILT) * h / 2;
+  [-1, 1].forEach(function (sd) {
+    var cx = x + sd * (w / 2 - 0.16);
+    b.block(flat(0x6c7388), cx - 0.008, cx + 0.008, tz - 0.008, tz + 0.008, top, 2.8);
+    b.block(flat(0x50566a), cx - 0.03, cx + 0.03, tz - 0.03, tz + 0.03, 2.8, 2.83);
+  });
+  var edge = flat(0x262b3b);
+  var mat = new THREE.MeshLambertMaterial({ map: signTex(s.id, false), alphaTest: 0.5 });
+  var face = new THREE.Mesh(new THREE.BoxGeometry(w, h, 0.05), [edge, edge, edge, edge, mat, edge]);
+  face.position.set(x, SIGN_Y, z);
+  face.rotation.x = SIGN_TILT;
   s.signMat = mat;
   return face;
 }
@@ -2732,7 +2819,7 @@ function syncArea(s, animate, now) {
   if (s.signMat && (s.glow !== glow || s.gold !== gold)) {
     if (s.gold !== gold) {
       s.signMat.map.dispose();
-      s.signMat.map = signTex(BZ[s.id].name, gold);
+      s.signMat.map = signTex(s.id, gold);
     }
     s.signMat.emissive.set(glow ? 0x333333 : 0x000000);
     s.signMat.emissiveMap = glow ? s.signMat.map : null;
