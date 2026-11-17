@@ -267,7 +267,8 @@ function room(id) {
 // what one more level of an item does, and what that adds to income a second
 function effect(id, x, j) {
   var g = gains[id + ':' + j];
-  var out = g === undefined ? '' : '+' + money(g) + '/s';
+  // with the shelves empty an item can add nothing for now; a row of "+$0/s" reads as broken
+  var out = g > 0.005 ? '+' + money(g) + '/s' : '';
   var st = '';
   if (BZ[id]) {
     if (x.stat === 'sell') st = '+' + money(perSell(id) * bmul()) + '/shopper';
