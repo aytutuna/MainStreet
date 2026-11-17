@@ -307,9 +307,15 @@ function room(id) {
   return BZ[id] ? has(id) : !!PL[id].open || S.pl[id] > 0;
 }
 
+// what a level of each room of the east wing does, and what the room does in all
+var ROOMFX = {
+  serv: function (n) { return '+' + perMin(inRate() / (1 + SERV * S.pl.serv) * SERV * (n || 1)) + ' shoppers/min'; }
+};
+
 // what one more level of an item does, as the one thing it changes
 function effect(id, x, j) {
   if (BZ[id]) return stat(id, x);
+  if (ROOMFX[id]) return ROOMFX[id]();
   var was = [inRate(), capacity(), stockCap()];
   S.pi[id][j]++;
   S.pl[id]++;
@@ -389,7 +395,7 @@ function placeHead(r) {
   var box = r.el.firstChild;
   set(k, 'lv', r.lv, 'textContent', 'Lv ' + S.pl[id] + '/' + p.cost.length);
   flag(k, 'nobar', box, 'nobar', id !== 'hall' && id !== 'dock');
-  var hint = loadBar(r, box, id);
+  var hint = loadBar(r, box, id) || (ROOMFX[id] && S.pl[id] ? 'Now: ' + ROOMFX[id](S.pl[id]) : '');
   set(k, 'hh', r.hint, 'hidden', !hint);
   set(k, 'ht', r.hint, 'textContent', hint);
 }
@@ -723,6 +729,11 @@ function updateMeters() {
 function drawPlace() {
   var pick = null;
   var best = 0;
+  var sc = placeCost('serv');
+  if (sc && firstLeft('serv') >= 0) {
+    best = inRate() / (1 + SERV * S.pl.serv) * SERV / sc;
+    pick = 'serv';
+  }
   [['lot', PER_LOT], ['taxi', PER_TAXI]].forEach(function (p) {
     var c = placeCost(p[0]);
     if (c && p[1] / c > best) {
@@ -763,6 +774,12 @@ function openItem(id, first, then) {
   openPlace(id, S.pi[id][first] < p.items[first].at.length ? first : then);
 }
 
+// the first item of a place with levels left, or -1
+function firstLeft(id) {
+  for (var j = 0; j < PL[id].items.length; j++) if (placePiece(id, j) >= 0) return j;
+  return -1;
+}
+
 function openDraw() {
   var id = drawPlace();
   openPlace(id, drawItem(id));
@@ -770,7 +787,7 @@ function openDraw() {
 
 // the draw item to buy in the place drawPlace picked
 function drawItem(id) {
-  if (PL[id]) return 0;
+  if (PL[id]) return Math.max(0, firstLeft(id));
   var items = BZ[id].items;
   for (var j = 0; j < items.length; j++) {
     if (items[j].stat === 'draw' && nextPiece(id, j) >= 0) return j;

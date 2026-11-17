@@ -878,7 +878,22 @@ function room(x0, x1, z0, z1, finish) {
 }
 
 
-var WING = {};
+var WING = {
+  serv: {
+    rect: [15.3, 21.5, -3, 2.4],
+    ups: [
+      up('Service desk', pw('ServiceDesk_20', 18.3, -1.8, 's', { spots: 0 })),
+      up('Clerk', { staff: [18.3, -2.4, 's'] }),
+      up('Queue posts', pw('QueuePost_Pair_01', 18.8, -0.35, 's', { spots: 0 })),
+      up('Waiting chairs', pw('Chair_Metal_Cafe_01', 21.15, 1.3, 'k', { spots: 0 }), pw('Chair_Metal_Cafe_01', 21.15, 0.7, 'k', { spots: 0 }), pw('Chair_Metal_Cafe_01', 21.15, 0.1, 'k', { spots: 0 })),
+      up('Second desk', pw('ServiceDesk_20', 19.3, -1.8, 's', { spots: 0 })),
+      up('Second clerk', { staff: [19.3, -2.4, 's'] }),
+      up('Returns kiosk', pw('Kiosk_Cash_01', 20.7, -2.45, 's', { spots: 0 })),
+      up('Floor sign', pw('SignStand_Floor_01', 17.9, 1.6, 's', { spots: 0 })),
+      up('Waiting table', pw('Table_Four_01', 19.9, 0.9, 's', { spots: 0 }), pw('Planter_Tall_01', 21.1, 1.9, 's', { spots: 0 }))
+    ]
+  }
+};
 
 DECOR.wing = cat(
   [room(15.3, 21.5, -2.9, 2.2, 'lino'), room(15.3, 21.5, -7.9, -3.1, 'tile'), room(15.3, 21.5, -13.9, -8.1, 'boards'), room(15.3, 21.5, -28.2, -14.1, 'carpet')],

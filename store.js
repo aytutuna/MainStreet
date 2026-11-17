@@ -501,6 +501,7 @@ function modelList() {
   walk(PLAN.areas);
   walk(PLAN.front);
   walk(PLAN.decor);
+  walk(PLAN.wing);
   walk(FLOWERS);
   walk(OVERSTOCK.boxes);
   walk(['food/plate-rectangle*0.55', 'skate/pallet', 'shop/character-employee@5,3>2,2', 'shop/freezers-standing@13,3>2,2',
@@ -2447,11 +2448,35 @@ function buildGarden() {
   pl.pick = addPick('garden', (x0 + x1) / 2, (z0 + z1) / 2, x1 - x0, z1 - z0);
 }
 
-// The east wing: the floors, dividers and signs of the four rooms along the east wall
-var WING_IDS = [];
+// The east wing: four rooms along the east wall, each a place whose levels add one piece from plan.js. Before a room is
+// bought it holds a coming soon board; its floor and walls are part of the building
+var WING_IDS = ['serv'];
 
 function buildWing() {
   decor(PLAN.decor.wing, true);
+  WING_IDS.forEach(function (id) {
+    var r = PLAN.wing[id];
+    var cx = (r.rect[0] + r.rect[1]) / 2;
+    var cz = (r.rect[2] + r.rect[3]) / 2;
+    var pl = { items: [], shown: -1, add: true, staff: [], foot: [] };
+    var site = board({ text: 'COMING SOON\n' + PL[id].name.toUpperCase(), x: cx, z: cz, y: 0.6, w: 1.3, h: 0.5, post: true });
+    site.visible = false;
+    root.add(site);
+    pl.items.push({ g: site, lv: 0, only: true });
+    r.ups.forEach(function (u, k) {
+      var pc = { k: k, b: new Batch(), x: new THREE.Group(), spots: [], foot: [] };
+      u.piece.forEach(function (e) { entry(pc, { a: { cx: cx, cz: cz }, i: k }, e); });
+      var g = new THREE.Group();
+      g.add(pc.b.group(), pc.x);
+      g.visible = false;
+      root.add(g);
+      pl.items.push({ g: g, lv: k + 1 });
+      pl.foot[k + 1] = pc.foot;
+      if (pc.staff) pl.staff.push({ f: pc.staff, g: g });
+    });
+    places[id] = pl;
+    pl.pick = addPick(id, cx, cz, r.rect[1] - r.rect[0], r.rect[3] - r.rect[2]);
+  });
 }
 
 // a pylon sign by the street with the store's name; "Market" until most of the store is open
@@ -2857,6 +2882,9 @@ function navBuild() {
   });
   places.hall.solids.forEach(function (q) { if (placeHas('hall', q.lv - 1)) markRect(q.r[0], q.r[1], q.r[2], q.r[3]); });
   fixed.forEach(markObb);
+  WING_IDS.forEach(function (id) {
+    places[id].foot.forEach(function (fs, lv) { if (placeHas(id, lv - 1)) fs.forEach(markObb); });
+  });
   // the doorway from the sales floor into the wing
   carve(14.3, 15.9, 0.55, 1.45);
 }
@@ -3087,7 +3115,7 @@ function syncPlace(id, animate, now) {
   });
   pl.shown = l;
   pl.key = key;
-  if (id === 'hall') nav.dirty = true;
+  if (id === 'hall' || pl.foot) nav.dirty = true;
   shadowDirty = true;
 }
 
@@ -3155,7 +3183,7 @@ function syncArea(s, animate, now) {
 function sync(animate, now) {
   order.forEach(function (id) { syncArea(shops[id], animate, now); });
   PLACES.forEach(function (p) { syncPlace(p.id, animate, now); });
-  ['lot', 'taxi', 'garden'].forEach(function (id) { places[id].pick.visible = has(PL[id].after); });
+  ['lot', 'taxi', 'garden'].concat(WING_IDS).forEach(function (id) { places[id].pick.visible = has(PL[id].after); });
   paintPylon();
   cutaway();
 }
@@ -4259,6 +4287,7 @@ function bstate(id) {
   if (p) {
     var busy = id === 'hall' ? Math.min(1, inRate() / capacity()) : id === 'dock' ? Math.min(1, served() / stockCap()) : 0;
     var out = id === 'hall' ? linesFull() : id === 'dock' && shelvesOut();
+    if (PLAN.wing[id]) busy = S.pl[id] / p.cost.length;
     return { name: p.name, lv: S.pl[id], own: S.pl[id] > 0 || !!p.open, price: placeCost(id), avail: has(p.after), frac: busy, alert: out,
       said: id === 'dock' ? 'Shelves empty!' : 'Lines full!' };
   }
@@ -4287,6 +4316,7 @@ function anchor(id) {
   if (id === 'taxi') return [0, 1.2, 10.2];
   if (id === 'dock') return [0, 1.0, -25.5];
   if (id === 'garden') return [(GARDEN[0] + GARDEN[1]) / 2, 1.0, (GARDEN[2] + GARDEN[3]) / 2];
+  if (PLAN.wing[id]) return [(PLAN.wing[id].rect[0] + PLAN.wing[id].rect[1]) / 2, 0.4, PLAN.wing[id].rect[3] - 1.2];
   var s = shops[id];
   // at the front edge, and clear of the sign plate, which would hide under the tag from the game camera
   return [s.cx, 0.2, Math.max(s.a.vacant[3] - 0.2, s.a.sign[1] + 1.1)];
@@ -4441,6 +4471,7 @@ function draw(now) {
     });
   });
   places.hall.staff.forEach(function (f) { if (f.mixer && f.obj.parent.visible && f.obj.visible) f.mixer.update(dt); });
+  WING_IDS.forEach(function (id) { places[id].staff.forEach(function (w) { if (w.f.mixer && w.g.visible) w.f.mixer.update(dt); }); });
   crewStep(dt, now);
   blobsStep();
   puffsStep(now);
@@ -4480,6 +4511,7 @@ function spot(id) {
   if (id === 'taxi') return { x: 0, y: 10 };
   if (id === 'dock') return { x: 0, y: -25 };
   if (id === 'garden') return { x: (GARDEN[0] + GARDEN[1]) / 2, y: (GARDEN[2] + GARDEN[3]) / 2 };
+  if (PLAN.wing[id]) return { x: (PLAN.wing[id].rect[0] + PLAN.wing[id].rect[1]) / 2, y: (PLAN.wing[id].rect[2] + PLAN.wing[id].rect[3]) / 2 };
   return { x: 0, y: 0.5 };
 }
 
@@ -4801,7 +4833,7 @@ function event(res, now) {
     if (!onScreen(at[0], at[1]) || !framed && (res.unlock || focus.dist > close * 1.2)) out = flyTo(at[0], at[1], Math.min(focus.dist, close)) + 0.1;
   } else if (res.place && !framed) {
     var p = spot(res.id);
-    out = flyTo(p.x, p.y, Math.min(focus.dist, fit(EDGE * 2 + 2))) + 0.1;
+    out = flyTo(p.x, p.y, Math.min(focus.dist, fit(PLAN.wing[res.id] ? 11 : EDGE * 2 + 2))) + 0.1;
   }
   return out;
 }

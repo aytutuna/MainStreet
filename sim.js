@@ -25,6 +25,8 @@ var PER_LOT = 0.035;
 var PER_TAXI = 0.02;
 var PER_GARDEN = 0.015;
 var GARDEN_IN = 0.025;
+// each Customer Service level brings this much more of every kind of shopper
+var SERV = 0.05;
 // seconds at the till for one shopper at Checkouts level 0, each level a little faster; GAP is the walk up to it
 var LANE_T = 5;
 var SELF_T = 8;
@@ -219,7 +221,8 @@ function opened() {
 
 function flow() {
   var p = S.pl;
-  return { walk: WALK0 + PER_DEPT * opened() + DRAW * drawLv() + PER_GARDEN * p.garden, car: PER_LOT * p.lot, taxi: PER_TAXI * p.taxi, garden: GARDEN_IN * p.garden };
+  var m = 1 + SERV * p.serv;
+  return { walk: (WALK0 + PER_DEPT * opened() + DRAW * drawLv() + PER_GARDEN * p.garden) * m, car: PER_LOT * p.lot * m, taxi: PER_TAXI * p.taxi * m, garden: GARDEN_IN * p.garden };
 }
 
 function inRate() {

@@ -70,6 +70,13 @@ var ITEMS = {
     of: '001130202502000244234412542413' }
 };
 
+// n prices from c, each g times the one before, to two significant digits
+function geo(c, g, n) {
+  var out = [];
+  for (var i = 0; i < n; i++) out.push(Number((c * Math.pow(g, i)).toPrecision(2)));
+  return out;
+}
+
 // places round the departments. Parking, the taxi stand and the garden bring shoppers, the stockroom keeps the
 // shelves full and the checkouts take the money. `after` must be open first, `open` places stand from the start, and
 // `next` names what each level adds. A place has items like a department: `it` names them and `of` gives the item
@@ -93,7 +100,11 @@ var PLACES = [
     it: ['Taxis'], of: '0000' },
   { id: 'garden', name: 'Garden Center', ic: 'shop/display-flowers', after: 'kitchen', cost: [2e10, 2e12, 2e14, 2e16],
     next: ['A fenced garden with a till', 'More flower displays', 'Potted plants and more displays', 'Trees and lamps'],
-    it: ['Garden'], of: '0000' }
+    it: ['Garden'], of: '0000' },
+  { id: 'serv', name: 'Customer Service', ic: 'shop/service-desk', after: 'pantry', cost: geo(2e6, 8, 9),
+    next: ['A service desk', 'A clerk behind it', 'Queue posts', 'Waiting chairs', 'A second service desk', 'A second clerk', 'A returns kiosk',
+      'A floor sign', 'A waiting table and a planter'],
+    it: ['Service desks', 'Waiting area', 'Extras'], of: '001100221' }
 ];
 var PL = {};
 PLACES.forEach(function (p) { PL[p.id] = p; });
