@@ -311,7 +311,8 @@ function room(id) {
 var ROOMFX = {
   serv: function (n) { return '+' + perMin(inRate() / (1 + SERV * S.pl.serv) * SERV * (n || 1)) + ' shoppers/min'; },
   rest: function (n) { return '+' + Math.round(REST * 100 * (n || 1)) + '% spent by every shopper'; },
-  lounge: function (n) { return 'Tills and stockers ' + Math.round((1 - Math.pow(LOUNGE, n || 1)) * 100) + '% faster'; }
+  lounge: function (n) { return 'Tills and stockers ' + Math.round((1 - Math.pow(LOUNGE, n || 1)) * 100) + '% faster'; },
+  head: function (n) { return '+' + Math.round(HEAD * 100 * (n || 1)) + '% income, ' + (n || 1) + ' h more away'; }
 };
 
 // what one more level of an item does, as the one thing it changes
@@ -893,7 +894,7 @@ function showAway(a) {
   if (a) {
     txt = 'You were away for ' + hours(a.real) + '. The store served ' + a.n.toLocaleString('en-US') + ' shoppers and took <b>' + money(a.gain) + '</b>.';
     if (S.pend - a.gain > 0.5) txt += ' <b>' + money(S.pend - a.gain) + '</b> from before is still waiting.';
-    if (a.real > MAX_AWAY) txt += ' It only earns for ' + MAX_AWAY / 3600 + ' h while you are away.';
+    if (a.real > maxAway()) txt += ' It only earns for ' + maxAway() / 3600 + ' h while you are away.';
   }
   $('away-txt').innerHTML = txt;
   $('away-ok').textContent = 'Collect ' + money(S.pend);

@@ -933,6 +933,25 @@ var WING = {
       up('A rug, a clock and a first aid box', on('pw/Rug_Runner_01', 17.9, -11.3, 0.05), wp('WallClock_Kitchen_01', 15.32, -12.6, 'b', 0.6), wp('TimeClock_Wall_01', 15.32, -13.1, 'b', 0.6),
         wp('FirstAid_Box_Wall_01', 15.32, -13.6, 'b', 0.6), pw('RecycleBin_Dual_01', 21.15, -13.3, 'k', { spots: 0 }))
     ]
+  },
+  head: {
+    rect: [15.3, 21.5, -28.2, -14],
+    ups: [
+      up('Desk and chair', pw('Workbench_Wood_01', 19.0, -25.4, 's', { spots: 0 }), pw('Chair_Metal_Cafe_01', 19.0, -24.5, 'n', { spots: 0 }), pw('ShopStool_Rolling_01', 19.0, -26.05, 's', { spots: 0 })),
+      up('Computer', on('furn/computerScreen', 18.7, -25.4, 0.45, 0.9), on('furn/computerKeyboard', 19.05, -25.15, 0.45, 0.9)),
+      up('Manager', { staff: [19.0, -26.05, 's', 'sit'] }),
+      up('Filing cabinets', pw('GarageCab_Tall_05', 20.4, -27.9, 's', { spots: 0, n: 4 })),
+      up('Safe', pw('SafetyCabinet_01', 16.3, -27.8, 's', { spots: 0 })),
+      up('Meeting table', pw('Table_Four_01', 18.6, -18.6, 's', { spots: 0, n: 2 }), pw('Chair_Metal_Cafe_01', 18.2, -19.25, 's', { spots: 0 }), pw('Chair_Metal_Cafe_01', 19.0, -19.25, 's', { spots: 0 }),
+        pw('Chair_Metal_Cafe_01', 18.2, -17.95, 'n', { spots: 0 }), pw('Chair_Metal_Cafe_01', 19.0, -17.95, 'n', { spots: 0 })),
+      up('Whiteboard', wp('Menu_Board_Wall_01', 15.32, -18.6, 'b', 0.35)),
+      up('Two more desks', pw('Table_Four_01', 20.9, -21.6, 'k', { spots: 0 }), on('furn/laptop', 20.9, -21.6, 0.375, 0.9, -Math.PI / 2), pw('ShopStool_Rolling_01', 21.2, -21.6, 'k', { spots: 0 }),
+        pw('Table_Four_01', 20.9, -22.8, 'k', { spots: 0 }), on('furn/computerScreen', 20.9, -22.8, 0.375, 0.9, -Math.PI / 2), pw('ShopStool_Rolling_01', 21.2, -22.8, 'k', { spots: 0 })),
+      up('Shelving', pw('Shelving_HD_01', 15.6, -16.0, 'b', { spots: 0, n: 2 })),
+      up('Rug and plants', on('pw/Floor_Carpet_1m', 18.1, -18.35, 0.05), on('pw/Floor_Carpet_1m', 18.6, -18.35, 0.05), on('pw/Floor_Carpet_1m', 19.1, -18.35, 0.05),
+        on('pw/Floor_Carpet_1m', 18.1, -18.85, 0.05), on('pw/Floor_Carpet_1m', 18.6, -18.85, 0.05), on('pw/Floor_Carpet_1m', 19.1, -18.85, 0.05),
+        pw('Planter_Tall_01', 21.1, -15.0, 's', { spots: 0 }), pw('Planter_Tall_01', 21.1, -19.5, 's', { spots: 0 }))
+    ]
   }
 };
 

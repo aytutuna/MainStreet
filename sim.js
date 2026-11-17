@@ -31,6 +31,8 @@ var SERV = 0.05;
 var REST = 0.04;
 // each Break Room level cuts the time a till or a stocker takes to this share
 var LOUNGE = 0.96;
+// each Head Office level adds this much income and an hour of time away that still pays
+var HEAD = 0.02;
 // seconds at the till for one shopper at Checkouts level 0, each level a little faster; GAP is the walk up to it
 var LANE_T = 5;
 var SELF_T = 8;
@@ -193,7 +195,11 @@ function gmul() {
 }
 
 function bmul() {
-  return S.x2 > 0 ? 2 : 1;
+  return (S.x2 > 0 ? 2 : 1) * (1 + HEAD * S.pl.head);
+}
+
+function maxAway() {
+  return MAX_AWAY + 3600 * S.pl.head;
 }
 
 // what the break room does to the time a till or a stocker takes
@@ -618,9 +624,9 @@ function tick(dt) {
 
 // time away: the store runs at its steady rate; the pay is held until claimAway
 function away(sec) {
-  var s = Math.max(0, Math.min(sec, MAX_AWAY));
+  var s = Math.max(0, Math.min(sec, maxAway()));
   var xs = Math.min(s, S.x2);
-  var gain = baseRate() * (s + xs);
+  var gain = baseRate() * (s + xs) * (1 + HEAD * S.pl.head);
   var n = Math.floor((served() + gardenServed()) * s);
   S.x2 = Math.max(0, S.x2 - s);
   S.pend += gain;
@@ -664,10 +670,11 @@ function options() {
 // what one more level of an item adds to income a second: makes the change, measures the rate and takes it back
 function trial(f, r0) {
   if (r0 === undefined) r0 = baseRate();
+  var was = r0 * bmul();
   f(1);
-  var r1 = baseRate();
+  var now = baseRate() * bmul();
   f(-1);
-  return (r1 - r0) * bmul();
+  return now - was;
 }
 
 function levelGain(id, j, r0) {
