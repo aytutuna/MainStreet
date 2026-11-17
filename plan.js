@@ -8,6 +8,9 @@
 //   { patch: [[x, z]...], finish }                             a floor patch: a colour, 'wood', 'carpet' or 'polish'
 //   { sign: 1 | 'gold' }  { staff: [x, z, face] }  { helper: 1 }  { lights: [[x, z]...] }
 
+// the Pipework kit is drawn at this size against the shop kit's people (store.js SCALE)
+export var PW = 0.5;
+
 function tints(ref, from, to) {
   return to.map(function (c) { return ref + '@' + from + '>' + c; });
 }
@@ -32,6 +35,25 @@ function up(name) {
 }
 function m(ref, x, z, r, k, y) {
   return { m: ref, x: x, z: z, r: r || 0, k: k || 1, y: y || 0 };
+}
+var FACES = { s: 0, b: Math.PI / 2, n: Math.PI, k: -Math.PI / 2 };
+// a Pipework model standing at x, z, its front turned to a face letter or radians, with options (store.js pwFixture):
+//   n copies side by side, stock a stocked version whose goods go with the stock (1 for _Stocked, or the file's suffix),
+//   spots 0 for no shoppers looking at it, on goods of other kits in the model's frame (x, z in world units from its centre)
+function pw(name, x, z, face, o) {
+  o = o || {};
+  var e = { m: 'pw/' + name, x: x, z: z, r: typeof face === 'string' ? FACES[face] : face || 0, pw: o };
+  if (o.stock) e.g = 'pw/' + name + '.goods' + (o.stock === 1 ? '' : '-' + o.stock);
+  if (o.y) e.y = o.y;
+  return e;
+}
+// a produce table with a tray in each of its six wells, the front row and then the back, left to right
+function tbl(name, x, z, face, trays) {
+  var on = trays.map(function (t, i) {
+    var back = i > 2;
+    return ['pw/ProduceTray_' + t + '_01', (i % 3 - 1) * 0.5 * PW, back ? -0.2 * PW : 0.2 * PW, 0, (back ? 0.88 : 0.81) * PW];
+  });
+  return up(name, pw('ProduceTable_15', x, z, face, { on: on }));
 }
 function tx(text, x, z, w, y) {
   return { text: text, x: x, z: z, r: 0, y: y || 1.15, w: w || 1.1, h: (w || 1.1) * 0.4, post: true };

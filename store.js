@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
-import { PLAN } from './plan.js';
+import { PLAN, PW } from './plan.js';
 
 var BASE = 'assets/models/';
 var TILT = 52 * Math.PI / 180;
@@ -25,7 +25,7 @@ var WALKS = [-9.5, 9.5];
 var CROSS = PLAN.bank.cross;
 var EXIT = PLAN.bank.exit;
 // the kits are drawn at different sizes; these bring them to the shop kit's people
-var SCALE = { car: 0.47, roads: 3, nature: 1.4, furn: 0.9, food: 0.5, sub: 3.2, toy: 1.1, forest: 0.9, golf: 0.45, pets: 0.08, tool: 0.03 };
+var SCALE = { car: 0.47, roads: 3, nature: 1.4, furn: 0.9, food: 0.5, sub: 3.2, toy: 1.1, forest: 0.9, golf: 0.45, pets: 0.08, tool: 0.03, pw: PW };
 
 var FOLK = 'abcdef'.split('').reduce(function (a, c) { return a.concat(['chars/character-female-' + c, 'chars/character-male-' + c]); }, []);
 var CARS = ['car/sedan', 'car/suv', 'car/suv-luxury', 'car/hatchback-sports', 'car/van'];
@@ -257,6 +257,9 @@ function joinParts(parts) {
   return out.map(function (e) { return { geom: e.list.length > 1 ? mergeGeometries(e.list, false) : e.list[0], mat: e.mat }; });
 }
 
+// pw/Gondola_Island_10.goods is the goods of Gondola_Island_10_Stocked; pw/ProduceTable_15.goods-Apples those of ProduceTable_15_Apples
+var GOODS = /^goods(-(\w+))?$/;
+
 function loadModels(list, progress, done) {
   var loader = new GLTFLoader();
   loader.register(textureFix);
@@ -294,10 +297,107 @@ function loadModels(list, progress, done) {
     progress(++n / names.length);
     if (n === names.length) done();
   }
-  function make(g, ref) {
+  // what a stocked Pipework fixture has over its empty one is its goods: the triangles of the stocked file that the empty
+  // file lacks, one part per product (a run of joined vertices) with a rank for the shelves to empty in
+  function goods(empty, full, k) {
+    function pos(o) {
+      var geom = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry.clone();
+      geom.applyMatrix4(o.matrixWorld);
+      return geom;
+    }
+    function find(sc) {
+      var out = null;
+      sc.updateMatrixWorld(true);
+      sc.traverse(function (o) { if (o.isMesh && !out) out = o; });
+      return out;
+    }
+    function key(a, i) {
+      return Math.round(a.getX(i) * 1000) + ',' + Math.round(a.getY(i) * 1000) + ',' + Math.round(a.getZ(i) * 1000);
+    }
+    function mid(a, t) {
+      var x = 0;
+      var y = 0;
+      var z = 0;
+      for (var j = 0; j < 3; j++) {
+        x += a.getX(t * 3 + j);
+        y += a.getY(t * 3 + j);
+        z += a.getZ(t * 3 + j);
+      }
+      return Math.round(x / 3 * 1000) + ',' + Math.round(y / 3 * 1000) + ',' + Math.round(z / 3 * 1000);
+    }
+    var eo = find(empty.scene);
+    var fo = find(full.scene);
+    var ea = pos(eo).attributes.position;
+    var fg = pos(fo);
+    var fa = fg.attributes.position;
+    var seen = {};
+    var t;
+    for (t = 0; t < ea.count / 3; t++) seen[mid(ea, t)] = 1;
+    var own = [];
+    for (t = 0; t < fa.count / 3; t++) if (!seen[mid(fa, t)]) own.push(t);
+    // triangles that share a corner belong to the same product
+    var up = {};
+    function root(a) {
+      while (up[a] !== a) a = up[a];
+      return a;
+    }
+    own.forEach(function (t) {
+      var r0 = null;
+      for (var j = 0; j < 3; j++) {
+        var c = key(fa, t * 3 + j);
+        if (up[c] === undefined) up[c] = c;
+        var rc = root(c);
+        if (r0 === null) r0 = rc;
+        else up[rc] = r0;
+      }
+    });
+    var by = {};
+    var names = [];
+    own.forEach(function (t) {
+      var c = root(key(fa, t * 3));
+      if (!by[c]) {
+        by[c] = [];
+        names.push(c);
+      }
+      by[c].push(t);
+    });
+    var mat = material(fo.material, 'pw');
+    var nm = fg.attributes.normal;
+    var uv = fg.attributes.uv;
+    return names.map(function (c, i) {
+      var ts = by[c];
+      var p = new Float32Array(ts.length * 9);
+      var n = new Float32Array(ts.length * 9);
+      var u = new Float32Array(ts.length * 6);
+      ts.forEach(function (t, a) {
+        for (var j = 0; j < 3; j++) {
+          var v = t * 3 + j;
+          p[a * 9 + j * 3] = fa.getX(v) * k;
+          p[a * 9 + j * 3 + 1] = fa.getY(v) * k;
+          p[a * 9 + j * 3 + 2] = fa.getZ(v) * k;
+          n[a * 9 + j * 3] = nm.getX(v);
+          n[a * 9 + j * 3 + 1] = nm.getY(v);
+          n[a * 9 + j * 3 + 2] = nm.getZ(v);
+          u[a * 6 + j * 2] = uv.getX(v);
+          u[a * 6 + j * 2 + 1] = uv.getY(v);
+        }
+      });
+      var geom = new THREE.BufferGeometry();
+      geom.setAttribute('position', new THREE.BufferAttribute(p, 3));
+      geom.setAttribute('normal', new THREE.BufferAttribute(n, 3));
+      geom.setAttribute('uv', new THREE.BufferAttribute(u, 2));
+      var rk = (i + 1) * 0.6180339887;
+      return { geom: geom, mat: mat, u: rk - Math.floor(rk) };
+    });
+  }
+  function make(g, ref, full) {
     var r = parseRef(ref);
     var kit = r.file.split('/')[0];
     var k = (SCALE[kit] || 1) * r.k;
+    if (full) {
+      models[ref] = { parts: goods(g, full, k), box: { x0: 0, x1: 0, z0: 0, z1: 0, y0: 0, h: 0 }, gltf: null };
+      return;
+    }
     // the tools lie in the side plane of their file; turned, they face the camera
     var spin = new THREE.Matrix4().makeRotationY(-Math.PI / 2);
     var skinned = false;
@@ -365,8 +465,20 @@ function loadModels(list, progress, done) {
   }
   names.forEach(function (f) {
     loader.load(BASE + f + '.glb', function (g) {
-      files[f].forEach(function (ref) { make(g, ref); });
-      one();
+      var wants = files[f].filter(function (ref) { return GOODS.test(parseRef(ref).part); });
+      files[f].forEach(function (ref) { if (wants.indexOf(ref) < 0) make(g, ref); });
+      var left = wants.length;
+      if (!left) return one();
+      wants.forEach(function (ref) {
+        var suffix = GOODS.exec(parseRef(ref).part)[2] || 'Stocked';
+        loader.load(BASE + f + '_' + suffix + '.glb', function (full) {
+          make(g, ref, full);
+          if (!--left) one();
+        }, undefined, function () {
+          console.warn('missing model', f + '_' + suffix);
+          if (!--left) one();
+        });
+      });
     }, undefined, function () {
       console.warn('missing model', f);
       one();
@@ -729,6 +841,13 @@ function Batch() {
   };
   this.raw = function (ref, x, z, rot, y, k, rank) {
     lib.model(ref).parts.forEach(function (p) { put(p.geom, p.mat, x, y, z, rot, k, rank === undefined ? -1 : rank); });
+  };
+  // the goods of a stocked Pipework fixture, each product at its own rank shifted by salt
+  this.pile = function (ref, x, z, rot, y, salt) {
+    lib.model(ref).parts.forEach(function (p) {
+      var r = p.u + salt;
+      put(p.geom, p.mat, x, y || 0, z, rot, 0, r - Math.floor(r));
+    });
   };
   this.take = function (o) {
     Object.keys(o.sets).forEach(function (key) {
@@ -1620,9 +1739,51 @@ var STAFF_COUNTER = 'shop/character-employee@5,3>2,2';
 
 // what one upgrade puts in the area: fixtures and models are merged into its batch; boards, staff, the sign and
 // the floor lights are objects of their own, kept in pc.x
+// a Pipework model with its footprint and the spots shoppers stand at, placed like fixture() by the middle of its footprint.
+// e.pw has n (copies side by side), stock (the model has goods that leave with the stock), spots (0 none, 1 front, 2 both
+// sides) and on (goods of other kits standing on it, in its own frame)
+function pwFixture(e, k) {
+  var o = e.pw;
+  var b = new Batch();
+  var box = lib.model(e.m).box;
+  var rot = e.r || 0;
+  var n = o.n || 1;
+  var width = box.x1 - box.x0;
+  var depth = box.z1 - box.z0;
+  var sn = Math.sin(rot);
+  var cs = Math.cos(rot);
+  var spots = [];
+  var c = rotY((box.x0 + box.x1) / 2, (box.z0 + box.z1) / 2, rot);
+  var nspot = o.spots === undefined ? 1 : o.spots;
+  for (var i = 0; i < n; i++) {
+    var off = (i - (n - 1) / 2) * width;
+    var wx = e.x + cs * off;
+    var wz = e.z - sn * off;
+    var ox = wx - c[0];
+    var oz = wz - c[1];
+    b.add(e.m, ox, oz, rot, e.y);
+    if (o.stock) b.pile(e.g, ox, oz, rot, e.y || 0, k * 0.37 + i * 0.21 + Math.abs(e.x) * 3.7 + Math.abs(e.z) * 5.3);
+    (o.on || []).forEach(function (g, gi) {
+      var p = rotY(g[1], g[2], rot);
+      var gk = g[5] || 1;
+      var gb = lib.model(g[0]).box;
+      b.raw(g[0], ox + p[0], oz + p[1], rot + (g[3] || 0), (e.y || 0) + (g[4] || 0) - gb.y0 * gk, gk, shelfRank(k, [0, e.x + i, e.z], gi));
+    });
+    var st = depth / 2 + 0.28;
+    if (nspot) spots.push({ at: [wx + sn * st, wz + cs * st], face: rot + Math.PI });
+    if (nspot > 1) spots.push({ at: [wx - sn * st, wz - cs * st], face: rot });
+  }
+  return { b: b, spots: spots, foot: [{ x: e.x, z: e.z, hw: width * n / 2, hd: depth / 2, a: rot }] };
+}
+
 function entry(pc, s, e) {
   var b = pc.b;
-  if (Array.isArray(e)) {
+  if (e.pw) {
+    var px = pwFixture(e, s.i);
+    b.take(px.b);
+    pc.spots = pc.spots.concat(px.spots);
+    pc.foot = pc.foot.concat(px.foot);
+  } else if (Array.isArray(e)) {
     var fx = fixture(e, s.i);
     b.take(fx.b);
     pc.spots = pc.spots.concat(fx.spots);
