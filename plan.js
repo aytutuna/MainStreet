@@ -279,22 +279,50 @@ function wall(names, kind, x0, goods) {
 function island(names, kind, x0, goods) {
   return names.map(function (n, i) { return f(n, kind, x0 + i, -19.7, 's', goods[i % goods.length]); });
 }
-var DAIRYG = [[[MILK[0], MILK[1]], [MILK[2], MILK[0]]], [[SMALL[0], 'food/pudding'], [MILK[3], SMALL[1]]], [['flat:food/egg', 'flat:food/egg'], [MILK[1], MILK[4]]],
-  [['food/pudding', SMALL[3]], [MILK[0], MILK[2]]], [[MILK[4], MILK[3]], ['flat:food/egg', SMALL[0]]], [[MILK[2], MILK[1]], ['food/pudding', SMALL[1]]],
-  [[SMALL[2], MILK[0]], [MILK[3], 'flat:food/egg']]];
+// two rows of three goods in the well of an open island, left to right, back row first
+function well(refs, y, k) {
+  var out = [];
+  for (var i = 0; i < 6; i++) out.push([refs[i % refs.length], (i % 3 - 1) * 0.28, i < 3 ? -0.1 : 0.1, i * 0.9, y, k || 1]);
+  return out;
+}
+function dairyIsland(name, x, refs, k) {
+  return up(name, pw('IslandFreezer_Open_20', x, -19.7, 's', { on: well(refs, 0.3, k) }));
+}
+function cooler(name, kind, x) {
+  return up(name, pw(kind, x, -21.97, 's', { stock: 1 }));
+}
+var CHEESE = 'food/cheese*0.3';
+var PUD = 'food/pudding';
 AREAS.dairy = {
   cx: 4.0, cz: -21.0, vacant: [0.1, 8.0, -22.2, -18.9], sign: [4.0, -20.5, 1.8],
   floor: [{ poly: rbox(0.1, 7.9, -21.7, -19.5, 0.5), finish: 0xc2dcf2 }],
-  ups: ups([].concat(
-    wall(['Milk cooler', 'Yogurt cooler', 'Egg cooler', 'Pudding cooler', 'Cream cooler', 'Butter cooler', 'Juice cooler'], 'coolerW', 1, DAIRYG),
-    island(['Cheese bunker', 'Dessert bunker', 'Dip bunker', 'Spread bunker', 'Sour cream bunker', 'Snack cheese'], 'bunker', 1.5,
-      [['food/cheese*0.6'], [SMALL[2]], ['food/pudding'], [SMALL[3]], [SMALL[1]], ['food/cheese*0.6']]),
-    [board('Fresh dairy board', 'FRESH DAIRY', 4.0, -18.9, 1.1), d('Dairy bin', 'furn/trashcan', 6.18, -20.81, 0, 1.5), d('Dairy plant', 'furn/pottedPlant', 0.26, -18.69, 0, 1),
-      d('Hand truck', 'shop/hand-truck', 8.12, -21.42, 1.2), pal('Juice box pallet', 8.5, -19.35, 0.1, [SMALL[0], SMALL[2]]), d('Stock cartons', 'furn/cardboardBoxClosed', 8.37, -18.69, 0.5, 1.1),
-      d('Dairy cart', 'shop/shopping-cart', 0.75, -20.8, 0.3), d('Basket stack', 'shop/shopping-basket', -0.22, -19.08, 0.2),
-      board('Milk deal', 'MILK 2 FOR 6', 7.0, -18.9, 1.0), mat('Dairy mat', 1.4, 2.9, -21.0, -19.9, 0xd7e6f6), board('Cheese deals', 'CHEESE 2 FOR 5', 2.4, -18.9, 1.0)]),
-    [SIGN, clerk(7.6, -20.5, 'k'), f('Cheese display', 'bunker', 7.5, -19.5, 's', ['food/cheese*0.6']), lights([[2.5, -20.6], [5.5, -20.6]]), HELP,
-      up('Showcase', { sign: 'gold' }, ['bunker', 0.6, -19.7, 's', ['food/cheese*0.6', SMALL[2]]])])
+  ups: ups([
+    cooler('Milk cooler', 'Multideck_Open_20', 1.1),
+    cooler('Yogurt cooler', 'Multideck_Open_20', 2.1),
+    cooler('Egg cooler', 'CoolerDoors_2Door_15', 2.975),
+    cooler('Pudding cooler', 'Multideck_Open_20', 3.85),
+    cooler('Cream cooler', 'CoolerDoors_2Door_15', 4.725),
+    cooler('Butter cooler', 'DrinkCooler_Upright_01', 5.275),
+    cooler('Juice cooler', 'DrinkCooler_Upright_01', 5.675),
+    dairyIsland('Cheese island', 1.4, [CHEESE, PUD, 'pw/Carton_Milk_01', PUD], 1.6),
+    dairyIsland('Dessert island', 2.4, [PUD, 'pw/Yogurt_4Pack_01', PUD], 1.8),
+    dairyIsland('Dip island', 3.4, ['pw/Yogurt_4Pack_01', PUD, 'pw/Carton_Milk_01'], 1.8),
+    dairyIsland('Spread island', 4.4, ['pw/Carton_Eggs_01', 'pw/Carton_Milk_01', 'pw/Jug_Milk_01'], 1.6),
+    dairyIsland('Sour cream island', 5.4, ['pw/Yogurt_4Pack_01', 'pw/Carton_Milk_01', PUD], 1.8),
+    dairyIsland('Snack cheese', 6.4, ['pw/Carton_JuiceBox_3Pack_01', PUD, 'pw/Carton_Milk_01'], 1.8),
+    board('Fresh dairy board', 'FRESH DAIRY', 4.0, -18.9, 1.1),
+    up('Recycling', pw('TrashRecycle_Station_01', 7.2, -21.6, 's', { spots: 0 })),
+    up('Dairy plant', pw('Planter_Tall_01', 0.3, -18.7, 0, { spots: 0 })),
+    up('Hand truck', pw('DeliveryBoxes_Dolly_01', 8.2, -21.4, 0.2, { spots: 0 })),
+    up('Juice end cap', pw('Gondola_EndCap_Low_10', 8.55, -19.4, 's', { stock: 1 })),
+    up('Stock pallet', pw('PalletLoad_Cases_01', 8.9, -20.4, 0.1, { spots: 0 })),
+    up('Full basket', pw('Basket_Hand_Full_01', 0.75, -20.8, 0.3, { spots: 0 })),
+    up('Basket stack', pw('Basket_Stack_01', -0.2, -19.1, 0.2, { spots: 0 })),
+    board('Milk deal', 'MILK 2 FOR 6', 7.0, -18.9, 1.0),
+    mat('Dairy mat', 1.4, 2.9, -21.0, -19.9, 0xd7e6f6),
+    board('Cheese deals', 'CHEESE 2 FOR 5', 2.4, -18.9, 1.0)
+  ], [SIGN, clerk(7.6, -20.5, 'k'), dairyIsland('Cheese display', 7.4, [CHEESE, PUD, 'pw/Carton_JuiceBox_3Pack_01', PUD], 1.6), lights([[2.5, -20.6], [5.5, -20.6]]), HELP,
+    up('Showcase', { sign: 'gold' }, pw('IceCream_Chest_01', 0.45, -19.7, 's', { on: [[CHEESE, -0.1, 0, 0.5, 0.3], [CHEESE, 0.1, 0, 1.4, 0.3], ['pw/Yogurt_4Pack_01', 0, 0.05, 0, 0.35, 1.6]] }))])
 };
 
 AREAS.frozen = {
