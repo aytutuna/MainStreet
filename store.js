@@ -626,6 +626,7 @@ function cutaway() {
     var d = w.n[0] * sx + w.n[1] * sz;
     if (w.both) d = Math.abs(d);
     var s = d > 0.3 ? 0.12 : 1;
+    if (w.hide) w.g.visible = s === 1;
     if (w.g.scale.y !== s) {
       w.g.scale.y = s;
       shadowDirty = true;
@@ -2204,7 +2205,10 @@ function buildShell() {
     if (z < -14.5 && z > -20.2) continue;
     hb.add('nature/plant_bushLarge', -EDGE - 0.65, z, z * 1.7);
   }
-  for (z = 1.9; z > SB + 0.4; z -= 1.1) hb.add('nature/plant_bush', WING_X + 0.85, z, z * 1.7);
+  for (z = 1.9; z > SB + 0.4; z -= 1.1) {
+    if (Math.abs(z + 10) < 0.6 || Math.abs(z + 24) < 0.6) continue;
+    hb.add('nature/plant_bush', WING_X + 0.85, z, z * 1.7);
+  }
   root.add(hb.group());
   PLAN.entrances.forEach(function (en) { doorSign(en); });
 }
@@ -2454,6 +2458,13 @@ var WING_IDS = ['serv', 'rest', 'lounge', 'head'];
 
 function buildWing() {
   decor(PLAN.decor.wing, true);
+  // the bar and sign over the doorway in the x 15 wall follow that wall's cutaway
+  var dw = new THREE.Group();
+  var lb = new Batch();
+  lb.block(flat(0x7f8597), 14.7, 15.3, 0.5, 1.5, 0.82, 1.0);
+  dw.add(lb.group(), boardFace({ text: 'CUSTOMER SERVICE\nRESTROOMS', x: 14.68, z: 1.0, y: 0.9, w: 1.1, h: 0.3, r: -Math.PI / 2 }));
+  root.add(dw);
+  outer.push({ g: dw, n: [1, 0], both: 1, hide: 1 });
   WING_IDS.forEach(function (id) {
     var r = PLAN.wing[id];
     var cx = (r.rect[0] + r.rect[1]) / 2;

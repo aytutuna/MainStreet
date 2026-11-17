@@ -1034,7 +1034,7 @@ var WING = {
   },
   rest: {
     rect: [15.3, 21.5, -8, -3],
-    visit: [[16.35, -4.2, -Math.PI / 2, 2], [16.35, -4.8, -Math.PI / 2, 2], [16.35, -5.4, -Math.PI / 2, 2], [17.5, -6.55, Math.PI, 0]],
+    visit: [[16.35, -4.2, -Math.PI / 2, 2], [16.35, -4.8, -Math.PI / 2, 2], [16.35, -5.4, -Math.PI / 2, 2], [17.2, -6.55, Math.PI, 0]],
     ups: [
       up('Two toilet stalls', pw('Toilet_01', 17.2, -7.55, 's', { spots: 0 }), pw('Toilet_02', 17.82, -7.55, 's', { spots: 0 }), stall(16.89), stall(17.51), stall(18.13)),
       up('Two more stalls', pw('Toilet_01', 18.44, -7.55, 's', { spots: 0 }), pw('Toilet_02', 19.06, -7.55, 's', { spots: 0 }), stall(18.75), stall(19.37)),
@@ -1091,8 +1091,6 @@ DECOR.wing = cat(
   [room(15.3, 21.5, -2.9, 2.2, 'lino'), room(15.3, 21.5, -7.9, -3.1, 'tile'), room(15.3, 21.5, -13.9, -8.1, 'boards'), room(15.3, 21.5, -28.2, -14.1, 'carpet')],
   // dividers: a door at the west end of the first and the third
   low(15.3, 15.9, -3.1, -2.9), low(17.1, 21.5, -3.1, -2.9), low(15.3, 21.5, -8.1, -7.9), low(15.3, 15.9, -14.1, -13.9), low(17.1, 21.5, -14.1, -13.9),
-  // above the doorway from the sales floor
-  [det(14.7, 15.3, 0.5, 1.5, 0.82, 1.0, 0x7f8597), bd('CUSTOMER SERVICE\nRESTROOMS', 14.68, 1.0, 1.1, 0.3, 0.9, -Math.PI / 2)],
   [{ light: [[18.4, 0], [18.4, -5.5], [18.4, -11], [18.4, -17], [18.4, -23], [18.4, -27]] }]
 );
 
