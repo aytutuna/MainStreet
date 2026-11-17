@@ -538,40 +538,41 @@ AREAS.auto = {
 };
 
 var TVK = [1.3, 1.15, 1, 1.15, 1.3, 1.15, 1];
+// a television hung on a slatwall panel on the north wall
 function tv(name, u) {
-  return fx(name, 'furn/cabinetTelevisionDoors', -14.2 + u * 0.72, -22.08, 's', null, [['furn/televisionModern' + (TVK[u] === 1 ? '' : '*' + TVK[u]), 0, -0.03, 0, 0.28]]);
+  return fx(name, 'pw/Wall_Slatwall_1m', -14.2 + u * 0.72, -22.19, 's', null, [['furn/televisionModern' + (TVK[u] === 1 ? '' : '*' + TVK[u]), 0, 0.1, 0, 0.3]]);
 }
 AREAS.tech = {
   cx: -12.2, cz: -20.6, vacant: [-14.7, -9.7, -22.2, -19.0], sign: [-11.0, -21.8, 2.4],
   floor: [{ poly: rbox(-14.7, -9.7, -22.2, -19.1, 0.5), finish: 0xd3d7e3 }],
   ups: ups([
     tv('24-inch TV', 6),
-    fx('Laptop table', 'furn/desk', -10.2, -20.0, 's', null, [['furn/laptop*1.3', -0.12, 0, 0.2, 0.343]]),
+    up('Laptop table', pw('Table_Promo_Tiered_01', -10.2, -20.0, 's', { on: [['furn/laptop*1.0', -0.12, 0.125, 0.2, 0.225], ['furn/laptop*1.0', 0.12, 0.125, -0.2, 0.225], ['furn/laptop*1.0', 0, 0, 0, 0.35]] })),
     tv('32-inch TV', 5),
     tv('40-inch TV', 4),
-    fx('Computer table', 'furn/desk', -11.5, -20.0, 's', null, [['furn/computerScreen*1.3', 0, -0.05, 0, 0.343], ['furn/computerKeyboard*1.3', 0, 0.07, 0, 0.343]], 2),
+    up('Computer table', pw('Table_Promo_Tiered_01', -11.5, -20.0, 's', { n: 2, on: [['furn/computerScreen*0.8', 0, -0.12, 0, 0.475], ['furn/computerKeyboard*0.9', 0, 0.02, 0, 0.35]] })),
     tv('43-inch TV', 3),
-    fx('Radio table', 'furn/desk', -13.2, -20.0, 's', null, [['furn/radio*1.2', -0.1, 0, 0.1, 0.343], ['furn/speakerSmall', 0.18, 0, 0, 0.343]], 2),
+    up('Radio table', pw('Table_Promo_Tiered_01', -13.2, -20.0, 's', { n: 2, on: [['furn/radio*1.0', -0.1, 0.12, 0.1, 0.225], ['furn/speakerSmall*0.8', 0.15, 0.12, 0, 0.225], ['furn/speakerSmall*0.8', -0.15, 0, 0, 0.35]] })),
     tv('50-inch TV', 2),
-    cap('Game rack', -14.3, -20.0, 's', [BOX[1], BOX[3]]),
+    up('Game rack', pw('Gondola_EndCap_10', -14.3, -20.0, 's', { on: shelfGoods([TBOX[1], TBOX[3], TBOX[4], TBOX[0]], 2, { zs: [0.03] }) })),
     tv('55-inch TV', 1),
-    perch('Camera box', BOX[3], -10.2, -20.0, 0.35, 0.8),
+    perch('Camera box', TBOX[3], -10.2, -20.1, 0.475, 1.2),
     tv('65-inch TV', 0),
     mat('Demo mat', -14.2, -10.2, -19.93, -18.82, 0xb9c1d6),
-    perch('Phone box', BOX[1], -13.2, -20.0, 0.35, 0.8),
-    perch('Desk plant', 'furn/plantSmall1', -10.47, -20.0, 0.35, 2),
-    perch('Console box', BOX[2], -11.5, -20.0, 0.35, 0.7),
-    perch('Boxed console', BOX[0], -14.3, -20.0, 1.05, 0.9, 0.3),
-    perch('Bookshelf speaker', 'furn/speakerSmall', -12.0, -20.0, 0.35, 1.2),
-    perch('Game stack', BOX[4], -14.3, -20.0, 1.05, 0.7),
-    perch('Cable boxes', 'furn/cardboardBoxOpen', -10.2, -20.0, 0.35, 0.6),
-    perch('Computer mouse', 'furn/computerMouse*1.6', -11.0, -20.0, 0.35),
-    perch('Monitor', 'furn/computerScreen*0.9', -10.9, -20.0, 0.35),
-    perch('Desk lamp', 'furn/lampSquareTable', -13.9, -20.0, 0.35, 1.3),
-    perch('Router box', BOX[5], -13.2, -20.0, 0.35, 0.7)
-  ], [SIGN, up('Service desk', till(-14.4, -21.0, 'b'), { staff: [-13.9, -21.0, 'b'] }),
-    up('Home theater', ['furn/cabinetTelevisionDoors', -12.2, -20.95, 's', null, [['furn/televisionModern*1.9', 0, -0.03, 0, 0.28]], 2]), lights([[-12.5, -21.0], [-10.5, -20.5]]), HELP,
-    up('Sound system', { sign: 'gold' }, ['furn/speaker', -14.45, -19.4, 's', null, null, 2])])
+    perch('Phone box', TBOX[1], -13.45, -20.1, 0.475, 1.1),
+    perch('Desk plant', 'furn/plantSmall1', -10.4, -20.1, 0.475, 2),
+    perch('Console box', TBOX[2], -11.85, -20.1, 0.475, 1.2),
+    perch('Boxed console', TBOX[0], -14.3, -20.0, 0.92, 1.2, 0.3),
+    perch('Bookshelf speaker', 'furn/speakerSmall', -11.15, -20.0, 0.475, 1.1),
+    perch('Game stack', TBOX[4], -14.3, -20.0, 1.0, 1),
+    perch('Cable boxes', 'furn/cardboardBoxOpen', -9.85, -19.75, 0, 0.6),
+    perch('Computer mouse', 'furn/computerMouse*1.6', -11.0, -19.95, 0.35),
+    perch('Monitor', 'furn/computerScreen*0.8', -10.2, -20.12, 0.475),
+    perch('Desk lamp', 'furn/lampSquareTable', -13.45, -20.0, 0.35, 1.3),
+    perch('Router box', TBOX[5], -12.95, -20.0, 0.35, 1.1)
+  ], [SIGN, counter('Service desk', -14.4, -21.0, 'b', -13.9, -21.0),
+    up('Home theater', ['pw/Table_Promo_Tiered_01', -12.2, -20.95, 's', null, [['furn/televisionModern*1.3', 0, -0.1, 0, 0.475], ['furn/speakerSmall*0.9', 0.2, 0.1, 0, 0.225], ['furn/speakerSmall*0.9', -0.2, 0.1, 0, 0.225]], 1]), lights([[-12.5, -21.0], [-10.5, -20.5]]), HELP,
+    up('Sound system', { sign: 'gold' }, pw('GlassCase_Locked_10', -10.0, -21.15, 's', { on: shelfGoods(['furn/speakerSmall*0.55', 'furn/radio*0.7', 'furn/speaker*0.3'], 2, { zs: [0], ys: [0.45, 0.8, 1.15, 1.5] }) })) ])
 };
 
 AREAS.home = {
