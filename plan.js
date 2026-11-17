@@ -495,7 +495,7 @@ AREAS.tech = {
     tv('65-inch TV', 0),
     mat('Demo mat', -14.2, -10.2, -19.93, -18.82, 0xb9c1d6),
     perch('Phone box', BOX[1], -13.2, -20.0, 0.35, 0.8),
-    perch('Desk plant', 'furn/plantSmall1', -10.6, -20.0, 0.35, 2),
+    perch('Desk plant', 'furn/plantSmall1', -10.47, -20.0, 0.35, 2),
     perch('Console box', BOX[2], -11.5, -20.0, 0.35, 0.7),
     perch('Boxed console', BOX[0], -14.3, -20.0, 1.05, 0.9, 0.3),
     perch('Bookshelf speaker', 'furn/speakerSmall', -12.0, -20.0, 0.35, 1.2),
