@@ -26,9 +26,9 @@ var PER_TAXI = 0.02;
 var PER_GARDEN = 0.015;
 var GARDEN_IN = 0.025;
 // each Customer Service level brings this much more of every kind of shopper
-var SERV = 0.05;
+var SERV = 0.04;
 // each Restrooms level makes shoppers spend this much more
-var REST = 0.04;
+var REST = 0.03;
 // each Break Room level cuts the time a till or a stocker takes to this share
 var LOUNGE = 0.96;
 // each Head Office level adds this much income and an hour of time away that still pays
