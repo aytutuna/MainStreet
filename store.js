@@ -1753,8 +1753,6 @@ function lightBar(b, x, z) {
 
 var STAFF_COUNTER = 'shop/character-employee@5,3>2,2';
 
-// what one upgrade puts in the area: fixtures and models are merged into its batch; boards, staff, the sign and
-// the floor lights are objects of their own, kept in pc.x
 // a Pipework model with its footprint and the spots shoppers stand at, placed like fixture() by the middle of its footprint.
 // e.pw has n (copies side by side), stock (the model has goods that leave with the stock), spots (0 none, 1 front, 2 both
 // sides) and on (goods of other kits standing on it, in its own frame)
@@ -1792,6 +1790,8 @@ function pwFixture(e, k) {
   return { b: b, spots: spots, foot: [{ x: e.x, z: e.z, hw: width * n / 2, hd: depth / 2, a: rot }] };
 }
 
+// what one upgrade puts in the area: fixtures and models are merged into its batch; boards, staff, the sign and
+// the floor lights are objects of their own, kept in pc.x
 function entry(pc, s, e) {
   var b = pc.b;
   if (e.pw) {
@@ -2085,8 +2085,7 @@ function doorSign(en) {
 }
 var doorMats = [];
 
-// a staffed lane: the counter, its cashier, the impulse rack the line waits beside with the lane number on it, and
-// the baskets left at the end. Its line runs north up the west side of the counter, the one paying at the front
+// a staffed lane: the counter, its cashier, the light pole with the lane number on it, and the baskets left at the end. Its line runs north up the west side of the counter, the one paying at the front
 function lane(hall, li, lv, x) {
   var zc = PLAN.bank.z;
   var m = new THREE.Group();
@@ -2108,9 +2107,9 @@ function lane(hall, li, lv, x) {
   root.add(m);
   hall.items.push({ g: m, lv: lv });
   hall.staff.push(cashier);
-  hall.solids.push({ r: [x - 0.35, x + 0.05, zc - 1.05, zc + 0.75], lv: lv }, { r: [x + 0.25, x + 0.6, zc - 0.3, zc + 0.2], lv: lv });
+  hall.solids.push({ r: [x - 0.45, x + 0.05, zc - 1.15, zc + 0.75], lv: lv }, { r: [x + 0.25, x + 0.6, zc - 0.3, zc + 0.2], lv: lv });
   var qx = x - 0.72;
-  return { k: 'lane', x: qx, till: [x + 0.2, 0.62, zc + 0.2], cashier: cashier, head: [x + 0.68, zc + 0.15],
+  return { k: 'lane', x: qx, till: [x - 0.15, 0.5, zc + 0.1], cashier: cashier, head: [x + 0.4, zc - 0.1],
     spot: function (n) { return n ? [qx, zc - 0.85 - 0.5 * (n - 1), 0] : [qx, zc + 0.15, Math.PI / 2]; } };
 }
 
@@ -2233,12 +2232,12 @@ function buildFront() {
   root.add(att.obj);
   hall.items.push({ g: att.obj, lv: 3 });
   hall.staff.push(att);
-  hall.solids.push({ r: [-7.2, -6.85, 0.1, 0.5], lv: 3 });
+  hall.solids.push({ r: [-7.2, -6.6, 0.1, 0.5], lv: 3 });
   hall.lv[3] = hall.lv[3] || new Batch();
   hall.lv[3].add('pw/SelfCheckout_Attendant_01', -6.72, 0.3, -Math.PI / 2);
   var desk = new THREE.Group();
   for (var di = 0; di < PLAN.desk.n; di++) {
-    var dm = mesh('pw/ServiceDesk_20', PLAN.desk.x + di * 0.9, PLAN.desk.z, Math.PI);
+    var dm = mesh('pw/ServiceDesk_20', PLAN.desk.x + di * 1.0, PLAN.desk.z, Math.PI);
     if (di !== 1) {
       var cl = crew('shop/character-employee', 'idle');
       cl.obj.position.set(0, 0, -0.42);
@@ -2247,11 +2246,11 @@ function buildFront() {
     }
     desk.add(dm);
   }
-  desk.add(board({ text: 'SERVICE', x: PLAN.desk.x + 0.9, z: 0.1, y: 1.7, w: 1.6, h: 0.45, post: true }));
+  desk.add(board({ text: 'SERVICE', x: PLAN.desk.x + 1.0, z: 0.1, y: 1.7, w: 1.6, h: 0.45, post: true }));
   desk.visible = false;
   root.add(desk);
   hall.items.push({ g: desk, lv: 7 });
-  hall.solids.push({ r: [PLAN.desk.x - 0.5, PLAN.desk.x + 0.9 * PLAN.desk.n, PLAN.desk.z - 0.3, PLAN.desk.z + 0.9], lv: 7 });
+  hall.solids.push({ r: [PLAN.desk.x - 0.5, PLAN.desk.x + 1.0 * PLAN.desk.n - 0.5, PLAN.desk.z - 0.3, PLAN.desk.z + 0.9], lv: 7 });
   PLAN.front.forEach(function (it) {
     var w = 0.5;
     hall.lv[it[0]] = hall.lv[it[0]] || new Batch();
