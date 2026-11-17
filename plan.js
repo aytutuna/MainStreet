@@ -452,39 +452,85 @@ function lane(z, names, pool, off) {
 }
 var XM = 'holiday/';
 var XP = [XM + 'present-a-cube*0.35', XM + 'present-b-round*0.35', XM + 'present-a-round*0.35', XM + 'present-b-cube*0.35', XM + 'present-a-rectangle*0.3'];
+// goods for the opts.on of a Pipework fixture, in the fixture's own frame (world units: x across, z toward its front, y from the floor).
+// shelves of a gondola, per goods across each shelf, lowest shelf first, the front face and then the back
+function shelfGoods(refs, per, o) {
+  o = o || {};
+  var out = [];
+  var n = 0;
+  (o.zs || [0.25, -0.25]).forEach(function (z) {
+    (o.ys || [0.15, 0.55, 0.95, 1.35]).forEach(function (y) {
+      for (var j = 0; j < per; j++) out.push([refs[n++ % refs.length], (j - (per - 1) / 2) * 0.84 / per * PW, z * PW, (z < 0 ? Math.PI : 0) + (o.turn || 0), (y + 0.02) * PW]);
+    });
+  });
+  return out;
+}
+// hooks of a peg gondola, four across and three down on each face; drop is how far a pack hangs below its hook
+function pegGoods(refs, drop, o) {
+  o = o || {};
+  var out = [];
+  var n = 0;
+  (o.zs || [0.11, -0.11]).forEach(function (z) {
+    (o.ys || [1.58, 1.09, 0.6]).forEach(function (y) {
+      (o.xs || [-0.33, -0.11, 0.11, 0.33]).forEach(function (x) {
+        out.push([refs[n++ % refs.length], x * PW, z * PW, z < 0 ? Math.PI : 0, y * PW - drop]);
+      });
+    });
+  });
+  return out;
+}
+// the three tiers of a promo table: [z, y, count, gap] from the front
+function tierGoods(refs, rows) {
+  var out = [];
+  var n = 0;
+  (rows || [[0.125, 0.225, 4, 0.13], [0, 0.35, 3, 0.13]]).forEach(function (r) {
+    for (var j = 0; j < r[2]; j++) out.push([refs[n++ % refs.length], (j - (r[2] - 1) / 2) * r[3], r[0], 0, r[1]]);
+  });
+  return out;
+}
+// a podium with a register, the clerk standing beside it
+function counter(name, x, z, face, sx, sz) {
+  return up(name, pw('HostStand_01', x, z, face, { spots: 0, on: [['pw/Register_Classic_01', 0, 0, 0, 0.58]] }), { staff: [sx, sz, face] });
+}
+var TBOX = BOX.map(function (r) { return r + '*0.5'; });
 
+var SGIFT = ['present-a-round', 'present-b-cube', 'present-a-cube', 'present-b-round', 'present-a-rectangle'].map(function (p) { return XM + p + '*0.25'; });
+// a tree standing on a pallet
+function xmasTree(name, ref, x, z, k) {
+  return up(name, pw('Pallet_01', x, z, 's'), { m: ref, x: x, z: z, r: 0, k: k || 1, y: 0.06, flat: 1 });
+}
 AREAS.seasonal = {
   cx: -12.2, cz: -3.0, vacant: [-14.7, -9.7, -4.9, -0.3], sign: [-10.92, -3.9, 1.9],
   floor: [{ poly: rbox(-14.7, -9.7, -4.9, -0.3, 0.6), finish: 0xf1e2e2 }],
   ups: ups([
-    up('Christmas tree', [XM + 'tree-decorated*0.6', -10.45, -1.2, 's']),
-    up('Present table', ['table', -11.3, -2.75, 's', [XP[0], XP[1], XP[2]]]),
-    unit('Ornament shelf', -13.8, -4.35, sf(XM + 'present-a-round*0.35', 'furn/lampRoundTable', XM + 'present-b-round*0.35', XM + 'sock-red*0.4')),
-    cap('Candy cane end', -10.55, -4.35, 's', [XM + 'candy-cane-red*0.4', XM + 'candy-cane-green*0.4']),
-    up('Train table', ['table', -12.5, -2.75, 's', [XM + 'train-locomotive*0.3', XM + 'train-wagon*0.3', XM + 'train-tender*0.3']]),
-    unit('Stocking shelf', -13.0, -4.35, sf(XM + 'sock-green*0.4', XM + 'sock-red*0.4', XM + 'sock-red*0.4', XM + 'sock-green*0.4')),
-    up('Snowman table', ['table', -13.7, -2.75, 's', null, [[XM + 'snowman*0.4', -0.2, 0, 0.3, 0.35], [XM + 'nutcracker*0.4', 0.15, 0.05, 0, 0.35], [XM + 'gingerbread-man*0.4', 0.33, 0.1, 0, 0.35]]]),
-    unit('Gift wrap shelf', -12.2, -4.35, sf(XP[3], XP[4], XP[0], XP[2])),
-    up('Spruce tree', ['nature/tree_pineRoundC*0.4', -11.45, -1.2, 's']),
-    unit('Lantern shelf', -11.4, -4.35, sf('furn/lampSquareTable', XM + 'present-b-cube*0.35', 'furn/lampRoundTable', XM + 'present-a-round*0.35')),
-    up('Pine tree', ['nature/tree_small*0.5', -12.45, -1.2, 's']),
-    up('Sled stand', [XM + 'sled*0.45', -13.4, -1.2, 's']),
-    perch('Wreath', XM + 'wreath-decorated*0.5', -13.0, -4.35, 0.8),
+    xmasTree('Christmas tree', 'holiday/tree-decorated*0.6', -10.45, -1.2),
+    up('Present table', pw('Table_Promo_Tiered_01', -11.3, -2.75, 's', { on: tierGoods(SGIFT, [[0.125, 0.225, 4, 0.13], [0, 0.35, 3, 0.13], [-0.125, 0.475, 2, 0.13]]) })),
+    up('Ornament shelf', pw('Gondola_Wall_10', -13.8, -4.55, 's', { on: shelfGoods(SGIFT.slice(0, 2).concat([XM + 'lantern*0.25']), 3, { zs: [0.03] }) })),
+    up('Candy cane end', pw('Gondola_EndCap_10', -10.55, -4.55, 's', { on: shelfGoods([XM + 'candy-cane-red*0.35', XM + 'candy-cane-green*0.35'], 3, { zs: [0.03] }) })),
+    up('Train table', pw('Table_Promo_Tiered_01', -12.5, -2.75, 's', { on: [[XM + 'train-locomotive*0.3', -0.12, 0.125, 0, 0.225], [XM + 'train-wagon*0.3', 0.12, 0.125, 0, 0.225], [XM + 'train-tender*0.3', 0, 0, 0, 0.35]] })),
+    up('Stocking shelf', pw('Gondola_Wall_10', -13.0, -4.55, 's', { on: shelfGoods([XM + 'sock-green*0.3', XM + 'sock-red*0.3'], 3, { zs: [0.03] }) })),
+    up('Snowman table', pw('Table_Promo_Tiered_01', -13.7, -2.75, 's', { on: [[XM + 'snowman*0.25', -0.15, 0.125, 0.3, 0.225], [XM + 'nutcracker*0.3', 0.1, 0.1, 0, 0.225], [XM + 'gingerbread-man*0.4', 0.25, 0.12, 0, 0.225], [XM + 'snowman*0.2', 0, -0.02, 0, 0.35]] })),
+    up('Gift wrap shelf', pw('Gondola_Wall_10', -12.2, -4.55, 's', { on: shelfGoods(SGIFT.slice(2), 3, { zs: [0.03] }) })),
+    xmasTree('Spruce tree', 'nature/tree_pineRoundC*0.4', -11.45, -1.2),
+    up('Lantern shelf', pw('Gondola_Wall_10', -11.4, -4.55, 's', { on: shelfGoods([XM + 'lantern*0.3', SGIFT[1], 'furn/lampSquareTable*0.8'], 3, { zs: [0.03] }) })),
+    xmasTree('Pine tree', 'nature/tree_small*0.5', -12.45, -1.2),
+    up('Sled bin', pw('DumpBin_Wire_01', -13.4, -1.2, 's', { on: [[XM + 'sled*0.3', 0, 0.02, 0.3, 0.3], [XM + 'sled*0.3', 0.05, -0.04, -0.2, 0.36], [XM + 'nutcracker*0.3', -0.15, 0.04, 0, 0.3]] })),
+    perch('Wreath', XM + 'wreath-decorated*0.5', -13.0, -4.6, 0.92),
     mat('Snow patch', -14.3, -10.2, -1.7, -0.6, 0xf6f6fa),
     mat('Holiday rug', -13.9, -10.9, -3.3, -2.2, 0xcf8d8d),
-    perch('Star lantern', 'furn/lampRoundTable', -11.4, -4.35, 0.8),
-    d('Gift boxes', 'furn/cardboardBoxClosed', -14.55, -4.55, 0.3, 1.1),
-    d('Holiday plant', 'furn/pottedPlant', -14.5, -1.9, 0, 0.9),
-    perch('Candy cane', XM + 'candy-cane-red*0.5', -10.55, -4.35, 1.05),
-    perch('Shelf snowman', XM + 'snowman*0.25', -13.0, -4.35, 0.8),
+    perch('Star lantern', 'furn/lampRoundTable', -11.4, -4.55, 0.92),
+    up('Gift bin', pw('DumpBin_Wire_01', -14.4, -4.3, 'b', { spots: 0, on: [[XP[0], 0, 0.03, 0, 0.2], [XP[1], 0.08, -0.05, 0.5, 0.2], [XP[2], -0.08, 0.05, 1, 0.2]] })),
+    up('Holiday planter', pw('Planter_Tall_01', -14.45, -1.9, 0, { spots: 0 })),
+    perch('Candy cane', XM + 'candy-cane-red*0.5', -10.55, -4.55, 0.92),
+    perch('Shelf snowman', XM + 'snowman*0.25', -12.9, -4.55, 0.92),
     d('Present pile', XP[1], -10.1, -0.55, 0.3, 1.3),
-    perch('Shelf presents', XP[0], -12.2, -4.35, 0.8),
+    perch('Shelf presents', XP[0], -12.2, -4.55, 0.92),
     d('Gingerbread', XM + 'gingerbread-man*0.4', -10.05, -3.2, 0.2, 1.2),
-    perch('Stocking topper', XM + 'sock-red*0.5', -13.8, -4.35, 0.8)
-  ], [SIGN, up('Gift counter', till(-9.95, -4.5, 'k'), { staff: [-9.5, -4.5, 'k'] }),
-    up('Giant tree', ['nature/tree_fat*0.45', -14.15, -1.25, 's']),
+    perch('Stocking topper', XM + 'sock-red*0.5', -13.8, -4.55, 0.92)
+  ], [SIGN, counter('Gift counter', -9.95, -4.5, 'k', -9.5, -4.5),
+    xmasTree('Giant tree', 'nature/tree_fat*0.45', -14.15, -1.25),
     lights([[-13, -2.5], [-11.2, -3.2]]), HELP,
-    up('Santa display', { sign: 'gold' }, { box: [-14.65, -14.25, -3.95, -3.1, 0, 0.08], c: 0xf6f6fa }, m(XM + 'sled*0.5', -14.45, -3.35, 0, 1, 0.08), m(XM + 'reindeer*0.4', -14.45, -3.75, 0, 1, 0.08))])
+    up('Santa display', { sign: 'gold' }, pw('PalletDisplay_Half_01', -14.4, -3.35, 'b', { on: [[XM + 'sled*0.35', 0, 0.1, 0, 0.225], [XM + 'reindeer*0.35', 0, 0, 0, 0.375]] }))])
 };
 
 AREAS.clothes = {
@@ -589,40 +635,41 @@ AREAS.auto = {
 };
 
 var TVK = [1.3, 1.15, 1, 1.15, 1.3, 1.15, 1];
+// a television hung on a slatwall panel on the north wall
 function tv(name, u) {
-  return fx(name, 'furn/cabinetTelevisionDoors', -14.2 + u * 0.72, -22.08, 's', null, [['furn/televisionModern' + (TVK[u] === 1 ? '' : '*' + TVK[u]), 0, -0.03, 0, 0.28]]);
+  return fx(name, 'pw/Wall_Slatwall_1m', -14.2 + u * 0.72, -22.19, 's', null, [['furn/televisionModern' + (TVK[u] === 1 ? '' : '*' + TVK[u]), 0, 0.1, 0, 0.3]]);
 }
 AREAS.tech = {
   cx: -12.2, cz: -20.6, vacant: [-14.7, -9.7, -22.2, -19.0], sign: [-11.0, -21.8, 2.4],
   floor: [{ poly: rbox(-14.7, -9.7, -22.2, -19.1, 0.5), finish: 0xd3d7e3 }],
   ups: ups([
     tv('24-inch TV', 6),
-    fx('Laptop table', 'furn/desk', -10.2, -20.0, 's', null, [['furn/laptop*1.3', -0.12, 0, 0.2, 0.343]]),
+    up('Laptop table', pw('Table_Promo_Tiered_01', -10.2, -20.0, 's', { on: [['furn/laptop*1.0', -0.12, 0.125, 0.2, 0.225], ['furn/laptop*1.0', 0.12, 0.125, -0.2, 0.225], ['furn/laptop*1.0', 0, 0, 0, 0.35]] })),
     tv('32-inch TV', 5),
     tv('40-inch TV', 4),
-    fx('Computer table', 'furn/desk', -11.5, -20.0, 's', null, [['furn/computerScreen*1.3', 0, -0.05, 0, 0.343], ['furn/computerKeyboard*1.3', 0, 0.07, 0, 0.343]], 2),
+    up('Computer table', pw('Table_Promo_Tiered_01', -11.5, -20.0, 's', { n: 2, on: [['furn/computerScreen*0.8', 0, -0.12, 0, 0.475], ['furn/computerKeyboard*0.9', 0, 0.02, 0, 0.35]] })),
     tv('43-inch TV', 3),
-    fx('Radio table', 'furn/desk', -13.2, -20.0, 's', null, [['furn/radio*1.2', -0.1, 0, 0.1, 0.343], ['furn/speakerSmall', 0.18, 0, 0, 0.343]], 2),
+    up('Radio table', pw('Table_Promo_Tiered_01', -13.2, -20.0, 's', { n: 2, on: [['furn/radio*1.0', -0.1, 0.12, 0.1, 0.225], ['furn/speakerSmall*0.8', 0.15, 0.12, 0, 0.225], ['furn/speakerSmall*0.8', -0.15, 0, 0, 0.35]] })),
     tv('50-inch TV', 2),
-    cap('Game rack', -14.3, -20.0, 's', [BOX[1], BOX[3]]),
+    up('Game rack', pw('Gondola_EndCap_10', -14.3, -20.0, 's', { on: shelfGoods([TBOX[1], TBOX[3], TBOX[4], TBOX[0]], 2, { zs: [0.03] }) })),
     tv('55-inch TV', 1),
-    perch('Camera box', BOX[3], -10.2, -20.0, 0.35, 0.8),
+    perch('Camera box', TBOX[3], -10.2, -20.1, 0.475, 1.2),
     tv('65-inch TV', 0),
     mat('Demo mat', -14.2, -10.2, -19.93, -18.82, 0xb9c1d6),
-    perch('Phone box', BOX[1], -13.2, -20.0, 0.35, 0.8),
-    perch('Desk plant', 'furn/plantSmall1', -10.47, -20.0, 0.35, 2),
-    perch('Console box', BOX[2], -11.5, -20.0, 0.35, 0.7),
-    perch('Boxed console', BOX[0], -14.3, -20.0, 1.05, 0.9, 0.3),
-    perch('Bookshelf speaker', 'furn/speakerSmall', -12.0, -20.0, 0.35, 1.2),
-    perch('Game stack', BOX[4], -14.3, -20.0, 1.05, 0.7),
-    perch('Cable boxes', 'furn/cardboardBoxOpen', -10.2, -20.0, 0.35, 0.6),
-    perch('Computer mouse', 'furn/computerMouse*1.6', -11.0, -20.0, 0.35),
-    perch('Monitor', 'furn/computerScreen*0.9', -10.9, -20.0, 0.35),
-    perch('Desk lamp', 'furn/lampSquareTable', -13.9, -20.0, 0.35, 1.3),
-    perch('Router box', BOX[5], -13.2, -20.0, 0.35, 0.7)
-  ], [SIGN, up('Service desk', till(-14.4, -21.0, 'b'), { staff: [-13.9, -21.0, 'b'] }),
-    up('Home theater', ['furn/cabinetTelevisionDoors', -12.2, -20.95, 's', null, [['furn/televisionModern*1.9', 0, -0.03, 0, 0.28]], 2]), lights([[-12.5, -21.0], [-10.5, -20.5]]), HELP,
-    up('Sound system', { sign: 'gold' }, ['furn/speaker', -14.45, -19.4, 's', null, null, 2])])
+    perch('Phone box', TBOX[1], -13.45, -20.1, 0.475, 1.1),
+    perch('Desk plant', 'furn/plantSmall1', -10.4, -20.1, 0.475, 2),
+    perch('Console box', TBOX[2], -11.85, -20.1, 0.475, 1.2),
+    perch('Boxed console', TBOX[0], -14.3, -20.0, 0.92, 1.2, 0.3),
+    perch('Bookshelf speaker', 'furn/speakerSmall', -11.15, -20.0, 0.475, 1.1),
+    perch('Game stack', TBOX[4], -14.3, -20.0, 1.0, 1),
+    perch('Cable boxes', 'furn/cardboardBoxOpen', -9.85, -19.75, 0, 0.6),
+    perch('Computer mouse', 'furn/computerMouse*1.6', -11.0, -19.95, 0.35),
+    perch('Monitor', 'furn/computerScreen*0.8', -10.2, -20.12, 0.475),
+    perch('Desk lamp', 'furn/lampSquareTable', -13.45, -20.0, 0.35, 1.3),
+    perch('Router box', TBOX[5], -12.95, -20.0, 0.35, 1.1)
+  ], [SIGN, counter('Service desk', -14.4, -21.0, 'b', -13.9, -21.0),
+    up('Home theater', ['pw/Table_Promo_Tiered_01', -12.2, -20.95, 's', null, [['furn/televisionModern*1.3', 0, -0.1, 0, 0.475], ['furn/speakerSmall*0.9', 0.2, 0.1, 0, 0.225], ['furn/speakerSmall*0.9', -0.2, 0.1, 0, 0.225]], 1]), lights([[-12.5, -21.0], [-10.5, -20.5]]), HELP,
+    up('Sound system', { sign: 'gold' }, pw('GlassCase_Locked_10', -10.0, -21.15, 's', { on: shelfGoods(['furn/speakerSmall*0.55', 'furn/radio*0.7', 'furn/speaker*0.3'], 2, { zs: [0], ys: [0.45, 0.8, 1.15, 1.5] }) })) ])
 };
 
 AREAS.home = {
@@ -659,136 +706,129 @@ AREAS.home = {
     up('Wardrobe', { sign: 'gold' }, pw('KitCab_Tall_Pantry_10', -1.5, -8.85, 'k'))])
 };
 
-var TOYP = [BOX[2], 'toy/vehicle-suv*0.2', XM + 'train-locomotive*0.3', 'toy/vehicle-racer*0.2', BOX[4], 'skate/skateboard*0.4', XM + 'present-b-cube*0.35', BOX[0], XM + 'sled*0.3', 'toy/vehicle-truck*0.2'];
-var TOYL = lane(-10.6, ['Toy cars', 'Building blocks', 'Dolls', 'Board games', 'Puzzles', 'Plush toys'], TOYP);
+var CARS = ['toy/vehicle-suv*0.2', 'toy/vehicle-racer*0.2', 'toy/vehicle-truck*0.2', 'toy/vehicle-speedster*0.2', 'toy/vehicle-monster-truck*0.2', 'toy/vehicle-vintage-racer*0.2'];
+var DOLLS = [XM + 'nutcracker*0.22', XM + 'gingerbread-man*0.45', XM + 'gingerbread-woman*0.45', XM + 'snowman*0.25'];
+var PLUSH = ['pets/animal-cat*1.1', 'pets/animal-dog*1.0', 'pets/animal-fish*1.4', XM + 'reindeer*0.3'];
 AREAS.toys = {
   cx: -4.1, cz: -10.5, vacant: [-6.9, -1.25, -11.7, -9.3], sign: [-3.2, -11.45, 1.6],
   floor: [{ poly: rbox(-6.9, -1.25, -11.7, -9.3, 0.5), finish: 0xe6dff3 }],
   ups: ups([
-    TOYL[0],
-    cap('Monster truck end', -6.65, -10.6, 'k', [BOX[1], 'toy/vehicle-monster-truck*0.2']),
-    TOYL[1],
+    up('Toy car shelf', pw('Gondola_Island_10', -6.05, -10.6, 's', { spots: 2, on: shelfGoods(CARS, 2, { turn: Math.PI / 2 }) })),
+    up('Monster truck end', pw('Gondola_EndCap_Low_10', -6.65, -10.6, 'k', { on: shelfGoods(CARS.slice(2), 2, { zs: [0.03], ys: [0.15, 0.55, 0.95], turn: Math.PI / 2 }) })),
+    up('Block table', pw('Table_Promo_Tiered_01', -5.25, -10.6, 's', { on: tierGoods(TBOX) })),
     fx('Claw machine', 'arcade/claw-machine', -7.6, -10.15, 'k'),
-    TOYL[2],
-    TOYL[3],
+    up('Doll pegs', pw('Gondola_Island_Peg_10', -4.45, -10.6, 's', { spots: 2, on: pegGoods(DOLLS, 0.16, { xs: [-0.22, 0.22] }) })),
+    up('Board game shelf', pw('Gondola_Island_10', -3.65, -10.6, 's', { spots: 2, on: shelfGoods(TBOX, 3) })),
     fx('Gacha machine', 'shop/gacha-machine', -7.6, -11.05, 'k'),
-    TOYL[4],
-    TOYL[5],
-    cap('Toy tower end', -1.45, -10.6, 'b', [XM + 'present-a-cube*0.35', XM + 'present-b-round*0.35']),
-    perch('Toy racer', 'toy/vehicle-racer*0.4', -6.05, -10.6, 0.8),
-    perch('Nutcracker doll', XM + 'nutcracker*0.4', -4.45, -10.6, 0.8),
-    perch('Toy truck', 'toy/vehicle-truck*0.45', -5.4, -10.6, 0.8),
-    perch('Plush cat', 'pets/animal-cat*2.5', -2.05, -10.6, 0.8),
+    up('Puzzle pegs', pw('Gondola_Island_Peg_10', -2.85, -10.6, 's', { spots: 2, on: pegGoods(TBOX, 0.09) })),
+    up('Plush table', pw('Table_Promo_Tiered_01', -2.05, -10.6, 's', { on: tierGoods(PLUSH) })),
+    up('Toy tower end', pw('Gondola_EndCap_10', -1.45, -10.6, 'b', { on: shelfGoods([XM + 'present-a-cube*0.35', XM + 'present-b-round*0.35'], 2, { zs: [0.03] }) })),
+    perch('Toy racer', 'toy/vehicle-racer*0.4', -6.05, -10.6, 0.92),
+    perch('Nutcracker doll', XM + 'nutcracker*0.4', -4.45, -10.6, 0.92),
+    perch('Toy truck', 'toy/vehicle-truck*0.45', -3.7, -10.6, 0.92),
+    perch('Plush cat', 'pets/animal-cat*2.2', -2.85, -10.6, 0.92),
     board('Toy sale board', 'TOY SALE', -6.8, -9.5, 0.9),
-    perch('Block tower', BOX[1], -5.05, -10.6, 0.8, 1.0, 0.3),
+    perch('Block tower', TBOX[1], -5.25, -10.72, 0.475),
     mat('Play mat', -6.5, -5, -11.75, -10.65, 0xf2c6d8),
-    perch('Monster truck', 'toy/vehicle-monster-truck*0.4', -3.8, -10.6, 0.8),
-    perch('Toy snowman', XM + 'snowman*0.3', -3.5, -10.6, 0.8),
-    perch('Puzzle box', BOX[4], -3.0, -10.6, 0.8, 1.1),
-    perch('Toy train', XM + 'train-locomotive*0.45', -1.45, -10.6, 1.05),
-    perch('Toy reindeer', XM + 'reindeer*0.3', -2.7, -10.6, 0.8),
+    perch('Monster truck', 'toy/vehicle-monster-truck*0.4', -2.95, -10.6, 0.92),
+    perch('Toy snowman', XM + 'snowman*0.3', -6.05, -10.5, 0.92),
+    perch('Puzzle box', TBOX[4], -3.55, -10.6, 0.92),
+    perch('Toy train', XM + 'train-locomotive*0.45', -1.45, -10.6, 0.92),
+    perch('Toy reindeer', XM + 'reindeer*0.3', -2.05, -10.72, 0.475),
     board('Kids board', 'KIDS CORNER', -6.8, -11.2, 0.9),
     mat('Game mat', -3.9, -2.4, -10.35, -9.25, 0xe8d9f4)
-  ], [SIGN, up('Toy desk', till(-0.85, -9.8, 'k'), { staff: [-0.4, -9.8, 'k'] }),
-    up('Present tower', on(XP[0], -6.65, -10.6, 1.05, 1.6), on(XP[1], -6.65, -10.6, 1.4, 1.3, 0.4)), lights([[-5, -10.6], [-2.8, -10.6]]), HELP,
-    up('Giant plush', { sign: 'gold' }, on('pets/animal-dog*3', -4.45, -10.6, 0.9))])
+  ], [SIGN, counter('Toy desk', -0.85, -9.8, 'k', -0.4, -9.8),
+    up('Present tower', on(XP[0], -6.65, -10.6, 0.72, 1.6), on(XP[1], -6.65, -10.6, 1.04, 1.3, 0.4)), lights([[-5, -10.6], [-2.8, -10.6]]), HELP,
+    up('Giant plush', { sign: 'gold' }, on('pets/animal-dog*3', -4.45, -10.6, 0.92))])
 };
 
-var OFFP = ['furn/books', BOX[1], CARTON[1], BOX[0], 'furn/books', BOX[2], CARTON[0], 'furn/books', BOX[3], CARTON[2]];
-var OFFL = lane(-12.8, ['Novels', 'Cookbooks', 'Kids books', 'Notebooks', 'Pens', 'Printer paper'], OFFP);
+var BOOKS = ['furn/books', 'furn/books*1.2', TBOX[0], 'furn/books', TBOX[2], 'furn/books*1.2', TBOX[4], 'furn/books'];
+var REAMS = CARTON.map(function (r) { return r + '*0.4'; });
 AREAS.office = {
   cx: -4.1, cz: -12.8, vacant: [-6.9, -1.25, -13.9, -11.7], sign: [-3.2, -13.65, 2.2],
   floor: [{ poly: rbox(-6.9, -1.25, -13.9, -11.7, 0.5), finish: 0xe3dccf }],
   ups: ups([
-    OFFL[0],
-    cap('Book end', -6.65, -12.8, 'k', ['furn/books', BOX[1]]),
-    OFFL[1],
-    fx('Study desk', 'furn/desk', -7.6, -12.45, 'k', null, [['furn/laptop*1.3', -0.12, 0, 0.2, 0.343], ['furn/lampSquareTable', 0.15, 0, 0, 0.343]]),
-    OFFL[2],
-    OFFL[3],
-    fx('Computer desk', 'furn/desk', -7.6, -13.2, 'k', null, [['furn/computerScreen*1.3', 0, -0.05, 0, 0.343], ['furn/computerKeyboard*1.3', 0, 0.07, 0, 0.343]]),
-    OFFL[4],
-    OFFL[5],
-    cap('Stationery end', -1.45, -12.8, 'b', [BOX[4], CARTON[0]]),
-    perch('Book stack', 'furn/books', -6.2, -12.8, 0.8, 1.6),
-    perch('Desk lamp', 'furn/lampSquareTable', -5.25, -12.8, 0.8, 1.4),
-    perch('Desk speaker', 'furn/speakerSmall', -5.9, -12.8, 0.8, 1.2, 0.3),
-    perch('Office plant', 'furn/plantSmall1', -4.6, -12.8, 0.8, 2),
-    perch('Paper boxes', CARTON[3], -3.8, -12.8, 0.8, 1.1),
-    perch('Radio', 'furn/radio', -4.3, -12.8, 0.8, 1.3, 0.2),
-    perch('Globe light', 'furn/lampRoundTable', -3.0, -12.8, 0.8, 1.4),
-    perch('Pencil box', BOX[2], -2.05, -12.8, 0.8, 1.1),
+    up('Novel shelf', pw('Gondola_Island_10', -6.05, -12.8, 's', { spots: 2, on: shelfGoods(BOOKS, 3) })),
+    up('Book end', pw('Gondola_EndCap_Low_10', -6.65, -12.8, 'k', { on: shelfGoods(BOOKS.slice(1), 3, { zs: [0.03], ys: [0.15, 0.55, 0.95] }) })),
+    up('Cookbook shelf', pw('Gondola_Island_Low_10', -5.25, -12.8, 's', { spots: 2, on: shelfGoods(BOOKS.slice(2), 3, { ys: [0.15, 0.55, 0.95] }) })),
+    up('Study table', pw('Table_Promo_Tiered_01', -7.6, -12.45, 'k', { on: [['furn/laptop*1.0', -0.12, 0.1, 0.2, 0.225], ['furn/lampSquareTable', 0.15, -0.05, 0, 0.35], ['furn/books', 0.1, 0.12, 0.4, 0.225]] })),
+    up('Kids book shelf', pw('Gondola_Island_10', -4.45, -12.8, 's', { spots: 2, on: shelfGoods(BOOKS.slice(3), 3) })),
+    up('Notebook pegs', pw('Gondola_Island_Peg_10', -3.65, -12.8, 's', { spots: 2, on: pegGoods(BOOKS, 0.1) })),
+    up('Computer table', pw('Table_Promo_Tiered_01', -7.6, -13.2, 'k', { on: [['furn/computerScreen*0.8', 0, -0.12, 0, 0.475], ['furn/computerKeyboard*0.9', 0, 0, 0, 0.35]] })),
+    up('Pen pegs', pw('Gondola_Island_Peg_10', -2.85, -12.8, 's', { spots: 2, on: pegGoods(BAG.map(function (r) { return r + '*0.5'; }), 0.1) })),
+    up('Paper shelf', pw('Gondola_Island_10', -2.05, -12.8, 's', { spots: 2, on: shelfGoods(REAMS, 2) })),
+    up('Magazine rack', pw('NewspaperRack_01', -1.45, -12.8, 'b')),
+    perch('Book stack', 'furn/books', -6.15, -12.8, 0.92, 1.6),
+    perch('Desk lamp', 'furn/lampSquareTable', -5.25, -12.8, 0.72, 1.4),
+    perch('Desk speaker', 'furn/speakerSmall', -5.95, -12.8, 0.92, 1.2, 0.3),
+    perch('Office plant', 'furn/plantSmall1', -4.45, -12.8, 0.92, 2),
+    perch('Paper boxes', CARTON[3] + '*0.6', -2.1, -12.8, 0.92, 1.1),
+    perch('Radio', 'furn/radio', -4.3, -12.8, 0.92, 1.3, 0.2),
+    perch('Globe light', 'furn/lampRoundTable', -3.65, -12.8, 0.92, 1.4),
+    perch('Pencil box', TBOX[2], -2.8, -12.8, 0.92, 1.1),
     board('Paper deal', 'PAPER 2 FOR 5', -6.8, -12.3, 0.9),
     mat('Reading mat', -6.5, -5, -12.55, -11.45, 0xd9cdb8),
     board('Back to school', 'BACK TO SCHOOL', -6.8, -13.5, 1.0),
-    perch('Boombox', 'furn/speaker*0.5', -1.45, -12.8, 1.05),
-    perch('Laptop display', 'furn/laptop*1.3', -3.5, -12.8, 0.8, 1.2, 0.3),
-    perch('Office mouse', 'furn/computerMouse*1.6', -5.5, -12.8, 0.8)
-  ], [SIGN, up('Book desk', till(-0.85, -12.0, 'k'), { staff: [-0.4, -12.0, 'k'] }),
-    up('Bestsellers', on('furn/books*3', -6.65, -12.8, 1.05), on('furn/books*3', -6.62, -12.8, 1.32, 1, 0.3), on('furn/books*3', -6.66, -12.8, 1.59, 1, 1)), lights([[-5, -12.8], [-2.8, -12.8]]), HELP,
-    up('Big monitor', { sign: 'gold' }, on('furn/computerScreen*2', -2.85, -12.8, 0.9))])
+    perch('Boombox', 'furn/speaker*0.5', -1.45, -12.8, 0.55),
+    perch('Laptop display', 'furn/laptop*1.3', -3.5, -12.8, 0.92, 1.2, 0.3),
+    perch('Office mouse', 'furn/computerMouse*1.6', -5.5, -12.8, 0.72)
+  ], [SIGN, counter('Book desk', -0.85, -12.0, 'k', -0.4, -12.0),
+    up('Bestsellers', on('furn/books*3', -6.65, -12.8, 0.72), on('furn/books*3', -6.62, -12.8, 0.99, 1, 0.3), on('furn/books*3', -6.66, -12.8, 1.26, 1, 1)), lights([[-5, -12.8], [-2.8, -12.8]]), HELP,
+    up('Big monitor', { sign: 'gold' }, on('furn/computerScreen*2', -2.85, -12.8, 0.92))])
 };
 
-// a pegboard panel on the area's north line with tools hung in rows: [model, across, height, size, turn]
-function peg(x, list) {
-  var out = [{ box: [x - 0.38, x + 0.38, -15.33, -15.29, 0.8, 1.7], c: 0x6f7f95, flat: 1 }, { box: [x - 0.39, x + 0.39, -15.34, -15.28, 1.66, 1.7], c: 0x434d5e, flat: 1 }];
-  list.forEach(function (t) { out.push(on(t[0], x + t[1], -15.26, t[2], t[3], t[4])); });
-  return out;
+var HAM = 'tool/hammer-';
+var HAMS = ['simple', 'plastic', 'rectangle', 'ouch', 'bangpop', 'smallhit', 'cool', 'kindathor'].map(function (h) { return HAM + h + '*0.55'; });
+var TINS = TIN.map(function (r) { return r + '*0.7'; });
+// tools hung on a slatwall rack on the north line: [model, across, height] in the panel's frame, rows from the top
+function slatRack(name, x, list) {
+  return up(name, pw('Slatwall_Panel_10', x, -15.9, 's', { on: list.map(function (t) { return [t[0], t[1], 0.08, 0, t[2]]; }) }));
 }
-function pegrack(name, x, list) {
-  return up.apply(null, [name].concat(peg(x, list)));
-}
-// a crate on a shelf top with loose fasteners lying on it
-function bin(name, x, ref, k, bits) {
-  var out = [name, on('furn/cardboardBoxOpen', x, -15.0, 0.8, 1.1)];
-  bits.forEach(function (b, i) { out.push(on(ref, x + b[0], -15.0 + b[1], 1.0, k, b[2])); });
+// a crate of fasteners on an island's top
+function partsBin(name, x, ref, bits) {
+  var out = [name, on('pw/PartsBin_01*1.8', x, -14.6, 0.92)];
+  bits.forEach(function (b) { out.push(on(ref, x + b[0], -14.6 + b[1], 0.97, 1, b[2])); });
   return up.apply(null, out);
 }
-var HAM = 'tool/hammer-';
-var TOOLL = [
-  unit('Hammers', -6.05, -15.0, sf(HAM + 'simple~x', HAM + 'plastic~x', HAM + 'rectangle~x', HAM + 'ouch~x')),
-  unit('Paint cans', -5.25, -15.0, sf(TIN[1], 'tool/brush~x', TIN[2], TIN[0])),
-  unit('Screws and nails', -4.45, -15.0, sf(BOX[0], 'tool/bolt-s*3', CARTON[0], 'tool/nut-l*5')),
-  unit('Screwdrivers and pliers', -3.65, -15.0, sf('tool/screwdriver-poke~x', 'tool/pliers-dull~x', 'tool/pliers-sharp~x', 'tool/screwdriver-slap~x')),
-  unit('Buckets', -2.85, -15.0, sf('surv/bucket', TIN[3], BOX[3], TIN[1])),
-  unit('Tape and glue', -2.05, -15.0, sf(TIN[2], BOX[5], 'surv/bucket', CARTON[2]))
-];
+function hung(x, y, ref, k) {
+  return [ref + '*' + (k * 1.25).toFixed(2), x, y];
+}
 AREAS.tools = {
   cx: -4.1, cz: -15.0, vacant: [-6.9, -1.25, -16.1, -13.9], sign: [-3.2, -15.85, 1.9],
   floor: [{ poly: rbox(-6.9, -1.25, -16.1, -13.9, 0.5), finish: 0xe2e2dc }],
   ups: ups([
-    TOOLL[0],
-    cap('Hammer end', -6.65, -15.0, 'k', [HAM + 'bangpop~x', HAM + 'smallhit~x']),
-    TOOLL[1],
-    fx('Workbench', 'surv/workbench*1.6', -7.6, -14.6, 'k', null, [[HAM + 'plastic~x', -0.1, 0.05, 0.5, 0.46], ['tool/saw-small-highcount~x*0.7', 0.02, -0.1, 0.1, 0.46]]),
-    TOOLL[2],
-    TOOLL[3],
-    fx('Paint barrel', 'surv/barrel*1.3', -7.6, -15.4, 'k', null, [['tool/brush~x', 0, 0, 0.6, 0.45]]),
-    TOOLL[4],
-    TOOLL[5],
-    cap('Axe and pick end', -1.45, -15.0, 'b', ['tool/axe~x', 'tool/cylinder-long~x']),
-    bin('Bolt bin', -4.45, 'tool/bolt-l~x*2.5', 1, [[-0.08, 0, 0.3], [0.03, 0.03, -0.6], [0.08, -0.03, 1.2]]),
-    perch('Paint tin', TIN[1], -5.25, -15.0, 0.8, 2),
-    pegrack('Mallet rack', -5.25, [[HAM + 'kindathor', -0.25, 0.88, 0.9], [HAM + 'ouch', 0, 0.88, 0.9], [HAM + 'rocket', 0.25, 0.88, 0.9],
-      [HAM + 'beemboom', -0.25, 1.27, 0.9], [HAM + 'cool', 0, 1.27, 0.9], [HAM + 'rectangle', 0.25, 1.27, 0.9]]),
-    pegrack('Plier rack', -4.45, [['tool/pliers-dull', -0.25, 0.88, 1], ['tool/pliers-sharp', 0, 0.88, 1], ['tool/pliers-dull', 0.25, 0.88, 1],
-      ['tool/screwdriver-poke', -0.28, 1.27, 1], ['tool/screwdriver-slap', -0.09, 1.27, 1], ['tool/screwdriver-poke', 0.09, 1.27, 1], ['tool/screwdriver-slap', 0.28, 1.27, 1]]),
-    board('Tool deal', 'TOOLS 20% OFF', -6.8, -14.4, 1.0),
-    perch('Primer tin', TIN[3], -2.9, -15.0, 0.8, 2),
-    bin('Nail bin', -2.45, 'tool/nail-l~x*1.6', 1, [[-0.08, -0.02, 0.5], [0.02, 0.03, -0.3], [0.08, -0.02, 1.4]]),
+    up('Hammer pegs', pw('Gondola_Island_Peg_10', -6.05, -14.6, 's', { spots: 2, on: pegGoods(HAMS, 0.2, { xs: [-0.22, 0.22] }) })),
+    up('Hammer end', pw('Gondola_EndCap_Low_10', -6.65, -14.6, 'k', { on: shelfGoods([HAM + 'bangpop~x*0.8', HAM + 'smallhit~x*0.8'], 2, { zs: [0.03], ys: [0.15, 0.55, 0.95] }) })),
+    up('Paint shelf', pw('Gondola_Island_10', -5.25, -14.6, 's', { spots: 2, on: shelfGoods(TINS.concat(['tool/brush~x']), 2, { ys: [0.15, 0.55, 0.95, 1.35] }) })),
+    up('Workbench', pw('Workbench_Wood_01', -7.6, -14.35, 'k', { on: [[HAM + 'plastic~x*0.8', -0.1, 0.06, 0.5, 0.46], ['tool/saw-small-highcount~x*0.7', 0.2, -0.05, 0.1, 0.46], ['tool/brush~x', -0.25, 0.0, 0.3, 0.46]] })),
+    up('Fastener shelf', pw('Gondola_Island_10', -4.45, -14.6, 's', { spots: 2, on: shelfGoods(['pw/BoltTray_01', TBOX[0], 'tool/bolt-s*2', TBOX[3], 'tool/nut-l*2', 'tool/bolt-s*2'], 2) })),
+    up('Hand tool pegs', pw('Gondola_Island_Peg_10', -3.65, -14.6, 's', { spots: 2, on: pegGoods(['tool/pliers-dull*0.6', 'tool/screwdriver-poke*0.6', 'tool/pliers-sharp*0.6', 'tool/screwdriver-slap*0.6'], 0.18, { xs: [-0.22, 0.22] }) })),
+    up('Tool chest', pw('ToolChest_Roller_01', -7.6, -15.3, 'k', { on: [['tool/brush~x', 0, 0, 0.6, 0.43]] })),
+    up('Bucket shelf', pw('Gondola_Island_10', -2.85, -14.6, 's', { spots: 2, on: shelfGoods(['surv/bucket*0.75', TINS[3], TBOX[3], TINS[1]], 2) })),
+    up('Tape and glue shelf', pw('Gondola_Island_Low_10', -2.05, -14.6, 's', { spots: 2, on: shelfGoods([TINS[2], TBOX[5], 'surv/bucket*0.6', CARTON[2] + '*0.5'], 3, { ys: [0.15, 0.55, 0.95] }) })),
+    up('Axe and pick end', pw('Gondola_EndCap_10', -1.45, -14.6, 'b', { on: shelfGoods(['tool/axe~x*0.7', 'tool/cylinder-long~x*0.7'], 2, { zs: [0.03] }) })),
+    partsBin('Bolt bin', -4.45, 'tool/bolt-l~x*1.3', [[-0.08, 0, 0.3], [0.03, 0.03, -0.6], [0.08, -0.03, 1.2]]),
+    up('Paint tin', on('pw/PaintCan_01*1.4', -5.25, -14.6, 0.92), on(TINS[1], -5.1, -14.55, 0.92, 1.3)),
+    slatRack('Mallet rack', -5.25, [hung(-0.15, 0.3, HAM + 'kindathor', 0.55), hung(0, 0.3, HAM + 'ouch', 0.55), hung(0.15, 0.3, HAM + 'rocket', 0.55),
+      hung(-0.15, 0.03, HAM + 'beemboom', 0.55), hung(0, 0.03, HAM + 'cool', 0.55), hung(0.15, 0.03, HAM + 'rectangle', 0.55)]),
+    slatRack('Plier rack', -4.45, [hung(-0.15, 0.3, 'tool/pliers-dull', 0.6), hung(0, 0.3, 'tool/pliers-sharp', 0.6), hung(0.15, 0.3, 'tool/pliers-dull', 0.6),
+      hung(-0.16, 0.03, 'tool/screwdriver-poke', 0.7), hung(-0.05, 0.03, 'tool/screwdriver-slap', 0.7), hung(0.05, 0.03, 'tool/screwdriver-poke', 0.7), hung(0.16, 0.03, 'tool/screwdriver-slap', 0.7)]),
+    board('Tool deal', 'TOOLS 20% OFF', -6.5, -13.98, 1.0),
+    perch('Primer tin', TINS[3], -2.85, -14.6, 0.92, 1.5),
+    partsBin('Nail bin', -2.05, 'tool/nail-l~x*1', [[-0.08, -0.02, 0.5], [0.02, 0.03, -0.3], [0.08, -0.02, 1.4]]),
     board('Paint deal', 'PAINT 2 FOR 30', -6.8, -15.8, 1.0),
-    up('Brush pot', on('surv/bucket', -5.9, -15.0, 0.8, 1.2), on('tool/brush*0.8', -5.94, -15.0, 0.88), on('tool/brush*0.8', -5.86, -15.02, 0.88)),
-    pegrack('Claw hammer rack', -3.65, [[HAM + 'simple', -0.25, 0.88, 0.9], [HAM + 'plastic', 0, 0.88, 0.9], [HAM + 'simple', 0.25, 0.88, 0.9],
-      [HAM + 'plastic', -0.25, 1.27, 0.9], [HAM + 'simple', 0, 1.27, 0.9], [HAM + 'plastic', 0.25, 1.27, 0.9]]),
-    pegrack('Hand saw rack', -2.85, [['tool/saw-big*0.8', 0, 0.86, 1], ['tool/saw-small-highcount*0.9', 0, 1.14, 1], ['tool/saw-precision*0.8', 0, 1.42, 1]]),
-    bin('Nut bin', -2.05, 'tool/nut-l*5', 1, [[-0.08, 0, 0], [0.06, 0.03, 0.4]]),
+    up('Brush pot', on('surv/bucket*0.8', -6.0, -14.6, 0.92, 1.2), on('tool/brush*0.8', -6.04, -14.6, 1.0), on('tool/brush*0.8', -5.96, -14.62, 1.0)),
+    slatRack('Claw hammer rack', -3.65, [hung(-0.15, 0.3, HAM + 'simple', 0.55), hung(0, 0.3, HAM + 'plastic', 0.55), hung(0.15, 0.3, HAM + 'simple', 0.55),
+      hung(-0.15, 0.03, HAM + 'plastic', 0.55), hung(0, 0.03, HAM + 'simple', 0.55), hung(0.15, 0.03, HAM + 'plastic', 0.55)]),
+    slatRack('Hand saw rack', -2.85, [hung(0, 0.4, 'tool/saw-big', 0.6), hung(0, 0.25, 'tool/saw-small-highcount', 0.7), hung(0, 0.03, 'tool/saw-precision', 0.6)]),
+    partsBin('Nut bin', -3.65, 'tool/nut-l*2.2', [[-0.08, 0, 0], [0.06, 0.03, 0.4]]),
     mat('Workshop mat', -6.5, -5, -14.55, -13.45, 0xd0d0c6),
-    pegrack('Axe and crowbar rack', -2.05, [['tool/axe~z', 0, 0.86, 1], ['tool/crowbar~z', 0, 1.14, 1], ['tool/cylinder-long~z', 0, 1.36, 1]])
-  ], [SIGN, up('Tool desk', till(-0.85, -14.2, 'k'), { staff: [-0.4, -14.2, 'k'] }),
-    pegrack('Tool wall', -6.05, [[HAM + 'simple', -0.27, 0.88, 0.8], [HAM + 'plastic', -0.09, 0.88, 0.8], [HAM + 'rectangle', 0.09, 0.88, 0.8], [HAM + 'ouch', 0.27, 0.88, 0.8],
-      [HAM + 'bangpop', -0.27, 1.27, 0.8], [HAM + 'smallhit', -0.09, 1.27, 0.8], [HAM + 'cool', 0.09, 1.27, 0.8], ['tool/axe', 0.27, 1.27, 0.6]]),
-    lights([[-5, -15], [-2.8, -15]]), HELP,
-    up('Lumber and crosscut saw', { sign: 'gold' }, on('surv/resource-planks*1.5', -3.65, -15.0, 0.9), on('tool/saw-bandsaw~x*0.8', -3.65, -14.95, 1.2))])
+    slatRack('Axe and crowbar rack', -2.05, [hung(-0.1, 0.03, 'tool/axe', 0.8), hung(0.1, 0.25, 'tool/crowbar~z', 0.7), hung(0.1, 0.03, 'tool/cylinder-long~z', 0.7)])
+  ], [SIGN, counter('Tool desk', -0.85, -14.2, 'k', -0.4, -14.2),
+    slatRack('Tool wall', -6.05, [hung(-0.15, 0.3, HAM + 'simple', 0.55), hung(-0.05, 0.3, HAM + 'plastic', 0.55), hung(0.05, 0.3, HAM + 'rectangle', 0.55), hung(0.15, 0.3, HAM + 'ouch', 0.55),
+      hung(-0.15, 0.03, HAM + 'bangpop', 0.55), hung(-0.05, 0.03, HAM + 'smallhit', 0.55), hung(0.05, 0.03, HAM + 'cool', 0.55), hung(0.15, 0.03, 'tool/axe', 0.45)]),
+    lights([[-5, -14.6], [-2.8, -14.6]]), HELP,
+    up('Lumber rack', { sign: 'gold' }, pw('Shelving_HD_Loaded_01', -0.9, -15.3, 'k'))])
 };
 
 // something of the kitchen kit standing on a lane gondola, at slot i of the run (two to a gondola)
