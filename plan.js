@@ -343,27 +343,42 @@ AREAS.frozen = {
       up('Showcase', { sign: 'gold' }, ['chest', -7.4, -19.7, 's', [PIZZA[1], SMALL[3]]])])
 };
 
-var MEATG = [[['food/turkey*0.6', 'food/whole-ham*0.7'], ['food/sausage', 'food/hot-dog-raw']], [['food/meat-raw', 'food/meat-patty'], ['food/bacon-raw', 'food/meat-ribs']],
-  [['food/fish~z*0.8', 'food/mussel'], ['food/meat-sausage', 'food/sausage']], [['food/meat-ribs', 'food/bacon-raw'], ['food/meat-patty', 'food/whole-ham*0.7']]];
-function deli(name, z, goods) {
-  return f(name, 'chest', 13.1, z, 'k', goods);
+function deli(name, z) {
+  return up(name, pw('SelfServe_Meat_20', 13.2, z, 'k', { stock: 1 }));
+}
+function meatWall(name, kind, x) {
+  return up(name, pw(kind, x, -21.97, 's', { stock: 1 }));
+}
+function meatChest(name, z, refs) {
+  return up(name, pw('IslandFreezer_Open_20', 11.3, z, 'k', { on: well(refs, 0.3, 1.6) }));
 }
 AREAS.meat = {
   cx: 12.0, cz: -18.4, vacant: [9.7, 14.7, -22.2, -14.4], sign: [12.0, -20.5, 2.2],
   floor: [{ poly: rbox(9.7, 14.7, -18.4, -14.4, 0.6), finish: 0xf2ddd8 }, { poly: rbox(9.1, 14.7, -21.7, -19.5, 0.4), finish: 0xf2ddd8 }],
-  ups: ups([].concat(
-    [deli('Beef case', -15.0, ['food/meat-raw']), deli('Rib case', -15.85, ['food/meat-ribs']), deli('Sausage case', -16.7, ['food/meat-sausage']), deli('Fish case', -17.55, ['food/fish~z*0.8'])],
-    wall(['Turkey cooler', 'Burger cooler', 'Seafood cooler', 'Rib cooler', 'Ham cooler'], 'coolerR', 10, MEATG),
-    [up('Meat fridge', ['furn/kitchenFridge', 14.45, -15.5, 'k', null, null, 2, 'staff']),
-      up('Deli prep cabinet', ['furn/kitchenCabinet', 13.44, -20.37, 'k', null, [['food/cutting-board*0.6', 0, 0, 0.2, 0.405], ['food/knife-block*0.6', 0.1, -0.1, 0, 0.405]], 3, 'staff']),
-      up('Slicer counter', ['furn/kitchenCabinet', 9.69, -15.97, 's', null, [['food/knife-block*0.6', 0, 0, 0, 0.405]], 3, 'staff']),
-      up('Bacon chest', ['chest', 11.3, -15.3, 'k', ['food/bacon-raw']]), up('Ham chest', ['chest', 11.3, -16.3, 'k', ['food/whole-ham*0.7']]),
-      up('Sausage chest', ['chest', 11.3, -17.3, 'k', ['food/hot-dog-raw']]), board('Deli board', 'FRESH DELI', 12.5, -14.7, 1.0),
-      up('Meat floor', { patch: rbox(10.2, 12.6, -17.8, -14.6, 0.3), finish: 0xe9c9c2 }), d('Brine barrel', 'surv/barrel', 9.85, -14.83, 0, 1.3),
-      up('Butcher block', m('furn/table', 9.9, -18.0, 0, 1.2), { m: 'food/cutting-board*0.8', x: 9.8, z: -18.0, r: 0.4, k: 1, y: 0.35, flat: 1 }, { m: 'food/knife-block*0.6', x: 10.1, z: -17.9, r: 0, k: 1, y: 0.35, flat: 1 }), d('Meat boxes', 'furn/cardboardBoxClosed', 14.4, -18.1, 0.2, 1.1), d('Hand truck', 'shop/hand-truck', 14.4, -19.2, 0.6),
-      board('Seafood deals', 'FISH 2 FOR 9', 12.21, -18.99, 1.0), d('Basket stack', 'shop/shopping-basket', 10.43, -20.42, 0.3), d('Ice bucket', 'surv/bucket', 14.4, -18.3, 0, 1.4)]),
-    [SIGN, clerk(13.85, -16.2, 'k'), up('Meat island', ['chest', 11.59, -19.51, 's', [['food/meat-ribs'], ['food/bacon-raw']], null, 2]), lights([[11.8, -20.6], [13.5, -16.5]]), HELP,
-      up('Showcase', { sign: 'gold' }, ['end', 9.5, -19.7, 'b', [['food/bottle-ketchup', 'food/bottle-musterd']]])])
+  ups: ups([
+    deli('Beef case', -15.0), deli('Rib case', -16.0), deli('Sausage case', -17.0), deli('Fish case', -18.0),
+    meatWall('Turkey cooler', 'Multideck_Open_20', 10.2),
+    meatWall('Burger cooler', 'Multideck_Open_20', 11.2),
+    meatWall('Seafood cooler', 'Multideck_Open_20', 12.2),
+    meatWall('Rib cooler', 'Multideck_Open_20', 13.2),
+    meatWall('Ham cooler', 'CoolerDoors_2Door_15', 14.1),
+    up('Meat fridge', pw('Freezer_Upright_01', 14.45, -15.5, 'k', { spots: 0 })),
+    up('Seafood case', pw('ServiceCase_Seafood_20', 13.2, -19.5, 'k')),
+    up('Slicer cart', pw('SampleCart_01', 9.95, -15.97, 's', { spots: 0, on: [['pw/DeliScale_Printer_01', 0, 0, 0, 0.48]] })),
+    meatChest('Bacon chest', -15.3, ['pw/Tray_Meat_01', 'food/bacon-raw*0.5', 'pw/Tray_Meat_01']),
+    meatChest('Ham chest', -16.3, ['food/whole-ham*0.4', 'pw/Tray_Meat_01', 'food/whole-ham*0.4']),
+    meatChest('Sausage chest', -17.3, ['food/hot-dog-raw*0.7', 'pw/Tray_Meat_01', 'food/sausage*0.7']),
+    board('Deli board', 'FRESH DELI', 12.5, -14.7, 1.0),
+    up('Meat floor', { patch: rbox(10.2, 12.6, -17.8, -14.6, 0.3), finish: 0xe9c9c2 }),
+    up('Brine tubs', pw('FoodTub_Stack_01', 9.95, -14.85, 0, { spots: 0 })),
+    up('Butcher case', pw('ServiceCase_Meat_20', 9.95, -18.4, 'b')),
+    up('Meat tubs', pw('FoodTub_Stack_01', 14.35, -18.0, 0.2, { n: 2, spots: 0 })),
+    up('Dolly', pw('DeliveryBoxes_Dolly_01', 14.3, -19.4, 0.6, { spots: 0 })),
+    board('Seafood deals', 'FISH 2 FOR 9', 12.21, -18.99, 1.0),
+    up('Basket stack', pw('Basket_Stack_01', 10.4, -20.5, 0.3, { spots: 0 })),
+    up('Ice bags', pw('IceBag_01', 14.4, -20.6, 0, { n: 2, spots: 0 }))
+  ], [SIGN, clerk(13.85, -16.2, 'k'), up('Meat island', pw('SelfServe_Meat_20', 11.4, -19.6, 's', { stock: 1 })), lights([[11.8, -20.6], [13.5, -16.5]]), HELP,
+    up('Showcase', { sign: 'gold' }, pw('DrinkCooler_Upright_01', 9.95, -20.5, 's', { stock: 1 }))])
 };
 
 // general merchandise, west
