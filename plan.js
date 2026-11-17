@@ -5,7 +5,8 @@
 //   { m: model ref, x, z, r, k, y, flat }                      a model turned r, scaled k, raised y; flat: no footprint
 //   { box: [x0, x1, z0, z1, y0, y1], c: colour }               a coloured box
 //   { text, x, z, r, y, w, h, post }                           a board with words, on a post when post is set
-//   { patch: [[x, z]...], finish }                             a floor patch: a colour, 'wood', 'carpet' or 'polish'
+//   { patch: [[x, z]...], finish }                             a floor patch: a colour, 'wood', 'carpet', 'polish' or 'vinyl'
+//   { m, x, z, r, pw: { n, stock, spots, on } }                a Pipework model (see pw() below)
 //   { sign: 1 | 'gold' }  { staff: [x, z, face] }  { helper: 1 }  { lights: [[x, z]...] }
 
 // the Pipework kit is drawn at this size against the shop kit's people (store.js SCALE)
@@ -120,14 +121,14 @@ AREAS.produce = {
   ups: ups([
     up('Apple table', pw('ProduceTable_15', 10.7, -2.7, 'b', { stock: 'Apples' })),
     up('Fruit bin', pw('DumpBin_Wire_01', 13.9, -2.7, 'k', { stock: 1 })),
-    up('Banana stand', pw('BananaStand_01', 10.7, -3.7, 'b')),
+    tbl('Banana stand', 10.7, -3.7, 'b', ['Bananas', 'Bananas', 'Bananas', 'Bananas', 'Bananas', 'Bananas']),
     tbl('Tomato table', 13.9, -3.7, 'k', ['Tomatoes', 'Tomatoes', 'Peppers', 'Tomatoes', 'Peppers', 'Tomatoes']),
     tbl('Lemon table', 10.7, -4.7, 'b', ['Lemons', 'Oranges', 'Lemons', 'Oranges', 'Lemons', 'Oranges']),
     tbl('Pepper table', 13.9, -4.7, 'k', ['Peppers', 'Peppers', 'Peppers', 'Tomatoes', 'Peppers', 'Peppers']),
     up('Pumpkin barrel', pw('ProduceBin_Round_01', 14.25, -0.9, 'k', { on: [['food/pumpkin', -0.05, 0.03, 0, 0.13], ['food/pumpkin', 0.07, -0.04, 1, 0.13], ['food/pumpkin', 0, 0.02, 2, 0.28]] })),
     tbl('Avocado table', 10.7, -5.7, 'b', ['Avocados', 'Avocados', 'Bananas', 'Avocados', 'Avocados', 'Avocados']),
     board('Price chalkboard', 'APPLES 99c', 12.3, -3.2, 1.0),
-    up('Watermelon bin', pw('WatermelonBin_01', 13.9, -5.7, 'k')),
+    up('Watermelon bin', pw('ProduceBin_Round_01', 13.9, -5.7, 'k', { on: [['food/watermelon', -0.07, 0.04, 0, 0.17], ['food/watermelon', 0.07, 0.03, 1, 0.17], ['food/watermelon', 0, -0.07, 2, 0.17]] })),
     tbl('Carrot table', 13.9, -6.7, 'k', ['Carrots', 'Carrots', 'Potatoes', 'Carrots', 'Onions', 'Carrots']),
     up('Tiered stand', pw('ProduceStand_Tiered_10', 10.7, -6.7, 'b', { stock: 1 })),
     up('Orange barrel', pw('ProduceBin_Round_01', 13.9, -7.7, 'k', { on: [['food/orange', -0.08, 0.04, 0, 0.3], ['food/orange', 0.06, 0.06, 1, 0.3], ['food/orange', 0.02, -0.07, 2, 0.3], ['food/orange', -0.05, -0.05, 3, 0.3]] })),
@@ -143,9 +144,9 @@ AREAS.produce = {
     up('Bench', pw('DiningBench_01', 9.78, -3.1, 'b', { spots: 0 })),
     up('Tall planter', pw('Planter_Tall_01', 14.15, -1.63, 0, { spots: 0 }))
   ], [SIGN, clerk(12.3, -9.95, 's'),
-    up('Fruit island', pw('ProduceTable_15', 12.3, -6.4, 'b', { stock: 'Mixed' })),
+    up('Fruit island', pw('ProduceTable_15', 12.3, -6.4, 'b', { stock: 'Apples' })),
     lights([[12.2, -4.0], [12.2, -7.4]]), HELP,
-    up('Showcase', { sign: 'gold' }, pw('ProduceTable_15', 13.1, -0.55, 's', { stock: 'Mixed' }))])
+    up('Showcase', { sign: 'gold' }, pw('ProduceTable_15', 13.1, -0.55, 's', { stock: 'Apples' }))])
 };
 
 // bakery: cases along the east wall facing the lane, bread racks opposite, ovens behind the counter
@@ -823,8 +824,8 @@ DECOR.stock = cat(
 // the apron in front of the glass (z 2.8 to 4), the near sidewalk and street, the tire bay, the service road and the yard
 var WHEELS = ['car/wheel-dark', 'car/wheel-default', 'car/wheel-racing'];
 DECOR.out = cat(
-  carts(-6.7, 3.35, 7), carts(5.9, 3.35, 7), carts(-14.2, 3.35, 5), carts(13.2, 3.35, 5),
-  [tx('CARTS', -7.4, 3.35, 0.6, 0.5), tx('CARTS', 7.4, 3.35, 0.6, 0.5)],
+  carts(-6.7, 3.35), carts(5.9, 3.35), carts(-14.45, 3.35), carts(13.2, 3.35),
+  [tx('CARTS', -7.4, 3.35, 0.6, 0.5), tx('CARTS', 8.1, 3.35, 0.6, 0.5)],
   [{ m: 'furn/bench', x: -12.6, z: 3.15, k: 1.5 }, { m: 'furn/bench', x: 12.6, z: 3.15, k: 1.5 }, { m: 'furn/bench', x: -3.7, z: 3.15, k: 1.5 },
     { m: 'furn/bench', x: 3.7, z: 3.15, k: 1.5 }],
   [-2.4, 2.4, 16.4].map(function (x, i) { return { m: 'sub/planter', x: x, z: 3.45, k: 0.55, flat: 1 }; }),
@@ -878,10 +879,10 @@ export var PLAN = {
   // the checkout bank runs from bank.x, its counters on bank.z; shoppers cross the front aisle at cross
   bank: { x: -6.75, z: 0.5, cross: -2.3, exit: 1.3 },
   // what each Checkouts level adds besides tills: [level, model, x, z, turn], carts as a row of five
-  front: [[2, 'carts', -14.0, 1.9], [2, 'carts', -7.0, 1.9], [2, 'carts', 5.0, 1.9], [2, 'carts', 10.4, 1.9],
+  front: [[2, 'carts', -14.0, 1.9], [2, 'carts', -7.0, 1.9], [2, 'carts', 5.0, 1.9], [2, 'carts', 11.6, 1.9],
     [4, 'pw/TrashRecycle_Station_01', 13.4, 2.1, Math.PI], [4, 'pw/TrashRecycle_Station_01', 14.0, 2.1, Math.PI],
     [8, 'pw/VendingMachine_Drink_01', -14.3, 1.95, Math.PI], [8, 'pw/VendingMachine_Snack_01', -13.75, 1.95, Math.PI], [8, 'pw/VendingMachine_Drink_01', -13.2, 1.95, Math.PI],
-    [8, 'pw/NewspaperRack_01', -12.5, 1.95, Math.PI], [10, 'pw/DiningBench_01', -5.0, 1.95, Math.PI], [10, 'pw/Planter_Tall_01', -5.8, 1.95, 0], [10, 'pw/Planter_Tall_01', -4.2, 1.95, 0]],
+    [8, 'pw/NewspaperRack_01', -12.5, 1.95, Math.PI], [10, 'pw/DiningBench_01', -6.1, 1.95, Math.PI], [10, 'pw/Planter_Tall_01', -7.0, 1.95, 0], [10, 'pw/Planter_Tall_01', -5.15, 1.95, 0]],
   desk: { x: 12.0, z: 0.9, n: 3 },
   // the stockroom: where stockers wait, by the stock doors
   idle: [0.7, -7, 8.5, -10, -1.7, 7, -8.5, 10].map(function (x) { return [x, -23.8]; }),
