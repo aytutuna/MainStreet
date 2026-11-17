@@ -97,7 +97,7 @@ function short(v) {
   if (v < 1000) return v < 10 && v !== Math.floor(v) ? String(Math.round(v * 10) / 10) : String(Math.floor(v));
   var i = Math.floor(Math.log10(v) / 3);
   var x = v / Math.pow(1000, i);
-  if (x >= 999.95) {
+  if (x >= 999.5) {
     x /= 1000;
     i++;
   }
