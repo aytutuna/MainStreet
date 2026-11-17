@@ -310,7 +310,8 @@ function room(id) {
 // what a level of each room of the east wing does, and what the room does in all
 var ROOMFX = {
   serv: function (n) { return '+' + perMin(inRate() / (1 + SERV * S.pl.serv) * SERV * (n || 1)) + ' shoppers/min'; },
-  rest: function (n) { return '+' + Math.round(REST * 100 * (n || 1)) + '% spent by every shopper'; }
+  rest: function (n) { return '+' + Math.round(REST * 100 * (n || 1)) + '% spent by every shopper'; },
+  lounge: function (n) { return 'Tills and stockers ' + Math.round((1 - Math.pow(LOUNGE, n || 1)) * 100) + '% faster'; }
 };
 
 // what one more level of an item does, as the one thing it changes
@@ -779,6 +780,27 @@ function openItem(id, first, then) {
 function firstLeft(id) {
   for (var j = 0; j < PL[id].items.length; j++) if (placePiece(id, j) >= 0) return j;
   return -1;
+}
+
+// what f() gains for the price from one more level of an item of a place
+function perCoin(id, j, f) {
+  var c = placeCost(id);
+  if (!c || j < 0 || placePiece(id, j) < 0) return 0;
+  var was = f();
+  S.pi[id][j]++;
+  S.pl[id]++;
+  var now = f();
+  S.pi[id][j]--;
+  S.pl[id]--;
+  return (now - was) / c;
+}
+
+// a meter of tills or shelves: its own place, unless a level of the Break Room does more for the price
+function tapMeter(id, f) {
+  var j = S.pi[id][0] < PL[id].items[0].at.length ? 0 : 1;
+  var lj = firstLeft('lounge');
+  if (perCoin('lounge', lj, f) > perCoin(id, j, f)) openPlace('lounge', lj);
+  else openPlace(id, j);
 }
 
 function openDraw() {
@@ -1257,8 +1279,8 @@ function start() {
   paintFree();
   $('stars').addEventListener('click', openSell);
   $('m-in').addEventListener('click', openDraw);
-  $('m-tills').addEventListener('click', function () { openItem('hall', 0, 1); });
-  $('m-shelf').addEventListener('click', function () { openItem('dock', 0, 1); });
+  $('m-tills').addEventListener('click', function () { tapMeter('hall', capacity); });
+  $('m-shelf').addEventListener('click', function () { tapMeter('dock', stockCap); });
   onShopper = onSale;
   var wait = setInterval(function () {
     if (!View.ready()) return;

@@ -108,7 +108,11 @@ var PLACES = [
   { id: 'rest', name: 'Restrooms', ic: 'shop/toilet', after: 'snacks', cost: geo(1.5e7, 10, 8),
     next: ['Two toilet stalls', 'Two more stalls', 'A row of sinks with mirrors', 'Two more stalls', 'Urinals', 'Soap and paper towels', 'Bins and a plant',
       'A mop bucket and a wet floor sign'],
-    it: ['Stalls', 'Sinks', 'Extras'], of: '00100122' }
+    it: ['Stalls', 'Sinks', 'Extras'], of: '00100122' },
+  { id: 'lounge', name: 'Break Room', ic: 'shop/coffee-maker', after: 'toys', cost: geo(1e8, 10, 10),
+    next: ['A fridge', 'A sink counter with a kettle', 'A coffee counter', 'A table with four chairs', 'Pizza boxes on the table', 'A staff member on break',
+      'A second table', 'Lockers', 'A second staff member', 'A rug, a clock and a first aid box'],
+    it: ['Kitchenette', 'Dining', 'Extras', 'Staff'], of: '0001131232' }
 ];
 var PL = {};
 PLACES.forEach(function (p) { PL[p.id] = p; });

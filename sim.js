@@ -29,6 +29,8 @@ var GARDEN_IN = 0.025;
 var SERV = 0.05;
 // each Restrooms level makes shoppers spend this much more
 var REST = 0.04;
+// each Break Room level cuts the time a till or a stocker takes to this share
+var LOUNGE = 0.96;
 // seconds at the till for one shopper at Checkouts level 0, each level a little faster; GAP is the walk up to it
 var LANE_T = 5;
 var SELF_T = 8;
@@ -194,6 +196,11 @@ function bmul() {
   return S.x2 > 0 ? 2 : 1;
 }
 
+// what the break room does to the time a till or a stocker takes
+function pace() {
+  return Math.pow(LOUNGE, S.pl.lounge);
+}
+
 // what each sales level adds to a shopper's basket: a full department sells what UPS levels of sales used to, however
 // many of its upgrades are sales ones
 function perSell(id) {
@@ -234,7 +241,7 @@ function inRate() {
 
 function svc(k) {
   var l = S.pl.hall;
-  return k === 'lane' ? LANE_T * Math.pow(0.9, l) : k === 'self' ? SELF_T * Math.pow(0.93, l) : PLANT_T;
+  return (k === 'lane' ? LANE_T * Math.pow(0.9, l) : k === 'self' ? SELF_T * Math.pow(0.93, l) : PLANT_T) * pace();
 }
 
 // shoppers a second the open tills can take
@@ -263,11 +270,15 @@ function haul() {
 }
 
 function walkT(id) {
-  return BZ[id].w;
+  return BZ[id].w * pace();
+}
+
+function shelveT() {
+  return SHELVE * pace();
 }
 
 function trip(id) {
-  return 2 * walkT(id) + SHELVE;
+  return 2 * walkT(id) + shelveT();
 }
 
 // stocker seconds a second it takes to keep a department full for n shoppers a second
@@ -564,8 +575,8 @@ function stockStep(dt) {
       var d = Math.min(left, w.T - w.t);
       w.t += d;
       left -= d;
-      var b = Math.min(w.t, w.out + SHELVE);
-      if (b > a) fill[w.id] = Math.min(1, fill[w.id] + (b - a) / SHELVE / SHELF * lift(w.id));
+      var b = Math.min(w.t, w.out + shelveT());
+      if (b > a) fill[w.id] = Math.min(1, fill[w.id] + (b - a) / shelveT() / SHELF * lift(w.id));
       if (w.t >= w.T) w.id = null;
     }
   });

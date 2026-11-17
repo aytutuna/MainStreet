@@ -26,7 +26,7 @@ var WALKS = [-9.5, 9.5];
 var CROSS = PLAN.bank.cross;
 var EXIT = PLAN.bank.exit;
 // the kits are drawn at different sizes; these bring them to the shop kit's people
-var SCALE = { car: 0.47, roads: 3, nature: 1.4, furn: 0.9, food: 0.5, sub: 3.2, toy: 1.1, forest: 0.9, golf: 0.45, pets: 0.08, tool: 0.03, pw: PW };
+var SCALE = { car: 0.47, roads: 3, nature: 1.4, furn: 0.9, food: 0.5, sub: 3.2, toy: 1.1, forest: 0.9, golf: 0.45, pets: 0.08, tool: 0.03, pw: PW, pizza: 0.5 };
 
 var FOLK = 'abcdef'.split('').reduce(function (a, c) { return a.concat(['chars/character-female-' + c, 'chars/character-male-' + c]); }, []);
 var CARS = ['car/sedan', 'car/suv', 'car/suv-luxury', 'car/hatchback-sports', 'car/van'];
@@ -1864,7 +1864,7 @@ function entry(pc, s, e) {
     pc.sign = e.sign;
     if (e.sign === 1) pc.x.add(makeSign(s, b));
   } else if (e.staff) {
-    var f = crew(STAFF_COUNTER, 'idle');
+    var f = crew(STAFF_COUNTER, e.staff[3] || 'idle');
     f.obj.position.set(e.staff[0], 0, e.staff[1]);
     f.obj.rotation.y = faceRot(e.staff[2]);
     pc.x.add(f.obj);
@@ -2450,7 +2450,7 @@ function buildGarden() {
 
 // The east wing: four rooms along the east wall, each a place whose levels add one piece from plan.js. Before a room is
 // bought it holds a coming soon board; its floor and walls are part of the building
-var WING_IDS = ['serv', 'rest'];
+var WING_IDS = ['serv', 'rest', 'lounge'];
 
 function buildWing() {
   decor(PLAN.decor.wing, true);
@@ -4160,7 +4160,7 @@ function stockerStep(k, w, dt) {
   var clip = 'idle';
   var rate = 1;
   var shelving = false;
-  var back = w.T - w.out - SHELVE;
+  var back = w.T - w.out - shelveT();
   if (w.id) {
     if (w.t < w.out) {
       along(k, k.cum[k.cum.length - 1] * w.t / w.out);
@@ -4168,17 +4168,17 @@ function stockerStep(k, w, dt) {
       park = Math.max(0, 1 - (w.out - w.t) / 0.8);
       clip = 'walk';
       rate = k.cum[k.cum.length - 1] / w.out;
-    } else if (w.t < w.out + SHELVE) {
+    } else if (w.t < w.out + shelveT()) {
       along(k, k.cum[k.cum.length - 1]);
       head = k.face;
       park = 1;
       clip = 'pick-up';
       shelving = true;
-      boxes = Math.ceil(boxes * (1 - (w.t - w.out) / SHELVE));
+      boxes = Math.ceil(boxes * (1 - (w.t - w.out) / shelveT()));
     } else {
-      along(k, k.cum[k.cum.length - 1] * (1 - (w.t - w.out - SHELVE) / back));
+      along(k, k.cum[k.cum.length - 1] * (1 - (w.t - w.out - shelveT()) / back));
       head = Math.atan2(-k.dx, -k.dz);
-      park = Math.max(0, 1 - (w.t - w.out - SHELVE) / 0.8);
+      park = Math.max(0, 1 - (w.t - w.out - shelveT()) / 0.8);
       clip = 'walk';
       boxes = 0;
       rate = k.cum[k.cum.length - 1] / back;

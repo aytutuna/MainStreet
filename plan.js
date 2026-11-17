@@ -914,6 +914,25 @@ var WING = {
       up('Bins and a plant', pw('WasteBin_01', 15.75, -6.9, 'b', { spots: 0 }), pw('WasteBin_01', 21.15, -6.3, 'k', { spots: 0 }), pw('Planter_Tall_01', 21.1, -7.4, 's', { spots: 0 })),
       up('A mop bucket and a wet floor sign', pw('MopBucket_01', 20.9, -3.6, 'k', { spots: 0 }), pw('WetFloorSign_01', 20.3, -3.75, 's', { spots: 0 }))
     ]
+  },
+  lounge: {
+    rect: [15.3, 21.5, -14, -8],
+    ups: [
+      up('Fridge', pw('Fridge_TopFreezer_01', 21.15, -8.7, 'k', { spots: 0 })),
+      up('Sink counter', pw('KitCab_Base_Sink_10', 21.25, -9.4, 'k', { spots: 0, on: [['pw/KitTop_10', 0, 0, 0, 0.44], ['pw/Kettle_Electric_01', 0.1, 0, 0, 0.48]] })),
+      up('Coffee counter', pw('KitCab_Base_Door_10', 21.25, -9.9, 'k', { spots: 0, on: [['pw/KitTop_10', 0, 0, 0, 0.44], ['pw/CoffeeMaker_Drip_01', -0.1, 0, 0, 0.48], ['pw/MugTree_01', 0.12, 0, 0, 0.48]] })),
+      up('Table and chairs', pw('DiningTable_Rect_01', 17.9, -11.3, 's', { spots: 0 }), pw('DiningChair_Padded_01', 17.5, -11.95, 's', { spots: 0 }), pw('DiningChair_Padded_01', 18.3, -11.95, 's', { spots: 0 }),
+        pw('DiningChair_Padded_01', 17.5, -10.65, 'n', { spots: 0 }), pw('DiningChair_Padded_01', 18.3, -10.65, 'n', { spots: 0 })),
+      up('Pizza boxes', on('pizza/pizza-box-closed', 17.65, -11.25, 0.375), on('pizza/pizza-box-closed', 17.65, -11.25, 0.41, 1, 0.3), on('pizza/pizza-box-opened', 18.3, -11.3, 0.375, 1, 0.2),
+        on('pizza/pizza-pepperoni', 18.3, -11.3, 0.41, 0.7)),
+      up('Staff on break', { staff: [20.35, -9.7, 'b'] }),
+      up('A second table', pw('DiningTable_Rect_01', 19.9, -12.6, 's', { spots: 0 }), pw('DiningChair_Padded_01', 19.5, -13.25, 's', { spots: 0 }), pw('DiningChair_Padded_01', 20.3, -13.25, 's', { spots: 0 }),
+        pw('DiningChair_Padded_01', 19.5, -11.95, 'n', { spots: 0 }), pw('DiningChair_Padded_01', 20.3, -11.95, 'n', { spots: 0 })),
+      up('Lockers', pw('EmployeeLockers_3_01', 15.5, -9.2, 'b', { spots: 0 }), pw('EmployeeLockers_3_01', 15.5, -10.1, 'b', { spots: 0 }), pw('EmployeeLockers_3_01', 15.5, -11.0, 'b', { spots: 0 })),
+      up('Second staff member', { staff: [18.3, -10.7, 'n', 'sit'] }),
+      up('A rug, a clock and a first aid box', on('pw/Rug_Runner_01', 17.9, -11.3, 0.05), wp('WallClock_Kitchen_01', 15.32, -12.6, 'b', 0.6), wp('TimeClock_Wall_01', 15.32, -13.1, 'b', 0.6),
+        wp('FirstAid_Box_Wall_01', 15.32, -13.6, 'b', 0.6), pw('RecycleBin_Dual_01', 21.15, -13.3, 'k', { spots: 0 }))
+    ]
   }
 };
 
