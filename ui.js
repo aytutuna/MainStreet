@@ -35,7 +35,7 @@ var free = false;
 var chips = [];
 var HINT_KEY = 'mainstreet.hints';
 var hinted = {};
-var dailyAsked = false;
+var dailyAsked = -1;
 
 function $(id) {
   return document.getElementById(id);
@@ -116,6 +116,7 @@ function clock2(v) {
 function fitInsets() {
   var top = $('meters').getBoundingClientRect().bottom + 6;
   var bot = innerHeight - (sheetOpen ? $('sheet').getBoundingClientRect().top : $('bottom').getBoundingClientRect().top) + 6;
+  if (cardId && !sheetOpen) bot += 25;
   if (top !== insets[0] || bot !== insets[1]) {
     insets = [top, bot];
     View.inset(top, bot);
@@ -850,7 +851,8 @@ function showAway(a) {
   if (S.pend <= 0) return false;
   var txt = 'Earnings from last time are still waiting: <b>' + money(S.pend) + '</b>.';
   if (a) {
-    txt = 'You were away for ' + hours(a.real) + '. The store served ' + a.n.toLocaleString('en-US') + ' shoppers and took <b>' + money(S.pend) + '</b>.';
+    txt = 'You were away for ' + hours(a.real) + '. The store served ' + a.n.toLocaleString('en-US') + ' shoppers and took <b>' + money(a.gain) + '</b>.';
+    if (S.pend - a.gain > 0.5) txt += ' <b>' + money(S.pend - a.gain) + '</b> from before is still waiting.';
     if (a.real > MAX_AWAY) txt += ' It only earns for ' + MAX_AWAY / 3600 + ' h while you are away.';
   }
   $('away-txt').innerHTML = txt;
@@ -885,10 +887,11 @@ function openDaily() {
   $('daily').hidden = false;
 }
 
-// the reward opens by itself once a visit, after the first purchase and never over another box
+// the reward opens by itself once a day, after the first purchase and never over another box
 function autoDaily() {
-  if (dailyAsked || !started() || !daily().can || veilUp()) return;
-  dailyAsked = true;
+  var day = dayNum(clock());
+  if (dailyAsked === day || !started() || !daily().can || veilUp()) return;
+  dailyAsked = day;
   openDaily();
 }
 
@@ -1083,6 +1086,7 @@ function wire() {
   var help = $('m-help').textContent;
   $('m-load').addEventListener('click', function () {
     if (!codeOk($('m-code').value)) {
+      loadArmed = false;
       flash('m-load', 'Not a code', 'Load code');
       return;
     }
@@ -1118,7 +1122,7 @@ function wire() {
     armed = false;
     reset();
     speed = 1;
-    dailyAsked = false;
+    dailyAsked = -1;
     afterLoad();
     $('m-reset').textContent = 'Erase all progress';
     $('menu').hidden = true;
