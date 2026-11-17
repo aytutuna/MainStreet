@@ -2450,7 +2450,7 @@ function buildGarden() {
 
 // The east wing: four rooms along the east wall, each a place whose levels add one piece from plan.js. Before a room is
 // bought it holds a coming soon board; its floor and walls are part of the building
-var WING_IDS = ['serv'];
+var WING_IDS = ['serv', 'rest'];
 
 function buildWing() {
   decor(PLAN.decor.wing, true);

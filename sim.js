@@ -27,6 +27,8 @@ var PER_GARDEN = 0.015;
 var GARDEN_IN = 0.025;
 // each Customer Service level brings this much more of every kind of shopper
 var SERV = 0.05;
+// each Restrooms level makes shoppers spend this much more
+var REST = 0.04;
 // seconds at the till for one shopper at Checkouts level 0, each level a little faster; GAP is the walk up to it
 var LANE_T = 5;
 var SELF_T = 8;
@@ -185,7 +187,7 @@ function drawLv() {
 }
 
 function gmul() {
-  return Math.pow(STORE_MUL, S.store - 1) * (1 + HALL_BOOST * S.pl.hall);
+  return Math.pow(STORE_MUL, S.store - 1) * (1 + HALL_BOOST * S.pl.hall) * (1 + REST * S.pl.rest);
 }
 
 function bmul() {

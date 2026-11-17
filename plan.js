@@ -876,7 +876,15 @@ function low(x0, x1, z0, z1) {
 function room(x0, x1, z0, z1, finish) {
   return { patch: [[x0, z1], [x1, z1], [x1, z0], [x0, z0]], finish: finish };
 }
+// a wall piece of Pipework, stuck to a wall and raised to hang at the height of a person's chest
+function wp(name, x, z, face, y) {
+  return pw(name, x, z, face, { spots: 0, y: y });
+}
 
+// a low partition between two toilet stalls
+function stall(x) {
+  return { box: [x - 0.02, x + 0.02, -7.9, -6.95, 0, 0.5], c: 0xb9c6d4 };
+}
 
 var WING = {
   serv: {
@@ -891,6 +899,20 @@ var WING = {
       up('Returns kiosk', pw('Kiosk_Cash_01', 20.7, -2.45, 's', { spots: 0 })),
       up('Floor sign', pw('SignStand_Floor_01', 17.9, 1.6, 's', { spots: 0 })),
       up('Waiting table', pw('Table_Four_01', 19.9, 0.9, 's', { spots: 0 }), pw('Planter_Tall_01', 21.1, 1.9, 's', { spots: 0 }))
+    ]
+  },
+  rest: {
+    rect: [15.3, 21.5, -8, -3],
+    ups: [
+      up('Two toilet stalls', pw('Toilet_01', 17.2, -7.55, 's', { spots: 0 }), pw('Toilet_02', 17.82, -7.55, 's', { spots: 0 }), stall(16.89), stall(17.51), stall(18.13)),
+      up('Two more stalls', pw('Toilet_01', 18.44, -7.55, 's', { spots: 0 }), pw('Toilet_02', 19.06, -7.55, 's', { spots: 0 }), stall(18.75), stall(19.37)),
+      up('A row of sinks with mirrors', pw('Vanity_Sink_01', 15.75, -4.2, 'b', { spots: 0 }), pw('Vanity_Sink_01', 15.75, -4.8, 'b', { spots: 0 }), pw('Vanity_Sink_01', 15.75, -5.4, 'b', { spots: 0 }),
+        wp('MirrorCabinet_01', 15.32, -4.2, 'b', 0.42), wp('MirrorCabinet_01', 15.32, -4.8, 'b', 0.42), wp('MirrorCabinet_01', 15.32, -5.4, 'b', 0.42)),
+      up('Two more stalls', pw('Toilet_01', 19.68, -7.55, 's', { spots: 0 }), pw('Toilet_02', 20.3, -7.55, 's', { spots: 0 }), stall(19.99), stall(20.61)),
+      up('Urinals', wp('Urinal_01', 21.48, -4.2, 'k', 0.22), wp('Urinal_01', 21.48, -4.8, 'k', 0.22), wp('Urinal_01', 21.48, -5.4, 'k', 0.22)),
+      up('Soap and paper towels', wp('SoapDispenser_01', 15.4, -4.5, 'b', 0.42), wp('SoapDispenser_01', 15.4, -5.1, 'b', 0.42), wp('PaperTowel_Dispenser_01', 15.32, -6.0, 'b', 0.45), wp('PaperTowel_Dispenser_01', 15.32, -6.5, 'b', 0.45)),
+      up('Bins and a plant', pw('WasteBin_01', 15.75, -6.9, 'b', { spots: 0 }), pw('WasteBin_01', 21.15, -6.3, 'k', { spots: 0 }), pw('Planter_Tall_01', 21.1, -7.4, 's', { spots: 0 })),
+      up('A mop bucket and a wet floor sign', pw('MopBucket_01', 20.9, -3.6, 'k', { spots: 0 }), pw('WetFloorSign_01', 20.3, -3.75, 's', { spots: 0 }))
     ]
   }
 };

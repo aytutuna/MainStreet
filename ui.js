@@ -309,7 +309,8 @@ function room(id) {
 
 // what a level of each room of the east wing does, and what the room does in all
 var ROOMFX = {
-  serv: function (n) { return '+' + perMin(inRate() / (1 + SERV * S.pl.serv) * SERV * (n || 1)) + ' shoppers/min'; }
+  serv: function (n) { return '+' + perMin(inRate() / (1 + SERV * S.pl.serv) * SERV * (n || 1)) + ' shoppers/min'; },
+  rest: function (n) { return '+' + Math.round(REST * 100 * (n || 1)) + '% spent by every shopper'; }
 };
 
 // what one more level of an item does, as the one thing it changes
