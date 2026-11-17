@@ -54,16 +54,36 @@ BIZ.forEach(function (b, i) {
   b.items.forEach(function (e) { if (e.stat === 'sell') b.sn += e.at.length; });
   BZ[b.id] = b;
 });
+PLACES.forEach(function (p) {
+  p.items = p.it.map(function (n) { return { name: n, at: [] }; });
+  p.rk = [];
+  for (var k = 0; k < p.of.length; k++) {
+    var e = p.items[+p.of.charAt(k)];
+    p.rk.push(e.at.length);
+    e.at.push(k);
+  }
+});
 // the departments by how far the stockers walk to them, nearest first
 var NEAR = BIZ.slice().sort(function (a, b) { return a.w - b.w; });
 
 var S = fresh();
 
 function fresh() {
-  var s = { v: 11, cash: START_CASH, gems: 0, stars: 0, run: 0, all: 0, pend: 0, pl: { lot: 0, hall: 0, dock: 0, taxi: 0, garden: 0 }, x2: 0, b: {}, ms: {},
+  var s = { v: 11, cash: START_CASH, gems: 0, stars: 0, run: 0, all: 0, pend: 0, x2: 0, b: {}, ms: {},
     st: { srv: 0, lost: 0, sales: 0 }, goal: [0, 1, 2], gn: 3, gd: {}, day: { n: 0, d: -1 }, ts: clock() };
+  noPlaces(s);
   s.b.produce = atLevel('produce', 1);
   return s;
+}
+
+// a store with no places: S.pl is each place's total level, S.pi the level of each of its items
+function noPlaces(s) {
+  s.pl = {};
+  s.pi = {};
+  PLACES.forEach(function (p) {
+    s.pl[p.id] = 0;
+    s.pi[p.id] = atPlace(p.id, 0);
+  });
 }
 
 // numbers: 1.2K, 3.4M, 5.6B, 7.8T, then aa, ab, ...
@@ -102,6 +122,21 @@ function atLevel(id, l) {
     return n;
   });
   return { l: l, it: it };
+}
+
+// a place at level l has the first l pieces of its next list in; an item's level is how many of its own are among them
+function atPlace(id, l) {
+  return PL[id].items.map(function (e) {
+    var n = 0;
+    e.at.forEach(function (k) { if (k < l) n++; });
+    return n;
+  });
+}
+
+// whether a place has piece k of its next list, which is its item's rank-th piece; -1 is what stands from the start
+function placeHas(id, k) {
+  var p = PL[id];
+  return k < 0 || S.pi[id][+p.of.charAt(k)] > p.rk[k];
 }
 
 // the levels in a department's items of one stat
@@ -189,7 +224,7 @@ function svc(k) {
 // shoppers a second the open tills can take
 function capacity() {
   var c = 0;
-  TILLS.forEach(function (t) { if (t.lv <= S.pl.hall) c += 1 / (svc(t.k) + GAP[t.k]); });
+  TILLS.forEach(function (t) { if (placeHas('hall', t.lv - 1)) c += 1 / (svc(t.k) + GAP[t.k]); });
   return c;
 }
 
@@ -201,8 +236,9 @@ function gardenServed() {
   return S.pl.garden ? Math.min(flow().garden, 1 / (svc('garden') + GAP.garden)) : 0;
 }
 
+// the stockers, and how many boxes each one's dolly carries
 function crewAt() {
-  return CREW[S.pl.dock];
+  return [1 + S.pi.dock[0], 2 + S.pi.dock[1]];
 }
 
 // what one dolly load sells for; the boosts that raise what shoppers spend raise it too
@@ -331,12 +367,21 @@ function placeCost(id) {
   return l < p.cost.length && has(p.after) ? p.cost[l] : 0;
 }
 
-function buyPlace(id) {
+// the piece of a place's next list that item j adds next, or -1 when it has them all
+function placePiece(id, j) {
+  var e = PL[id].items[j];
+  var n = S.pi[id][j];
+  return n < e.at.length ? e.at[n] : -1;
+}
+
+function buyPlace(id, j) {
+  var piece = placePiece(id, j);
   var c = placeCost(id);
-  if (!c || S.cash < c) return null;
+  if (piece < 0 || !c || S.cash < c) return null;
   S.cash -= c;
+  S.pi[id][j]++;
   S.pl[id]++;
-  return { id: id, place: true };
+  return { id: id, item: j, piece: piece, place: true };
 }
 
 // Shoppers come in on foot, by car or by taxi, fill a basket and pay at a till, and the money comes in then. A till
@@ -368,7 +413,7 @@ function clearShoppers() {
 clearShoppers();
 
 function tillOpen(t) {
-  return t.k === 'garden' ? S.pl.garden > 0 : t.lv <= S.pl.hall;
+  return t.k === 'garden' ? S.pl.garden > 0 : placeHas('hall', t.lv - 1);
 }
 
 function come(by) {
@@ -573,43 +618,57 @@ function options() {
     o.T = o.wait + o.cost / Math.max(o.gain, 1e-12);
     out.push(o);
   }
-  // makes the change, measures the rate and takes it back
-  function gain(f) {
-    f(1);
-    var r1 = baseRate();
-    f(-1);
-    return (r1 - r0) * bmul();
-  }
   BIZ.forEach(function (z) {
     var id = z.id;
     if (!avail(id)) return;
     z.items.forEach(function (x, j) {
-      if (nextPiece(id, j) < 0) return;
-      add({ k: 'lv', id: id, item: j, cost: cost(id, 1), gain: gain(function (d) {
-        var b = S.b[id] || (S.b[id] = atLevel(id, 0));
-        b.it[j] += d;
-        b.l += d;
-        if (!b.l) delete S.b[id];
-      }) });
+      if (nextPiece(id, j) >= 0) add({ k: 'lv', id: id, item: j, cost: cost(id, 1), gain: levelGain(id, j, r0) });
     });
   });
   PLACES.forEach(function (p) {
     var c = placeCost(p.id);
-    if (c) add({ k: 'place', id: p.id, n: 1, cost: c, gain: gain(function (d) { S.pl[p.id] += d; }) });
+    if (c) p.items.forEach(function (x, j) {
+      if (placePiece(p.id, j) >= 0) add({ k: 'place', id: p.id, item: j, cost: c, gain: placeGain(p.id, j, r0) });
+    });
   });
   return out;
 }
 
-function best() {
+// what one more level of an item adds to income a second: makes the change, measures the rate and takes it back
+function trial(f, r0) {
+  if (r0 === undefined) r0 = baseRate();
+  f(1);
+  var r1 = baseRate();
+  f(-1);
+  return (r1 - r0) * bmul();
+}
+
+function levelGain(id, j, r0) {
+  return trial(function (d) {
+    var b = S.b[id] || (S.b[id] = atLevel(id, 0));
+    b.it[j] += d;
+    b.l += d;
+    if (!b.l) delete S.b[id];
+  }, r0);
+}
+
+function placeGain(id, j, r0) {
+  return trial(function (d) {
+    S.pi[id][j] += d;
+    S.pl[id] += d;
+  }, r0);
+}
+
+function best(opts) {
   var b = null;
-  options().forEach(function (o) {
+  (opts || options()).forEach(function (o) {
     if (!b || o.T < b.T) b = o;
   });
   return b;
 }
 
 function doOption(o) {
-  return o.k === 'lv' ? buy(o.id, o.item) : buyPlace(o.id);
+  return o.k === 'lv' ? buy(o.id, o.item) : buyPlace(o.id, o.item);
 }
 
 function buyBest() {
@@ -705,7 +764,7 @@ function sell() {
   S.st.sales++;
   S.cash = START_CASH;
   S.run = 0;
-  S.pl = { lot: 0, hall: 0, dock: 0, taxi: 0, garden: 0 };
+  noPlaces(S);
   S.b = { produce: atLevel('produce', 1) };
   clearShoppers();
   return n;
@@ -788,7 +847,18 @@ function validate(o) {
   s.pend = num(o.pend, 0);
   s.x2 = num(o.x2, 0);
   var pl = o.pl && typeof o.pl === 'object' ? o.pl : {};
-  PLACES.forEach(function (p) { s.pl[p.id] = Math.min(p.cost.length, Math.floor(num(pl[p.id], 0))); });
+  PLACES.forEach(function (p) {
+    var l = Math.min(p.cost.length, Math.floor(num(pl[p.id], 0)));
+    var it = atPlace(p.id, l);
+    // v11 keeps the level of each item; the first l pieces are what the older saves had
+    var at = o.v >= 11 && o.pi && o.pi[p.id];
+    if (Array.isArray(at) && at.length === p.items.length) {
+      it = p.items.map(function (x, j) { return Math.min(x.at.length, Math.floor(num(at[j], 0))); });
+      l = it.reduce(function (a, c) { return a + c; }, 0);
+    }
+    s.pl[p.id] = l;
+    s.pi[p.id] = it;
+  });
   s.ts = o.ts;
   BIZ.forEach(function (z) {
     var e = o.b[z.id];

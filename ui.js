@@ -23,6 +23,7 @@ var shown = {};
 var insets = [0, 0];
 var rows = {};
 var bestOpt = null;
+var gains = {};
 var bestAt = 0;
 var sheetOpen = false;
 var bq = [];
@@ -246,7 +247,7 @@ function makeRow(id) {
   r.nm.textContent = b.name;
   el.querySelector('.ic').addEventListener('click', function () { focusBiz(id); });
   r.up.addEventListener('click', function () {
-    if (BZ[id] && has(id)) openPlace(id);
+    if (room(id)) openPlace(id);
     else upgrade(id);
   });
   return r;
@@ -258,25 +259,33 @@ function starRow(n) {
   return out;
 }
 
-// what one more level of an item does
-function effect(id, x) {
-  if (x.stat === 'sell') return '+' + money(perSell(id) * bmul()) + ' a shopper';
-  if (x.stat === 'draw') {
-    var v = DRAW * 60;
-    return '+' + (v < 1 ? v.toFixed(2) : v.toFixed(1)) + ' shoppers a minute';
-  }
-  return "Stockers' work here -" + Math.round((1 - STAFF) * 100) + '%';
+// a place is a room once it stands: Checkouts and the Stockroom from the start, the rest when built
+function room(id) {
+  return BZ[id] ? has(id) : !!PL[id].open || S.pl[id] > 0;
 }
 
-// an open department's card: its stars and a row for each of its items
-function makeDept(id) {
-  var b = BZ[id];
+// what one more level of an item does, and what that adds to income a second
+function effect(id, x, j) {
+  var g = gains[id + ':' + j];
+  var out = g === undefined ? '' : '+' + money(g) + '/s';
+  var st = '';
+  if (BZ[id]) {
+    if (x.stat === 'sell') st = '+' + money(perSell(id) * bmul()) + '/shopper';
+    else if (x.stat === 'draw') st = '+' + (DRAW * 60).toFixed(DRAW * 60 < 1 ? 2 : 1) + '/min';
+    else st = '-' + Math.round((1 - STAFF) * 100) + '% stocking';
+  }
+  return out && st ? out + ' \u00b7 ' + st : out || st;
+}
+
+// an open room's card: a department's stars or a place's load, and a row for each of its items
+function makeRoom(id) {
+  var b = BZ[id] || PL[id];
   var el = document.createElement('div');
   el.className = 'dept';
   el.innerHTML = '<div class="biz dh"><img class="ic" src="assets/' + b.ic + '.png" alt="">' +
     '<div class="mid"><div class="l1"><b></b><span></span></div><div class="pr"><i></i><em></em></div></div></div><div class="its"></div>';
-  var r = { id: id, kind: 'dept', el: el, k: {}, nm: el.querySelector('b'), lv: el.querySelector('.l1 span'), fill: el.querySelector('.pr i'),
-    bt: el.querySelector('.pr em'), its: [] };
+  var r = { id: id, kind: 'room', el: el, k: {}, nm: el.querySelector('b'), lv: el.querySelector('.l1 span'), bar: el.querySelector('.pr'),
+    fill: el.querySelector('.pr i'), bt: el.querySelector('.pr em'), its: [] };
   r.nm.textContent = b.name;
   el.querySelector('.ic').addEventListener('click', function () { focusBiz(id); });
   b.items.forEach(function (x, j) {
@@ -294,7 +303,8 @@ function makeDept(id) {
   return r;
 }
 
-function upDept(r) {
+// the header of a department's card: its level and stars, and the way to the next star
+function deptHead(r) {
   var id = r.id;
   var k = r.k;
   var e = S.b[id];
@@ -304,28 +314,57 @@ function upDept(r) {
   r.fill.style.width = (n >= STAR_AT.length ? 100 : (e.l - from) / (STAR_AT[n] - from) * 100) + '%';
   set(k, 'bt', r.bt, 'textContent', n >= STAR_AT.length ? 'All stars: sales here x' + Math.pow(STAR_MUL, n) :
     STAR_AT[n] - e.l + ' more for star ' + (n + 1) + ': sales here x' + STAR_MUL);
-  BZ[id].items.forEach(function (x, j) {
+}
+
+// the header of a place's card; Checkouts and the Stockroom show how loaded they are
+function placeHead(r) {
+  var id = r.id;
+  var k = r.k;
+  var p = PL[id];
+  var hall = id === 'hall';
+  var dock = id === 'dock';
+  set(k, 'lv', r.lv, 'textContent', 'Lv ' + S.pl[id] + '/' + p.cost.length);
+  flag(k, 'nobar', r.el.firstChild, 'nobar', !hall && !dock);
+  flag(k, 'rd', r.el.firstChild, 'rd', hall && linesFull() || dock && shelvesOut());
+  if (hall) {
+    r.fill.style.width = Math.min(100, inRate() / capacity() * 100) + '%';
+    set(k, 'bt', r.bt, 'textContent', perMin(inRate()) + ' come in, tills take ' + perMin(capacity()) + ' a min');
+  }
+  if (dock) {
+    r.fill.style.width = Math.min(100, served() / stockCap() * 100) + '%';
+    set(k, 'bt', r.bt, 'textContent', perMin(served()) + ' shop, shelves for ' + perMin(stockCap()) + ' a min');
+  }
+}
+
+function upRoom(r) {
+  var id = r.id;
+  var p = PL[id];
+  if (p) placeHead(r);
+  else deptHead(r);
+  var c = p ? placeCost(id) : cost(id, 1);
+  (p || BZ[id]).items.forEach(function (x, j) {
     var q = r.its[j];
     var qk = q.k;
-    var done = e.it[j] >= x.at.length;
-    var piece = x.at[done ? x.at.length - 1 : e.it[j]];
-    var c = cost(id, 1);
+    var lvl = p ? S.pi[id][j] : S.b[id].it[j];
+    var done = lvl >= x.at.length;
+    var piece = x.at[done ? x.at.length - 1 : lvl];
+    var name = p ? p.next[piece] : upName(id, piece);
     var hl = !!bestOpt && bestOpt.id === id && bestOpt.item === j;
     flag(qk, 'best', q.el, 'best', hl);
     flag(qk, 'done', q.el, 'done', done);
-    set(qk, 'n', q.n, 'textContent', e.it[j] + '/' + x.at.length);
-    set(qk, 'fx', q.fx, 'textContent', effect(id, x));
-    set(qk, 'nx', q.nx, 'textContent', done ? 'Complete' : 'Next: ' + upName(id, piece));
-    if (set(qk, 'pc', q.pic, 'title', upName(id, piece))) q.pic.src = upIcon(id, piece);
+    set(qk, 'n', q.n, 'textContent', lvl + '/' + x.at.length);
+    set(qk, 'fx', q.fx, 'textContent', done ? '' : effect(id, x, j));
+    set(qk, 'nx', q.nx, 'textContent', done ? 'Complete' : 'Next: ' + name);
+    if (set(qk, 'pc', q.pic, 'title', name)) q.pic.src = p ? placeIcon(id, piece + 1) : upIcon(id, piece);
     set(qk, 'up', q.up, 'innerHTML', done ? 'Done' : 'Buy<small>' + money(c) + '</small>');
-    set(qk, 'upd', q.up, 'disabled', done || S.cash < c);
+    set(qk, 'upd', q.up, 'disabled', done || !c || S.cash < c);
     flag(qk, 'uphl', q.up, 'hl', hl);
   });
 }
 
 function upRow(r) {
-  if (r.kind === 'dept') {
-    upDept(r);
+  if (r.kind === 'room') {
+    upRoom(r);
     return;
   }
   var id = r.id;
@@ -337,6 +376,7 @@ function upRow(r) {
     var c = placeCost(id);
     var l = S.pl[id];
     var open = has(p.after);
+    var built = room(id);
     var hall = id === 'hall';
     var dock = id === 'dock';
     flag(k, 'lock', r.el, 'lock', !open);
@@ -352,14 +392,14 @@ function upRow(r) {
       r.fill.style.width = Math.min(100, served() / stockCap() * 100) + '%';
       set(k, 'bt', r.bt, 'textContent', perMin(served()) + ' shop, shelves for ' + perMin(stockCap()) + ' a min');
     }
-    set(k, 'ms', r.ms, 'textContent', !open ? 'Open ' + BZ[p.after].name + ' first' : c ? 'Next: ' + p.next[l] : 'Everything is built');
-    var newLv = set(k, 'nxl', r.nx.dataset, 'lv', open && c ? l : '');
-    if (set(k, 'nxk', r.nx, 'title', open && c ? p.next[l] : '') || newLv) {
-      if (open && c) r.nx.src = placeIcon(id, l + 1);
+    set(k, 'ms', r.ms, 'textContent', !open ? 'Open ' + BZ[p.after].name + ' first' : !built ? 'Next: ' + p.next[0] : c ? p.items.map(function (x) { return x.name; }).join(', ') : 'Everything is built');
+    var newLv = set(k, 'nxl', r.nx.dataset, 'lv', open && !built ? 1 : '');
+    if (set(k, 'nxk', r.nx, 'title', open && !built ? p.next[0] : '') || newLv) {
+      if (open && !built) r.nx.src = placeIcon(id, 1);
       else r.nx.removeAttribute('src');
     }
-    set(k, 'up', r.up, 'innerHTML', c ? (l || p.open ? 'Upgrade' : 'Build') + '<small>' + money(c) + '</small>' : 'Done<small>all levels</small>');
-    set(k, 'upd', r.up, 'disabled', !c || S.cash < c);
+    set(k, 'up', r.up, 'innerHTML', built ? 'Items' : 'Build<small>' + money(c) + '</small>');
+    set(k, 'upd', r.up, 'disabled', built ? false : !open || S.cash < c);
     flag(k, 'uphl', r.up, 'hl', hl);
     return;
   }
@@ -428,7 +468,7 @@ function showCard(id) {
   closeSheet();
   cardId = id;
   if (cardRow) cardRow.el.remove();
-  cardRow = BZ[id] && has(id) ? makeDept(id) : makeRow(id);
+  cardRow = room(id) ? makeRoom(id) : makeRow(id);
   $('card-row').appendChild(cardRow.el);
   upRow(cardRow);
   $('card').hidden = false;
@@ -464,7 +504,7 @@ function afterBuy(res) {
   } else if (res.place) {
     var p = PL[res.id];
     sfx('mile');
-    banner('<b>' + name + ' level ' + S.pl[res.id] + '</b><small>' + p.next[S.pl[res.id] - 1] + '</small>', t + 0.3, S.pl[res.id] === p.cost.length);
+    banner('<b>' + name + ' level ' + S.pl[res.id] + '</b><small>' + p.next[res.piece] + '</small>', t + 0.3, S.pl[res.id] === p.cost.length);
   } else sfx('buy');
   buzz(res.star || res.unlock || res.place ? 'medium' : 'light');
   nudge();
@@ -480,7 +520,7 @@ function nudge() {
 function upgrade(id, j) {
   wake();
   var res;
-  if (PL[id]) res = buyPlace(id);
+  if (PL[id]) res = buyPlace(id, j || 0);
   else res = buy(id, j === undefined ? BZ[id].first : j);
   if (res) afterBuy(res);
 }
@@ -562,7 +602,10 @@ function openPlace(id) {
 }
 
 function updateBest() {
-  bestOpt = best();
+  var opts = options();
+  bestOpt = best(opts);
+  gains = {};
+  opts.forEach(function (o) { gains[o.id + ':' + o.item] = o.gain; });
   View.setBest(bestOpt ? bestOpt.id : null);
 }
 
@@ -600,7 +643,7 @@ function updateGoals() {
 function updateOpen() {
   if (sheetOpen) BIZ.forEach(function (b) { upRow(rows[b.id]); });
   if (sheetOpen) PLACES.forEach(function (p) { upRow(rows[p.id]); });
-  if (cardRow && cardRow.kind !== (BZ[cardId] && has(cardId) ? 'dept' : undefined)) showCard(cardId);
+  if (cardRow && cardRow.kind !== (room(cardId) ? 'room' : undefined)) showCard(cardId);
   else if (cardRow) upRow(cardRow);
   if (!$('boost').hidden) paintBoost();
 }

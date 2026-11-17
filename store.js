@@ -2333,7 +2333,7 @@ function navBuild() {
     }
     standing(s).forEach(function (pc) { pc.foot.forEach(markObb); });
   });
-  places.hall.solids.forEach(function (q) { if (q.lv <= S.pl.hall) markRect(q.r[0], q.r[1], q.r[2], q.r[3]); });
+  places.hall.solids.forEach(function (q) { if (placeHas('hall', q.lv - 1)) markRect(q.r[0], q.r[1], q.r[2], q.r[3]); });
   fixed.forEach(markObb);
 }
 
@@ -2540,15 +2540,17 @@ function riseStep(now) {
 function syncPlace(id, animate, now) {
   var pl = places[id];
   var l = S.pl[id];
-  if (l === pl.shown) return;
+  var key = S.pi[id].join();
+  if (l === pl.shown && key === pl.key) return;
   pl.items.forEach(function (it) {
-    var want = it.only ? l === it.lv : it.lv <= l && (pl.add || it.lv === l);
+    var want = it.only ? l === it.lv : (pl.add ? placeHas(id, it.lv - 1) : it.lv === l);
     if (want && !it.g.visible && animate && pl.shown >= 0) {
       rise(it.g, now, 450);
       dustAt(it.g, now, pl.add ? 8 : 20);
     } else it.g.visible = want;
   });
   pl.shown = l;
+  pl.key = key;
   if (id === 'hall') nav.dirty = true;
   shadowDirty = true;
 }
@@ -4169,11 +4171,12 @@ function placeIcon(id, k) {
   if (id === 'dock' && k > 0) {
     // a stocker arrives or the dollies carry more: the new stocker with his dolly
     var fig = figure(STAFF, 'idle');
-    var dol = dollyGroup(CREW[k][1]);
+    var dolly = PL.dock.of.charAt(k - 1) === '1';
+    var dol = dollyGroup(2 + (dolly ? PL.dock.rk[k - 1] + 1 : 0));
     var at = g.children.length ? boxOf(g).getCenter(new THREE.Vector3()) : new THREE.Vector3();
     dol.position.set(at.x, 0, at.z + 0.6);
     fig.obj.position.set(at.x, 0, at.z + 0.18);
-    if (CREW[k][0] > CREW[k - 1][0]) g.add(fig.obj);
+    if (!dolly) g.add(fig.obj);
     g.add(dol);
   }
   g.traverse(function (o) { o.visible = true; });

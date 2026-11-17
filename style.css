@@ -721,8 +721,9 @@ small {
 
 .it .fx {
   color: var(--ink);
-  font-size: 12px;
+  font-size: 11.5px;
   font-weight: 700;
+  white-space: nowrap;
 }
 
 .it.done {
