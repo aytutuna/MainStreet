@@ -18,6 +18,7 @@ var snd = true;
 var vib = true;
 var cardId = null;
 var cardRow = null;
+var cardSel = -1;
 var lastTick = 0;
 var shown = {};
 var insets = [0, 0];
@@ -297,7 +298,14 @@ function makeRoom(id) {
     var q = { el: row, k: {}, pic: row.querySelector('.ic'), n: row.querySelector('.l1 span'), fx: row.querySelector('.fx span'),
       nx: row.querySelector('.nx span'), up: row.querySelector('.up') };
     row.querySelector('b').textContent = x.name;
-    q.up.addEventListener('click', function () { upgrade(id, j); });
+    q.up.addEventListener('click', function () {
+      cardSel = j;
+      upgrade(id, j);
+    });
+    row.addEventListener('click', function () {
+      cardSel = j;
+      upRoom(r);
+    });
     r.its.push(q);
     el.querySelector('.its').appendChild(row);
   });
@@ -337,12 +345,38 @@ function placeHead(r) {
   }
 }
 
+// the piece an item adds next, or -1 when it is done
+function nextOf(id, j) {
+  return PL[id] ? placePiece(id, j) : nextPiece(id, j);
+}
+
+// the item the game would have bought next, else the first with levels left
+function defaultItem(id) {
+  var pick = -1;
+  (PL[id] || BZ[id]).items.forEach(function (x, j) {
+    if (nextOf(id, j) < 0) return;
+    if (bestOpt && bestOpt.id === id && bestOpt.item === j || pick < 0) pick = j;
+  });
+  return pick;
+}
+
+// tells the store where the card's next piece goes, when that changed
+function markNext(r, piece) {
+  var key = r.id + ':' + piece;
+  if (r.k.mk === key) return;
+  r.k.mk = key;
+  View.mark(r.id, piece);
+}
+
 function upRoom(r) {
   var id = r.id;
   var p = PL[id];
   if (p) placeHead(r);
   else deptHead(r);
   var c = p ? placeCost(id) : cost(id, 1);
+  if (cardSel < 0 || nextOf(id, cardSel) < 0) cardSel = defaultItem(id);
+  var at = cardSel < 0 ? -1 : nextOf(id, cardSel);
+  markNext(r, at);
   (p || BZ[id]).items.forEach(function (x, j) {
     var q = r.its[j];
     var qk = q.k;
@@ -353,6 +387,7 @@ function upRoom(r) {
     var hl = !!bestOpt && bestOpt.id === id && bestOpt.item === j;
     flag(qk, 'best', q.el, 'best', hl);
     flag(qk, 'done', q.el, 'done', done);
+    flag(qk, 'sel', q.el, 'sel', j === cardSel);
     set(qk, 'n', q.n, 'textContent', lvl + '/' + x.at.length);
     set(qk, 'fx', q.fx, 'textContent', done ? '' : effect(id, x, j));
     set(qk, 'nx', q.nx, 'textContent', done ? 'Complete' : 'Next: ' + name);
@@ -373,6 +408,8 @@ function upRow(r) {
   var hl = bestOpt && bestOpt.id === id;
   flag(k, 'best', r.el, 'best', hl);
   var p = PL[id];
+  // a card for an area that is not open yet marks where its first piece goes
+  if (r === cardRow) markNext(r, p ? (has(p.after) ? 0 : -1) : (avail(id) ? 0 : -1));
   if (p) {
     var c = placeCost(id);
     var l = S.pl[id];
@@ -469,6 +506,7 @@ function showCard(id) {
   closeSheet();
   var fresh = cardId !== id;
   cardId = id;
+  if (fresh) cardSel = -1;
   if (cardRow) cardRow.el.remove();
   cardRow = room(id) ? makeRoom(id) : makeRow(id);
   $('card-row').appendChild(cardRow.el);

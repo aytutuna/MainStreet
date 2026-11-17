@@ -4014,8 +4014,23 @@ function glowMat(color, op, add) {
 var areaEdge = glowMat(GOLD, 1);
 var areaDark = glowMat(NAVY, 0.55);
 var areaFill = glowMat(GOLD, 0.1);
+var markEdge = glowMat(GOLD, 1);
+var markPad = glowMat(GOLD, 0.3);
+var arrowMat = new THREE.MeshBasicMaterial({ color: 0xf2c230 });
+var hullMat = new THREE.MeshBasicMaterial({ color: NAVY });
+// a flat arrow pointing down, its middle on the origin; the marker turns it to face the camera
+var arrowGeo = (function () {
+  var a = new THREE.Shape();
+  [[0, 0], [0.34, 0.38], [0.13, 0.38], [0.13, 0.85], [-0.13, 0.85], [-0.13, 0.38], [-0.34, 0.38]].forEach(function (p, i) {
+    if (i) a.lineTo(p[0], p[1]);
+    else a.moveTo(p[0], p[1]);
+  });
+  return new THREE.ExtrudeGeometry(a, { depth: 0.1, bevelEnabled: false }).translate(0, -0.425, -0.05);
+})();
 var sel = null;
 var selId = null;
+var mark = null;
+var pboxes = {};
 
 function rrPath(p, w, d, r) {
   var x = -w / 2;
@@ -4049,7 +4064,7 @@ function flatMesh(geo, mat, x, y, z, order) {
 
 function dropFlat(g) {
   root.remove(g);
-  g.traverse(function (o) { if (o.geometry) o.geometry.dispose(); });
+  g.traverse(function (o) { if (o.geometry && o.geometry !== arrowGeo) o.geometry.dispose(); });
 }
 
 // an area's floor, as the box its tap target covers: [x0, x1, z0, z1]
@@ -4095,14 +4110,89 @@ function select(id, go) {
       sel = { id: id, g: g };
     }
   }
-  if (id && go) frame(id);
+  if (!id) setMark(null);
+  else if (go) frame(id);
+}
+
+// the extent of a piece on the floor and how high it stands: { x0, x1, z0, z1, top }
+function pieceBox(id, k) {
+  var key = id + ':' + k;
+  if (pboxes[key]) return pboxes[key];
+  var s = shops[id];
+  var pc = s ? pieceOf(s, k) : null;
+  var box = new THREE.Box3();
+  if (pc) {
+    var g = pc.b.group();
+    box = boxOf(g);
+    g.traverse(function (o) { if (o.geometry) o.geometry.dispose(); });
+  } else if (places[id] && places[id].items[k + 1]) box = boxOf(places[id].items[k + 1].g);
+  var out;
+  if (!box.isEmpty() && box.getSize(new THREE.Vector3()).length() < 10) out = { x0: box.min.x, x1: box.max.x, z0: box.min.z, z1: box.max.z, top: box.max.y };
+  else {
+    // staff, a sign, floor lights and levels that spread over a whole site have no model of their own to measure
+    var at;
+    var top = 1;
+    if (pc && pc.foot.length) {
+      out = { x0: 1e9, x1: -1e9, z0: 1e9, z1: -1e9, top: 1 };
+      pc.foot.forEach(function (o) {
+        out.x0 = Math.min(out.x0, o.x - o.hw);
+        out.x1 = Math.max(out.x1, o.x + o.hw);
+        out.z0 = Math.min(out.z0, o.z - o.hd);
+        out.z1 = Math.max(out.z1, o.z + o.hd);
+      });
+    } else {
+      if (pc && pc.sign && s.a.sign) {
+        at = [s.a.sign[0], s.a.sign[1]];
+        top = s.a.sign[2];
+      } else if (pc) at = pieceAt(pc);
+      else {
+        var sp0 = spot(id);
+        at = [sp0.x, sp0.y];
+      }
+      out = { x0: at[0] - 0.5, x1: at[0] + 0.5, z0: at[1] - 0.5, z1: at[1] + 0.5, top: top };
+    }
+  }
+  pboxes[key] = out;
+  return out;
+}
+
+function setMark(id, k) {
+  if (mark) dropFlat(mark.g);
+  mark = null;
+  if (!id || k < 0 || (!shops[id] && !places[id])) return;
+  var b = pieceBox(id, k);
+  var w = Math.max(0.9, b.x1 - b.x0 + 0.3);
+  var d = Math.max(0.9, b.z1 - b.z0 + 0.3);
+  var g = new THREE.Group();
+  g.position.set((b.x0 + b.x1) / 2, 0.1, (b.z0 + b.z1) / 2);
+  g.add(flatMesh(rrGeo(w, d, 0.2), markPad, 0, 0, 0, 5));
+  g.add(flatMesh(rrGeo(w, d, 0.2, 0.09), markEdge, 0, 0.002, 0, 6));
+  var ar = new THREE.Mesh(arrowGeo, arrowMat);
+  var hull = new THREE.Mesh(arrowGeo, hullMat);
+  hull.scale.set(1.3, 1.22, 1);
+  hull.position.z = -0.06;
+  ar.add(hull);
+  ar.rotation.order = 'YXZ';
+  ar.scale.setScalar(0.8);
+  ar.renderOrder = 7;
+  g.add(ar);
+  root.add(g);
+  mark = { g: g, ar: ar, y: Math.min(b.top, 2.2) + 0.45 + 0.34 };
 }
 
 function selStep(now) {
+  var u = 0.5 + 0.5 * Math.sin(now / 320);
   if (sel) {
-    var u = 0.5 + 0.5 * Math.sin(now / 320);
     areaEdge.opacity = 0.6 + 0.4 * u;
     areaFill.opacity = 0.05 + 0.09 * u;
+  }
+  if (mark) {
+    // seen from far off the marker grows, so it stays a spot a thumb could cover
+    mark.g.scale.setScalar(Math.max(1, Math.min(2, focus.dist / 28)));
+    mark.ar.rotation.set(-TILT, focus.az, 0);
+    markEdge.opacity = 0.7 + 0.3 * u;
+    markPad.opacity = 0.2 + 0.25 * u;
+    mark.ar.position.y = mark.y + Math.abs(Math.sin(now / 260)) * 0.3;
   }
 }
 
@@ -4366,6 +4456,7 @@ window.View = {
   spot: spot,
   select: select,
   frame: frame,
+  mark: setMark,
   setBest: function (id) { bestId = id; },
   shopper: shopperEvent,
   upName: function (id, k) { var u = PLAN.areas[id].ups[k]; return u ? u.name : ''; },
