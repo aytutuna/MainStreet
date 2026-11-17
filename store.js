@@ -3910,6 +3910,7 @@ function draw(now) {
   puffsStep(now);
   riseStep(now);
   selStep(now);
+  flashStep(now);
   pop(now);
   if (shadowDirty) {
     renderer.shadowMap.needsUpdate = true;
@@ -4031,6 +4032,10 @@ var sel = null;
 var selId = null;
 var mark = null;
 var pboxes = {};
+var flashes = [];
+var flashN = 0;
+var ringGeo = new THREE.RingGeometry(0.8, 1, 36).rotateX(-Math.PI / 2);
+var diskGeo = new THREE.CircleGeometry(1, 24).rotateX(-Math.PI / 2);
 
 function rrPath(p, w, d, r) {
   var x = -w / 2;
@@ -4196,11 +4201,58 @@ function selStep(now) {
   }
 }
 
+// a bought piece flashes: a ring runs out over the floor from it and a glow blooms and fades
+function flash(id, k, now) {
+  if (!shops[id] && !places[id]) return;
+  var b = pieceBox(id, k);
+  if (!flashes.length) {
+    for (var i = 0; i < 3; i++) {
+      var f = { ring: flatMesh(ringGeo, glowMat(0xfff0a0, 1), 0, 0.12, 0, 8), glow: flatMesh(diskGeo, glowMat(0xffc830, 0.8, true), 0, 0.11, 0, 8), t0: -1e9, r: 1 };
+      f.ring.visible = f.glow.visible = false;
+      root.add(f.ring, f.glow);
+      flashes.push(f);
+    }
+  }
+  var fl = flashes[flashN++ % 3];
+  fl.t0 = now;
+  fl.r = Math.max(0.6, Math.max(b.x1 - b.x0, b.z1 - b.z0) / 2 + 0.2, focus.dist * 0.04);
+  fl.ring.position.set((b.x0 + b.x1) / 2, 0.12, (b.z0 + b.z1) / 2);
+  fl.glow.position.set((b.x0 + b.x1) / 2, 0.11, (b.z0 + b.z1) / 2);
+  fl.ring.visible = fl.glow.visible = true;
+}
+
+function flashStep(now) {
+  for (var i = 0; i < flashes.length; i++) {
+    var f = flashes[i];
+    if (!f.ring.visible) continue;
+    var u = (now - f.t0) / 800;
+    if (u >= 1) {
+      f.ring.visible = f.glow.visible = false;
+      continue;
+    }
+    var e = 1 - Math.pow(1 - u, 3);
+    f.ring.scale.setScalar(f.r * (0.5 + 2.4 * e));
+    f.ring.material.opacity = 1 - u;
+    f.glow.scale.setScalar(f.r * (0.6 + 0.7 * e));
+    f.glow.material.opacity = 0.85 * (1 - u) * (1 - u);
+  }
+}
+
+// where a piece is on the screen, kept inside the part of it the game uses
+function pieceScreen(id, k) {
+  if (!shops[id] && !places[id]) return null;
+  var b = pieceBox(id, k);
+  toScreen((b.x0 + b.x1) / 2, Math.min(1.4, b.top * 0.6), (b.z0 + b.z1) / 2, sp);
+  if (sp.z > 1) return null;
+  return { x: Math.max(40, Math.min(cw - 40, sp.x)), y: Math.max(IT + 90, Math.min(ch - IB - 30, sp.y)) };
+}
+
 // each upgrade shows: its piece rises, its name pops over it, and the camera goes to it, closer for a small piece
 function event(res, now) {
   var s = shops[res.id];
   if (s) bump[res.id] = now;
   sync(true, now);
+  flash(res.id, res.piece, now);
   var out = 0.25;
   // with the area's card open the camera stays on the area
   var framed = !!sel && sel.id === res.id;
@@ -4457,6 +4509,7 @@ window.View = {
   select: select,
   frame: frame,
   mark: setMark,
+  pieceScreen: pieceScreen,
   setBest: function (id) { bestId = id; },
   shopper: shopperEvent,
   upName: function (id, k) { var u = PLAN.areas[id].ups[k]; return u ? u.name : ''; },

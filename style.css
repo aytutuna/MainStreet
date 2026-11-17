@@ -354,6 +354,10 @@ small {
   font-size: 13px;
 }
 
+.pop.item {
+  font-size: 15px;
+}
+
 .pop.gem {
   color: #8fd4ff;
 }

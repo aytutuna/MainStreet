@@ -270,13 +270,16 @@ function effect(id, x, j) {
   var g = gains[id + ':' + j];
   // with the shelves empty an item can add nothing for now; a row of "+$0/s" reads as broken
   var out = g > 0.005 ? '+' + money(g) + '/s' : '';
-  var st = '';
-  if (BZ[id]) {
-    if (x.stat === 'sell') st = '+' + money(perSell(id) * bmul()) + '/shopper';
-    else if (x.stat === 'draw') st = '+' + (DRAW * 60).toFixed(DRAW * 60 < 1 ? 2 : 1) + '/min';
-    else st = '-' + Math.round((1 - STAFF) * 100) + '% stocking';
-  }
+  var st = stat(id, x);
   return out && st ? out + ' \u00b7 ' + st : out || st;
+}
+
+// what a department item's level changes for each shopper or stocker
+function stat(id, x) {
+  if (!BZ[id]) return '';
+  if (x.stat === 'sell') return '+' + money(perSell(id) * bmul()) + '/shopper';
+  if (x.stat === 'draw') return '+' + (DRAW * 60).toFixed(DRAW * 60 < 1 ? 2 : 1) + '/min';
+  return '-' + Math.round((1 - STAFF) * 100) + '% stocking';
 }
 
 // an open room's card: a department's stars or a place's load, and a row for each of its items
@@ -561,9 +564,16 @@ function nudge() {
 function upgrade(id, j) {
   wake();
   var res;
-  if (PL[id]) res = buyPlace(id, j || 0);
-  else res = buy(id, j === undefined ? BZ[id].first : j);
-  if (res) afterBuy(res);
+  if (j === undefined) j = PL[id] ? 0 : BZ[id].first;
+  // read what the level adds before it is bought, since some of it depends on the level
+  var x = (PL[id] || BZ[id]).items[j];
+  var gain = PL[id] ? effect(id, x, j) : stat(id, x);
+  if (PL[id]) res = buyPlace(id, j);
+  else res = buy(id, j);
+  if (!res) return;
+  afterBuy(res);
+  var at = View.pieceScreen(res.id, res.piece);
+  if (at) popAt(gain || '+ ' + x.name, at.x, at.y - 46, 'item');
 }
 
 function claimGoalAt(i, el) {
