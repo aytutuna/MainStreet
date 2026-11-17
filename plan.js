@@ -433,30 +433,30 @@ AREAS.sports = {
   cx: -12.2, cz: -12.9, vacant: [-14.7, -9.7, -14.8, -10.9], sign: [-11.0, -13.35, 1.7],
   floor: [{ poly: rbox(-14.7, -9.7, -14.7, -11.0, 0.6), finish: 0xd9e4ee }],
   ups: ups([
-    fx('Ball crate', 'crate', -10.6, -12.0, 's', GBALL),
-    fx('Dome tent', 'surv/tent-canvas', -11.55, -12.0, 's'),
-    fx('Skateboard rack', 'pallet', -10.6, -14.0, 's', ['skate/skateboard*0.4']),
-    fx('Camp tent', 'surv/tent-canvas', -12.5, -12.0, 's'),
-    fx('Bedroll table', 'table', -11.55, -14.0, 's', ['surv/bedroll-packed*0.9', 'surv/bedroll-packed*0.9']),
-    fx('Family tent', 'surv/tent-canvas', -13.45, -12.0, 's'),
-    fx('Camp stove table', 'table', -12.5, -14.0, 's', ['food/pot*0.5', 'food/pan*0.5']),
-    fx('Cooler barrel', 'surv/barrel', -14.35, -12.0, 's'),
-    fx('Jersey rack', RACK[1], -13.45, -14.0, 's'),
+    up('Ball bin', pw('DumpBin_Wire_01', -10.6, -12.0, 's', { stock: 1 })),
+    tent('Dome tent', -11.55, -12.0),
+    up('Skateboard rack', pw('Gondola_Island_Low_10', -10.6, -14.0, 's', { on: [['skate/skateboard*0.4', -0.1, 0.1, 0, 0.24], ['skate/skateboard*0.4', 0.1, 0.1, 0, 0.24], ['skate/skateboard*0.4', 0, 0.1, 0, 0.42]] })),
+    tent('Camp tent', -12.5, -12.0),
+    up('Bedroll table', pw('Table_Promo_Tiered_01', -11.55, -14.0, 's', { on: [['surv/bedroll-packed*0.9', -0.12, 0, 0, 0.33], ['surv/bedroll-packed*0.9', 0.12, 0, 0, 0.33], ['surv/bedroll-packed*0.9', 0.05, -0.1, 0, 0.475]] })),
+    tent('Family tent', -13.45, -12.0),
+    up('Camp stove table', pw('Table_Promo_Tiered_01', -12.5, -14.0, 's', { on: [['food/pot*0.5', -0.15, 0, 0, 0.33], ['food/pan*0.5', 0.15, 0, 0, 0.33]] })),
+    up('Ice chest', pw('IceChest_Outdoor_01', -14.2, -12.0, 's')),
+    rail('Jersey rack', -13.45, -14.0, 's'),
     d('Ice axe', 'surv/tool-pickaxe*2', -14.5, -13.0, 1.57),
-    fx('Yoga balls', 'golf/ball-blue*9', -14.35, -14.0, 's'),
+    up('Yoga balls', pw('DumpBin_Wire_01', -14.35, -14.0, 's', { stock: 1 })),
     mat('Turf mat', -14.3, -10.2, -11.9, -10.8, 0x7fb069),
     d('Trail marker', 'car/cone', -9.9, -12.0, 0, 0.8),
     d('Cap boxes', 'furn/cardboardBoxClosed', -9.9, -12.75, 0.2, 1.0),
-    perch('Camp lantern', 'furn/lampRoundTable', -11.55, -14.0, 0.35),
+    perch('Camp lantern', 'furn/lampRoundTable', -11.55, -14.1, 0.5, 0.8),
     d('Sports plant', 'furn/pottedPlant', -9.9, -14.45, 0, 0.9),
     d('Stock boxes', 'furn/cardboardBoxClosed', -14.4, -10.95, 0.3, 1.1),
     perch('Tent lantern', 'furn/lampSquareTable', -13.45, -12.0, 0.5, 1.2),
-    perch('Water bottles', 'surv/bottle*1.6', -10.6, -12.0, 0.22),
-    perch('Cooler lid', 'surv/bucket', -14.35, -12.0, 0.3, 1.3),
+    perch('Water bottles', 'surv/bottle*1.6', -10.6, -12.0, 0.5),
+    perch('Cooler bucket', 'surv/bucket', -14.2, -12.0, 0.7, 1.3),
     board('Ball board', 'BALLS 3 FOR 10', -12.9, -10.95, 0.9),
     d('Spare cone', 'roads/construction-cone', -9.9, -11.3, 0, 0.8),
-    perch('Camp radio', 'furn/radio', -12.5, -14.0, 0.35, 1.2),
-    perch('Ball on crate', 'golf/ball-red*4', -10.45, -12.0, 0.22)
+    perch('Camp radio', 'furn/radio', -12.5, -14.1, 0.5, 1.2),
+    perch('Ball on bin', 'golf/ball-red*4', -10.45, -12.0, 0.5)
   ], [SIGN, up('Pro desk', till(-14.35, -14.5, 'b'), { staff: [-13.8, -14.5, 'b'] }),
     up('Climbing wall', { box: [-14.7, -14.63, -12.7, -11.8, 0, 1.3], c: 0x8e8e96 }, { box: [-14.63, -14.6, -12.5, -12.4, 0.5, 0.6], c: 0xe0524a }, { box: [-14.63, -14.6, -12.2, -12.1, 0.9, 1.0], c: 0x4a8fe0 }, { box: [-14.63, -14.6, -12.0, -11.9, 0.3, 0.4], c: 0xe0b43a }),
     lights([[-13, -12.7], [-11, -12.7]]), HELP,
@@ -900,5 +900,11 @@ function rail(name, x, z, face) {
 function dummy(name, x, z) {
   var u = fx(name, 'shop/mannequin', x, z, Math.PI / 2);
   u.piece.push(pw('Slatwall_Panel_10', x - 0.25, z, 'b', { spots: 0 }));
+  return u;
+}
+
+function tent(name, x, z) {
+  var u = fx(name, 'surv/tent-canvas', x, z, 's');
+  u.piece.push(pw('Slatwall_Panel_10', x, z - 0.36, 's', { spots: 0 }));
   return u;
 }
