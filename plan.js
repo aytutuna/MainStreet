@@ -360,6 +360,47 @@ function lane(z, names, pool, off) {
 }
 var XM = 'holiday/';
 var XP = [XM + 'present-a-cube*0.35', XM + 'present-b-round*0.35', XM + 'present-a-round*0.35', XM + 'present-b-cube*0.35', XM + 'present-a-rectangle*0.3'];
+// goods for the opts.on of a Pipework fixture, in the fixture's own frame (world units: x across, z toward its front, y from the floor).
+// shelves of a gondola, per goods across each shelf, lowest shelf first, the front face and then the back
+function shelfGoods(refs, per, o) {
+  o = o || {};
+  var out = [];
+  var n = 0;
+  (o.zs || [0.25, -0.25]).forEach(function (z) {
+    (o.ys || [0.15, 0.55, 0.95, 1.35]).forEach(function (y) {
+      for (var j = 0; j < per; j++) out.push([refs[n++ % refs.length], (j - (per - 1) / 2) * 0.84 / per * PW, z * PW, (z < 0 ? Math.PI : 0) + (o.turn || 0), (y + 0.02) * PW]);
+    });
+  });
+  return out;
+}
+// hooks of a peg gondola, four across and three down on each face; drop is how far a pack hangs below its hook
+function pegGoods(refs, drop, o) {
+  o = o || {};
+  var out = [];
+  var n = 0;
+  (o.zs || [0.11, -0.11]).forEach(function (z) {
+    (o.ys || [1.58, 1.09, 0.6]).forEach(function (y) {
+      (o.xs || [-0.33, -0.11, 0.11, 0.33]).forEach(function (x) {
+        out.push([refs[n++ % refs.length], x * PW, z * PW, z < 0 ? Math.PI : 0, y * PW - drop]);
+      });
+    });
+  });
+  return out;
+}
+// the three tiers of a promo table: [z, y, count, gap] from the front
+function tierGoods(refs, rows) {
+  var out = [];
+  var n = 0;
+  (rows || [[0.125, 0.225, 4, 0.13], [0, 0.35, 3, 0.13]]).forEach(function (r) {
+    for (var j = 0; j < r[2]; j++) out.push([refs[n++ % refs.length], (j - (r[2] - 1) / 2) * r[3], r[0], 0, r[1]]);
+  });
+  return out;
+}
+// a podium with a register, the clerk standing beside it
+function counter(name, x, z, face, sx, sz) {
+  return up(name, pw('HostStand_01', x, z, face, { spots: 0, on: [['pw/Register_Classic_01', 0, 0, 0, 0.58]] }), { staff: [sx, sz, face] });
+}
+var TBOX = BOX.map(function (r) { return r + '*0.5'; });
 
 AREAS.seasonal = {
   cx: -12.2, cz: -3.0, vacant: [-14.7, -9.7, -4.9, -0.3], sign: [-10.92, -3.9, 1.9],
@@ -566,39 +607,40 @@ AREAS.home = {
     up('Wardrobe', { sign: 'gold' }, { box: [-1.5, -1.28, -9.25, -8.4, 0, 0.9], c: 0xc9a063 }, { box: [-1.52, -1.5, -9.2, -8.8, 0.1, 0.8], c: 0xe9d3a8 }, { box: [-1.52, -1.5, -8.8, -8.45, 0.1, 0.8], c: 0xe9d3a8 })])
 };
 
-var TOYP = [BOX[2], 'toy/vehicle-suv*0.2', XM + 'train-locomotive*0.3', 'toy/vehicle-racer*0.2', BOX[4], 'skate/skateboard*0.4', XM + 'present-b-cube*0.35', BOX[0], XM + 'sled*0.3', 'toy/vehicle-truck*0.2'];
-var TOYL = lane(-10.6, ['Toy cars', 'Building blocks', 'Dolls', 'Board games', 'Puzzles', 'Plush toys'], TOYP);
+var CARS = ['toy/vehicle-suv*0.2', 'toy/vehicle-racer*0.2', 'toy/vehicle-truck*0.2', 'toy/vehicle-speedster*0.2', 'toy/vehicle-monster-truck*0.2', 'toy/vehicle-vintage-racer*0.2'];
+var DOLLS = [XM + 'nutcracker*0.22', XM + 'gingerbread-man*0.45', XM + 'gingerbread-woman*0.45', XM + 'snowman*0.25'];
+var PLUSH = ['pets/animal-cat*1.1', 'pets/animal-dog*1.0', 'pets/animal-fish*1.4', XM + 'reindeer*0.3'];
 AREAS.toys = {
   cx: -4.1, cz: -10.5, vacant: [-6.9, -1.25, -11.7, -9.3], sign: [-3.2, -11.45, 1.6],
   floor: [{ poly: rbox(-6.9, -1.25, -11.7, -9.3, 0.5), finish: 0xe6dff3 }],
   ups: ups([
-    TOYL[0],
-    cap('Monster truck end', -6.65, -10.6, 'k', [BOX[1], 'toy/vehicle-monster-truck*0.2']),
-    TOYL[1],
+    up('Toy car shelf', pw('Gondola_Island_10', -6.05, -10.6, 's', { spots: 2, on: shelfGoods(CARS, 2, { turn: Math.PI / 2 }) })),
+    up('Monster truck end', pw('Gondola_EndCap_Low_10', -6.65, -10.6, 'k', { on: shelfGoods(CARS.slice(2), 2, { zs: [0.03], ys: [0.15, 0.55, 0.95], turn: Math.PI / 2 }) })),
+    up('Block table', pw('Table_Promo_Tiered_01', -5.25, -10.6, 's', { on: tierGoods(TBOX) })),
     fx('Claw machine', 'arcade/claw-machine', -7.6, -10.15, 'k'),
-    TOYL[2],
-    TOYL[3],
+    up('Doll pegs', pw('Gondola_Island_Peg_10', -4.45, -10.6, 's', { spots: 2, on: pegGoods(DOLLS, 0.16, { xs: [-0.22, 0.22] }) })),
+    up('Board game shelf', pw('Gondola_Island_10', -3.65, -10.6, 's', { spots: 2, on: shelfGoods(TBOX, 3) })),
     fx('Gacha machine', 'shop/gacha-machine', -7.6, -11.05, 'k'),
-    TOYL[4],
-    TOYL[5],
-    cap('Toy tower end', -1.45, -10.6, 'b', [XM + 'present-a-cube*0.35', XM + 'present-b-round*0.35']),
-    perch('Toy racer', 'toy/vehicle-racer*0.4', -6.05, -10.6, 0.8),
-    perch('Nutcracker doll', XM + 'nutcracker*0.4', -4.45, -10.6, 0.8),
-    perch('Toy truck', 'toy/vehicle-truck*0.45', -5.4, -10.6, 0.8),
-    perch('Plush cat', 'pets/animal-cat*2.5', -2.05, -10.6, 0.8),
+    up('Puzzle pegs', pw('Gondola_Island_Peg_10', -2.85, -10.6, 's', { spots: 2, on: pegGoods(TBOX, 0.09) })),
+    up('Plush table', pw('Table_Promo_Tiered_01', -2.05, -10.6, 's', { on: tierGoods(PLUSH) })),
+    up('Toy tower end', pw('Gondola_EndCap_10', -1.45, -10.6, 'b', { on: shelfGoods([XM + 'present-a-cube*0.35', XM + 'present-b-round*0.35'], 2, { zs: [0.03] }) })),
+    perch('Toy racer', 'toy/vehicle-racer*0.4', -6.05, -10.6, 0.92),
+    perch('Nutcracker doll', XM + 'nutcracker*0.4', -4.45, -10.6, 0.92),
+    perch('Toy truck', 'toy/vehicle-truck*0.45', -3.7, -10.6, 0.92),
+    perch('Plush cat', 'pets/animal-cat*2.2', -2.85, -10.6, 0.92),
     board('Toy sale board', 'TOY SALE', -6.8, -9.5, 0.9),
-    perch('Block tower', BOX[1], -5.05, -10.6, 0.8, 1.0, 0.3),
+    perch('Block tower', TBOX[1], -5.25, -10.72, 0.475),
     mat('Play mat', -6.5, -5, -11.75, -10.65, 0xf2c6d8),
-    perch('Monster truck', 'toy/vehicle-monster-truck*0.4', -3.8, -10.6, 0.8),
-    perch('Toy snowman', XM + 'snowman*0.3', -3.5, -10.6, 0.8),
-    perch('Puzzle box', BOX[4], -3.0, -10.6, 0.8, 1.1),
-    perch('Toy train', XM + 'train-locomotive*0.45', -1.45, -10.6, 1.05),
-    perch('Toy reindeer', XM + 'reindeer*0.3', -2.7, -10.6, 0.8),
+    perch('Monster truck', 'toy/vehicle-monster-truck*0.4', -2.95, -10.6, 0.92),
+    perch('Toy snowman', XM + 'snowman*0.3', -6.05, -10.5, 0.92),
+    perch('Puzzle box', TBOX[4], -3.55, -10.6, 0.92),
+    perch('Toy train', XM + 'train-locomotive*0.45', -1.45, -10.6, 0.92),
+    perch('Toy reindeer', XM + 'reindeer*0.3', -2.05, -10.72, 0.475),
     board('Kids board', 'KIDS CORNER', -6.8, -11.2, 0.9),
     mat('Game mat', -3.9, -2.4, -10.35, -9.25, 0xe8d9f4)
-  ], [SIGN, up('Toy desk', till(-0.85, -9.8, 'k'), { staff: [-0.4, -9.8, 'k'] }),
-    up('Present tower', on(XP[0], -6.65, -10.6, 1.05, 1.6), on(XP[1], -6.65, -10.6, 1.4, 1.3, 0.4)), lights([[-5, -10.6], [-2.8, -10.6]]), HELP,
-    up('Giant plush', { sign: 'gold' }, on('pets/animal-dog*3', -4.45, -10.6, 0.9))])
+  ], [SIGN, counter('Toy desk', -0.85, -9.8, 'k', -0.4, -9.8),
+    up('Present tower', on(XP[0], -6.65, -10.6, 0.72, 1.6), on(XP[1], -6.65, -10.6, 1.04, 1.3, 0.4)), lights([[-5, -10.6], [-2.8, -10.6]]), HELP,
+    up('Giant plush', { sign: 'gold' }, on('pets/animal-dog*3', -4.45, -10.6, 0.92))])
 };
 
 var OFFP = ['furn/books', BOX[1], CARTON[1], BOX[0], 'furn/books', BOX[2], CARTON[0], 'furn/books', BOX[3], CARTON[2]];
