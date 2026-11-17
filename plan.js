@@ -643,39 +643,39 @@ AREAS.toys = {
     up('Giant plush', { sign: 'gold' }, on('pets/animal-dog*3', -4.45, -10.6, 0.92))])
 };
 
-var OFFP = ['furn/books', BOX[1], CARTON[1], BOX[0], 'furn/books', BOX[2], CARTON[0], 'furn/books', BOX[3], CARTON[2]];
-var OFFL = lane(-12.8, ['Novels', 'Cookbooks', 'Kids books', 'Notebooks', 'Pens', 'Printer paper'], OFFP);
+var BOOKS = ['furn/books', 'furn/books*1.2', TBOX[0], 'furn/books', TBOX[2], 'furn/books*1.2', TBOX[4], 'furn/books'];
+var REAMS = CARTON.map(function (r) { return r + '*0.4'; });
 AREAS.office = {
   cx: -4.1, cz: -12.8, vacant: [-6.9, -1.25, -13.9, -11.7], sign: [-3.2, -13.65, 2.2],
   floor: [{ poly: rbox(-6.9, -1.25, -13.9, -11.7, 0.5), finish: 0xe3dccf }],
   ups: ups([
-    OFFL[0],
-    cap('Book end', -6.65, -12.8, 'k', ['furn/books', BOX[1]]),
-    OFFL[1],
-    fx('Study desk', 'furn/desk', -7.6, -12.45, 'k', null, [['furn/laptop*1.3', -0.12, 0, 0.2, 0.343], ['furn/lampSquareTable', 0.15, 0, 0, 0.343]]),
-    OFFL[2],
-    OFFL[3],
-    fx('Computer desk', 'furn/desk', -7.6, -13.2, 'k', null, [['furn/computerScreen*1.3', 0, -0.05, 0, 0.343], ['furn/computerKeyboard*1.3', 0, 0.07, 0, 0.343]]),
-    OFFL[4],
-    OFFL[5],
-    cap('Stationery end', -1.45, -12.8, 'b', [BOX[4], CARTON[0]]),
-    perch('Book stack', 'furn/books', -6.2, -12.8, 0.8, 1.6),
-    perch('Desk lamp', 'furn/lampSquareTable', -5.25, -12.8, 0.8, 1.4),
-    perch('Desk speaker', 'furn/speakerSmall', -5.9, -12.8, 0.8, 1.2, 0.3),
-    perch('Office plant', 'furn/plantSmall1', -4.6, -12.8, 0.8, 2),
-    perch('Paper boxes', CARTON[3], -3.8, -12.8, 0.8, 1.1),
-    perch('Radio', 'furn/radio', -4.3, -12.8, 0.8, 1.3, 0.2),
-    perch('Globe light', 'furn/lampRoundTable', -3.0, -12.8, 0.8, 1.4),
-    perch('Pencil box', BOX[2], -2.05, -12.8, 0.8, 1.1),
+    up('Novel shelf', pw('Gondola_Island_10', -6.05, -12.8, 's', { spots: 2, on: shelfGoods(BOOKS, 3) })),
+    up('Book end', pw('Gondola_EndCap_Low_10', -6.65, -12.8, 'k', { on: shelfGoods(BOOKS.slice(1), 3, { zs: [0.03], ys: [0.15, 0.55, 0.95] }) })),
+    up('Cookbook shelf', pw('Gondola_Island_Low_10', -5.25, -12.8, 's', { spots: 2, on: shelfGoods(BOOKS.slice(2), 3, { ys: [0.15, 0.55, 0.95] }) })),
+    up('Study table', pw('Table_Promo_Tiered_01', -7.6, -12.45, 'k', { on: [['furn/laptop*1.0', -0.12, 0.1, 0.2, 0.225], ['furn/lampSquareTable', 0.15, -0.05, 0, 0.35], ['furn/books', 0.1, 0.12, 0.4, 0.225]] })),
+    up('Kids book shelf', pw('Gondola_Island_10', -4.45, -12.8, 's', { spots: 2, on: shelfGoods(BOOKS.slice(3), 3) })),
+    up('Notebook pegs', pw('Gondola_Island_Peg_10', -3.65, -12.8, 's', { spots: 2, on: pegGoods(BOOKS, 0.1) })),
+    up('Computer table', pw('Table_Promo_Tiered_01', -7.6, -13.2, 'k', { on: [['furn/computerScreen*0.8', 0, -0.12, 0, 0.475], ['furn/computerKeyboard*0.9', 0, 0, 0, 0.35]] })),
+    up('Pen pegs', pw('Gondola_Island_Peg_10', -2.85, -12.8, 's', { spots: 2, on: pegGoods(BAG.map(function (r) { return r + '*0.5'; }), 0.1) })),
+    up('Paper shelf', pw('Gondola_Island_10', -2.05, -12.8, 's', { spots: 2, on: shelfGoods(REAMS, 2) })),
+    up('Magazine rack', pw('NewspaperRack_01', -1.45, -12.8, 'b')),
+    perch('Book stack', 'furn/books', -6.15, -12.8, 0.92, 1.6),
+    perch('Desk lamp', 'furn/lampSquareTable', -5.25, -12.8, 0.72, 1.4),
+    perch('Desk speaker', 'furn/speakerSmall', -5.95, -12.8, 0.92, 1.2, 0.3),
+    perch('Office plant', 'furn/plantSmall1', -4.45, -12.8, 0.92, 2),
+    perch('Paper boxes', CARTON[3] + '*0.6', -2.1, -12.8, 0.92, 1.1),
+    perch('Radio', 'furn/radio', -4.3, -12.8, 0.92, 1.3, 0.2),
+    perch('Globe light', 'furn/lampRoundTable', -3.65, -12.8, 0.92, 1.4),
+    perch('Pencil box', TBOX[2], -2.8, -12.8, 0.92, 1.1),
     board('Paper deal', 'PAPER 2 FOR 5', -6.8, -12.3, 0.9),
     mat('Reading mat', -6.5, -5, -12.55, -11.45, 0xd9cdb8),
     board('Back to school', 'BACK TO SCHOOL', -6.8, -13.5, 1.0),
-    perch('Boombox', 'furn/speaker*0.5', -1.45, -12.8, 1.05),
-    perch('Laptop display', 'furn/laptop*1.3', -3.5, -12.8, 0.8, 1.2, 0.3),
-    perch('Office mouse', 'furn/computerMouse*1.6', -5.5, -12.8, 0.8)
-  ], [SIGN, up('Book desk', till(-0.85, -12.0, 'k'), { staff: [-0.4, -12.0, 'k'] }),
-    up('Bestsellers', on('furn/books*3', -6.65, -12.8, 1.05), on('furn/books*3', -6.62, -12.8, 1.32, 1, 0.3), on('furn/books*3', -6.66, -12.8, 1.59, 1, 1)), lights([[-5, -12.8], [-2.8, -12.8]]), HELP,
-    up('Big monitor', { sign: 'gold' }, on('furn/computerScreen*2', -2.85, -12.8, 0.9))])
+    perch('Boombox', 'furn/speaker*0.5', -1.45, -12.8, 0.55),
+    perch('Laptop display', 'furn/laptop*1.3', -3.5, -12.8, 0.92, 1.2, 0.3),
+    perch('Office mouse', 'furn/computerMouse*1.6', -5.5, -12.8, 0.72)
+  ], [SIGN, counter('Book desk', -0.85, -12.0, 'k', -0.4, -12.0),
+    up('Bestsellers', on('furn/books*3', -6.65, -12.8, 0.72), on('furn/books*3', -6.62, -12.8, 0.99, 1, 0.3), on('furn/books*3', -6.66, -12.8, 1.26, 1, 1)), lights([[-5, -12.8], [-2.8, -12.8]]), HELP,
+    up('Big monitor', { sign: 'gold' }, on('furn/computerScreen*2', -2.85, -12.8, 0.92))])
 };
 
 // a pegboard panel on the area's north line with tools hung in rows: [model, across, height, size, turn]
