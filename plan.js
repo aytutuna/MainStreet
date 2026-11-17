@@ -205,19 +205,43 @@ function eastCaps(z, names, goods) {
   return [cap(names[0], 6.65, z[0], 'b', goods[0]), cap(names[1], 1.45, z[0], 'k', goods[1]), cap(names[2], 6.65, z[1], 'b', goods[2]), cap(names[3], 1.45, z[1], 'k', goods[3])];
 }
 
+// a run of Pipework pieces side by side, from x going west (or east when dir is 1): [name, model, width, options]
+function pwrun(list, x, z, face, dir) {
+  dir = dir || -1;
+  return list.map(function (it) {
+    var cx = x + dir * it[2] / 2;
+    x += dir * it[2];
+    return up(it[0], pw(it[1], cx, z, face, it[3]));
+  });
+}
+function gond(name, model, on) {
+  return [name, model, 0.5, { stock: 1, spots: 2, on: on }];
+}
+// goods of other kits standing along the top of a gondola, [ref, x, y] (x from the middle, y from the floor)
+function tops(list) {
+  return list.map(function (g) { return ['pw/' + g[0], g[1], 0, 0, g[2]]; });
+}
+
 AREAS.pantry = {
   cx: 4.05, cz: -6.6, vacant: [1.25, 6.9, -8.9, -4.7], sign: [4.0, -6.6, 1.9],
   floor: [{ poly: rbox(1.25, 6.9, -8.9, -4.7, 0.5), finish: 0xe8d9b4 }],
   ups: ups(runs(
-    row(2.05, -5.5, nm(['Cereal shelf', 'Pasta shelf', 'Rice shelf', 'Soup shelf', 'Canned veg', 'Bean shelf'], [BOX[0], CAN[0], CARTON[1], BAG[0], BOX[1], CAN[1], BAG[2], CARTON[0], CAN[2], BOX[2]])),
-    row(2.05, -7.7, nm(['Sauce shelf', 'Baking shelf', 'Oil shelf', 'Snack bars', 'Coffee shelf', 'Tea shelf'], [BOX[4], CARTON[3], CAN[0], BAG[4], BOX[5], CAN[2], CARTON[4], BAG[5], CAN[1], BOX[0]])),
-    eastCaps([-5.5, -7.7], ['Peanut butter end', 'Honey end', 'Ketchup end', 'Oil end'],
-      [['food/peanut-butter', 'food/honey'], ['food/bottle-ketchup', 'food/bottle-musterd'], ['food/bottle-oil', 'food/soy'], [CAN[3], 'food/can-small']]),
-    [pal('Can pallet', 1.9, -3.65, 0.1, [CAN[1]]), pal('Flour pallet', 8.4, -5.5, 'b', [BAG[2]]), board('Pantry sale board', 'SALE', 6.85, -6.37, 0.9),
-      pal('Jar pallet', 8.4, -7.7, 'b', ['food/honey']), d('Basket stack', 'shop/shopping-basket', 8.4, -4.9, 0.2),
-      pal('Pasta pallet', 8.4, -6.6, 'b', [CARTON[1]]), pal('Bean pallet', 8.4, -8.6, 'b', [CAN[2]]), pal('Soup can pallet', 0.8, -6.6, 'k', [TIN[0]])]),
-    [SIGN, clerk(7.6, -6.6, 'k'), f('Cereal tower', 'end', 4.05, -6.95, 'b', ['food/bottle-oil', CAN[4]]), lights([[3, -6.6], [5.2, -6.6]]), HELP,
-      up('Showcase', { sign: 'gold' }, { m: CAN[2] + '*2', x: 2.05, z: -5.5, r: 0, k: 1, y: 0.8, flat: 1 }, { m: CAN[3] + '*2', x: 2.85, z: -5.5, r: 0, k: 1, y: 0.8, flat: 1 })])
+    pwrun([gond('Cereal gondola', 'Gondola_Island_10'), gond('Pasta gondola', 'Gondola_Island_10'),
+      gond('Rice rack', 'Gondola_Island_Low_10', tops([['Bag_Rice_01', -0.15, 0.7], ['Bag_Rice_01', 0.1, 0.7]])),
+      gond('Soup gondola', 'Gondola_Island_10'), gond('Canned veg gondola', 'Gondola_Island_10'),
+      gond('Flour rack', 'Gondola_Island_Low_10', tops([['Bag_Flour_01', -0.15, 0.7], ['Bag_Flour_01', 0.1, 0.7]]))], 5.5, -5.5, 's'),
+    pwrun([gond('Sauce gondola', 'Gondola_Island_10'), gond('Baking gondola', 'Gondola_Island_10'),
+      gond('Oil rack', 'Gondola_Island_Low_10', tops([['Jug_CookingOil_01', -0.15, 0.7], ['Jug_CookingOil_01', 0.1, 0.7]])),
+      gond('Spice pegs', 'Gondola_Island_Peg_10'), gond('Coffee gondola', 'Gondola_Island_10'),
+      gond('Tea rack', 'Gondola_Island_Low_10')], 5.5, -7.7, 's'),
+    [up('Soup end cap', pw('Gondola_EndCap_10', 5.68, -5.5, 'b', { stock: 1 })), up('Jar end cap', pw('Gondola_EndCap_10', 2.37, -5.5, 'k', { stock: 1 })),
+      up('Ketchup end cap', pw('Gondola_EndCap_10', 5.68, -7.7, 'b', { stock: 1 })), up('Cereal end cap', pw('Gondola_EndCap_10', 2.37, -7.7, 'k', { stock: 1 }))],
+    [up('Can bin', pw('DumpBin_Wire_01', 1.9, -3.65, 0.1, { stock: 1 })), up('Flour table', pw('Table_Promo_Tiered_01', 8.2, -5.5, 'b', { stock: 1 })), board('Pantry sale board', 'SALE', 6.85, -6.37, 0.9),
+      up('Jar table', pw('Table_Promo_Tiered_01', 8.2, -7.7, 'b', { stock: 1 })), up('Basket stack', pw('Basket_Stack_01', 8.2, -4.9, 'b', { spots: 0 })),
+      up('Pasta bin', pw('DumpBin_Wire_01', 8.2, -6.6, 'b', { stock: 1 })), up('Bean table', pw('Table_Promo_Tiered_01', 8.2, -8.6, 'b', { stock: 1 })),
+      up('Soup bin', pw('DumpBin_Wire_01', 0.8, -6.6, 'k', { stock: 1 }))]),
+    [SIGN, clerk(7.6, -6.6, 'k'), up('Promo table', pw('Table_Promo_Tiered_01', 6.45, -6.6, 'b', { stock: 1 })), lights([[3, -6.6], [5.2, -6.6]]), HELP,
+      up('Bulk bins', { sign: 'gold' }, pw('BulkBins_Gravity_10', 1.55, -6.6, 'b', {}))])
 };
 
 AREAS.snacks = {
