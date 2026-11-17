@@ -109,7 +109,7 @@ function clock2(v) {
 }
 
 function fitInsets() {
-  var top = $('goals').getBoundingClientRect().bottom + 6;
+  var top = $('meters').getBoundingClientRect().bottom + 6;
   var bot = innerHeight - (sheetOpen ? $('sheet').getBoundingClientRect().top : $('bottom').getBoundingClientRect().top) + 6;
   if (top !== insets[0] || bot !== insets[1]) {
     insets = [top, bot];
@@ -444,6 +444,46 @@ function updateHud() {
   var x = $('x2');
   set(shown, 'x2h', x, 'hidden', !(S.x2 > 0));
   if (S.x2 > 0) set(shown, 'x2t', x, 'textContent', 'x2  ' + clock2(S.x2));
+}
+
+function meter(id, v, k) {
+  var b = $(id);
+  var w = Math.round(Math.max(0, Math.min(1, v)) * 100);
+  flag(k, id + 'a', b, 'amber', v < 0.8 && v >= 0.5);
+  flag(k, id + 'r', b, 'red', v < 0.5);
+  if (k[id] !== w) {
+    k[id] = w;
+    b.querySelector('u').style.width = w + '%';
+  }
+}
+
+function updateMeters() {
+  var k = shown;
+  var cap = capacity();
+  var inr = inRate();
+  meter('m-in', inr / cap, k);
+  meter('m-tills', cap / inr, k);
+  meter('m-shelf', stockCap() / served(), k);
+}
+
+// the place that brings the most shoppers for the money: Parking or the Taxi Stand
+function drawPlace() {
+  var pick = null;
+  var best = 0;
+  [['lot', PER_LOT], ['taxi', PER_TAXI]].forEach(function (p) {
+    var c = placeCost(p[0]);
+    if (c && p[1] / c > best) {
+      best = p[1] / c;
+      pick = p[0];
+    }
+  });
+  return pick || (S.pl.lot < PL.lot.cost.length ? 'lot' : 'taxi');
+}
+
+function openPlace(id) {
+  wake();
+  showCard(id);
+  focusBiz(id);
 }
 
 function updateBest() {
@@ -793,6 +833,7 @@ function loop(t) {
     bestAt = t;
     updateBest();
     updateGoals();
+    updateMeters();
     fitInsets();
   }
   View.draw(t);
@@ -814,6 +855,9 @@ function start() {
   wire();
   setFree(free);
   paintFree();
+  $('m-in').addEventListener('click', function () { openPlace(drawPlace()); });
+  $('m-tills').addEventListener('click', function () { openPlace('hall'); });
+  $('m-shelf').addEventListener('click', function () { openPlace('dock'); });
   onShopper = onSale;
   var wait = setInterval(function () {
     if (!View.ready()) return;
