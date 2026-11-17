@@ -311,7 +311,7 @@ function room(id) {
 var ROOMFX = {
   serv: function (n) { return '+' + perMin(inRate() / (1 + SERV * S.pl.serv) * SERV * (n || 1)) + ' shoppers/min'; },
   rest: function (n) { return '+' + Math.round(REST * 100 * (n || 1)) + '% spent by every shopper'; },
-  lounge: function (n) { return 'Tills and stockers ' + Math.round((1 - Math.pow(LOUNGE, n || 1)) * 100) + '% faster'; },
+  lounge: function (n) { return '-' + Math.round((1 - Math.pow(LOUNGE, n || 1)) * 100) + '% till and stocking time'; },
   head: function (n) { return '+' + Math.round(HEAD * 100 * (n || 1)) + '% income, ' + (n || 1) + ' h more away'; }
 };
 
@@ -745,7 +745,7 @@ function drawPlace() {
     }
   });
   BIZ.forEach(function (z) {
-    if (!has(z.id) || DRAW / cost(z.id, 1) <= best) return;
+    if (!has(z.id) || DRAW * sm / cost(z.id, 1) <= best) return;
     var left = z.items.some(function (x, j) { return x.stat === 'draw' && nextPiece(z.id, j) >= 0; });
     if (!left) return;
     best = DRAW / cost(z.id, 1);
