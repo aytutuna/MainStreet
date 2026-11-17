@@ -21,14 +21,14 @@
     <div id="bar">
       <div id="cash" class="pill"><img class="ico" src="assets/coin.png" alt=""><div><b id="cash-n"></b><span id="rate"></span></div></div>
       <div id="gems" class="pill sm"><img class="ico" src="assets/ui_gem.png" alt=""><b id="gem-n"></b></div>
-      <div id="stars" class="pill sm"><img class="ico" src="assets/ui_star.png" alt=""><span id="store-n"></span><b id="star-n"></b></div>
+      <button type="button" id="stars" class="pill sm" aria-label="New store"><img class="ico" src="assets/ui_star.png" alt=""><div><span id="store-n"></span><b id="star-n"></b></div></button>
       <button type="button" id="gear" class="pill" aria-label="Menu"><i></i><i></i><i></i></button>
     </div>
     <div id="goals"></div>
     <div id="meters">
-      <button type="button" id="m-in"><span>Shoppers</span><i><u></u></i></button>
-      <button type="button" id="m-tills"><span>Checkouts</span><i><u></u></i></button>
-      <button type="button" id="m-shelf"><span>Shelves</span><i><u></u></i></button>
+      <button type="button" id="m-in"><div><span>Shoppers</span><em></em></div><i><u></u></i></button>
+      <button type="button" id="m-tills"><div><span>Checkouts</span><em></em></div><i><u></u></i></button>
+      <button type="button" id="m-shelf"><div><span>Shelves</span><em></em></div><i><u></u></i></button>
     </div>
     <div id="turn"><button type="button" id="turn-l" aria-label="Rotate left">&#8634;</button><button type="button" id="turn-r" aria-label="Rotate right">&#8635;</button></div>
     <div id="side">
@@ -37,8 +37,9 @@
   </div>
   <div id="fly"></div>
   <div id="bottom">
+    <div id="hint" hidden></div>
     <div id="card" hidden>
-      <button type="button" id="card-x" aria-label="Close">x</button>
+      <button type="button" id="card-x" aria-label="Close"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 2.5l7 7M9.5 2.5l-7 7"/></svg></button>
       <div id="card-row"></div>
     </div>
     <div id="tabs">
@@ -51,7 +52,7 @@
   <div id="sheet" hidden>
     <div id="sheet-head">
       <b>Departments</b>
-      <button type="button" id="sheet-x" aria-label="Close">x</button>
+      <button type="button" id="sheet-x" aria-label="Close"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 2.5l7 7M9.5 2.5l-7 7"/></svg></button>
     </div>
     <div id="list"></div>
   </div>
@@ -76,8 +77,8 @@
     <div class="box">
       <h2>Boosts</h2>
       <p id="boost-gems"></p>
-      <div class="offer"><img src="assets/ui_bolt.png" alt=""><div><b>Double income</b><span id="x2-txt"></span></div><button type="button" id="b-x2" class="btn"></button></div>
-      <div class="offer"><img src="assets/ui_warp.png" alt=""><div><b>Time warp</b><span id="warp-txt"></span></div><button type="button" id="b-warp" class="btn"></button></div>
+      <div class="offer"><img src="assets/ui_bolt.png" alt=""><div><b>Double income</b><span id="x2-txt"></span><span class="need" id="x2-need"></span></div><button type="button" id="b-x2" class="btn"></button></div>
+      <div class="offer"><img src="assets/ui_warp.png" alt=""><div><b>Time warp</b><span id="warp-txt"></span><span class="need" id="warp-need"></span></div><button type="button" id="b-warp" class="btn"></button></div>
       <p class="small">Gems come from goals, milestones and the daily reward.</p>
       <button type="button" id="boost-x" class="btn alt">Close</button>
     </div>
@@ -99,13 +100,14 @@
       <button type="button" id="m-buzz" class="btn alt"></button>
       <button type="button" id="m-copy" class="btn alt">Copy code</button>
       <div class="row"><input id="m-code" type="text" placeholder="Paste a code" autocomplete="off" autocapitalize="off" spellcheck="false"><button type="button" id="m-load" class="btn alt">Load code</button></div>
+      <p class="small" id="m-help">Copy code is your backup. Paste it on another device to move the game.</p>
       <div id="test" hidden>
         <div class="row" id="t-speed"><button type="button" data-s="1" class="btn alt">x1</button><button type="button" data-s="10" class="btn alt">x10</button><button type="button" data-s="100" class="btn alt">x100</button></div>
         <div class="row"><button type="button" id="t-hour" class="btn alt">+1 h income</button><button type="button" id="t-gems" class="btn alt">+100 gems</button></div>
         <button type="button" id="t-free" class="btn alt">Unlimited money: on</button>
         <button type="button" id="t-goals" class="btn alt">Finish goals</button>
       </div>
-      <button type="button" id="m-reset" class="btn alt">Reset store</button>
+      <button type="button" id="m-reset" class="btn alt">Erase all progress</button>
       <p class="credit">Models and sounds: Kenney (www.kenney.nl)<br>Icons: LimeZu (https://limezu.itch.io/)<br>3D: three.js (threejs.org)</p>
       <button type="button" id="m-ok" class="btn">Close</button>
     </div>
