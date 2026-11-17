@@ -1,5 +1,5 @@
-var KEY = 'mainstreet.v9';
-var OLD_KEYS = ['mainstreet.v8', 'mainstreet.v7', 'mainstreet.v6', 'mainstreet.v5', 'mainstreet.v4', 'mainstreet.v3', 'mainstreet.v2', 'mainstreet.v1', 'mainstreet.won'];
+var KEY = 'mainstreet.v10';
+var OLD_KEYS = ['mainstreet.v9', 'mainstreet.v8', 'mainstreet.v7', 'mainstreet.v6', 'mainstreet.v5', 'mainstreet.v4', 'mainstreet.v3', 'mainstreet.v2', 'mainstreet.v1', 'mainstreet.won'];
 var MAX_AWAY = 8 * 3600;
 var START_CASH = 5;
 var STAR_BONUS = 0.02;
@@ -31,12 +31,9 @@ var PATIENCE = 6;
 var SHOP_T = 30;
 var PLANT = 0.3;
 // goods are counted by what they sell for. A dolly carries LOAD0 dollars of them at Stockroom level 0 and LOAD times
-// that at each level, and a full department holds SHELF loads. A stocker walks from the stock door to a department in
-// the first row in WALK_T seconds and ROW_T more for each row behind it, and takes SHELVE seconds to put a load out
+// that at each level, and a full department holds SHELF loads. A stocker takes SHELVE seconds to put a load out
 var SHELF = 6;
 var SHELVE = 4;
-var WALK_T = 12;
-var ROW_T = 3.3;
 var LOAD0 = 300;
 var LOAD = 100;
 
@@ -48,11 +45,13 @@ BIZ.forEach(function (b, i) {
   b.i = i;
   BZ[b.id] = b;
 });
+// the departments by how far the stockers walk to them, nearest first
+var NEAR = BIZ.slice().sort(function (a, b) { return a.w - b.w; });
 
 var S = fresh();
 
 function fresh() {
-  var s = { v: 9, cash: START_CASH, gems: 0, stars: 0, run: 0, all: 0, pend: 0, pl: { lot: 0, hall: 0, dock: 0, taxi: 0, garden: 0 }, x2: 0, b: {}, ms: {},
+  var s = { v: 10, cash: START_CASH, gems: 0, stars: 0, run: 0, all: 0, pend: 0, pl: { lot: 0, hall: 0, dock: 0, taxi: 0, garden: 0 }, x2: 0, b: {}, ms: {},
     st: { srv: 0, lost: 0, sales: 0 }, goal: [0, 1, 2], gn: 3, gd: {}, day: { n: 0, d: -1 }, ts: clock() };
   s.b.produce = { l: 1 };
   return s;
@@ -166,7 +165,7 @@ function haul() {
 }
 
 function walkT(id) {
-  return WALK_T + ROW_T * (BZ[id].i >> 1);
+  return BZ[id].w;
 }
 
 function trip(id) {
@@ -186,12 +185,12 @@ function stockCap() {
 }
 
 // what the shoppers pay for at the tills a second while the store runs steady. Stockers keep the departments nearest
-// the stock door full first; past what they can carry the ones further back are empty part of the time
+// the stock doors full first; past what they can carry the ones further off are empty part of the time
 function sold() {
   var n = served();
   var left = crewAt()[0];
   var v = 0;
-  BIZ.forEach(function (b) {
+  NEAR.forEach(function (b) {
     var t = need(b.id, n);
     if (!t) return;
     v += n * spendAt(b.id, lv(b.id)) * Math.min(1, left / t);
@@ -210,24 +209,14 @@ function rate() {
 }
 
 function cost(id, n) {
+  if (lv(id) + n > UPS) return Infinity;
   var b = BZ[id];
   return b.c0 * Math.pow(b.g, lv(id)) * (Math.pow(b.g, n) - 1) / (b.g - 1);
 }
 
-function maxBuy(id) {
-  var b = BZ[id];
-  var u = b.c0 * Math.pow(b.g, lv(id));
-  var n = Math.floor(Math.log(1 + S.cash * (b.g - 1) / u) / Math.log(b.g) + 1e-9);
-  while (n > 0 && cost(id, n) > S.cash) n--;
-  return Math.max(0, n);
-}
-
-// how many of a department's pieces are in, one for each STAGE level reached
+// how many of a department's pieces are in: one for each upgrade
 function shape(id) {
-  var l = lv(id);
-  var n = 0;
-  while (n < STAGE.length && l >= STAGE[n]) n++;
-  return n;
+  return lv(id);
 }
 
 // unlimited money for testing: spending is free, and the real balance waits in FREE so saves never hold the top-up
@@ -261,7 +250,7 @@ function earn(v) {
 // returns what changed: unlock, milestones crossed and their gems, whether the department gets a new piece
 function buy(id, n) {
   n = n || 1;
-  if (!avail(id) || n < 1) return null;
+  if (!avail(id) || n < 1 || lv(id) + n > UPS) return null;
   var c = cost(id, n);
   if (c > S.cash) return null;
   S.cash -= c;
@@ -427,10 +416,10 @@ function shelvesOut() {
   return outT > 0;
 }
 
-// the open department nearest the stock door with room for one more load besides the ones on their way
+// the open department nearest the stock doors with room for one more load besides the ones on their way
 function pickDept() {
-  for (var i = 0; i < BIZ.length; i++) {
-    var id = BIZ[i].id;
+  for (var i = 0; i < NEAR.length; i++) {
+    var id = NEAR[i].id;
     if (!has(id)) continue;
     var on = 0;
     crew.forEach(function (w) { if (w.id === id) on++; });
@@ -548,9 +537,7 @@ function options() {
         if (!b.l) delete S.b[id];
       };
     }
-    add({ k: 'lv', id: id, n: 1, cost: cost(id, 1), gain: gain(by(1)) });
-    var m = nextMs(l);
-    if (m && m.lv - l > 1 && l > 0) add({ k: 'lv', id: id, n: m.lv - l, cost: cost(id, m.lv - l), gain: gain(by(m.lv - l)), ms: m.lv });
+    if (l < UPS) add({ k: 'lv', id: id, n: 1, cost: cost(id, 1), gain: gain(by(1)) });
   });
   PLACES.forEach(function (p) {
     var c = placeCost(p.id);
@@ -600,11 +587,11 @@ function nw(g) {
 var GOALS = [
   gServe(10, 3), gLv('produce', 10, 3), gLv('bakery', 1, 4), gPl('hall', 1, 'Open lane 2', 5), nw(gPl('dock', 1, 'Hire a second stocker', 4)),
   gPl('lot', 1, 'Build the Parking', 4),
-  gServe(100, 3), gLv('bakery', 10, 4), gEarn(1000, 3), gLv('dairy', 1, 5), gLv('produce', 25, 5, 15), gLv('meat', 1, 6),
-  gEarn(1e5, 5), gLv('bakery', 25, 6), gServe(500, 5), gLv('frozen', 1, 8), gLv('dairy', 25, 8, 30), gPl('taxi', 1, 'Open the Taxi Stand', 8),
-  gPl('hall', 3, 'Put in self checkouts', 10), nw(gPl('dock', 3, 'Stockroom to level 3', 10)), gEarn(1e7, 8), gLv('pantry', 1, 10), gLv('produce', 100, 12), gLv('snacks', 1, 10),
+  gServe(100, 3), gLv('bakery', 10, 4), gEarn(1000, 3), gLv('dairy', 1, 5), gLv('produce', 20, 5, 15), gLv('meat', 1, 6),
+  gEarn(1e5, 5), gLv('bakery', 20, 6), gServe(500, 5), gLv('frozen', 1, 8), gLv('dairy', 20, 8, 30), gPl('taxi', 1, 'Open the Taxi Stand', 8),
+  gPl('hall', 3, 'Put in self checkouts', 10), nw(gPl('dock', 3, 'Stockroom to level 3', 10)), gEarn(1e7, 8), gLv('pantry', 1, 10), gLv('produce', 30, 12), gLv('snacks', 1, 10),
   gPl('lot', 3, 'Parking to level 3', 10), gLv('toys', 1, 12), gServe(2000, 10), gEarn(1e9, 10, 30), gLv('tech', 1, 15),
-  gPl('hall', 5, 'Open lane 3', 15), gLv('kitchen', 1, 20), gEarn(1e11, 15), gLv('kitchen', 25, 15, 30), gLv('toys', 50, 15),
+  gPl('hall', 5, 'Open lane 3', 15), gLv('kitchen', 1, 20), gEarn(1e11, 15), gLv('kitchen', 20, 15, 30), gLv('toys', 25, 15),
   gl('Sell the store', 30, 1, function () { return S.st.sales; }), gServe(10000, 20), gEarn(1e13, 20, 60), gLv('clothes', 1, 25),
   gPl('garden', 1, 'Open the Garden Center', 25), gLv('home', 1, 30), gLv('office', 1, 30), gPl('hall', 10, 'Checkouts to level 10', 30),
   nw(gPl('dock', 10, 'Stockroom to level 10', 30)),
@@ -725,9 +712,16 @@ function num(v, d) {
   return isFinite(v) && v >= 0 ? +v : d;
 }
 
+function oldPieces(l) {
+  var at = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 16, 18, 20, 25, 50, 100, 200, 300, 400];
+  var n = 0;
+  while (n < at.length && l >= at[n]) n++;
+  return n;
+}
+
 // copies what it knows by id; anything unknown is dropped and anything missing starts over
 function validate(o) {
-  if (!o || typeof o !== 'object' || (o.v !== 7 && o.v !== 8 && o.v !== 9) || !o.b || typeof o.b !== 'object') return null;
+  if (!o || typeof o !== 'object' || typeof o.v !== 'number' || o.v < 7 || o.v > 10 || !o.b || typeof o.b !== 'object') return null;
   if (!isFinite(o.cash) || !isFinite(o.ts)) return null;
   var s = fresh();
   s.b = {};
@@ -744,11 +738,12 @@ function validate(o) {
   BIZ.forEach(function (z) {
     var e = o.b[z.id];
     if (!e || !(e.l >= 1)) return;
-    s.b[z.id] = { l: Math.floor(e.l) };
-  });
-  BIZ.forEach(function (z) {
-    var m = o.ms && o.ms[z.id];
-    if (m >= 1) s.ms[z.id] = Math.min(MS.length, Math.floor(m));
+    var l = Math.floor(e.l);
+    // before v10 a department went to level 400 and showed 21 pieces on the way; it keeps its share of them
+    if (o.v < 10) l = Math.max(1, Math.round(oldPieces(l) * UPS / 21));
+    l = Math.min(UPS, l);
+    s.b[z.id] = { l: l };
+    if (l >= MS[0][0]) s.ms[z.id] = Math.min(MS.length, Math.floor(l / MS[0][0]));
   });
   if (o.st) {
     s.st.srv = Math.floor(num(o.st.srv, 0));
@@ -793,7 +788,7 @@ function load() {
   var back = null;
   try {
     var raw = localStorage.getItem(KEY);
-    var old = raw ? null : localStorage.getItem('mainstreet.v8') || localStorage.getItem('mainstreet.v7');
+    var old = raw ? null : localStorage.getItem('mainstreet.v9') || localStorage.getItem('mainstreet.v8') || localStorage.getItem('mainstreet.v7');
     var mall = raw || old ? null : localStorage.getItem('mainstreet.v6');
     OLD_KEYS.forEach(function (k) { localStorage.removeItem(k); });
     if (mall) carry(JSON.parse(mall));

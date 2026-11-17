@@ -38,6 +38,8 @@ targets:
         buildPhase: resources
       - path: ../store.js
         buildPhase: resources
+      - path: ../plan.js
+        buildPhase: resources
       - path: ../ui.js
         buildPhase: resources
       - path: ../vendor

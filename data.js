@@ -1,30 +1,31 @@
-// Departments in unlock order. c0: price of level 1 (the unlock), g: price growth per level, s: what every shopper
-// spends there per level. ic: sprite shown on the row.
+// Departments in unlock order. c0: price of the first upgrade (the unlock), g: price growth per upgrade, s: what every
+// shopper spends there per upgrade, w: a stocker's one-way walk there from the stockroom in seconds. ic: sprite shown
+// on the row.
 var BIZ = [
-  { id: 'produce', name: 'Produce', ic: 'food/apple', c0: 4, g: 1.1, s: 6 },
-  { id: 'bakery', name: 'Bakery', ic: 'food/croissant', c0: 60, g: 1.15, s: 1.29 },
-  { id: 'dairy', name: 'Dairy', ic: 'food/cheese', c0: 600, g: 1.14, s: 11 },
-  { id: 'meat', name: 'Meat & Fish', ic: 'food/meat-raw', c0: 6000, g: 1.13, s: 94 },
-  { id: 'frozen', name: 'Frozen', ic: 'food/ice-cream', c0: 60000, g: 1.12, s: 804 },
-  { id: 'pantry', name: 'Pantry', ic: 'food/can', c0: 6e5, g: 1.11, s: 6860 },
-  { id: 'snacks', name: 'Snacks & Drinks', ic: 'food/soda-bottle', c0: 6e6, g: 1.11, s: 58700 },
-  { id: 'toys', name: 'Toys', ic: 'holiday/present-a-cube', c0: 6e7, g: 1.1, s: 5.01e5 },
-  { id: 'tech', name: 'Electronics', ic: 'furn/televisionModern', c0: 6e8, g: 1.09, s: 4.29e6 },
-  { id: 'kitchen', name: 'Kitchen', ic: 'food/frying-pan', c0: 6e9, g: 1.08, s: 3.66e7 },
-  { id: 'clothes', name: 'Clothing', ic: 'shop/clothing-rack', c0: 6e10, g: 1.07, s: 3.13e8 },
-  { id: 'home', name: 'Home', ic: 'furn/loungeSofa', c0: 6e11, g: 1.07, s: 2.65e9 },
-  { id: 'office', name: 'Books & Office', ic: 'furn/books', c0: 6e12, g: 1.07, s: 2.25e10 },
-  { id: 'pets', name: 'Pets', ic: 'pets/animal-dog', c0: 6e13, g: 1.07, s: 1.9e11 },
-  { id: 'sports', name: 'Sports & Outdoors', ic: 'surv/tent-canvas', c0: 6e14, g: 1.06, s: 1.6e12 },
-  { id: 'tools', name: 'Hardware', ic: 'surv/tool-hammer', c0: 6e15, g: 1.06, s: 1.4e13 },
-  { id: 'auto', name: 'Auto', ic: 'car/wheel-default', c0: 6e16, g: 1.06, s: 1.2e14 },
-  { id: 'seasonal', name: 'Seasonal', ic: 'holiday/tree-decorated', c0: 6e17, g: 1.06, s: 1e15 }
+  { id: 'produce', name: 'Produce', ic: 'food/apple', c0: 4, g: 1.165, s: 6, w: 18.8 },
+  { id: 'bakery', name: 'Bakery', ic: 'food/croissant', c0: 60, g: 1.165, s: 1.29, w: 14 },
+  { id: 'dairy', name: 'Dairy', ic: 'food/cheese', c0: 600, g: 1.165, s: 11, w: 8.1 },
+  { id: 'meat', name: 'Meat & Fish', ic: 'food/meat-raw', c0: 6000, g: 1.165, s: 94, w: 10.4 },
+  { id: 'frozen', name: 'Frozen', ic: 'food/ice-cream', c0: 60000, g: 1.165, s: 804, w: 7.6 },
+  { id: 'pantry', name: 'Pantry', ic: 'food/can', c0: 6e5, g: 1.165, s: 6860, w: 16.8 },
+  { id: 'snacks', name: 'Snacks & Drinks', ic: 'food/soda-bottle', c0: 6e6, g: 1.165, s: 58700, w: 13.2 },
+  { id: 'toys', name: 'Toys', ic: 'holiday/present-a-cube', c0: 6e7, g: 1.165, s: 5.01e5, w: 14.4 },
+  { id: 'tech', name: 'Electronics', ic: 'furn/televisionModern', c0: 6e8, g: 1.165, s: 4.29e6, w: 10 },
+  { id: 'kitchen', name: 'Kitchen', ic: 'food/frying-pan', c0: 6e9, g: 1.165, s: 3.66e7, w: 9.2 },
+  { id: 'clothes', name: 'Clothing', ic: 'shop/clothing-rack', c0: 6e10, g: 1.165, s: 3.13e8, w: 17.5 },
+  { id: 'home', name: 'Home', ic: 'furn/loungeSofa', c0: 6e11, g: 1.165, s: 2.65e9, w: 16.3 },
+  { id: 'office', name: 'Books & Office', ic: 'furn/books', c0: 6e12, g: 1.165, s: 2.25e10, w: 12.1 },
+  { id: 'pets', name: 'Pets', ic: 'pets/animal-dog', c0: 6e13, g: 1.165, s: 1.9e11, w: 11.2 },
+  { id: 'sports', name: 'Sports & Outdoors', ic: 'surv/tent-canvas', c0: 6e14, g: 1.165, s: 1.6e12, w: 14.6 },
+  { id: 'tools', name: 'Hardware', ic: 'surv/tool-hammer', c0: 6e15, g: 1.165, s: 1.4e13, w: 10.7 },
+  { id: 'auto', name: 'Auto', ic: 'car/wheel-default', c0: 6e16, g: 1.165, s: 1.2e14, w: 11.2 },
+  { id: 'seasonal', name: 'Seasonal', ic: 'holiday/tree-decorated', c0: 6e17, g: 1.165, s: 1e15, w: 20.3 }
 ];
 
-// milestones: [level, sales x]. Each level in STAGE also puts one more thing in the department
-var MS = [[10, 2], [25, 4], [50, 3], [100, 4], [200, 3], [300, 3], [400, 3]];
-var MS_GEMS = [1, 2, 3, 5, 8, 10, 15];
-var STAGE = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 16, 18, 20, 25, 50, 100, 200, 300, 400];
+// a department has UPS upgrades, each one more thing in it; every fifth doubles its sales. MS: [upgrade, sales x]
+var UPS = 30;
+var MS = [[5, 2], [10, 2], [15, 2], [20, 2], [25, 2], [30, 2]];
+var MS_GEMS = [1, 2, 3, 5, 8, 10];
 
 // places round the departments. Parking, the taxi stand and the garden bring shoppers, the stockroom keeps the
 // shelves full and the checkouts take the money. `after` must be open first, `open` places stand from the start, and
