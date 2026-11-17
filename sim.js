@@ -2,8 +2,11 @@ var KEY = 'mainstreet.v11';
 var OLD_KEYS = ['mainstreet.v10', 'mainstreet.v9', 'mainstreet.v8', 'mainstreet.v7', 'mainstreet.v6', 'mainstreet.v5', 'mainstreet.v4', 'mainstreet.v3', 'mainstreet.v2', 'mainstreet.v1', 'mainstreet.won'];
 var MAX_AWAY = 8 * 3600;
 var START_CASH = 5;
-var STAR_BONUS = 0.02;
-var STAR_DIV = 1e15;
+// each store is worth this much more income than the one before; the move needs GATE0 department stars in store 1
+// and GATE_STEP more in each one after, up to every star in the store
+var STORE_MUL = 1.45;
+var GATE0 = 42;
+var GATE_STEP = 6;
 var HALL_BOOST = 0.1;
 var X2_COST = 20;
 var X2_SECS = 1800;
@@ -69,8 +72,8 @@ var NEAR = BIZ.slice().sort(function (a, b) { return a.w - b.w; });
 var S = fresh();
 
 function fresh() {
-  var s = { v: 11, cash: START_CASH, gems: 0, stars: 0, run: 0, all: 0, pend: 0, x2: 0, b: {}, ms: {},
-    st: { srv: 0, lost: 0, sales: 0 }, goal: [0, 1, 2], gn: 3, gd: {}, day: { n: 0, d: -1 }, ts: clock() };
+  var s = { v: 11, cash: START_CASH, gems: 0, store: 1, run: 0, all: 0, pend: 0, x2: 0, b: {}, ms: {},
+    st: { srv: 0, lost: 0 }, goal: [0, 1, 2], gn: 3, gd: {}, day: { n: 0, d: -1 }, ts: clock() };
   noPlaces(s);
   s.b.produce = atLevel('produce', 1);
   return s;
@@ -172,7 +175,7 @@ function drawLv() {
 }
 
 function gmul() {
-  return (1 + STAR_BONUS * S.stars) * (1 + HALL_BOOST * S.pl.hall);
+  return Math.pow(STORE_MUL, S.store - 1) * (1 + HALL_BOOST * S.pl.hall);
 }
 
 function bmul() {
@@ -705,11 +708,11 @@ var GOALS = [
   gPl('hall', 3, 'Put in self checkouts', 10), nw(gPl('dock', 3, 'Stockroom to level 3', 10)), gEarn(1e7, 8), gLv('pantry', 1, 10), gLv('produce', 30, 12), gLv('snacks', 1, 10),
   gPl('lot', 3, 'Parking to level 3', 10), gLv('toys', 1, 12), gServe(2000, 10), gEarn(1e9, 10, 30), gLv('tech', 1, 15),
   gPl('hall', 5, 'Open lane 3', 15), gLv('kitchen', 1, 20), gEarn(1e11, 15), gLv('kitchen', 20, 15, 30), gLv('toys', 25, 15),
-  gl('Sell the store', 30, 1, function () { return S.st.sales; }), gServe(10000, 20), gEarn(1e13, 20, 60), gLv('clothes', 1, 25),
+  gl('Move to a new store', 30, 1, function () { return S.store - 1; }), gServe(10000, 20), gEarn(1e13, 20, 60), gLv('clothes', 1, 25),
   gPl('garden', 1, 'Open the Garden Center', 25), gLv('home', 1, 30), gLv('office', 1, 30), gPl('hall', 10, 'Checkouts to level 10', 30),
   nw(gPl('dock', 10, 'Stockroom to level 10', 30)),
   gLv('pets', 1, 35), gEarn(1e15, 25), gLv('sports', 1, 35), gServe(50000, 30), gLv('tools', 1, 40), gLv('auto', 1, 40),
-  gl('Earn 100 Store stars', 40, 100, function () { return S.stars; }), gLv('seasonal', 1, 50), gEarn(1e21, 30)
+  gl('Reach store #3', 40, 2, function () { return S.store - 1; }), gLv('seasonal', 1, 50), gEarn(1e21, 30)
 ];
 
 // a v8 save's goal numbers, moved to where those goals are now; the new ones before them are passed over
@@ -752,22 +755,32 @@ function finishGoals() {
   S.goal.forEach(function (i) { S.gd[i] = 1; });
 }
 
-function stars() {
-  return Math.floor(Math.sqrt(S.run / STAR_DIV));
+// the department stars in the store, which is what the move is gated on
+function rating() {
+  var n = 0;
+  BIZ.forEach(function (b) { n += deptStars(b.id); });
+  return n;
 }
 
-function sell() {
-  var n = stars();
-  if (n < 1) return 0;
+function gate() {
+  return Math.min(STAR_AT.length * BIZ.length, GATE0 + GATE_STEP * (S.store - 1));
+}
+
+function canMove() {
+  return BIZ.every(function (b) { return has(b.id); }) && rating() >= gate();
+}
+
+function move() {
+  if (!canMove()) return false;
   claimAway();
-  S.stars += n;
-  S.st.sales++;
+  S.store++;
   S.cash = START_CASH;
   S.run = 0;
+  S.ms = {};
   noPlaces(S);
   S.b = { produce: atLevel('produce', 1) };
   clearShoppers();
-  return n;
+  return true;
 }
 
 function dayNum(ms) {
@@ -841,7 +854,6 @@ function validate(o) {
   s.b = {};
   s.cash = num(o.cash, 0);
   s.gems = Math.floor(num(o.gems, 0));
-  s.stars = Math.floor(num(o.stars, 0));
   s.run = num(o.run, 0);
   s.all = Math.max(s.run, num(o.all, 0));
   s.pend = num(o.pend, 0);
@@ -880,8 +892,9 @@ function validate(o) {
   if (o.st) {
     s.st.srv = Math.floor(num(o.st.srv, 0));
     s.st.lost = Math.floor(num(o.st.lost, 0));
-    s.st.sales = Math.floor(num(o.st.sales, 0));
   }
+  // before the move a store sale was counted in st.sales
+  s.store = o.store >= 1 ? Math.floor(o.store) : 1 + Math.floor(num(o.st && o.st.sales, 0));
   // the goal list was rewritten with the tills, so a v7 save starts it again; a v8 one had no stockroom goals
   if (o.v === 8) v8Goals(o);
   var gn = o.v === 7 ? 3 : Math.min(GOALS.length, Math.floor(num(o.gn, 3)));
@@ -902,14 +915,13 @@ function validate(o) {
   return s;
 }
 
-// the mall's shops are gone with the store rebuild, but its stars, gems, boosts and daily streak carry over
+// the mall's shops are gone with the store rebuild, but its stores, gems, boosts and daily streak carry over
 function carry(o) {
   if (!o || typeof o !== 'object') return;
   S = fresh();
-  S.stars = Math.floor(num(o.stars, 0));
   S.gems = Math.floor(num(o.gems, 0));
   S.x2 = num(o.x2, 0);
-  if (o.st) S.st.sales = Math.floor(num(o.st.sales, 0));
+  S.store = 1 + Math.floor(num(o.st && o.st.sales, 0));
   if (o.day && isFinite(o.day.n) && isFinite(o.day.d)) S.day = { n: Math.floor(o.day.n), d: Math.floor(o.day.d) };
   save();
 }

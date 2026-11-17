@@ -548,7 +548,8 @@ function updateHud() {
   set(shown, 'cash', $('cash-n'), 'textContent', free ? 'Unlimited' : money(S.cash));
   set(shown, 'rate', $('rate'), 'textContent', '+' + money(rate()) + '/s');
   set(shown, 'gems', $('gem-n'), 'textContent', String(S.gems));
-  set(shown, 'stars', $('star-n'), 'textContent', String(S.stars));
+  set(shown, 'stars', $('star-n'), 'textContent', rating() + '/' + gate());
+  set(shown, 'store', $('store-n'), 'textContent', '#' + S.store);
   var x = $('x2');
   set(shown, 'x2h', x, 'hidden', !(S.x2 > 0));
   if (S.x2 > 0) set(shown, 'x2t', x, 'textContent', 'x2  ' + clock2(S.x2));
@@ -556,7 +557,8 @@ function updateHud() {
 
 function meter(id, v, k) {
   var b = $(id);
-  var w = Math.round(Math.max(0, Math.min(1, v)) * 100);
+  // a sliver stays in the track so an empty meter still reads as red
+  var w = Math.max(4, Math.round(Math.max(0, Math.min(1, v)) * 100));
   flag(k, id + 'a', b, 'amber', v < 0.8 && v >= 0.5);
   flag(k, id + 'r', b, 'red', v < 0.5);
   if (k[id] !== w) {
@@ -637,7 +639,7 @@ function updateGoals() {
   });
   var cd = daily().can;
   set(shown, 'dd', $('daily-dot'), 'hidden', !cd);
-  set(shown, 'sd', $('sell-dot'), 'hidden', stars() < 10);
+  set(shown, 'sd', $('sell-dot'), 'hidden', !canMove());
 }
 
 function updateOpen() {
@@ -696,17 +698,21 @@ function paintBoost() {
   $('b-warp').disabled = S.gems < WARP_COST;
 }
 
+function storeMul(n) {
+  return Math.round(Math.pow(STORE_MUL, n - 1) * 100) / 100;
+}
+
 function openSell() {
-  var n = stars();
-  var now = 1 + STAR_BONUS * S.stars;
-  var then = 1 + STAR_BONUS * (S.stars + n);
-  $('sell-txt').innerHTML = n >= 1 ?
-    'Selling now gives <b>' + n + ' Store stars</b>. Each star adds ' + Math.round(STAR_BONUS * 100) + '% to all income, forever. Your income goes from x' + now.toFixed(2) + ' to x' + then.toFixed(2) + '.' +
-    (n < 10 ? ' Waiting for about 10 stars makes the sale worth more.' : '') :
-    'You need to earn about ' + money(STAR_DIV) + ' in this run to get the first star. So far: ' + money(S.run) + '.';
-  $('sell-keep').textContent = 'You keep: stars, gems, goals and boosts. Everything else starts again: cash, departments, and the Parking, Checkouts, Taxi Stand and Garden Center.';
-  $('sell-ok').textContent = n >= 1 ? 'Sell for ' + n + ' stars' : 'Not yet';
-  $('sell-ok').disabled = n < 1;
+  var r = rating();
+  var g = gate();
+  var open = BIZ.filter(function (b) { return has(b.id); }).length;
+  var ok = canMove();
+  $('sell-txt').innerHTML = 'Store #' + S.store + ' is rated <b>' + r + ' of ' + g + ' stars</b>. ' +
+    (ok ? 'Ready to move.' : open < BIZ.length ? 'Open all ' + BIZ.length + ' departments and reach ' + g + ' stars to move.' : 'Reach ' + g + ' stars to move.') +
+    ' Store #' + (S.store + 1) + ' earns <b>x' + storeMul(S.store + 1) + '</b> income, up from x' + storeMul(S.store) + '.';
+  $('sell-keep').textContent = 'You keep gems, goals and boosts. Everything else starts again: cash, departments, and the Parking, Checkouts, Taxi Stand and Garden Center. Department stars pay gems again.';
+  $('sell-ok').textContent = ok ? 'Move to store #' + (S.store + 1) : open < BIZ.length ? 'Open all departments' : 'Needs ' + g + ' stars';
+  $('sell-ok').disabled = !ok;
   $('sell').hidden = false;
 }
 
@@ -785,7 +791,7 @@ function wire() {
     var b = $('sell-ok');
     if (!b.dataset.armed) {
       b.dataset.armed = '1';
-      b.textContent = 'Tap again to sell';
+      b.textContent = 'Tap again to move';
       setTimeout(function () {
         b.dataset.armed = '';
         if (!$('sell').hidden) openSell();
@@ -793,13 +799,13 @@ function wire() {
       return;
     }
     b.dataset.armed = '';
-    var n = sell();
+    var moved = move();
     $('sell').hidden = true;
-    if (!n) return;
+    if (!moved) return;
     afterLoad();
     sfx('mile');
     buzz('success');
-    banner('<b>Store sold</b><small>+' + n + ' Store stars, income x' + (1 + STAR_BONUS * S.stars).toFixed(2) + '</small>', 0.2, true);
+    banner('<b>Welcome to store #' + S.store + '</b><small>Income x' + storeMul(S.store) + '</small>', 0.2, true);
     nudge();
   });
   $('gear').addEventListener('click', function () {

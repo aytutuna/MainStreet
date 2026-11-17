@@ -103,6 +103,11 @@ small {
   font-size: 15px;
 }
 
+#store-n {
+  font-size: 12px;
+  color: #6b6f7d;
+}
+
 #cash {
   flex: 1;
   min-width: 0;
