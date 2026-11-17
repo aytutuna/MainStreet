@@ -3552,6 +3552,23 @@ function visit(s, pts) {
   return false;
 }
 
+// now and then a shopper looks in at the service desk or the restrooms: through the doorway in the east wall, a moment at a
+// spot of the room and out again
+function roomVisit(pts) {
+  if (Math.random() > 0.25) return;
+  var spots = [];
+  ['serv', 'rest'].forEach(function (id) {
+    PLAN.wing[id].visit.forEach(function (v) { if (placeHas(id, v[3])) spots.push(v); });
+  });
+  if (!spots.length) return;
+  var v = spots[Math.floor(Math.random() * spots.length)];
+  if (!walkTo(pts, v[0], v[1])) return;
+  var at = pts[pts.length - 1];
+  at.wait = 2 + Math.random() * 1.5;
+  at.act = 'idle';
+  at.face = v[2];
+}
+
 // the walk from an entrance to a basket, round one or two areas and down to the front aisle, where the shopper
 // picks a checkout
 function storeRoute(pts, ei) {
@@ -3565,6 +3582,7 @@ function storeRoute(pts, ei) {
     var t = pickShop(s.id);
     if (t) visit(t, pts);
   }
+  roomVisit(pts);
   var ax = Math.max(-6.4, Math.min(6.4, pts[pts.length - 1].x)) + (Math.random() - 0.5) * 1.2;
   if (!walkTo(pts, ax, CROSS)) pts.push({ x: ax, z: CROSS });
   pts[pts.length - 1].pick = true;

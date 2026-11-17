@@ -889,6 +889,7 @@ function stall(x) {
 var WING = {
   serv: {
     rect: [15.3, 21.5, -3, 2.4],
+    visit: [[18.3, -1.2, Math.PI, 0], [19.3, -1.2, Math.PI, 4]],
     ups: [
       up('Service desk', pw('ServiceDesk_20', 18.3, -1.8, 's', { spots: 0 })),
       up('Clerk', { staff: [18.3, -2.4, 's'] }),
@@ -903,6 +904,7 @@ var WING = {
   },
   rest: {
     rect: [15.3, 21.5, -8, -3],
+    visit: [[16.35, -4.2, -Math.PI / 2, 2], [16.35, -4.8, -Math.PI / 2, 2], [16.35, -5.4, -Math.PI / 2, 2], [17.5, -6.55, Math.PI, 0]],
     ups: [
       up('Two toilet stalls', pw('Toilet_01', 17.2, -7.55, 's', { spots: 0 }), pw('Toilet_02', 17.82, -7.55, 's', { spots: 0 }), stall(16.89), stall(17.51), stall(18.13)),
       up('Two more stalls', pw('Toilet_01', 18.44, -7.55, 's', { spots: 0 }), pw('Toilet_02', 19.06, -7.55, 's', { spots: 0 }), stall(18.75), stall(19.37)),
