@@ -1247,45 +1247,171 @@ function patch(pts, holes) {
   return g;
 }
 
-// the words of a board painted in a w by h rectangle at (x, y) of a canvas; a line break starts a second line
-function paintBoard(g, x, y, w, h, text) {
+var FONT = 'ui-rounded, "SF Pro Rounded", "Arial Rounded MT Bold", system-ui, sans-serif';
+function font(px) {
+  return '800 ' + px + 'px ' + FONT;
+}
+
+function rr(g, x, y, w, h, r) {
+  g.beginPath();
+  g.roundRect(x, y, w, h, r);
+}
+
+// the largest size at or under fs that fits every line in w; leaves the font set
+function fitFont(g, lines, w, fs) {
+  g.font = font(fs);
+  while (fs > 8 && lines.some(function (l) { return g.measureText(l).width > w; })) g.font = font(fs -= 2);
+  return fs;
+}
+
+// deals look like shelf price cards, the rest of the standing boards like chalkboards, flat ones like plates
+function boardKind(text, post) {
+  return !post ? 'plate' : /\d|SALE/.test(text) ? 'deal' : 'chalk';
+}
+
+function paintDeal(g, w, h, text) {
+  var t = text.split(' ');
+  var i = t.findIndex(function (s) { return /\d/.test(s); });
+  if (i < 0) i = t.length - 1;
+  var head = t.slice(0, i).join(' ') || 'THIS WEEK';
+  var price = t.slice(i).join(' ');
+  if (/^\d+\.\d\d$/.test(price)) price = '$' + price;
+  var e = h * 0.05;
+  rr(g, 0, 0, w, h, h * 0.16);
+  g.fillStyle = '#a82a22';
+  g.fill();
+  rr(g, e, e, w - 2 * e, h - 2 * e, h * 0.12);
+  var gr = g.createLinearGradient(0, 0, 0, h);
+  gr.addColorStop(0, '#ffe46a');
+  gr.addColorStop(1, '#ffc928');
+  g.fillStyle = gr;
+  g.fill();
   g.save();
-  g.translate(x, y);
-  g.fillStyle = '#2f3446';
-  g.fillRect(0, 0, w, h);
-  g.fillStyle = '#f2c230';
-  g.fillRect(0, h - 6, w, 6);
-  g.fillStyle = '#fff6e0';
+  g.clip();
+  var hb = h * 0.34;
+  g.fillStyle = '#e0382c';
+  g.fillRect(0, 0, w, hb);
+  g.fillStyle = '#ff8c7c';
+  g.fillRect(0, hb - 3, w, 3);
+  g.fillStyle = 'rgba(120,60,0,0.22)';
+  g.fillRect(0, hb, w, 5);
+  g.restore();
   g.textAlign = 'center';
   g.textBaseline = 'middle';
-  var lines = text.split('\n');
-  var fs = Math.floor((h - 8) / lines.length * 0.7);
-  g.font = 'bold ' + fs + 'px sans-serif';
-  while (fs > 8 && lines.some(function (l) { return g.measureText(l).width > w - 20; })) {
-    fs -= 2;
-    g.font = 'bold ' + fs + 'px sans-serif';
-  }
-  lines.forEach(function (l, i) { g.fillText(l, w / 2, (h - 6) * (i + 0.5) / lines.length); });
+  fitFont(g, [head], w * 0.8, Math.floor(hb * 0.62));
+  g.fillStyle = '#7a1710';
+  g.fillText(head, w / 2, hb * 0.5 + 3);
+  g.fillStyle = '#fff';
+  g.fillText(head, w / 2, hb * 0.5);
+  var py = hb + (h - e - hb) * 0.5;
+  fitFont(g, [price], w * 0.84, Math.floor((h - hb - e) * 0.95));
+  g.fillStyle = 'rgba(255,255,255,0.65)';
+  g.fillText(price, w / 2, py + 4);
+  g.fillStyle = '#3a1410';
+  g.fillText(price, w / 2, py);
+  rr(g, e + 2, e + 2, w - 2 * e - 4, h - 2 * e - 4, h * 0.1);
+  g.strokeStyle = 'rgba(120,60,0,0.3)';
+  g.lineWidth = 3;
+  g.stroke();
+}
+
+function paintChalk(g, w, h, lines) {
+  rr(g, 0, 0, w, h, h * 0.14);
+  g.fillStyle = '#7d5129';
+  g.fill();
+  g.strokeStyle = '#4a2d14';
+  g.lineWidth = 4;
+  g.stroke();
+  rr(g, 5, 5, w - 10, h - 10, h * 0.11);
+  g.strokeStyle = '#b8814a';
+  g.lineWidth = 3;
+  g.stroke();
+  var f = h * 0.11;
+  rr(g, f, f, w - 2 * f, h - 2 * f, h * 0.05);
+  var gr = g.createLinearGradient(0, 0, 0, h);
+  gr.addColorStop(0, '#3b4843');
+  gr.addColorStop(1, '#2a3531');
+  g.fillStyle = gr;
+  g.fill();
+  g.save();
+  g.clip();
+  rr(g, f + 5, f + 5, w - 2 * f, h - 2 * f, h * 0.05);
+  g.strokeStyle = 'rgba(0,0,0,0.35)';
+  g.lineWidth = 9;
+  g.stroke();
+  g.restore();
+  rr(g, f + 9, f + 9, w - 2 * f - 18, h - 2 * f - 18, h * 0.03);
+  g.setLineDash([10, 8]);
+  g.strokeStyle = 'rgba(255,255,255,0.25)';
+  g.lineWidth = 2.5;
+  g.stroke();
+  g.setLineDash([]);
+  g.textAlign = 'center';
+  g.textBaseline = 'middle';
+  var fs = fitFont(g, lines, w * 0.76, Math.floor((h - 2 * f - 24) / lines.length * 0.74));
+  g.fillStyle = '#f6f2e4';
+  g.shadowColor = 'rgba(255,255,255,0.4)';
+  g.shadowBlur = 5;
+  lines.forEach(function (l, i) { g.fillText(l, w / 2, h / 2 + (i + 0.5 - lines.length / 2) * fs * 1.05); });
+  g.shadowBlur = 0;
+}
+
+function paintPlate(g, w, h, lines) {
+  rr(g, 0, 0, w, h, h * 0.2);
+  g.fillStyle = '#2f3446';
+  g.fill();
+  var e = h * 0.07;
+  rr(g, e, e, w - 2 * e, h - 2 * e, h * 0.15);
+  var gr = g.createLinearGradient(0, 0, 0, h);
+  gr.addColorStop(0, '#fffaf0');
+  gr.addColorStop(1, '#f1e2bc');
+  g.fillStyle = gr;
+  g.fill();
+  g.save();
+  g.clip();
+  g.fillStyle = '#f2c230';
+  g.fillRect(0, h - e - h * 0.1, w, h * 0.1);
+  g.restore();
+  rr(g, e + 2, e + 2, w - 2 * e - 4, h - 2 * e - 4, h * 0.13);
+  g.strokeStyle = 'rgba(80,50,0,0.22)';
+  g.lineWidth = 3;
+  g.stroke();
+  g.textAlign = 'center';
+  g.textBaseline = 'middle';
+  var fs = fitFont(g, lines, w * 0.84, Math.floor((h - 2 * e - h * 0.1) / lines.length * 0.7));
+  g.fillStyle = '#2f3446';
+  lines.forEach(function (l, i) { g.fillText(l, w / 2, h * 0.47 + (i + 0.5 - lines.length / 2) * fs * 1.05); });
+}
+
+// a board's face painted in a w by h cell at (x, y) of a canvas. The board is asp times wider than high, so the cell
+// is drawn in the board's own proportions and squeezed in
+function paintBoard(g, x, y, w, h, text, asp, post) {
+  g.save();
+  g.translate(x, y);
+  g.scale(w / (h * asp), 1);
+  var kind = boardKind(text, post);
+  if (kind === 'deal') paintDeal(g, h * asp, h, text);
+  else (kind === 'chalk' ? paintChalk : paintPlate)(g, h * asp, h, text.split('\n'));
   g.restore();
 }
 
 // a board of its own: one plane
 function boardFace(e) {
   var c = document.createElement('canvas');
-  c.width = 256;
-  c.height = Math.round(256 * e.h / e.w);
-  paintBoard(c.getContext('2d'), 0, 0, c.width, c.height, e.text);
+  c.width = 400;
+  c.height = Math.round(400 * e.h / e.w);
+  paintBoard(c.getContext('2d'), 0, 0, c.width, c.height, e.text, e.w / e.h, e.post);
   var t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
   t.anisotropy = 4;
-  var m = new THREE.Mesh(new THREE.PlaneGeometry(e.w, e.h), new THREE.MeshLambertMaterial({ map: t }));
+  var m = new THREE.Mesh(new THREE.PlaneGeometry(e.w, e.h), new THREE.MeshLambertMaterial({ map: t, alphaTest: 0.5 }));
   m.position.set(e.x, e.y, e.z);
   m.rotation.y = e.r || 0;
   return m;
 }
 
 // the boards of the areas share one picture, so a whole area's boards are drawn in the same call as its fixtures
-var BA = { w: 2048, h: 2048, cw: 256, ch: 102, n: 0, cells: {}, c: null, tex: null, mat: null };
+var BA = { w: 2048, h: 2048, cw: 400, ch: 160, cols: 5, n: 0, cells: {}, c: null, tex: null, mat: null };
 function boardAtlas(b, e) {
   if (!BA.c) {
     BA.c = document.createElement('canvas');
@@ -1294,20 +1420,21 @@ function boardAtlas(b, e) {
     BA.tex = new THREE.CanvasTexture(BA.c);
     BA.tex.colorSpace = THREE.SRGBColorSpace;
     BA.tex.anisotropy = 4;
-    BA.mat = new THREE.MeshLambertMaterial({ map: BA.tex });
+    BA.mat = new THREE.MeshLambertMaterial({ map: BA.tex, alphaTest: 0.5 });
   }
-  var key = e.text;
+  var asp = e.w / e.h;
+  var key = e.text + '|' + asp.toFixed(2) + (e.post ? 'p' : '');
   if (BA.cells[key] === undefined) {
     BA.cells[key] = BA.n++;
     var k = BA.cells[key];
-    paintBoard(BA.c.getContext('2d'), (k % 8) * BA.cw, Math.floor(k / 8) * BA.ch, BA.cw, BA.ch, e.text);
+    paintBoard(BA.c.getContext('2d'), (k % BA.cols) * BA.cw, Math.floor(k / BA.cols) * BA.ch, BA.cw, BA.ch, e.text, asp, e.post);
     BA.tex.needsUpdate = true;
   }
   var k2 = BA.cells[key];
   var g = new THREE.PlaneGeometry(e.w, e.h);
   var uv = g.attributes.uv;
   for (var i = 0; i < uv.count; i++) {
-    uv.setXY(i, ((k2 % 8) + uv.getX(i)) * BA.cw / BA.w, 1 - (Math.floor(k2 / 8) + 1 - uv.getY(i)) * BA.ch / BA.h);
+    uv.setXY(i, ((k2 % BA.cols) + uv.getX(i)) * BA.cw / BA.w, 1 - (Math.floor(k2 / BA.cols) + 1 - uv.getY(i)) * BA.ch / BA.h);
   }
   if (e.r) g.rotateY(e.r);
   g.translate(e.x, e.y, e.z);
