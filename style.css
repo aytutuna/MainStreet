@@ -1037,6 +1037,16 @@ small {
   box-shadow: 0 0 0 1.5px #fff;
 }
 
+.tag.sel {
+  outline: 3px solid #ffd34a;
+  box-shadow: 0 0 0 1.5px #2f3446, 0 0 14px 4px rgba(255, 211, 74, 0.85);
+  z-index: 2;
+}
+
+.tag.dim {
+  opacity: 0.4;
+}
+
 .say {
   position: absolute;
   left: 0;

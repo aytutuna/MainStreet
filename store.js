@@ -3780,7 +3780,7 @@ function overlay(now) {
         t.line.textContent = line;
         t.h = t.el.offsetHeight;
       }
-      var cls = 'tag' + (st.own ? ' own' : st.avail ? ' buy' : ' lock') + (!st.own && st.avail && S.cash >= st.price ? ' ready' : '') + (st.alert ? ' alert' : '');
+      var cls = 'tag' + (st.own ? ' own' : st.avail ? ' buy' : ' lock') + (!st.own && st.avail && S.cash >= st.price ? ' ready' : '') + (st.alert ? ' alert' : '') + (selId ? (selId === id ? ' sel' : ' dim') : '');
       if (cls !== t.cls) {
         t.cls = cls;
         t.el.className = cls;
@@ -3798,11 +3798,14 @@ function overlay(now) {
       var sc = Math.max(0.6, Math.min(1.1, 30 / focus.dist + 0.12));
       var tx = Math.round(sp.x);
       var ty = Math.round(sp.y);
-      if (tx !== t.x || ty !== t.y || sc !== t.sc) {
+      var below = selId === id;
+      if (tx !== t.x || ty !== t.y || sc !== t.sc || below !== t.below) {
         t.x = tx;
         t.y = ty;
         t.sc = sc;
-        t.el.style.transform = 'translate(' + tx + 'px,' + ty + 'px) translate(-50%,-100%) scale(' + sc + ')';
+        t.below = below;
+        // the open card's tag hangs under the outline, clear of the pieces inside it
+        t.el.style.transform = 'translate(' + tx + 'px,' + ty + 'px) translate(-50%,' + (below ? '8px' : '-100%') + ') scale(' + sc + ')';
       }
       anchorXY[id].top = ty - (t.h || 24) * sc;
     }
@@ -3906,6 +3909,7 @@ function draw(now) {
   blobsStep();
   puffsStep(now);
   riseStep(now);
+  selStep(now);
   pop(now);
   if (shadowDirty) {
     renderer.shadowMap.needsUpdate = true;
@@ -4001,20 +4005,123 @@ function pieceMid(pc) {
   return [(box.min.x + box.max.x) / 2, (box.min.z + box.max.z) / 2];
 }
 
+// The open card's area: a pulsing outline on the floor, and the spot where the selected item's next piece will go
+var GOLD = 0xffd34a;
+var NAVY = 0x2f3446;
+function glowMat(color, op, add) {
+  return new THREE.MeshBasicMaterial({ color: color, transparent: true, opacity: op, depthWrite: false, blending: add ? THREE.AdditiveBlending : THREE.NormalBlending });
+}
+var areaEdge = glowMat(GOLD, 1);
+var areaDark = glowMat(NAVY, 0.55);
+var areaFill = glowMat(GOLD, 0.1);
+var sel = null;
+var selId = null;
+
+function rrPath(p, w, d, r) {
+  var x = -w / 2;
+  var y = -d / 2;
+  r = Math.min(r, w / 2 - 0.01, d / 2 - 0.01);
+  p.moveTo(x + r, y);
+  p.lineTo(x + w - r, y);
+  p.quadraticCurveTo(x + w, y, x + w, y + r);
+  p.lineTo(x + w, y + d - r);
+  p.quadraticCurveTo(x + w, y + d, x + w - r, y + d);
+  p.lineTo(x + r, y + d);
+  p.quadraticCurveTo(x, y + d, x, y + d - r);
+  p.lineTo(x, y + r);
+  p.quadraticCurveTo(x, y, x + r, y);
+  return p;
+}
+
+// a rounded rectangle lying on the floor, or just its border when t is given
+function rrGeo(w, d, r, t) {
+  var s = rrPath(new THREE.Shape(), w, d, r);
+  if (t) s.holes.push(rrPath(new THREE.Path(), w - 2 * t, d - 2 * t, Math.max(0.02, r - t)));
+  return new THREE.ShapeGeometry(s, 4).rotateX(-Math.PI / 2);
+}
+
+function flatMesh(geo, mat, x, y, z, order) {
+  var m = new THREE.Mesh(geo, mat);
+  m.position.set(x, y, z);
+  m.renderOrder = order;
+  return m;
+}
+
+function dropFlat(g) {
+  root.remove(g);
+  g.traverse(function (o) { if (o.geometry) o.geometry.dispose(); });
+}
+
+// an area's floor, as the box its tap target covers: [x0, x1, z0, z1]
+function areaRect(id) {
+  for (var i = 0; i < picks.length; i++) {
+    var p = picks[i];
+    if (p.userData.id !== id) continue;
+    var g = p.geometry.parameters;
+    return [p.position.x - g.width / 2, p.position.x + g.width / 2, p.position.z - g.depth / 2, p.position.z + g.depth / 2];
+  }
+  return null;
+}
+
+// how far back the camera sits to show a whole area in the part of the screen between the meters and the card
+function frameDist(r) {
+  var w = r[1] - r[0] + 1.6;
+  var d = r[3] - r[2] + 3;
+  return fit(Math.max(w, d * Math.sin(TILT) * cw / Math.max(80, ch - IT - IB)));
+}
+
+function frame(id) {
+  var r = areaRect(id);
+  if (r) flyTo((r[0] + r[1]) / 2, (r[2] + r[3]) / 2, frameDist(r));
+}
+
+function select(id, go) {
+  if (!sel || sel.id !== id) {
+    if (sel) dropFlat(sel.g);
+    sel = null;
+    selId = id;
+    var r = id && areaRect(id);
+    if (r) {
+      var w = r[1] - r[0] - 0.3;
+      var d = r[3] - r[2] - 0.3;
+      // the line stays about as wide on screen however far the camera sits
+      var t = Math.max(0.18, frameDist(r) * 0.011);
+      var g = new THREE.Group();
+      g.position.set((r[0] + r[1]) / 2, 0.09, (r[2] + r[3]) / 2);
+      g.add(flatMesh(rrGeo(w, d, 0.5), areaFill, 0, 0, 0, 3));
+      g.add(flatMesh(rrGeo(w + t * 0.8, d + t * 0.8, 0.55, t * 1.45), areaDark, 0, -0.005, 0, 3));
+      g.add(flatMesh(rrGeo(w, d, 0.5, t), areaEdge, 0, 0, 0, 4));
+      root.add(g);
+      sel = { id: id, g: g };
+    }
+  }
+  if (id && go) frame(id);
+}
+
+function selStep(now) {
+  if (sel) {
+    var u = 0.5 + 0.5 * Math.sin(now / 320);
+    areaEdge.opacity = 0.6 + 0.4 * u;
+    areaFill.opacity = 0.05 + 0.09 * u;
+  }
+}
+
 // each upgrade shows: its piece rises, its name pops over it, and the camera goes to it, closer for a small piece
 function event(res, now) {
   var s = shops[res.id];
   if (s) bump[res.id] = now;
   sync(true, now);
   var out = 0.25;
+  // with the area's card open the camera stays on the area
+  var framed = !!sel && sel.id === res.id;
   if (s && res.to) {
     var pc = s.pcs[res.piece];
     var at = pc ? pieceMid(pc) : [s.cx, s.cz];
     if (pc) popName(at[0], at[1], pc.name, res.id);
     var size = pc ? pieceSize(pc) : 1;
     var close = fit(size < 0.6 ? 6 : size < 1.5 ? 8 : 11);
-    if (res.unlock || !onScreen(at[0], at[1]) || focus.dist > close * 1.2) out = flyTo(at[0], at[1], Math.min(focus.dist, close)) + 0.1;
-  } else if (res.place) {
+    if (!onScreen(at[0], at[1]) || !framed && (res.unlock || focus.dist > close * 1.2)) out = flyTo(at[0], at[1], Math.min(focus.dist, close)) + 0.1;
+  } else if (res.place && !framed) {
     var p = spot(res.id);
     out = flyTo(p.x, p.y, Math.min(focus.dist, fit(EDGE * 2 + 2))) + 0.1;
   }
@@ -4257,6 +4364,8 @@ window.View = {
     return a ? { x: a.x, y: a.y } : null;
   },
   spot: spot,
+  select: select,
+  frame: frame,
   setBest: function (id) { bestId = id; },
   shopper: shopperEvent,
   upName: function (id, k) { var u = PLAN.areas[id].ups[k]; return u ? u.name : ''; },

@@ -467,6 +467,7 @@ function closeSheet() {
 
 function showCard(id) {
   closeSheet();
+  var fresh = cardId !== id;
   cardId = id;
   if (cardRow) cardRow.el.remove();
   cardRow = room(id) ? makeRoom(id) : makeRow(id);
@@ -475,6 +476,7 @@ function showCard(id) {
   $('card').hidden = false;
   $('app').classList.add('card-open');
   fitInsets();
+  View.select(id, fresh);
 }
 
 function closeCard() {
@@ -484,11 +486,11 @@ function closeCard() {
   $('card').hidden = true;
   $('app').classList.remove('card-open');
   fitInsets();
+  View.select(null);
 }
 
 function focusBiz(id) {
-  var sp = View.spot(id);
-  View.go(sp.x, sp.y);
+  View.frame(id);
 }
 
 function afterBuy(res) {
