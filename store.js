@@ -1533,7 +1533,8 @@ function buildAreas() {
   BIZ.forEach(function (bz, i) {
     var a = PLAN.areas[bz.id];
     var r = a.vacant;
-    var s = { id: bz.id, a: a, i: i, cx: a.cx, cz: a.cz, pcs: [], shown: -1, merged: null, open: false };
+    if (ITEMS[bz.id].of.length !== a.ups.length) console.error('ITEMS in data.js does not match the upgrades of', bz.id);
+    var s = { id: bz.id, a: a, i: i, cx: a.cx, cz: a.cz, pcs: [], shown: -1, key: null, merged: null, open: false };
     shops[bz.id] = s;
     order.push(bz.id);
     s.group = new THREE.Group();
@@ -2552,16 +2553,19 @@ function syncPlace(id, animate, now) {
   shadowDirty = true;
 }
 
-// brings the area to the level the sim says it is at: a piece for each upgrade, rising when it is the new one
+// brings the area to the pieces the sim says it has, in whatever order its items were bought, rising when one is new
 function syncArea(s, animate, now) {
   var own = has(s.id);
-  var n = own ? Math.min(shape(s.id), s.a.ups.length) : 0;
-  if (n === s.shown) return;
+  var have = own ? pieces(s.id).sort(function (p, q) { return p - q; }) : [];
+  var n = have.length;
+  var key = have.join();
+  if (key === s.key) return;
   var grew = false;
-  for (var i = 0; i < Math.max(n, s.pcs.length); i++) {
-    var pc = i < n ? pieceOf(s, i) : s.pcs[i];
+  for (var i = 0; i < s.a.ups.length; i++) {
+    var inn = have.indexOf(i) >= 0;
+    var pc = inn ? pieceOf(s, i) : s.pcs[i];
     if (!pc) continue;
-    if (i < n && !pc.on && animate && s.shown >= 0) {
+    if (inn && !pc.on && animate && s.shown >= 0) {
       pc.on = true;
       pc.x.visible = true;
       pc.gb = pc.b.group();
@@ -2572,7 +2576,7 @@ function syncArea(s, animate, now) {
       rise(pc.g, now, 450, s, pc);
       dustAt(pc.g, now);
       grew = true;
-    } else if (i < n) {
+    } else if (inn) {
       pc.on = true;
       pc.x.visible = true;
       if (!pc.g && !pc.x.parent) s.group.add(pc.x);
@@ -2605,6 +2609,7 @@ function syncArea(s, animate, now) {
   }
   if (animate && s.shown >= 0 && n > s.shown) truckFor();
   s.shown = n;
+  s.key = key;
   nav.dirty = true;
   shadowDirty = true;
 }
@@ -3721,8 +3726,9 @@ function bstate(id) {
   }
   var e = S.b[id];
   var l = e ? e.l : 0;
-  var from = Math.floor(l / 5) * 5;
-  return { name: BZ[id].name, lv: l, own: !!e, price: cost(id, 1), avail: avail(id), frac: !e ? 0 : l >= UPS ? 1 : (l - from) / 5,
+  var n = starsAt(l);
+  var from = n ? STAR_AT[n - 1] : 0;
+  return { name: BZ[id].name, lv: l, stars: n, own: !!e, price: cost(id, 1), avail: avail(id), frac: !e ? 0 : n >= STAR_AT.length ? 1 : (l - from) / (STAR_AT[n] - from),
     alert: !!e && window.fill[id] <= 0, said: 'Sold out' };
 }
 
@@ -3765,7 +3771,7 @@ function overlay(now) {
       t.el.style.display = show ? '' : 'none';
     }
     if (show) {
-      var line = st.alert ? st.name + '  ' + st.said : st.own ? (st.lv ? st.name + '  Lv ' + st.lv + (PL[id] ? '' : '/' + UPS) : st.name) : st.avail ? st.name + '  $' + short(st.price) : st.name + '  locked';
+      var line = st.alert ? st.name + '  ' + st.said : st.own ? (st.lv ? st.name + '  Lv ' + st.lv + (PL[id] ? '' : '/' + UPS + '  ' + '★'.repeat(st.stars)) : st.name) : st.avail ? st.name + '  $' + short(st.price) : st.name + '  locked';
       if (line !== t.text) {
         t.text = line;
         t.line.textContent = line;
@@ -3999,7 +4005,7 @@ function event(res, now) {
   sync(true, now);
   var out = 0.25;
   if (s && res.to) {
-    var pc = s.pcs[res.to - 1];
+    var pc = s.pcs[res.piece];
     var at = pc ? pieceMid(pc) : [s.cx, s.cz];
     if (pc) popName(at[0], at[1], pc.name, res.id);
     var size = pc ? pieceSize(pc) : 1;
@@ -4030,6 +4036,7 @@ function refresh() {
       }
     });
     s.shown = -1;
+    s.key = null;
   });
   PLACES.forEach(function (p) { places[p.id].shown = -1; });
   sync(false, 0);
@@ -4107,16 +4114,16 @@ function snap(group, box) {
   return c.toDataURL('image/png');
 }
 
-// the piece upgrade k adds to an area, rendered once from the real model with its goods. A skinned figure's bounds reach
-// back to the origin, so boxOf frames a figure by where it stands, turned toward the icon camera
+// piece k of an area (its place in plan.js), rendered once from the real model with its goods. A skinned figure's bounds
+// reach back to the origin, so boxOf frames a figure by where it stands, turned toward the icon camera
 function upIcon(id, k) {
   var key = id + ':' + k;
   if (icons[key] !== undefined) return icons[key];
   var s = shops[id];
-  if (!s || !s.a.ups[k - 1]) return null;
+  if (!s || !s.a.ups[k]) return null;
   var seen = figs.length;
   var sm = s.signMat;
-  var pc = makePiece(s, k - 1);
+  var pc = makePiece(s, k);
   figs.length = seen;
   s.signMat = sm;
   var g = new THREE.Group();
@@ -4248,7 +4255,7 @@ window.View = {
   spot: spot,
   setBest: function (id) { bestId = id; },
   shopper: shopperEvent,
-  upName: function (id, k) { var u = PLAN.areas[id].ups[k - 1]; return u ? u.name : ''; },
+  upName: function (id, k) { var u = PLAN.areas[id].ups[k]; return u ? u.name : ''; },
   upIcon: upIcon,
   placeIcon: placeIcon
 };

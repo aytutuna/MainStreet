@@ -22,10 +22,53 @@ var BIZ = [
   { id: 'seasonal', name: 'Seasonal', ic: 'holiday/tree-decorated', c0: 6e17, g: 1.165, s: 1e15, w: 20.3 }
 ];
 
-// a department has UPS upgrades, each one more thing in it; every fifth doubles its sales. MS: [upgrade, sales x]
+// a department has UPS upgrades, each one more thing in it, and they come in items of one kind each: sell raises what
+// every shopper spends there, draw brings more shoppers and staff cuts the stockers' work. ITEMS gives each department's
+// items as [name, stat], and for every upgrade in the order plan.js lists them the number of the item it belongs to.
+// Items are bought a level at a time, each level adding that item's next piece. A star at each of STAR_AT levels
+// multiplies the department's sales by STAR_MUL
 var UPS = 30;
-var MS = [[5, 2], [10, 2], [15, 2], [20, 2], [25, 2], [30, 2]];
-var MS_GEMS = [1, 2, 3, 5, 8, 10];
+var STAR_AT = [10, 20, 30];
+var STAR_GEMS = [6, 10, 13];
+var STAR_MUL = 4;
+var ITEMS = {
+  produce: { it: [['Fruit stands', 'sell'], ['Veg & flower stands', 'sell'], ['Crates & pallets', 'sell'], ['Signs & lights', 'draw'], ['Decor', 'draw'], ['Staff', 'staff']],
+    of: '020030120532110221132023544443' },
+  bakery: { it: [['Bread racks', 'sell'], ['Cases & baskets', 'sell'], ['Cake case & ovens', 'sell'], ['Signs & decor', 'draw'], ['Staff', 'staff']],
+    of: '110031100422221100030113433232' },
+  dairy: { it: [['Wall coolers', 'sell'], ['Bunkers & pallets', 'sell'], ['Signs & lights', 'draw'], ['Decor', 'draw'], ['Staff', 'staff']],
+    of: '000020001411111123323133432322' },
+  meat: { it: [['Deli cases', 'sell'], ['Meat coolers', 'sell'], ['Butcher counter', 'sell'], ['Signs & lights', 'draw'], ['Decor', 'draw'], ['Staff', 'staff']],
+    of: '000031111512220000334424543441' },
+  frozen: { it: [['Freezer cases', 'sell'], ['Chest freezers', 'sell'], ['Signs & lights', 'draw'], ['Decor', 'draw'], ['Staff', 'staff']],
+    of: '000020011411121333223321423231' },
+  pantry: { it: [['Dry goods shelves', 'sell'], ['Cooking shelves', 'sell'], ['End caps', 'sell'], ['Pallets', 'sell'], ['Signs & lights', 'draw'], ['Staff', 'staff']],
+    of: '200040002533112111142243543330' },
+  snacks: { it: [['Snack shelves', 'sell'], ['Drink shelves', 'sell'], ['End caps', 'sell'], ['Pallets', 'sell'], ['Signs & lights', 'draw'], ['Staff', 'staff']],
+    of: '200041112533002111042243534431' },
+  toys: { it: [['Cars & blocks', 'sell'], ['Dolls & machines', 'sell'], ['Games & puzzles', 'sell'], ['Signs & decor', 'draw'], ['Staff', 'staff']],
+    of: '000131212412010013033222422331' },
+  tech: { it: [['TVs', 'sell'], ['Laptops', 'sell'], ['Computers', 'sell'], ['Games & audio', 'sell'], ['Signs & lights', 'draw'], ['Staff', 'staff']],
+    of: '010042030530100431243231522334' },
+  kitchen: { it: [['Pots & pans', 'sell'], ['Plates & bowls', 'sell'], ['Glassware', 'sell'], ['Display kitchen', 'sell'], ['Signs & lights', 'draw'], ['Staff', 'staff']],
+    of: '000341132522000114242401510241' },
+  clothes: { it: [['Clothing racks', 'sell'], ['Clothing tables', 'sell'], ['Shoes & mannequins', 'sell'], ['Signs & lights', 'draw'], ['Decor', 'draw'], ['Staff', 'staff']],
+    of: '012030102511002122232442544443' },
+  home: { it: [['Living room', 'sell'], ['Bedroom', 'sell'], ['Dining & kitchen', 'sell'], ['Lamps & decor', 'draw'], ['Staff', 'staff']],
+    of: '000130213421120012033213430211' },
+  office: { it: [['Bookshelves', 'sell'], ['Kids books & desks', 'sell'], ['Pens & paper', 'sell'], ['Signs & lights', 'draw'], ['Staff', 'staff']],
+    of: '000131112422000011132233432102' },
+  pets: { it: [['Pet food shelves', 'sell'], ['Supply shelves', 'sell'], ['End caps & pallets', 'sell'], ['Tanks & pens', 'sell'], ['Signs & decor', 'draw'], ['Staff', 'staff']],
+    of: '200040002523113111142233544423' },
+  sports: { it: [['Tents', 'sell'], ['Camp gear', 'sell'], ['Balls & boards', 'sell'], ['Signs & lights', 'draw'], ['Decor', 'draw'], ['Staff', 'staff']],
+    of: '202031011524243441434021534123' },
+  tools: { it: [['Hammers & workbench', 'sell'], ['Hand tools', 'sell'], ['Paint', 'sell'], ['Hardware shelves', 'sell'], ['Signs & lights', 'draw'], ['Staff', 'staff']],
+    of: '002043122533320014243420513431' },
+  auto: { it: [['Oil & care', 'sell'], ['Parts shelves', 'sell'], ['Tires & wheels', 'sell'], ['Signs & lights', 'draw'], ['Decor', 'draw'], ['Staff', 'staff']],
+    of: '120230112502442440033444511423' },
+  seasonal: { it: [['Trees & tables', 'sell'], ['Ornament shelves', 'sell'], ['Stocking & gift shelves', 'sell'], ['Signs & lights', 'draw'], ['Decor', 'draw'], ['Staff', 'staff']],
+    of: '001130202502000244234412542413' }
+};
 
 // places round the departments. Parking, the taxi stand and the garden bring shoppers, the stockroom keeps the
 // shelves full and the checkouts take the money. `after` must be open first, `open` places stand from the start, and

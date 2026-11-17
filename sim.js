@@ -1,5 +1,5 @@
-var KEY = 'mainstreet.v10';
-var OLD_KEYS = ['mainstreet.v9', 'mainstreet.v8', 'mainstreet.v7', 'mainstreet.v6', 'mainstreet.v5', 'mainstreet.v4', 'mainstreet.v3', 'mainstreet.v2', 'mainstreet.v1', 'mainstreet.won'];
+var KEY = 'mainstreet.v11';
+var OLD_KEYS = ['mainstreet.v10', 'mainstreet.v9', 'mainstreet.v8', 'mainstreet.v7', 'mainstreet.v6', 'mainstreet.v5', 'mainstreet.v4', 'mainstreet.v3', 'mainstreet.v2', 'mainstreet.v1', 'mainstreet.won'];
 var MAX_AWAY = 8 * 3600;
 var START_CASH = 5;
 var STAR_BONUS = 0.02;
@@ -17,6 +17,7 @@ var DAILY = [
 // each Taxi Stand level, and garden visitors who only buy a plant
 var WALK0 = 0.1;
 var PER_DEPT = 0.006;
+var DRAW = 0.0025;
 var PER_LOT = 0.035;
 var PER_TAXI = 0.02;
 var PER_GARDEN = 0.015;
@@ -36,13 +37,21 @@ var SHELF = 6;
 var SHELVE = 4;
 var LOAD0 = 300;
 var LOAD = 100;
+// each Staff level cuts the stockers' work in its department to this share
+var STAFF = 0.7;
 
 var speed = 1;
 var clock = function () { return Date.now(); };
 var onShopper = null;
 var BZ = {};
 BIZ.forEach(function (b, i) {
+  var it = ITEMS[b.id];
   b.i = i;
+  b.items = it.it.map(function (e) { return { name: e[0], stat: e[1], at: [] }; });
+  for (var k = 0; k < it.of.length; k++) b.items[+it.of.charAt(k)].at.push(k);
+  b.first = +it.of.charAt(0);
+  b.sn = 0;
+  b.items.forEach(function (e) { if (e.stat === 'sell') b.sn += e.at.length; });
   BZ[b.id] = b;
 });
 // the departments by how far the stockers walk to them, nearest first
@@ -51,9 +60,9 @@ var NEAR = BIZ.slice().sort(function (a, b) { return a.w - b.w; });
 var S = fresh();
 
 function fresh() {
-  var s = { v: 10, cash: START_CASH, gems: 0, stars: 0, run: 0, all: 0, pend: 0, pl: { lot: 0, hall: 0, dock: 0, taxi: 0, garden: 0 }, x2: 0, b: {}, ms: {},
+  var s = { v: 11, cash: START_CASH, gems: 0, stars: 0, run: 0, all: 0, pend: 0, pl: { lot: 0, hall: 0, dock: 0, taxi: 0, garden: 0 }, x2: 0, b: {}, ms: {},
     st: { srv: 0, lost: 0, sales: 0 }, goal: [0, 1, 2], gn: 3, gd: {}, day: { n: 0, d: -1 }, ts: clock() };
-  s.b.produce = { l: 1 };
+  s.b.produce = atLevel('produce', 1);
   return s;
 }
 
@@ -85,15 +94,46 @@ function avail(id) {
   return has(id) || i === 0 || has(BIZ[i - 1].id);
 }
 
-function msAt(l) {
-  var mul = 1;
-  for (var i = 0; i < MS.length && l >= MS[i][0]; i++) mul *= MS[i][1];
-  return mul;
+// a department at level l has the first l upgrades of plan.js in; an item's level is how many of its own are among them
+function atLevel(id, l) {
+  var it = BZ[id].items.map(function (e) {
+    var n = 0;
+    e.at.forEach(function (k) { if (k < l) n++; });
+    return n;
+  });
+  return { l: l, it: it };
 }
 
-function nextMs(l) {
-  for (var i = 0; i < MS.length; i++) if (l < MS[i][0]) return { i: i, lv: MS[i][0], mul: MS[i][1] };
-  return null;
+// the levels in a department's items of one stat
+function statLv(id, stat) {
+  var e = S.b[id];
+  var n = 0;
+  if (e) BZ[id].items.forEach(function (x, j) { if (x.stat === stat) n += e.it[j]; });
+  return n;
+}
+
+function starsAt(l) {
+  var n = 0;
+  STAR_AT.forEach(function (a) { if (l >= a) n++; });
+  return n;
+}
+
+function deptStars(id) {
+  return starsAt(lv(id));
+}
+
+// the plan.js indexes of the pieces a department has, which are the first it[j] of each item
+function pieces(id) {
+  var e = S.b[id];
+  var out = [];
+  if (e) BZ[id].items.forEach(function (x, j) { out = out.concat(x.at.slice(0, e.it[j])); });
+  return out;
+}
+
+function drawLv() {
+  var n = 0;
+  BIZ.forEach(function (b) { n += statLv(b.id, 'draw'); });
+  return n;
 }
 
 function gmul() {
@@ -104,14 +144,20 @@ function bmul() {
   return S.x2 > 0 ? 2 : 1;
 }
 
-function spendAt(id, l) {
-  return l > 0 ? BZ[id].s * l * msAt(l) * gmul() : 0;
+// what each sales level adds to a shopper's basket: a full department sells what UPS levels of sales used to, however
+// many of its upgrades are sales ones
+function perSell(id) {
+  return BZ[id].s * UPS / BZ[id].sn * Math.pow(STAR_MUL, deptStars(id)) * gmul();
+}
+
+function spendAt(id) {
+  return perSell(id) * statLv(id, 'sell');
 }
 
 // what a shopper pays at the till: something from every open department
 function basket() {
   var v = 0;
-  BIZ.forEach(function (b) { v += spendAt(b.id, lv(b.id)); });
+  BIZ.forEach(function (b) { v += spendAt(b.id); });
   return v;
 }
 
@@ -127,7 +173,7 @@ function opened() {
 
 function flow() {
   var p = S.pl;
-  return { walk: WALK0 + PER_DEPT * opened() + PER_GARDEN * p.garden, car: PER_LOT * p.lot, taxi: PER_TAXI * p.taxi, garden: GARDEN_IN * p.garden };
+  return { walk: WALK0 + PER_DEPT * opened() + DRAW * drawLv() + PER_GARDEN * p.garden, car: PER_LOT * p.lot, taxi: PER_TAXI * p.taxi, garden: GARDEN_IN * p.garden };
 }
 
 function inRate() {
@@ -174,7 +220,12 @@ function trip(id) {
 
 // stocker seconds a second it takes to keep a department full for n shoppers a second
 function need(id, n) {
-  return n * spendAt(id, lv(id)) * trip(id) / haul();
+  return n * spendAt(id) * trip(id) / haul() * Math.pow(STAFF, statLv(id, 'staff'));
+}
+
+// what a load is worth on the shelves once the department's clerks have put it out
+function lift(id) {
+  return Math.pow(STAFF, -statLv(id, 'staff'));
 }
 
 // shoppers a second the stockers can keep every open department full for
@@ -193,7 +244,7 @@ function sold() {
   NEAR.forEach(function (b) {
     var t = need(b.id, n);
     if (!t) return;
-    v += n * spendAt(b.id, lv(b.id)) * Math.min(1, left / t);
+    v += n * spendAt(b.id) * Math.min(1, left / t);
     left = Math.max(0, left - t);
   });
   return v;
@@ -212,11 +263,6 @@ function cost(id, n) {
   if (lv(id) + n > UPS) return Infinity;
   var b = BZ[id];
   return b.c0 * Math.pow(b.g, lv(id)) * (Math.pow(b.g, n) - 1) / (b.g - 1);
-}
-
-// how many of a department's pieces are in: one for each upgrade
-function shape(id) {
-  return lv(id);
 }
 
 // unlimited money for testing: spending is free, and the real balance waits in FREE so saves never hold the top-up
@@ -247,27 +293,35 @@ function earn(v) {
   S.all += v;
 }
 
-// returns what changed: unlock, milestones crossed and their gems, whether the department gets a new piece
-function buy(id, n) {
-  n = n || 1;
-  if (!avail(id) || n < 1 || lv(id) + n > UPS) return null;
-  var c = cost(id, n);
+// the next piece of an item, or -1 when it has all of them. An unopened department can only buy its first piece
+function nextPiece(id, j) {
+  var e = S.b[id];
+  var x = BZ[id].items[j];
+  if (!e) return j === BZ[id].first ? 0 : -1;
+  return e.it[j] < x.at.length ? x.at[e.it[j]] : -1;
+}
+
+// one more level of item j, which adds that item's next piece. Returns what changed: the piece, an unlock, a star
+// earned and its gems
+function buy(id, j) {
+  if (!avail(id) || nextPiece(id, j) < 0) return null;
+  var c = cost(id, 1);
   if (c > S.cash) return null;
   S.cash -= c;
-  var b = S.b[id] || (S.b[id] = { l: 0 });
+  var b = S.b[id] || (S.b[id] = atLevel(id, 0));
   var was = b.l;
-  var stage = shape(id);
-  b.l += n;
-  var res = { id: id, n: n, from: was, to: b.l, unlock: was === 0, ms: [], gems: 0, stage: shape(id) !== stage };
-  for (var i = S.ms[id] || 0; i < MS.length; i++) {
-    if (b.l < MS[i][0]) break;
-    S.gems += MS_GEMS[i];
-    res.gems += MS_GEMS[i];
+  var piece = nextPiece(id, j);
+  b.it[j]++;
+  b.l++;
+  var res = { id: id, item: j, piece: piece, from: was, to: b.l, unlock: was === 0, star: 0, gems: 0 };
+  STAR_AT.forEach(function (a, i) {
+    if (was >= a || b.l < a) return;
+    res.star = i + 1;
+    if ((S.ms[id] || 0) > i) return;
     S.ms[id] = i + 1;
-  }
-  for (var j = 0; j < MS.length; j++) {
-    if (was < MS[j][0] && b.l >= MS[j][0]) res.ms.push({ lv: MS[j][0], mul: MS[j][1] });
-  }
+    S.gems += STAR_GEMS[i];
+    res.gems += STAR_GEMS[i];
+  });
   return res;
 }
 
@@ -366,7 +420,7 @@ function take() {
   var full = SHELF * haul();
   BIZ.forEach(function (b) {
     var id = b.id;
-    var sp = spendAt(id, lv(id));
+    var sp = spendAt(id);
     if (!sp) return;
     if (fill[id] > 0) {
       v += Math.min(sp, fill[id] * full);
@@ -423,7 +477,7 @@ function pickDept() {
     if (!has(id)) continue;
     var on = 0;
     crew.forEach(function (w) { if (w.id === id) on++; });
-    if (fill[id] + (on + 1) / SHELF <= 1) return id;
+    if (fill[id] + (on + 1) * lift(id) / SHELF <= 1) return id;
   }
   return null;
 }
@@ -450,7 +504,7 @@ function stockStep(dt) {
       w.t += d;
       left -= d;
       var b = Math.min(w.t, w.out + SHELVE);
-      if (b > a) fill[w.id] = Math.min(1, fill[w.id] + (b - a) / SHELVE / SHELF);
+      if (b > a) fill[w.id] = Math.min(1, fill[w.id] + (b - a) / SHELVE / SHELF * lift(w.id));
       if (w.t >= w.T) w.id = null;
     }
   });
@@ -528,16 +582,16 @@ function options() {
   }
   BIZ.forEach(function (z) {
     var id = z.id;
-    var l = lv(id);
     if (!avail(id)) return;
-    function by(n) {
-      return function (d) {
-        var b = S.b[id] || (S.b[id] = { l: 0 });
-        b.l += d * n;
+    z.items.forEach(function (x, j) {
+      if (nextPiece(id, j) < 0) return;
+      add({ k: 'lv', id: id, item: j, cost: cost(id, 1), gain: gain(function (d) {
+        var b = S.b[id] || (S.b[id] = atLevel(id, 0));
+        b.it[j] += d;
+        b.l += d;
         if (!b.l) delete S.b[id];
-      };
-    }
-    if (l < UPS) add({ k: 'lv', id: id, n: 1, cost: cost(id, 1), gain: gain(by(1)) });
+      }) });
+    });
   });
   PLACES.forEach(function (p) {
     var c = placeCost(p.id);
@@ -555,7 +609,7 @@ function best() {
 }
 
 function doOption(o) {
-  return o.k === 'lv' ? buy(o.id, o.n) : buyPlace(o.id);
+  return o.k === 'lv' ? buy(o.id, o.item) : buyPlace(o.id);
 }
 
 function buyBest() {
@@ -652,7 +706,7 @@ function sell() {
   S.cash = START_CASH;
   S.run = 0;
   S.pl = { lot: 0, hall: 0, dock: 0, taxi: 0, garden: 0 };
-  S.b = { produce: { l: 1 } };
+  S.b = { produce: atLevel('produce', 1) };
   clearShoppers();
   return n;
 }
@@ -712,6 +766,7 @@ function num(v, d) {
   return isFinite(v) && v >= 0 ? +v : d;
 }
 
+// the pieces a level meant before v10
 function oldPieces(l) {
   var at = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 12, 14, 16, 18, 20, 25, 50, 100, 200, 300, 400];
   var n = 0;
@@ -721,7 +776,7 @@ function oldPieces(l) {
 
 // copies what it knows by id; anything unknown is dropped and anything missing starts over
 function validate(o) {
-  if (!o || typeof o !== 'object' || typeof o.v !== 'number' || o.v < 7 || o.v > 10 || !o.b || typeof o.b !== 'object') return null;
+  if (!o || typeof o !== 'object' || typeof o.v !== 'number' || o.v < 7 || o.v > 11 || !o.b || typeof o.b !== 'object') return null;
   if (!isFinite(o.cash) || !isFinite(o.ts)) return null;
   var s = fresh();
   s.b = {};
@@ -742,8 +797,15 @@ function validate(o) {
     // before v10 a department went to level 400 and showed 21 pieces on the way; it keeps its share of them
     if (o.v < 10) l = Math.max(1, Math.round(oldPieces(l) * UPS / 21));
     l = Math.min(UPS, l);
-    s.b[z.id] = { l: l };
-    if (l >= MS[0][0]) s.ms[z.id] = Math.min(MS.length, Math.floor(l / MS[0][0]));
+    var b = atLevel(z.id, l);
+    // v11 keeps the level of each item; the first l pieces are what the older saves had
+    if (o.v >= 11 && Array.isArray(e.it) && e.it.length === z.items.length) {
+      var it = z.items.map(function (x, j) { return Math.min(x.at.length, Math.floor(num(e.it[j], 0))); });
+      var sum = it.reduce(function (a, c) { return a + c; }, 0);
+      if (sum >= 1) b = { l: sum, it: it };
+    }
+    s.b[z.id] = b;
+    s.ms[z.id] = o.v >= 11 && o.ms ? Math.min(STAR_AT.length, Math.floor(num(o.ms[z.id], 0))) : starsAt(b.l);
   });
   if (o.st) {
     s.st.srv = Math.floor(num(o.st.srv, 0));
@@ -788,7 +850,7 @@ function load() {
   var back = null;
   try {
     var raw = localStorage.getItem(KEY);
-    var old = raw ? null : localStorage.getItem('mainstreet.v9') || localStorage.getItem('mainstreet.v8') || localStorage.getItem('mainstreet.v7');
+    var old = raw ? null : localStorage.getItem('mainstreet.v10') || localStorage.getItem('mainstreet.v9') || localStorage.getItem('mainstreet.v8') || localStorage.getItem('mainstreet.v7');
     var mall = raw || old ? null : localStorage.getItem('mainstreet.v6');
     OLD_KEYS.forEach(function (k) { localStorage.removeItem(k); });
     if (mall) carry(JSON.parse(mall));
