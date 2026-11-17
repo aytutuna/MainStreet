@@ -425,7 +425,7 @@ function dayStep(dt) {
   scene.background.copy(skyNight).lerp(skyDay, k);
   scene.fog.color.copy(scene.background);
   bulbMat.emissive.copy(lampOn).multiplyScalar(1 - k);
-  doorMats.forEach(function (m) { m.emissive.setScalar(0.5 * (1 - k)); });
+  doorMats.forEach(function (m) { m.emissive.setScalar(0.3 + 0.7 * (1 - k)); });
   poolMat.opacity = 0.5 * (1 - k);
   poolMat.visible = k < 0.98;
 }
@@ -1809,47 +1809,89 @@ function settle(s) {
 }
 
 
-// a lane's number on a small lit box, standing on its impulse rack
+// a lane's number on a round lit badge turned up toward the camera, standing on its impulse rack
 function laneSign(n) {
   var c = document.createElement('canvas');
-  c.width = 64;
-  c.height = 64;
+  c.width = 128;
+  c.height = 128;
   var x = c.getContext('2d');
-  x.fillStyle = '#2f3446';
-  x.fillRect(0, 0, 64, 64);
-  x.fillStyle = '#ffd34a';
-  x.font = 'bold 46px sans-serif';
+  x.fillStyle = '#262b3b';
+  x.fillRect(0, 0, 128, 128);
+  // a cylinder's cap maps u along z and v along x
+  x.translate(64, 64);
+  x.rotate(-Math.PI / 2);
+  x.translate(-64, -64);
+  x.beginPath();
+  x.arc(64, 64, 58, 0, Math.PI * 2);
+  x.fillStyle = '#1b1f2c';
+  x.fill();
+  x.lineWidth = 9;
+  x.strokeStyle = '#f2c230';
+  x.stroke();
+  x.fillStyle = '#ffe27a';
+  x.font = font(n > 9 ? 62 : 80);
   x.textAlign = 'center';
   x.textBaseline = 'middle';
-  x.fillText(String(n), 32, 35);
+  x.fillText(String(n), 64, 70);
   var t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
-  var lit = new THREE.MeshLambertMaterial({ map: t, emissive: 0xffffff, emissiveMap: t, emissiveIntensity: 0.6 });
-  var rim = flat(0x2f3446);
-  return new THREE.Mesh(new THREE.BoxGeometry(0.22, 0.22, 0.22), [lit, lit, rim, rim, lit, lit]);
+  var lit = new THREE.MeshLambertMaterial({ map: t, emissive: 0xffffff, emissiveMap: t, emissiveIntensity: 0.7 });
+  var m = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.15, 0.05, 28), [flat(0x262b3b), lit, flat(0x262b3b)]);
+  m.rotation.x = 0.9;
+  return m;
 }
 
-// the store's name over an entrance, standing above the wall line
+// the store's name in lit letters on a fascia over an entrance, leaning toward the camera; a second picture of the letters
+// alone makes them glow at night
+function paintDoor(g, name, glow) {
+  var W = 768, H = 164;
+  g.fillStyle = glow ? '#000' : '#262b3b';
+  g.fillRect(0, 0, W, H);
+  rr(g, 12, 12, W - 24, H - 24, 34);
+  if (!glow) {
+    var gr = g.createLinearGradient(0, 0, 0, H);
+    gr.addColorStop(0, '#363d54');
+    gr.addColorStop(1, '#1b1f2c');
+    g.fillStyle = gr;
+    g.fill();
+  }
+  g.strokeStyle = '#f2c230';
+  g.lineWidth = 7;
+  g.stroke();
+  g.textAlign = 'center';
+  g.textBaseline = 'middle';
+  fitFont(g, [name], W - 200, 104);
+  g.lineWidth = 6;
+  g.lineJoin = 'round';
+  if (!glow) {
+    g.strokeStyle = '#a8700c';
+    g.strokeText(name, W / 2, H / 2 + 5);
+  }
+  g.fillStyle = '#ffe27a';
+  g.fillText(name, W / 2, H / 2 + 5);
+  [60, W - 60].forEach(function (sx) {
+    star(g, sx, H / 2, 24);
+    g.fill();
+  });
+}
+
 function doorSign(en) {
-  var c = document.createElement('canvas');
-  c.width = 512;
-  c.height = 96;
-  var x = c.getContext('2d');
-  x.fillStyle = '#2f3446';
-  x.fillRect(0, 0, 512, 96);
-  x.fillStyle = '#f2c230';
-  x.fillRect(0, 84, 512, 12);
-  x.fillStyle = '#fff6e0';
-  x.font = 'bold 60px sans-serif';
-  x.textAlign = 'center';
-  x.textBaseline = 'middle';
-  x.fillText(en.name, 256, 44);
-  var t = new THREE.CanvasTexture(c);
-  t.colorSpace = THREE.SRGBColorSpace;
-  var m = new THREE.MeshLambertMaterial({ map: t, emissiveMap: t, emissive: 0x000000 });
-  var rim = flat(0x2f3446);
-  var b = new THREE.Mesh(new THREE.BoxGeometry(en.w - 0.1, 0.42, 0.06), [rim, rim, rim, rim, m, rim]);
-  b.position.set(en.x, 1.2, FRONT + 0.05);
+  function tex(glow) {
+    var c = document.createElement('canvas');
+    c.width = 768;
+    c.height = 164;
+    paintDoor(c.getContext('2d'), en.name, glow);
+    var t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    t.anisotropy = 4;
+    return t;
+  }
+  var m = new THREE.MeshLambertMaterial({ map: tex(false), emissiveMap: tex(true), emissive: 0x000000 });
+  var rim = flat(0x262b3b);
+  var w = en.w - 0.1;
+  var b = new THREE.Mesh(new THREE.BoxGeometry(w, w * 164 / 768, 0.08), [rim, rim, rim, rim, m, rim]);
+  b.position.set(en.x, 1.3, FRONT + 0.08);
+  b.rotation.x = -0.5;
   b.castShadow = true;
   root.add(b);
   doorMats.push(m);
@@ -2191,7 +2233,7 @@ function buildPylon() {
   var g = new THREE.Group();
   [-1, 1].forEach(function (sd) {
     var post = new THREE.Mesh(new THREE.BoxGeometry(0.16, 2.4, 0.16), flat(0x50566a));
-    post.position.set(sd * 0.9, 1.2, 0);
+    post.position.set(sd * 0.9, 1.2, -0.16);
     post.castShadow = true;
     g.add(post);
   });
@@ -2217,19 +2259,54 @@ function paintPylon() {
   if (pylon.big === key) return;
   pylon.big = key;
   var x = pylon.c.getContext('2d');
-  x.fillStyle = '#2f3446';
+  var n = S.store > 1;
+  x.fillStyle = '#2a2e3f';
   x.fillRect(0, 0, 512, 256);
-  x.fillStyle = '#f2c230';
-  x.fillRect(0, 196, 512, 60);
-  x.fillStyle = '#fff6e0';
-  x.font = 'bold 92px sans-serif';
+  rr(x, 12, 12, 488, 232, 38);
+  var gr = x.createLinearGradient(0, 0, 0, 256);
+  gr.addColorStop(0, '#fffaf0');
+  gr.addColorStop(1, '#f2e4c0');
+  x.fillStyle = gr;
+  x.fill();
+  x.save();
+  x.clip();
+  x.fillStyle = '#d63a2f';
+  x.fillRect(0, 186, 512, 70);
+  x.fillStyle = 'rgba(255,255,255,0.35)';
+  x.fillRect(0, 186, 512, 3);
+  rr(x, 18, 18, 488, 232, 38);
+  x.strokeStyle = 'rgba(70,40,0,0.16)';
+  x.lineWidth = 12;
+  x.stroke();
+  x.restore();
+  x.fillStyle = '#ffd23a';
+  x.strokeStyle = '#8a6410';
+  x.lineWidth = 5;
+  star(x, 84, 98, 50);
+  x.fill();
+  x.stroke();
+  x.fillStyle = '#2a2f40';
   x.textAlign = 'center';
   x.textBaseline = 'middle';
-  x.fillText('MAIN', 256, 58);
-  x.fillText('STREET', 256, 146);
-  x.fillStyle = '#2f3446';
-  x.font = 'bold 42px sans-serif';
-  x.fillText((big ? 'SUPERCENTER' : 'MARKET') + (S.store > 1 ? ' #' + S.store : ''), 256, 228);
+  var tx = n ? 262 : 300;
+  fitFont(x, ['STREET'], n ? 200 : 280, 84);
+  x.fillText('MAIN', tx, 66);
+  x.fillText('STREET', tx, 140);
+  x.fillStyle = '#fff';
+  x.font = font(46);
+  x.fillText(big ? 'SUPERCENTER' : 'MARKET', 256, 222);
+  if (n) {
+    x.beginPath();
+    x.arc(434, 100, 54, 0, Math.PI * 2);
+    x.fillStyle = '#d63a2f';
+    x.fill();
+    x.lineWidth = 7;
+    x.strokeStyle = '#fff';
+    x.stroke();
+    x.fillStyle = '#fff';
+    x.font = font(S.store > 9 ? 54 : 70);
+    x.fillText('#' + S.store, 434, 106);
+  }
   pylon.tex.needsUpdate = true;
 }
 
