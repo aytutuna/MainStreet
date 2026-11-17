@@ -1,9 +1,10 @@
-var CACHE = 'mainstreet-cd782e93';
+var CACHE = 'mainstreet-fa9f3ddc';
 var FILES = [
   './',
   'data.js',
   'index.html',
   'manifest.webmanifest',
+  'plan.js',
   'sim.js',
   'store.js',
   'style.css',
