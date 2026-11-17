@@ -695,19 +695,23 @@ function gServe(n, gems, x2) {
 function gPl(id, n, t, gems) {
   return gl(t, gems, n, function () { return S.pl[id]; });
 }
+// a goal on one item of a place, since the place's level also counts its other items
+function gIt(id, j, n, t, gems) {
+  return gl(t, gems, n, function () { return S.pi[id][j]; });
+}
 // a goal added with the stockroom
 function nw(g) {
   g.nw = true;
   return g;
 }
 var GOALS = [
-  gServe(10, 3), gLv('produce', 10, 3), gLv('bakery', 1, 4), gPl('hall', 1, 'Open lane 2', 5), nw(gPl('dock', 1, 'Hire a second stocker', 4)),
+  gServe(10, 3), gLv('produce', 10, 3), gLv('bakery', 1, 4), gIt('hall', 0, 1, 'Open lane 2', 5), nw(gIt('dock', 0, 1, 'Hire a second stocker', 4)),
   gPl('lot', 1, 'Build the Parking', 4),
   gServe(100, 3), gLv('bakery', 10, 4), gEarn(1000, 3), gLv('dairy', 1, 5), gLv('produce', 20, 5, 15), gLv('meat', 1, 6),
   gEarn(1e5, 5), gLv('bakery', 20, 6), gServe(500, 5), gLv('frozen', 1, 8), gLv('dairy', 20, 8, 30), gPl('taxi', 1, 'Open the Taxi Stand', 8),
-  gPl('hall', 3, 'Put in self checkouts', 10), nw(gPl('dock', 3, 'Stockroom to level 3', 10)), gEarn(1e7, 8), gLv('pantry', 1, 10), gLv('produce', 30, 12), gLv('snacks', 1, 10),
+  gIt('hall', 1, 1, 'Put in self checkouts', 10), nw(gPl('dock', 3, 'Stockroom to level 3', 10)), gEarn(1e7, 8), gLv('pantry', 1, 10), gLv('produce', 30, 12), gLv('snacks', 1, 10),
   gPl('lot', 3, 'Parking to level 3', 10), gLv('toys', 1, 12), gServe(2000, 10), gEarn(1e9, 10, 30), gLv('tech', 1, 15),
-  gPl('hall', 5, 'Open lane 3', 15), gLv('kitchen', 1, 20), gEarn(1e11, 15), gLv('kitchen', 20, 15, 30), gLv('toys', 25, 15),
+  gIt('hall', 0, 2, 'Open lane 3', 15), gLv('kitchen', 1, 20), gEarn(1e11, 15), gLv('kitchen', 20, 15, 30), gLv('toys', 25, 15),
   gl('Move to a new store', 30, 1, function () { return S.store - 1; }), gServe(10000, 20), gEarn(1e13, 20, 60), gLv('clothes', 1, 25),
   gPl('garden', 1, 'Open the Garden Center', 25), gLv('home', 1, 30), gLv('office', 1, 30), gPl('hall', 10, 'Checkouts to level 10', 30),
   nw(gPl('dock', 10, 'Stockroom to level 10', 30)),
@@ -887,14 +891,14 @@ function validate(o) {
       if (sum >= 1) b = { l: sum, it: it };
     }
     s.b[z.id] = b;
-    s.ms[z.id] = o.v >= 11 && o.ms ? Math.min(STAR_AT.length, Math.floor(num(o.ms[z.id], 0))) : starsAt(b.l);
+    s.ms[z.id] = o.v >= 11 && o.ms && z.id in o.ms ? Math.min(STAR_AT.length, Math.floor(num(o.ms[z.id], 0))) : starsAt(b.l);
   });
   if (o.st) {
     s.st.srv = Math.floor(num(o.st.srv, 0));
     s.st.lost = Math.floor(num(o.st.lost, 0));
   }
   // before the move a store sale was counted in st.sales
-  s.store = o.store >= 1 ? Math.floor(o.store) : 1 + Math.floor(num(o.st && o.st.sales, 0));
+  s.store = Math.min(1000, Math.max(1, Math.floor(num(o.store, 0)) || 1 + Math.floor(num(o.st && o.st.sales, 0))));
   // the goal list was rewritten with the tills, so a v7 save starts it again; a v8 one had no stockroom goals
   if (o.v === 8) v8Goals(o);
   var gn = o.v === 7 ? 3 : Math.min(GOALS.length, Math.floor(num(o.gn, 3)));
