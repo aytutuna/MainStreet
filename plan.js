@@ -279,20 +279,22 @@ AREAS.pets = {
   cx: 4.05, cz: -15.8, vacant: [1.25, 6.9, -18.4, -13.2], sign: [4.0, -15.0, 1.6],
   floor: [{ poly: rbox(1.25, 6.9, -18.4, -13.2, 0.5), finish: 0xcfe4bf }],
   ups: ups(runs(
-    row(2.05, -13.9, nm(['Dog food', 'Cat food', 'Puppy food', 'Kitten food', 'Dog treats', 'Cat treats'], [BAG[0], CAN[0], BAG[1], CAN[2], BAG[2], CAN[1], BAG[3], CAN[4], BAG[4], CAN[3]])),
-    row(2.05, -16.1, nm(['Bird seed', 'Fish food', 'Litter shelf', 'Chew toys', 'Collars', 'Pet beds'], [BAG[5], BOX[1], BAG[0], BOX[2], CAN[2], BAG[2], BOX[5], BAG[3], CAN[0], BOX[3]])),
-    (function () {
-      var c = eastCaps([-13.9, -16.1], ['Treat end', 'Dog toy end', 'Catnip end', 'Leash end'],
-        [[BAG[1], CAN[1]], [CAN[3], CAN[1]], [BAG[0], CAN[2]], [BAG[3], BAG[5]]]);
-      c[1].piece.push({ m: 'pets/animal-dog*3', x: 1.45, z: -13.9, r: 1.57, k: 1, y: 1.05, flat: 1 });
-      c[2].piece.push({ m: 'pets/animal-cat*2.5', x: 6.65, z: -16.1, r: -1.57, k: 1, y: 1.05, flat: 1 });
-      return c;
-    })(),
-    [pal('Pet food pallet', 5.3, -3.65, 0.1, [BAG[4]]), tank('Fish tank', 1.9, 'pets/animal-fish*2.2'),
+    pwrun([gond('Dog food gondola', 'Gondola_Island_10'), gond('Cat food rack', 'Gondola_Island_Low_10', tops([['Bag_PetFood_01*1.4', -0.13, 0.7], ['Bag_PetFood_01*1.4', 0.13, 0.7]])),
+      gond('Puppy food gondola', 'Gondola_Island_10'), gond('Kitten food rack', 'Gondola_Island_Low_10', tops([['Bag_PetFood_01*1.4', -0.13, 0.7], ['Bag_PetFood_01*1.4', 0.13, 0.7]])),
+      gond('Dog treat gondola', 'Gondola_Island_10'), gond('Cat treat rack', 'Gondola_Island_Low_10', tops([['Bag_PetFood_01*1.4', 0, 0.7]]))], 5.5, -13.9, 's'),
+    pwrun([gond('Bird seed gondola', 'Gondola_Island_10'), gond('Fish food gondola', 'Gondola_Island_10'),
+      gond('Litter rack', 'Gondola_Island_Low_10', tops([['Bag_PetFood_01*1.4', -0.13, 0.7], ['Bag_PetFood_01*1.4', 0.13, 0.7]])),
+      gond('Chew toy pegs', 'Gondola_Island_Peg_10'), gond('Collar pegs', 'Gondola_Island_Peg_10'), gond('Pet bed rack', 'Gondola_Island_Low_10')], 5.5, -16.1, 's'),
+    [up('Treat end cap', pw('Gondola_EndCap_10', 5.68, -13.9, 'b', { stock: 1 })),
+      up('Dog toy end cap', pw('Gondola_EndCap_10', 2.37, -13.9, 'k', { stock: 1 }), { m: 'pets/animal-dog*3', x: 2.37, z: -13.9, r: -1.57, k: 1, y: 0.9, flat: 1 }),
+      up('Catnip end cap', pw('Gondola_EndCap_10', 5.68, -16.1, 'b', { stock: 1 }), { m: 'pets/animal-cat*2.5', x: 5.68, z: -16.1, r: 1.57, k: 1, y: 0.9, flat: 1 }),
+      up('Leash end cap', pw('Gondola_EndCap_10', 2.37, -16.1, 'k', { stock: 1 }))],
+    [up('Pet food table', pw('Table_Promo_Tiered_01', 5.3, -3.65, 0.1, { stock: 1, on: tops([['Bag_PetFood_01', -0.15, 0.56], ['Bag_PetFood_01', 0.15, 0.56]]) })), tank('Fish tank', 1.9, 'pets/animal-fish*2.2'),
       pen('Puppy pen', 3.1, 'pets/animal-dog*2.5'), pen('Kitten pen', 4.4, 'pets/animal-cat*2.5'),
       board('Pet toys board', 'PET TOYS 2 FOR 5', 6.49, -14.66, 1.0), up('Pet rug', { patch: rbox(7.1, 8.5, -16.8, -15.2, 0.3), finish: 0xe6b8a8 }),
-      d('Dog bed', 'furn/rugRound', 7.6, -17.4, 0, 1.2), up('Ball crate', ['crate', 0.9, -15.3, 'k', ['golf/ball-red', 'golf/ball-blue']])]),
-    [SIGN, clerk(7.6, -15.0, 'k'), up('Adoption corner', ['table', 7.7, -13.5, 'k', [BAG[0], BAG[1]]], m('pets/animal-dog*3', 7.6, -13.0, 0.5, 1)), lights([[3, -15], [5.2, -15]]), HELP,
+      d('Dog bed', 'furn/rugRound', 7.6, -17.4, 0, 1.2), up('Ball bin', pw('DumpBin_Wire_01', 0.9, -15.3, 'k', { stock: 1 }))]),
+    [SIGN, clerk(7.6, -15.0, 'k'), up('Adoption corner', pw('Table_Promo_Tiered_01', 7.7, -13.5, 'k', { stock: 1, on: tops([['Bag_PetFood_01', -0.15, 0.56], ['Bag_PetFood_01', 0.15, 0.56]]) }), m('pets/animal-dog*3', 7.6, -13.0, 0.5, 1), on('pw/Bowl_01*3', 7.55, -13.5, 0.48)),
+      lights([[3, -15], [5.2, -15]]), HELP,
       up('Showcase', { sign: 'gold' }, ['tank', 5.5, -18.0, 's', FISH], ['tank', 6.4, -18.0, 's', FISH])])
 };
 
