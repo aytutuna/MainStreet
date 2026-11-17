@@ -597,10 +597,37 @@ function drawPlace() {
   return pick || (S.pl.lot < PL.lot.cost.length ? 'lot' : 'taxi');
 }
 
-function openPlace(id) {
+function openPlace(id, j) {
   wake();
   showCard(id);
   focusBiz(id);
+  if (j === undefined || !cardRow.its) return;
+  var el = cardRow.its[j].el;
+  el.scrollIntoView({ block: 'center' });
+  el.classList.remove('ping');
+  void el.offsetWidth;
+  el.classList.add('ping');
+}
+
+// the first item of a place that still has levels left, else the one after it
+function openItem(id, first, then) {
+  var p = PL[id];
+  openPlace(id, S.pi[id][first] < p.items[first].at.length ? first : then);
+}
+
+function openDraw() {
+  var id = drawPlace();
+  openPlace(id, drawItem(id));
+}
+
+// the draw item to buy in the place drawPlace picked
+function drawItem(id) {
+  if (PL[id]) return 0;
+  var items = BZ[id].items;
+  for (var j = 0; j < items.length; j++) {
+    if (items[j].stat === 'draw' && nextPiece(id, j) >= 0) return j;
+  }
+  return 0;
 }
 
 function updateBest() {
@@ -980,9 +1007,9 @@ function start() {
   wire();
   setFree(free);
   paintFree();
-  $('m-in').addEventListener('click', function () { openPlace(drawPlace()); });
-  $('m-tills').addEventListener('click', function () { openPlace('hall'); });
-  $('m-shelf').addEventListener('click', function () { openPlace('dock'); });
+  $('m-in').addEventListener('click', openDraw);
+  $('m-tills').addEventListener('click', function () { openItem('hall', 0, 1); });
+  $('m-shelf').addEventListener('click', function () { openItem('dock', 0, 1); });
   onShopper = onSale;
   var wait = setInterval(function () {
     if (!View.ready()) return;

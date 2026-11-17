@@ -739,6 +739,16 @@ small {
   background: #fff3b8;
 }
 
+.it.ping {
+  animation: ping 1.2s ease-out;
+}
+
+@keyframes ping {
+  0%, 60% {
+    background: #ffd84a;
+  }
+}
+
 #banner {
   position: absolute;
   left: 16px;
