@@ -801,11 +801,13 @@ DECOR.stock = cat(
   DOCKS.map(function (d) { return { slab: [d + 1.24, d + 1.3, -28.2, -27.6], c: 0xf2c230 }; }),
   DOCKS.map(function (d, i) { return bd('DOCK ' + (i + 1), d, -28.17, 0.8, 0.2, 0.84); }),
   [bd('RECEIVING', 0, -28.17, 1.6, 0.36, 0.6), bd('EMPLOYEES ONLY', -12.2, -28.17, 1.4, 0.3, 0.6)],
-  // pallets waiting between the docks, a jack at each dock and drums on the east side
-  [['stock', -7.5, -26.1, 's', 'boxes'], ['stock', -7.5, -26.8, 's', 'boxes'], ['stock', -6.8, -26.3, 's', 'boxes'], ['stock', -0.8, -26.4, 's', 'boxes'],
-    ['stock', 0.2, -26.4, 's', 'boxes'], ['stock', 1.2, -26.4, 's', 'boxes'], ['stock', 7.4, -26.5, 's', 'boxes'], ['stock', 8.2, -26.2, 's', 'boxes']],
-  [{ m: 'shop/hand-truck', x: -9.2, z: -25.9, r: 0.3 }, { m: 'shop/hand-truck', x: -3.0, z: -25.9, r: -0.2 }, { m: 'shop/hand-truck', x: 3.0, z: -25.8, r: 0.1 },
-    { m: 'shop/hand-truck', x: 9.2, z: -25.9, r: -0.4 }],
+  // loads waiting between the docks, a jack or a cart at each dock, roll cages by the west wall and drums on the east side
+  [pw('PalletLoad_Cases_01', -7.7, -26.3, 0.1, { spots: 0 }), pw('PalletLoad_Water_01', -6.9, -26.3, -0.1, { spots: 0 }), pw('PalletLoad_Cases_01', -0.8, -26.4, 0.05, { spots: 0 }),
+    pw('PalletLoad_Water_01', 0.2, -26.4, 0, { spots: 0 }), pw('PalletLoad_Cases_01', 1.2, -26.4, -0.1, { spots: 0 }), pw('PalletLoad_Water_01', 7.5, -26.4, 0.1, { spots: 0 }),
+    pw('PalletLoad_Cases_01', 8.3, -26.3, 0, { spots: 0 })],
+  [pw('PalletJack_01', -9.2, -25.9, 0.3, { spots: 0 }), pw('UBoat_Cart_01', -3.0, -25.9, -0.2, { spots: 0 }), pw('FlatCart_15', 3.0, -25.8, 0.1, { spots: 0 }),
+    pw('PalletJack_01', 9.2, -25.9, -0.4, { spots: 0 }), pw('RollCage_Loaded_01', -12.1, -25.6, 0.2, { spots: 0 }), pw('RollCage_01', -11.6, -25.5, -0.3, { spots: 0 }),
+    pw('JanitorCart_01', -14.2, -24.15, 0, { spots: 0 }), pw('FloorScrubber_01', 14.0, -24.15, Math.PI, { spots: 0 })],
   [{ m: 'surv/barrel', x: 11.9, z: -25.6 }, { m: 'surv/barrel', x: 12.3, z: -25.6 }, { m: 'surv/barrel', x: 12.1, z: -25.25 }, { m: 'surv/barrel', x: 12.5, z: -25.25 }],
   // a forklift: body, counterweight, cage, mast and forks
   [hi(-2.65, -2.15, -26.9, -26.3, 0.06, 0.3, 0xf2c230), hi(-2.65, -2.15, -27.1, -26.9, 0.06, 0.36, 0x3a3d4a), hi(-2.65, -2.15, -26.75, -26.45, 0.55, 0.58, 0x3a3d4a),
@@ -817,7 +819,7 @@ DECOR.stock = cat(
     { m: 'furn/radio', x: -13.7, z: -26.2, y: 0.44, k: 1.6, flat: 1 }],
   line(4, 0, -26.9, 0, 0.42, function (x, z, i) { return cab(-14.5, z, 0.36, 0.38, 0.72, [0x4a6fa5, 0x5b8a5b, 0xb5574b, 0x8a6bb0][i]); }),
   // bales and bins by the baler
-  [hi(11.2, 11.9, -27.3, -26.7, 0, 0.3, 0xb08a5a), hi(11.2, 11.9, -27.3, -26.7, 0.3, 0.6, 0xa67f50), hi(11.2, 11.9, -26.55, -25.95, 0, 0.3, 0xb08a5a),
+  [pw('CardboardBale_01', 11.55, -27.0, 's', { spots: 0, on: [['pw/CardboardBale_01', 0, 0, 0, 0.5]] }), pw('CardboardBale_01', 11.55, -26.2, 's', { spots: 0 }),
     cab(14.3, -27.3, 0.4, 0.4, 0.45, 0x3f7a4a), cab(14.3, -27.9, 0.4, 0.4, 0.45, 0x3c63a8)]
 );
 
