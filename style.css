@@ -554,6 +554,16 @@ small {
   font-weight: 800;
   color: var(--blue2);
   font-size: 13px;
+  white-space: nowrap;
+}
+
+.l1 i {
+  font-style: normal;
+  color: #cbbfa8;
+}
+
+.l1 i.on {
+  color: #e8a800;
 }
 
 .pr {
@@ -671,6 +681,56 @@ small {
 
 .biz.nobar .pr {
   display: none;
+}
+
+#card-row {
+  max-height: 48vh;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 13px;
+}
+
+.dh {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--paper);
+}
+
+.dh .ic {
+  width: 40px;
+  height: 40px;
+}
+
+.it {
+  padding: 4px 6px;
+}
+
+.it .ic {
+  width: 44px;
+  height: 44px;
+}
+
+.it .btns {
+  width: 78px;
+}
+
+.it .l1 {
+  font-size: 14px;
+}
+
+.it .fx {
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.it.done {
+  opacity: 0.6;
+}
+
+.it.best {
+  background: #fff3b8;
 }
 
 #banner {

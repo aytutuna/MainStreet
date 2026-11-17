@@ -215,7 +215,7 @@ function nextBanner() {
   }, q.d * 1000);
 }
 
-// what the next upgrade adds and its picture; the view draws them from the store's own pieces
+// a piece's name and picture, k being its place in plan.js; the view draws them from the store's own pieces
 function upName(id, k) {
   return View.upName(id, k);
 }
@@ -226,11 +226,6 @@ function upIcon(id, k) {
 
 function placeIcon(id, k) {
   return View.placeIcon(id, k) || 'assets/' + PL[id].ic + '.png';
-}
-
-function nextText(id, l) {
-  var m = nextMs(l);
-  return 'Next: ' + upName(id, l + 1) + (m && m.lv === l + 1 ? ', sales here x' + m.mul : '');
 }
 
 function perMin(v) {
@@ -250,11 +245,89 @@ function makeRow(id) {
     up: el.querySelector('.up') };
   r.nm.textContent = b.name;
   el.querySelector('.ic').addEventListener('click', function () { focusBiz(id); });
-  r.up.addEventListener('click', function () { upgrade(id); });
+  r.up.addEventListener('click', function () {
+    if (BZ[id] && has(id)) openPlace(id);
+    else upgrade(id);
+  });
   return r;
 }
 
+function starRow(n) {
+  var out = '';
+  for (var i = 0; i < STAR_AT.length; i++) out += '<i' + (i < n ? ' class="on"' : '') + '>\u2605</i>';
+  return out;
+}
+
+// what one more level of an item does
+function effect(id, x) {
+  if (x.stat === 'sell') return '+' + money(perSell(id) * bmul()) + ' a shopper';
+  if (x.stat === 'draw') {
+    var v = DRAW * 60;
+    return '+' + (v < 1 ? v.toFixed(2) : v.toFixed(1)) + ' shoppers a minute';
+  }
+  return "Stockers' work here -" + Math.round((1 - STAFF) * 100) + '%';
+}
+
+// an open department's card: its stars and a row for each of its items
+function makeDept(id) {
+  var b = BZ[id];
+  var el = document.createElement('div');
+  el.className = 'dept';
+  el.innerHTML = '<div class="biz dh"><img class="ic" src="assets/' + b.ic + '.png" alt="">' +
+    '<div class="mid"><div class="l1"><b></b><span></span></div><div class="pr"><i></i><em></em></div></div></div><div class="its"></div>';
+  var r = { id: id, kind: 'dept', el: el, k: {}, nm: el.querySelector('b'), lv: el.querySelector('.l1 span'), fill: el.querySelector('.pr i'),
+    bt: el.querySelector('.pr em'), its: [] };
+  r.nm.textContent = b.name;
+  el.querySelector('.ic').addEventListener('click', function () { focusBiz(id); });
+  b.items.forEach(function (x, j) {
+    var row = document.createElement('div');
+    row.className = 'biz it';
+    row.innerHTML = '<img class="ic" alt=""><div class="mid"><div class="l1"><b></b><span></span></div><div class="l3 fx"><span></span></div>' +
+      '<div class="l3 nx"><span></span></div></div><div class="btns"><button type="button" class="up"></button></div>';
+    var q = { el: row, k: {}, pic: row.querySelector('.ic'), n: row.querySelector('.l1 span'), fx: row.querySelector('.fx span'),
+      nx: row.querySelector('.nx span'), up: row.querySelector('.up') };
+    row.querySelector('b').textContent = x.name;
+    q.up.addEventListener('click', function () { upgrade(id, j); });
+    r.its.push(q);
+    el.querySelector('.its').appendChild(row);
+  });
+  return r;
+}
+
+function upDept(r) {
+  var id = r.id;
+  var k = r.k;
+  var e = S.b[id];
+  var n = deptStars(id);
+  var from = n ? STAR_AT[n - 1] : 0;
+  set(k, 'lv', r.lv, 'innerHTML', 'Lv ' + e.l + '/' + UPS + ' ' + starRow(n));
+  r.fill.style.width = (n >= STAR_AT.length ? 100 : (e.l - from) / (STAR_AT[n] - from) * 100) + '%';
+  set(k, 'bt', r.bt, 'textContent', n >= STAR_AT.length ? 'All stars: sales here x' + Math.pow(STAR_MUL, n) :
+    STAR_AT[n] - e.l + ' more for star ' + (n + 1) + ': sales here x' + STAR_MUL);
+  BZ[id].items.forEach(function (x, j) {
+    var q = r.its[j];
+    var qk = q.k;
+    var done = e.it[j] >= x.at.length;
+    var piece = x.at[done ? x.at.length - 1 : e.it[j]];
+    var c = cost(id, 1);
+    var hl = !!bestOpt && bestOpt.id === id && bestOpt.item === j;
+    flag(qk, 'best', q.el, 'best', hl);
+    flag(qk, 'done', q.el, 'done', done);
+    set(qk, 'n', q.n, 'textContent', e.it[j] + '/' + x.at.length);
+    set(qk, 'fx', q.fx, 'textContent', effect(id, x));
+    set(qk, 'nx', q.nx, 'textContent', done ? 'Complete' : 'Next: ' + upName(id, piece));
+    if (set(qk, 'pc', q.pic, 'title', upName(id, piece))) q.pic.src = upIcon(id, piece);
+    set(qk, 'up', q.up, 'innerHTML', done ? 'Done' : 'Buy<small>' + money(c) + '</small>');
+    set(qk, 'upd', q.up, 'disabled', done || S.cash < c);
+    flag(qk, 'uphl', q.up, 'hl', hl);
+  });
+}
+
 function upRow(r) {
+  if (r.kind === 'dept') {
+    upDept(r);
+    return;
+  }
   var id = r.id;
   var k = r.k;
   var hl = bestOpt && bestOpt.id === id;
@@ -297,9 +370,9 @@ function upRow(r) {
   if (!e) {
     var u = cost(id, 1);
     set(k, 'lv', r.lv, 'textContent', '');
-    set(k, 'ms', r.ms, 'textContent', avail(id) ? upName(id, 1) + ': every shopper buys here' : 'Open ' + BIZ[BZ[id].i - 1].name + ' first');
-    if (set(k, 'nxk', r.nx, 'title', avail(id) ? upName(id, 1) : '')) {
-      if (avail(id)) r.nx.src = upIcon(id, 1);
+    set(k, 'ms', r.ms, 'textContent', avail(id) ? upName(id, 0) + ': every shopper buys here' : 'Open ' + BIZ[BZ[id].i - 1].name + ' first');
+    if (set(k, 'nxk', r.nx, 'title', avail(id) ? upName(id, 0) : '')) {
+      if (avail(id)) r.nx.src = upIcon(id, 0);
       else r.nx.removeAttribute('src');
     }
     set(k, 'up', r.up, 'innerHTML', 'Open<small>' + money(u) + '</small>');
@@ -307,21 +380,17 @@ function upRow(r) {
     flag(k, 'uphl', r.up, 'hl', hl);
     return;
   }
-  var all = e.l >= UPS;
-  var cc = cost(id, 1);
-  var m = nextMs(e.l);
-  var from = m && m.i ? MS[m.i - 1][0] : 0;
-  set(k, 'lv', r.lv, 'textContent', 'Lv ' + e.l + '/' + UPS);
-  set(k, 'ms', r.ms, 'textContent', all ? 'Every upgrade is in' : nextText(id, e.l));
-  if (set(k, 'nxk', r.nx, 'title', all ? '' : upName(id, e.l + 1))) {
-    if (all) r.nx.removeAttribute('src');
-    else r.nx.src = upIcon(id, e.l + 1);
-  }
-  set(k, 'up', r.up, 'innerHTML', all ? 'Done<small>all upgrades</small>' : 'Upgrade<small>' + money(cc) + '</small>');
-  set(k, 'upd', r.up, 'disabled', all || S.cash < cc);
+  var n = deptStars(id);
+  var from = n ? STAR_AT[n - 1] : 0;
+  set(k, 'lv', r.lv, 'innerHTML', 'Lv ' + e.l + '/' + UPS + ' ' + starRow(n));
+  set(k, 'ms', r.ms, 'textContent', n >= STAR_AT.length ? 'All three stars: sales here x' + Math.pow(STAR_MUL, n) :
+    'Star ' + (n + 1) + ' at level ' + STAR_AT[n] + ': sales here x' + STAR_MUL);
+  if (set(k, 'nxk', r.nx, 'title', '')) r.nx.removeAttribute('src');
+  set(k, 'up', r.up, 'innerHTML', 'Items');
+  set(k, 'upd', r.up, 'disabled', false);
   flag(k, 'uphl', r.up, 'hl', hl);
-  r.fill.style.width = (m ? (e.l - from) / (m.lv - from) * 100 : 100) + '%';
-  set(k, 'bt', r.bt, 'textContent', money(spendAt(id, e.l) * bmul()) + ' a shopper');
+  r.fill.style.width = (n >= STAR_AT.length ? 100 : (e.l - from) / (STAR_AT[n] - from) * 100) + '%';
+  set(k, 'bt', r.bt, 'textContent', money(spendAt(id) * bmul()) + ' a shopper');
 }
 
 function buildList() {
@@ -359,7 +428,7 @@ function showCard(id) {
   closeSheet();
   cardId = id;
   if (cardRow) cardRow.el.remove();
-  cardRow = makeRow(id);
+  cardRow = BZ[id] && has(id) ? makeDept(id) : makeRow(id);
   $('card-row').appendChild(cardRow.el);
   upRow(cardRow);
   $('card').hidden = false;
@@ -383,22 +452,21 @@ function focusBiz(id) {
 
 function afterBuy(res) {
   var t = View.event(res, performance.now());
-  var ms = res.ms || [];
   var name = (BZ[res.id] || PL[res.id]).name;
-  if (ms.length) {
-    var m = ms[ms.length - 1];
+  if (res.star) {
     sfx('mile');
-    banner('<b>' + name + ': ' + upName(res.id, m.lv) + '</b><small>Sales here x' + m.mul + (res.gems ? '  +' + res.gems + ' gems' : '') + '</small>', t + 0.3, m.lv >= 25);
+    banner('<b>' + name + ': ' + res.star + (res.star === 1 ? ' star' : ' stars') + ', sales here x' + STAR_MUL + '</b>' + (res.gems ? '<small>+' + res.gems + ' gems</small>' : ''),
+      t + 0.3, res.star === STAR_AT.length);
     if (res.gems) flyGems(innerWidth / 2, innerHeight * 0.3, Math.min(6, res.gems));
   } else if (res.unlock) {
     sfx('unlock');
-    banner('<b>New: ' + name + '</b><small>' + upName(res.id, 1) + ', and every shopper buys here now</small>', t + 0.3, true);
+    banner('<b>New: ' + name + '</b><small>' + upName(res.id, res.piece) + ', and every shopper buys here now</small>', t + 0.3, true);
   } else if (res.place) {
     var p = PL[res.id];
     sfx('mile');
     banner('<b>' + name + ' level ' + S.pl[res.id] + '</b><small>' + p.next[S.pl[res.id] - 1] + '</small>', t + 0.3, S.pl[res.id] === p.cost.length);
   } else sfx('buy');
-  buzz(ms.length || res.unlock || res.place ? 'medium' : 'light');
+  buzz(res.star || res.unlock || res.place ? 'medium' : 'light');
   nudge();
 }
 
@@ -409,11 +477,11 @@ function nudge() {
   save();
 }
 
-function upgrade(id) {
+function upgrade(id, j) {
   wake();
   var res;
   if (PL[id]) res = buyPlace(id);
-  else res = buy(id, 1);
+  else res = buy(id, j === undefined ? BZ[id].first : j);
   if (res) afterBuy(res);
 }
 
@@ -466,7 +534,7 @@ function updateMeters() {
   meter('m-shelf', stockCap() / served(), k);
 }
 
-// the place that brings the most shoppers for the money: Parking or the Taxi Stand
+// what brings the most shoppers for the money: Parking, the Taxi Stand or the cheapest draw item in a department
 function drawPlace() {
   var pick = null;
   var best = 0;
@@ -476,6 +544,13 @@ function drawPlace() {
       best = p[1] / c;
       pick = p[0];
     }
+  });
+  BIZ.forEach(function (z) {
+    if (!has(z.id) || DRAW / cost(z.id, 1) <= best) return;
+    var left = z.items.some(function (x, j) { return x.stat === 'draw' && nextPiece(z.id, j) >= 0; });
+    if (!left) return;
+    best = DRAW / cost(z.id, 1);
+    pick = z.id;
   });
   return pick || (S.pl.lot < PL.lot.cost.length ? 'lot' : 'taxi');
 }
@@ -525,7 +600,8 @@ function updateGoals() {
 function updateOpen() {
   if (sheetOpen) BIZ.forEach(function (b) { upRow(rows[b.id]); });
   if (sheetOpen) PLACES.forEach(function (p) { upRow(rows[p.id]); });
-  if (cardRow) upRow(cardRow);
+  if (cardRow && cardRow.kind !== (BZ[cardId] && has(cardId) ? 'dept' : undefined)) showCard(cardId);
+  else if (cardRow) upRow(cardRow);
   if (!$('boost').hidden) paintBoost();
 }
 
