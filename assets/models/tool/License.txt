@@ -1,0 +1,6 @@
+	Tools pack
+
+	Created by mekmeesk
+
+	Supplied for use in this game by the developer. The original scene was
+	split into one file per tool; each keeps its own rotation and scale.

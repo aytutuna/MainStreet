@@ -25,7 +25,7 @@ var WALKS = [-9.5, 9.5];
 var CROSS = PLAN.bank.cross;
 var EXIT = PLAN.bank.exit;
 // the kits are drawn at different sizes; these bring them to the shop kit's people
-var SCALE = { car: 0.47, roads: 3, nature: 1.4, furn: 0.9, food: 0.5, sub: 3.2, toy: 1.1, forest: 0.9, golf: 0.45, pets: 0.08 };
+var SCALE = { car: 0.47, roads: 3, nature: 1.4, furn: 0.9, food: 0.5, sub: 3.2, toy: 1.1, forest: 0.9, golf: 0.45, pets: 0.08, tool: 0.03 };
 
 var FOLK = 'abcdef'.split('').reduce(function (a, c) { return a.concat(['chars/character-female-' + c, 'chars/character-male-' + c]); }, []);
 var CARS = ['car/sedan', 'car/suv', 'car/suv-luxury', 'car/hatchback-sports', 'car/van'];
@@ -142,6 +142,9 @@ function parseRef(ref) {
 }
 
 // fixtures whose goods are separate nodes; the bare fixture is stocked with other things in place
+// the tools pack has near black wood and plastic, which would read as holes in the shelves
+var TOOLTINT = { wood: 'c08a52', plastic: '4f5868', metal: 'e7e7e7', screw: 'e7e7e7' };
+
 var BARE = { 'shop/shelf-boxes': 1, 'shop/shelf-bags': 1, 'shop/shelf-end': 1, 'shop/display-cans': 1, 'shop/display-bread': 1,
   'shop/clothing-table': 1, 'shop/hand-truck': 1 };
 
@@ -268,7 +271,7 @@ function loadModels(list, progress, done) {
   var n = 0;
   function material(src, kit, tint) {
     var see = src.transparent || src.opacity < 1;
-    var key = kit + '|' + (src.map ? 'map' : src.name + src.color.getHex()) + (tint || '') + (see ? 't' + src.opacity : '');
+    var key = kit + '|' + (src.map ? 'map' : tint ? '' : src.name + src.color.getHex()) + (tint || '') + (see ? 't' + src.opacity : '');
     if (mats[key]) return mats[key];
     if (src.map) {
       src.map.magFilter = THREE.NearestFilter;
@@ -295,6 +298,8 @@ function loadModels(list, progress, done) {
     var r = parseRef(ref);
     var kit = r.file.split('/')[0];
     var k = (SCALE[kit] || 1) * r.k;
+    // the tools lie in the side plane of their file; turned, they face the camera
+    var spin = new THREE.Matrix4().makeRotationY(-Math.PI / 2);
     var skinned = false;
     g.scene.traverse(function (o) { if (o.isSkinnedMesh) skinned = true; });
     g.scene.updateMatrixWorld(true);
@@ -323,6 +328,10 @@ function loadModels(list, progress, done) {
       var tint = null;
       // an empty material name tints the whole model
       (r.mats || []).forEach(function (mt) { if (!mt[0] || mt[0] === o.material.name) tint = mt[1]; });
+      if (kit === 'tool') {
+        geom.applyMatrix4(spin);
+        if (!tint) tint = TOOLTINT[o.material.name] || null;
+      }
       geom.computeBoundingBox();
       box.union(geom.boundingBox);
       if (cool) {
@@ -343,9 +352,10 @@ function loadModels(list, progress, done) {
         box.union(p.geom.boundingBox);
       });
     }
-    // the furniture kit puts its models' corner at the origin
+    // the furniture kit puts its models' corner at the origin; the tools are off centre and float
     var sm = new THREE.Matrix4().makeScale(k, k, k);
     if (kit === 'furn') sm.multiply(new THREE.Matrix4().makeTranslation(-(box.min.x + box.max.x) / 2, 0, -(box.min.z + box.max.z) / 2));
+    if (kit === 'tool') sm.multiply(new THREE.Matrix4().makeTranslation(-(box.min.x + box.max.x) / 2, -box.min.y, -(box.min.z + box.max.z) / 2));
     if (!skinned) {
       parts.forEach(function (p) { p.geom.applyMatrix4(sm); });
       box.applyMatrix4(sm);
