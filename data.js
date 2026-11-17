@@ -44,7 +44,7 @@ var ITEMS = {
     of: '000020011411121333223321423231' },
   pantry: { it: [['Dry goods gondolas', 'sell'], ['Cooking gondolas', 'sell'], ['End caps', 'sell'], ['Promo tables & bins', 'sell'], ['Signs & lights', 'draw'], ['Staff', 'staff']],
     of: '200040002533112111142243543330' },
-  snacks: { it: [['Snack shelves', 'sell'], ['Drink shelves', 'sell'], ['End caps', 'sell'], ['Pallets', 'sell'], ['Signs & lights', 'draw'], ['Staff', 'staff']],
+  snacks: { it: [['Snack racks', 'sell'], ['Drink coolers', 'sell'], ['End caps', 'sell'], ['Promo tables & bins', 'sell'], ['Signs & lights', 'draw'], ['Staff', 'staff']],
     of: '200041112533002111042243534431' },
   toys: { it: [['Cars & blocks', 'sell'], ['Dolls & machines', 'sell'], ['Games & puzzles', 'sell'], ['Signs & decor', 'draw'], ['Staff', 'staff']],
     of: '000131212412010013033222422331' },

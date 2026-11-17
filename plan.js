@@ -248,15 +248,21 @@ AREAS.snacks = {
   cx: 4.05, cz: -11.0, vacant: [1.25, 6.9, -13.2, -8.9], sign: [4.0, -10.9, 2.2],
   floor: [{ poly: rbox(1.25, 6.9, -13.2, -8.9, 0.5), finish: 0xf6e6a6 }],
   ups: ups(runs(
-    row(2.05, -9.9, nm(['Chip shelf', 'Candy shelf', 'Cookie shelf', 'Soda shelf', 'Juice shelf', 'Water shelf'], [BAG[0], 'food/candy-bar-wrapper', BAG[1], 'food/chocolate-wrapper', BAG[2], 'food/lollypop', SODA[0], TIN[1], SODA[1], SODA[2]])),
-    row(2.05, -12.1, nm(['Cracker shelf', 'Nut shelf', 'Energy drinks', 'Tea drinks', 'Sports drinks', 'Gum and mints'], [BOX[0], BAG[5], SODA[3], TIN[0], BOX[2], BAG[3], SODA[0], TIN[2], BOX[4], BAG[4]])),
-    eastCaps([-9.9, -12.1], ['Chocolate end', 'Lollipop end', 'Cola end', 'Pretzel end'],
-      [[BAG[5], 'food/candy-bar-wrapper'], ['food/lollypop', BAG[4]], [SODA[0], TIN[1]], [BAG[1], BAG[3]]]),
-    [pal('Soda pallet', 3.6, -3.65, -0.1, [SODA[0]]), pal('Water pallet', 8.4, -9.6, 'b', [SODA[1]]), board('Drinks board', 'COLD DRINKS', 6.85, -10.77, 1.0),
-      pal('Juice pallet', 8.4, -11.6, 'b', [SODA[3]]), pal('Chips pallet', 8.4, -10.5, 'b', [BAG[0]]),
-      board('Cola deal', 'COLA 3 FOR 5', 6.85, -9.3, 0.9), board('Tea deal', 'TEA 2 FOR 4', 6.85, -11.5, 0.9), pal('Candy pallet', 8.4, -14.2, 'b', ['food/candy-bar-wrapper'])]),
-    [SIGN, clerk(7.6, -10.9, 'k'), f('Gum tower', 'end', 8.4, -13.2, 'b', ['food/lollypop', BAG[4]]), lights([[3, -11], [5.2, -11]]), HELP,
-      up('Showcase', { sign: 'gold' }, { m: SODA[0] + '*2', x: 4.45, z: -9.9, r: 0, k: 1, y: 0.8, flat: 1 }, { m: SODA[1] + '*2', x: 5.25, z: -9.9, r: 0, k: 1, y: 0.8, flat: 1 })])
+    pwrun([gond('Chip gondola', 'Gondola_Island_10'), ['Chip racks', 'WireRack_Chips_01', 0.6, { stock: 1, n: 2 }],
+      ['Candy spinners', 'SpinnerRack_01', 0.5, { stock: 1, n: 2 }], ['Soda cooler', 'DrinkCooler_GrabGo_10', 0.5, { stock: 1 }],
+      ['Juice cooler', 'DrinkCooler_GrabGo_10', 0.5, { stock: 1 }], ['Water cooler', 'DrinkCooler_Upright_01', 0.325, { stock: 1 }]], 5.5, -9.9, 's'),
+    pwrun([gond('Cracker gondola', 'Gondola_Island_10'), gond('Nut rack', 'Gondola_Island_Low_10'),
+      ['Energy cooler', 'DrinkCooler_GrabGo_10', 0.5, { stock: 1 }], ['Tea cooler', 'DrinkCooler_GrabGo_10', 0.5, { stock: 1 }],
+      ['Sports cooler', 'DrinkCooler_Upright_01', 0.325, { stock: 1 }], ['Mint spinners', 'SpinnerRack_01', 0.5, { stock: 1, n: 2 }]], 5.5, -12.1, 's'),
+    [up('Chocolate end cap', pw('Gondola_EndCap_10', 5.68, -9.9, 'b', { stock: 1 })), up('Candy end cap', pw('Gondola_EndCap_10', 2.45, -9.9, 'k', { stock: 1 })),
+      up('Cola end cap', pw('Gondola_EndCap_10', 5.68, -12.1, 'b', { stock: 1, on: tops([['Bottle_Soda_2L_01', -0.1, 0.9], ['Bottle_Soda_2L_01', 0, 0.9], ['Bottle_Soda_2L_01', 0.1, 0.9]]) })),
+      up('Pretzel end cap', pw('Gondola_EndCap_10', 2.55, -12.1, 'k', { stock: 1 }))],
+    [up('Soda table', pw('Table_Promo_Tiered_01', 3.6, -3.65, -0.1, { stock: 1, on: tops([['Can_Soda_6Pack_01', -0.15, 0.56], ['Can_Soda_6Pack_01', 0.15, 0.56]]) })),
+      up('Water table', pw('Table_Promo_Tiered_01', 8.2, -9.6, 'b', { stock: 1, on: tops([['Bottle_Water_01', 0, 0.56]]) })), board('Drinks board', 'COLD DRINKS', 6.85, -10.77, 1.0),
+      up('Juice table', pw('Table_Promo_Tiered_01', 8.2, -11.6, 'b', { stock: 1, on: tops([['Bottle_Juice_01', 0, 0.56]]) })), up('Chips bin', pw('DumpBin_Wire_01', 8.2, -10.5, 'b', { stock: 1 })),
+      board('Cola deal', 'COLA 3 FOR 5', 6.85, -9.3, 0.9), board('Tea deal', 'TEA 2 FOR 4', 6.85, -11.5, 0.9), up('Candy table', pw('Table_Promo_Tiered_01', 8.2, -14.2, 'b', { stock: 1 }))]),
+    [SIGN, clerk(7.6, -10.9, 'k'), up('Gum spinner', pw('SpinnerRack_01', 8.2, -13.2, 'b', { stock: 1 })), lights([[3, -11], [5.2, -11]]), HELP,
+      up('Drink machine', { sign: 'gold' }, pw('VendingMachine_Drink_01', 6.4, -11.1, 'b'))])
 };
 
 var FISH = [['pets/animal-fish*2.2', 'pets/animal-fish*2.2'], ['pets/animal-fish*2.2', 'pets/animal-fish*2.2']];
