@@ -3803,11 +3803,20 @@ function roomVisit(pts) {
   });
   if (!spots.length) return;
   var v = spots[Math.floor(Math.random() * spots.length)];
-  if (!walkTo(pts, v[0], v[1])) return;
+  var n = pts.length;
+  // the basket stays outside: it goes down at the doorway and comes back up when the shopper is out again
+  if (!walkTo(pts, 14.2, 1)) return;
+  pts.push({ x: 15.6, z: 1, drop: true });
+  if (!walkTo(pts, v[0], v[1])) {
+    pts.length = n;
+    return;
+  }
   var at = pts[pts.length - 1];
   at.wait = 2 + Math.random() * 1.5;
   at.act = 'idle';
   at.face = v[2];
+  walkTo(pts, 15.6, 1);
+  pts.push({ x: 14.2, z: 1, basket: true });
 }
 
 // the walk from an entrance to a basket, round one or two areas and down to the front aisle, where the shopper
