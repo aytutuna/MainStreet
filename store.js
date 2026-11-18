@@ -4101,7 +4101,13 @@ function spawnFrom(kind, c, n, cu) {
     k = [pts.length - 2, Math.round((k + pts.length - 2) / 2), k][seed];
     p.i = k + 1;
     p.f.obj.position.set(pts[k].x, 0, pts[k].z);
-    p.basket.visible = true;
+    // a seeded spot can fall inside a wing room visit, where the basket is left at the door
+    var vis = false;
+    for (var j = 0; j <= k; j++) {
+      if (pts[j].basket) vis = true;
+      if (pts[j].drop) vis = false;
+    }
+    p.basket.visible = vis;
   }
   return true;
 }
