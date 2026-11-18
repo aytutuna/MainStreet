@@ -2091,9 +2091,9 @@ function floorName(id, w, h) {
   c.height = Math.round(1024 * h / w);
   var g = c.getContext('2d');
   var name = BZ[id].name.toUpperCase();
-  var size = c.height * 0.58;
+  var size = c.height * 0.7;
   g.font = '900 ' + size + 'px "Arial Black", Impact, sans-serif';
-  size = Math.min(size, size * c.width * 0.94 / g.measureText(name).width);
+  size = Math.min(size, size * c.width * 0.98 / g.measureText(name).width);
   g.font = '900 ' + size + 'px "Arial Black", Impact, sans-serif';
   g.textAlign = 'center';
   g.textBaseline = 'middle';
@@ -2103,11 +2103,11 @@ function floorName(id, w, h) {
   g.fillStyle = DEPT[id];
   g.strokeText(name, c.width / 2, c.height * 0.4);
   g.fillText(name, c.width / 2, c.height * 0.4);
-  var small = c.height * 0.13;
+  var small = Math.min(c.height * 0.15, c.width * 0.05);
   g.font = '800 ' + small + 'px "Arial Black", Impact, sans-serif';
   g.letterSpacing = small * 0.25 + 'px';
   g.fillStyle = 'rgba(70,70,80,0.75)';
-  g.fillText('OPENING SOON', c.width / 2, c.height * 0.84);
+  g.fillText('OPENING SOON', c.width / 2, c.height * 0.9);
   // scuffs, so it reads as paint on concrete
   g.globalCompositeOperation = 'destination-out';
   for (var i = 0; i < 260; i++) {
@@ -2155,10 +2155,13 @@ function vacantSite(s) {
     }
   });
   g.add(b.group());
-  var pw = Math.min(r[1] - r[0] - 1, 6);
-  var nm = floorName(s.id, pw, Math.min(r[3] - r[2] - 0.8, pw * 0.4));
+  // the name fills 80% of the lot's width and about 45% of its depth. It sits in the back part: the price tag is at the
+  // front edge and a neighbour's hanging sign reaches over the front of the lot from the aisle
+  var pw = Math.min((r[1] - r[0]) * 0.8, 6);
+  var ph = Math.min((r[3] - r[2]) * 0.56, pw * 0.4);
+  var nm = floorName(s.id, pw, ph);
   nm.position.x = mx;
-  nm.position.z = mz;
+  nm.position.z = r[2] + (r[3] - r[2]) * 0.03 + ph / 2;
   g.add(nm);
   return g;
 }
