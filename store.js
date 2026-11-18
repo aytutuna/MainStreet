@@ -23,7 +23,7 @@ var WALK_S = 13.95;
 var AISLE = 6.8;
 var DRIVE = 18;
 var ROAD = 24.8;
-var STREET = 76;
+var STREET = 75;
 var WALKS = [-9.5, 9.5];
 var CROSS = PLAN.bank.cross;
 var EXIT = PLAN.bank.exit;
@@ -581,7 +581,7 @@ function dayStep(dt) {
   poolMat.visible = k < 0.98;
   washMat.opacity = 0.2 * (1 - k);
   wash.visible = k < 0.98;
-  waterU.t.value = dayT * 0.9;
+  waterU.t.value = (dayT * 0.9) % (10 * Math.PI);
   waterU.sun.value = k;
 }
 
@@ -2873,6 +2873,7 @@ function buildOutside() {
 // Trees, bushes, grass and flowers scattered over the zones of NATURE on a jittered grid. Each 12 unit tile of ground is
 // its own batch, so what is off the screen is not drawn
 var TILE = 12;
+var natureTrees = [];
 function buildNature() {
   var tiles = {};
   var seed = 7;
@@ -2887,6 +2888,7 @@ function buildNature() {
     var key = Math.floor(x / TILE) + ',' + Math.floor(z / TILE);
     var b = tiles[key] = tiles[key] || new Batch();
     var k = (big ? 0.85 + rand() * 0.4 : 0.8 + rand() * 0.5);
+    if (big) natureTrees.push([x, z]);
     b.model(ref, x, -lib.model(ref).box.y0 * k, z, rand() * 6.283, k);
   }
   function clear(x, z) {
@@ -3149,8 +3151,10 @@ function buildLand() {
     var pick = rand();
     var shade = 0.92 + rand() * 0.16;
     lib.model(ref).parts.forEach(function (p) {
-      var g = p.geom.clone();
-      g.deleteAttribute('uv');
+      var g = new THREE.BufferGeometry();
+      g.setAttribute('position', p.geom.attributes.position.clone());
+      g.setAttribute('normal', p.geom.attributes.normal.clone());
+      g.setIndex(p.geom.index);
       g.applyMatrix4(mtx);
       var pal = LEAF[p.mat.name];
       var n = g.attributes.position.count;
@@ -3198,7 +3202,9 @@ function buildLand() {
     root.add(new THREE.Mesh(tg, vcMat));
   });
 
-  var sc = LAND.scenery();
+  var sc = LAND.scenery(function (x, z) {
+    return natureTrees.some(function (t) { return Math.hypot(x - t[0], z - t[1]) < 2.2; });
+  });
   ['trees', 'low', 'rocks', 'flowers'].forEach(function (kind) {
     sc[kind].forEach(function (s) {
       var r = kind === 'trees' ? 0.4 : kind === 'rocks' ? 0.8 : 0.2;
@@ -3211,7 +3217,8 @@ function buildLand() {
     stand(s[0], s[1], s[5] === null ? LAND.ground(s[1], s[2]) : rock ? s[5] - 0.12 : s[5], s[2], s[3], s[4]);
   });
   Object.keys(lists).forEach(function (key) {
-    root.add(new THREE.Mesh(mergeGeometries(lists[key], false), vcMat));
+    var merged = mergeGeometries(lists[key], false);
+    if (merged) root.add(new THREE.Mesh(merged, vcMat));
   });
 }
 // parking bays: two rows across the front split by a walkway to each entrance; the lot paints more of them at each level
