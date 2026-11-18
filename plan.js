@@ -810,42 +810,47 @@ function partsBin(name, x, ref, bits) {
 function hung(x, y, ref, k) {
   return [ref + '*' + (k * 1.25).toFixed(2), x, y];
 }
+var HX = xs(-6.9, [0.25, 0.5, 0.5, 0.9, 0.5, 0.5, 0.35, 0.5, 0.5, 0.25]);
+// the slatwall run along the north edge, one panel after another
+function sl(k) {
+  return -5.9 + k * 0.5;
+}
 AREAS.tools = {
   cx: -4.1, cz: -15.0, vacant: [-6.9, -1.25, -16.1, -13.9], sign: [-3.2, -15.85, 1.9],
   floor: [{ poly: rbox(-6.9, -1.25, -16.1, -13.9, 0.5), finish: 0xe2e2dc }],
   ups: ups([
-    up('Hammer pegs', pw('Gondola_Island_Peg_10', -6.05, -14.6, 's', { spots: 2, on: pegGoods(HAMS, 0.2, { xs: [-0.22, 0.22] }) })),
-    up('Hammer end', pw('Gondola_EndCap_Low_10', -6.65, -14.6, 'k', { on: shelfGoods([HAM + 'bangpop~x*0.8', HAM + 'smallhit~x*0.8'], 2, { zs: [0.03], ys: [0.15, 0.55, 0.95] }) })),
-    up('Paint shelf', pw('Gondola_Island_10', -5.25, -14.6, 's', { spots: 2, on: shelfGoods(TINS.concat(['tool/brush~x']), 2, { ys: [0.15, 0.55, 0.95, 1.35] }) })),
-    up('Workbench', pw('Workbench_Wood_01', -7.6, -14.35, 'k', { on: [[HAM + 'plastic~x*0.8', -0.1, 0.06, 0.5, 0.46], ['tool/saw-small-highcount~x*0.7', 0.2, -0.05, 0.1, 0.46], ['tool/brush~x', -0.25, 0.0, 0.3, 0.46]] })),
-    up('Fastener shelf', pw('Gondola_Island_10', -4.45, -14.6, 's', { spots: 2, on: shelfGoods(['pw/BoltTray_01', TBOX[0], 'tool/bolt-s*2', TBOX[3], 'tool/nut-l*2', 'tool/bolt-s*2'], 2) })),
-    up('Hand tool pegs', pw('Gondola_Island_Peg_10', -3.65, -14.6, 's', { spots: 2, on: pegGoods(['tool/pliers-dull*0.6', 'tool/screwdriver-poke*0.6', 'tool/pliers-sharp*0.6', 'tool/screwdriver-slap*0.6'], 0.18, { xs: [-0.22, 0.22] }) })),
-    up('Tool chest', pw('ToolChest_Roller_01', -7.6, -15.3, 'k', { on: [['tool/brush~x', 0, 0, 0.6, 0.43]] })),
-    up('Bucket shelf', pw('Gondola_Island_10', -2.85, -14.6, 's', { spots: 2, on: shelfGoods(['surv/bucket*0.75', TINS[3], TBOX[3], TINS[1]], 2) })),
-    up('Tape and glue shelf', pw('Gondola_Island_Low_10', -2.05, -14.6, 's', { spots: 2, on: shelfGoods([TINS[2], TBOX[5], 'surv/bucket*0.6', CARTON[2] + '*0.5'], 3, { ys: [0.15, 0.55, 0.95] }) })),
-    up('Axe and pick end', pw('Gondola_EndCap_10', -1.45, -14.6, 'b', { on: shelfGoods(['tool/axe~x*0.7', 'tool/cylinder-long~x*0.7'], 2, { zs: [0.03] }) })),
-    partsBin('Bolt bin', -4.45, 'tool/bolt-l~x*1.3', [[-0.08, 0, 0.3], [0.03, 0.03, -0.6], [0.08, -0.03, 1.2]]),
-    up('Paint tin', on('pw/PaintCan_01*1.4', -5.25, -14.6, 0.92), on(TINS[1], -5.1, -14.55, 0.92, 1.3)),
-    slatRack('Mallet rack', -5.25, [hung(-0.15, 0.3, HAM + 'kindathor', 0.55), hung(0, 0.3, HAM + 'ouch', 0.55), hung(0.15, 0.3, HAM + 'rocket', 0.55),
+    up('Hammer pegs', pw('Gondola_Island_Peg_10', HX[1], -14.6, 's', { spots: 2, on: pegGoods(HAMS, 0.2, { xs: [-0.22, 0.22] }) })),
+    up('Hammer end', pw('Gondola_EndCap_Low_10', HX[0], -14.6, 'k', { on: shelfGoods([HAM + 'bangpop~x*0.8', HAM + 'smallhit~x*0.8'], 2, { zs: [0.03], ys: [0.15, 0.55, 0.95] }) })),
+    up('Paint shelf', pw('Gondola_Island_10', HX[2], -14.6, 's', { spots: 2, on: shelfGoods(TINS.concat(['tool/brush~x']), 2, { ys: [0.15, 0.55, 0.95, 1.35] }) })),
+    up('Workbench', pw('Workbench_Wood_01', HX[3], -14.6, 's', { on: [[HAM + 'plastic~x*0.8', -0.1, 0.06, 0.5, 0.46], ['tool/saw-small-highcount~x*0.7', 0.2, -0.05, 0.1, 0.46], ['tool/brush~x', -0.25, 0.0, 0.3, 0.46]] })),
+    up('Fastener shelf', pw('Gondola_Island_10', HX[4], -14.6, 's', { spots: 2, on: shelfGoods(['pw/BoltTray_01', TBOX[0], 'tool/bolt-s*2', TBOX[3], 'tool/nut-l*2', 'tool/bolt-s*2'], 2) })),
+    up('Hand tool pegs', pw('Gondola_Island_Peg_10', HX[5], -14.6, 's', { spots: 2, on: pegGoods(['tool/pliers-dull*0.6', 'tool/screwdriver-poke*0.6', 'tool/pliers-sharp*0.6', 'tool/screwdriver-slap*0.6'], 0.18, { xs: [-0.22, 0.22] }) })),
+    up('Tool chest', pw('ToolChest_Roller_01', HX[6], -14.6, 's', { on: [['tool/brush~x', 0, 0, 0.6, 0.43]] })),
+    up('Bucket shelf', pw('Gondola_Island_10', HX[7], -14.6, 's', { spots: 2, on: shelfGoods(['surv/bucket*0.75', TINS[3], TBOX[3], TINS[1]], 2) })),
+    up('Tape and glue shelf', pw('Gondola_Island_Low_10', HX[8], -14.6, 's', { spots: 2, on: shelfGoods([TINS[2], TBOX[5], 'surv/bucket*0.6', CARTON[2] + '*0.5'], 3, { ys: [0.15, 0.55, 0.95] }) })),
+    up('Axe and pick end', pw('Gondola_EndCap_10', HX[9], -14.6, 'b', { on: shelfGoods(['tool/axe~x*0.7', 'tool/cylinder-long~x*0.7'], 2, { zs: [0.03] }) })),
+    partsBin('Bolt bin', HX[4], 'tool/bolt-l~x*1.3', [[-0.08, 0, 0.3], [0.03, 0.03, -0.6], [0.08, -0.03, 1.2]]),
+    up('Paint tin', on('pw/PaintCan_01*1.4', HX[2], -14.6, 0.92), on(TINS[1], HX[2] + 0.15, -14.55, 0.92, 1.3)),
+    slatRack('Mallet rack', sl(1), [hung(-0.15, 0.3, HAM + 'kindathor', 0.55), hung(0, 0.3, HAM + 'ouch', 0.55), hung(0.15, 0.3, HAM + 'rocket', 0.55),
       hung(-0.15, 0.03, HAM + 'beemboom', 0.55), hung(0, 0.03, HAM + 'cool', 0.55), hung(0.15, 0.03, HAM + 'rectangle', 0.55)]),
-    slatRack('Plier rack', -4.45, [hung(-0.15, 0.3, 'tool/pliers-dull', 0.6), hung(0, 0.3, 'tool/pliers-sharp', 0.6), hung(0.15, 0.3, 'tool/pliers-dull', 0.6),
+    slatRack('Plier rack', sl(2), [hung(-0.15, 0.3, 'tool/pliers-dull', 0.6), hung(0, 0.3, 'tool/pliers-sharp', 0.6), hung(0.15, 0.3, 'tool/pliers-dull', 0.6),
       hung(-0.16, 0.03, 'tool/screwdriver-poke', 0.7), hung(-0.05, 0.03, 'tool/screwdriver-slap', 0.7), hung(0.05, 0.03, 'tool/screwdriver-poke', 0.7), hung(0.16, 0.03, 'tool/screwdriver-slap', 0.7)]),
-    board('Tool deal', 'TOOLS 20% OFF', -6.5, -13.98, 1.0),
-    perch('Primer tin', TINS[3], -2.85, -14.6, 0.92, 1.5),
-    partsBin('Nail bin', -2.05, 'tool/nail-l~x*1', [[-0.08, -0.02, 0.5], [0.02, 0.03, -0.3], [0.08, -0.02, 1.4]]),
-    board('Paint deal', 'PAINT 2 FOR 30', -6.8, -15.8, 1.0),
-    up('Brush pot', on('surv/bucket*0.8', -6.0, -14.6, 0.92, 1.2), on('tool/brush*0.8', -6.04, -14.6, 1.0), on('tool/brush*0.8', -5.96, -14.62, 1.0)),
-    slatRack('Claw hammer rack', -3.65, [hung(-0.15, 0.3, HAM + 'simple', 0.55), hung(0, 0.3, HAM + 'plastic', 0.55), hung(0.15, 0.3, HAM + 'simple', 0.55),
+    deal('Tool deal', 'TOOLS 20% OFF', -6.55, -13.75),
+    perch('Primer tin', TINS[3], HX[7], -14.6, 0.92, 1.5),
+    partsBin('Nail bin', HX[8], 'tool/nail-l~x*1', [[-0.08, -0.02, 0.5], [0.02, 0.03, -0.3], [0.08, -0.02, 1.4]]),
+    perch('Paint pile', TINS[0], HX[7] - 0.12, -14.6, 0.92, 1.5),
+    up('Brush pot', on('surv/bucket*0.8', HX[1], -14.6, 0.92, 1.2), on('tool/brush*0.8', HX[1] - 0.04, -14.6, 1.0), on('tool/brush*0.8', HX[1] + 0.04, -14.62, 1.0)),
+    slatRack('Claw hammer rack', sl(3), [hung(-0.15, 0.3, HAM + 'simple', 0.55), hung(0, 0.3, HAM + 'plastic', 0.55), hung(0.15, 0.3, HAM + 'simple', 0.55),
       hung(-0.15, 0.03, HAM + 'plastic', 0.55), hung(0, 0.03, HAM + 'simple', 0.55), hung(0.15, 0.03, HAM + 'plastic', 0.55)]),
-    slatRack('Hand saw rack', -2.85, [hung(0, 0.4, 'tool/saw-big', 0.6), hung(0, 0.25, 'tool/saw-small-highcount', 0.7), hung(0, 0.03, 'tool/saw-precision', 0.6)]),
-    partsBin('Nut bin', -3.65, 'tool/nut-l*2.2', [[-0.08, 0, 0], [0.06, 0.03, 0.4]]),
-    mat('Workshop mat', -6.5, -5, -14.55, -13.45, 0xd0d0c6),
-    slatRack('Axe and crowbar rack', -2.05, [hung(-0.1, 0.03, 'tool/axe', 0.8), hung(0.1, 0.25, 'tool/crowbar~z', 0.7), hung(0.1, 0.03, 'tool/cylinder-long~z', 0.7)])
-  ], [SIGN, counter('Tool desk', -0.85, -14.2, 'k', -0.4, -14.2),
-    slatRack('Tool wall', -6.05, [hung(-0.15, 0.3, HAM + 'simple', 0.55), hung(-0.05, 0.3, HAM + 'plastic', 0.55), hung(0.05, 0.3, HAM + 'rectangle', 0.55), hung(0.15, 0.3, HAM + 'ouch', 0.55),
+    slatRack('Hand saw rack', sl(4), [hung(0, 0.4, 'tool/saw-big', 0.6), hung(0, 0.25, 'tool/saw-small-highcount', 0.7), hung(0, 0.03, 'tool/saw-precision', 0.6)]),
+    partsBin('Nut bin', HX[5], 'tool/nut-l*2.2', [[-0.08, 0, 0], [0.06, 0.03, 0.4]]),
+    mat('Workshop mat', -6.5, -2.5, -15.45, -13.95, 0xd0d0c6),
+    slatRack('Axe and crowbar rack', sl(5), [hung(-0.1, 0.03, 'tool/axe', 0.8), hung(0.1, 0.25, 'tool/crowbar~z', 0.7), hung(0.1, 0.03, 'tool/cylinder-long~z', 0.7)])
+  ], [SIGN, counter('Tool desk', -6.6, -15.65, 's', -6.6, -15.95),
+    slatRack('Tool wall', sl(0), [hung(-0.15, 0.3, HAM + 'simple', 0.55), hung(-0.05, 0.3, HAM + 'plastic', 0.55), hung(0.05, 0.3, HAM + 'rectangle', 0.55), hung(0.15, 0.3, HAM + 'ouch', 0.55),
       hung(-0.15, 0.03, HAM + 'bangpop', 0.55), hung(-0.05, 0.03, HAM + 'smallhit', 0.55), hung(0.05, 0.03, HAM + 'cool', 0.55), hung(0.15, 0.03, 'tool/axe', 0.45)]),
     lights([[-5, -14.6], [-2.8, -14.6]]), HELP,
-    up('Lumber rack', { sign: 'gold' }, pw('Shelving_HD_Loaded_01', -0.9, -15.3, 'k'))])
+    up('Lumber rack', { sign: 'gold' }, pw('Shelving_HD_Loaded_01', -2.69, -15.8, 's'))])
 };
 
 // something of the kitchen kit standing on a lane gondola, at slot i of the run (two to a gondola)
