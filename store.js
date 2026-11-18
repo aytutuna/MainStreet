@@ -5233,6 +5233,7 @@ function refresh() {
 // a small picture of a group of objects, from a three quarter view framed to them, as a data url
 var iconRT;
 var icons = {};
+var ICON = 192;
 function boxOf(group) {
   var box = new THREE.Box3();
   var v = new THREE.Vector3();
@@ -5274,7 +5275,7 @@ function snap(group, box) {
   cm.position.copy(mid).addScaledVector(dir, rad / Math.sin(cm.fov * Math.PI / 360) * 1.05);
   cm.lookAt(mid);
   if (!iconRT) {
-    iconRT = new THREE.WebGLRenderTarget(128, 128, { samples: 4 });
+    iconRT = new THREE.WebGLRenderTarget(ICON, ICON, { samples: 4 });
     iconRT.texture.colorSpace = THREE.SRGBColorSpace;
   }
   var was = renderer.getRenderTarget();
@@ -5285,16 +5286,31 @@ function snap(group, box) {
   renderer.setClearColor(0x000000, 0);
   renderer.clear();
   renderer.render(scn, cm);
-  var px = new Uint8Array(128 * 128 * 4);
-  renderer.readRenderTargetPixels(iconRT, 0, 0, 128, 128, px);
+  var px = new Uint8Array(ICON * ICON * 4);
+  renderer.readRenderTargetPixels(iconRT, 0, 0, ICON, ICON, px);
   renderer.setRenderTarget(was);
   renderer.setClearColor(col, alpha);
   var c = document.createElement('canvas');
-  c.width = c.height = 128;
-  var img = c.getContext('2d').createImageData(128, 128);
-  for (var y = 0; y < 128; y++) img.data.set(px.subarray((127 - y) * 512, (128 - y) * 512), y * 512);
+  c.width = c.height = ICON;
+  var img = c.getContext('2d').createImageData(ICON, ICON);
+  for (var y = 0; y < ICON; y++) img.data.set(px.subarray((ICON - 1 - y) * ICON * 4, (ICON - y) * ICON * 4), y * ICON * 4);
   c.getContext('2d').putImageData(img, 0, 0);
   return c.toDataURL('image/png');
+}
+
+// the way a piece's fixtures face on the floor, as the angle that turns them to +z, which the icon camera looks at;
+// fixtures count more than loose models, and a piece that faces two ways at once is left as it is
+function frontOf(list) {
+  var sx = 0;
+  var sz = 0;
+  list.forEach(function (e) {
+    var r = Array.isArray(e) ? faceRot(e[3]) : e.pw ? e.r || 0 : e.m && !e.flat ? (e.r || 0) : undefined;
+    if (r === undefined) return;
+    var w = e.m && !e.pw ? 0.4 : 1;
+    sx += w * Math.sin(r);
+    sz += w * Math.cos(r);
+  });
+  return Math.hypot(sx, sz) < 0.3 ? 0 : -Math.atan2(sx, sz);
 }
 
 // piece k of an area (its place in plan.js), rendered once from the real model with its goods. A skinned figure's bounds
@@ -5324,7 +5340,7 @@ function upIcon(id, k) {
     fig.obj.rotation.y = 0.57;
     var fp = fig.obj.position;
     box = new THREE.Box3(new THREE.Vector3(fp.x - 0.4, 0, fp.z - 0.4), new THREE.Vector3(fp.x + 0.4, 1.0, fp.z + 0.4));
-  }
+  } else g.rotation.y = frontOf(s.a.ups[k].piece);
   var url = snap(g, box);
   g.traverse(function (o) { if (o.geometry) o.geometry.dispose(); });
   if (made) {
