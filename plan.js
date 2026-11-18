@@ -498,38 +498,42 @@ var SGIFT = ['present-a-round', 'present-b-cube', 'present-a-cube', 'present-b-r
 function xmasTree(name, ref, x, z, k) {
   return up(name, pw('Pallet_01', x, z, 's'), { m: ref, x: x, z: z, r: 0, k: k || 1, y: 0.06, flat: 1 });
 }
+// trees on pallets, then the wall gondolas and a cap, along the north line; the tables in a row in front
+var SW = xs(-12.2, [0.5, 0.5, 0.5, 0.5]);
+var ST = xs(-13.7, [0.6, 0.6, 0.6]);
+var TREES = xs(-14.7, [0.63, 0.63, 0.63, 0.63]);
 AREAS.seasonal = {
   cx: -12.2, cz: -3.0, vacant: [-14.7, -9.7, -4.9, -0.3], sign: [-10.92, -3.9, 1.9],
   floor: [{ poly: rbox(-14.7, -9.7, -4.9, -0.3, 0.6), finish: 0xf1e2e2 }],
   ups: ups([
-    xmasTree('Christmas tree', 'holiday/tree-decorated*0.6', -10.45, -1.2),
-    up('Present table', pw('Table_Promo_Tiered_01', -11.3, -2.75, 's', { on: tierGoods(SGIFT, [[0.125, 0.225, 4, 0.13], [0, 0.35, 3, 0.13], [-0.125, 0.475, 2, 0.13]]) })),
-    up('Ornament shelf', pw('Gondola_Wall_10', -13.8, -4.55, 's', { on: shelfGoods(SGIFT.slice(0, 2).concat([XM + 'lantern*0.25']), 3, { zs: [0.03] }) })),
-    up('Candy cane end', pw('Gondola_EndCap_10', -10.55, -4.55, 's', { on: shelfGoods([XM + 'candy-cane-red*0.35', XM + 'candy-cane-green*0.35'], 3, { zs: [0.03] }) })),
-    up('Train table', pw('Table_Promo_Tiered_01', -12.5, -2.75, 's', { on: [[XM + 'train-locomotive*0.3', -0.12, 0.125, 0, 0.225], [XM + 'train-wagon*0.3', 0.12, 0.125, 0, 0.225], [XM + 'train-tender*0.3', 0, 0, 0, 0.35]] })),
-    up('Stocking shelf', pw('Gondola_Wall_10', -13.0, -4.55, 's', { on: shelfGoods([XM + 'sock-green*0.3', XM + 'sock-red*0.3'], 3, { zs: [0.03] }) })),
-    up('Snowman table', pw('Table_Promo_Tiered_01', -13.7, -2.75, 's', { on: [[XM + 'snowman*0.25', -0.15, 0.125, 0.3, 0.225], [XM + 'nutcracker*0.3', 0.1, 0.1, 0, 0.225], [XM + 'gingerbread-man*0.4', 0.25, 0.12, 0, 0.225], [XM + 'snowman*0.2', 0, -0.02, 0, 0.35]] })),
-    up('Gift wrap shelf', pw('Gondola_Wall_10', -12.2, -4.55, 's', { on: shelfGoods(SGIFT.slice(2), 3, { zs: [0.03] }) })),
-    xmasTree('Spruce tree', 'nature/tree_pineRoundC*0.4', -11.45, -1.2),
-    up('Lantern shelf', pw('Gondola_Wall_10', -11.4, -4.55, 's', { on: shelfGoods([XM + 'lantern*0.3', SGIFT[1], 'furn/lampSquareTable*0.8'], 3, { zs: [0.03] }) })),
-    xmasTree('Pine tree', 'nature/tree_small*0.5', -12.45, -1.2),
-    up('Sled bin', pw('DumpBin_Wire_01', -13.4, -1.2, 's', { on: [[XM + 'sled*0.3', 0, 0.02, 0.3, 0.3], [XM + 'sled*0.3', 0.05, -0.04, -0.2, 0.36], [XM + 'nutcracker*0.3', -0.15, 0.04, 0, 0.3]] })),
-    perch('Wreath', XM + 'wreath-decorated*0.5', -13.0, -4.6, 0.92),
+    xmasTree('Christmas tree', 'holiday/tree-decorated*0.6', TREES[0], -4.45),
+    up('Present table', pw('Table_Promo_Tiered_01', ST[0], -2.9, 's', { on: tierGoods(SGIFT, [[0.125, 0.225, 4, 0.13], [0, 0.35, 3, 0.13], [-0.125, 0.475, 2, 0.13]]) })),
+    up('Ornament shelf', pw('Gondola_Wall_10', SW[0], -4.55, 's', { on: shelfGoods(SGIFT.slice(0, 2).concat([XM + 'lantern*0.25']), 3, { zs: [0.03] }) })),
+    up('Candy cane end', pw('Gondola_EndCap_10', -9.825, -4.55, 'b', { on: shelfGoods([XM + 'candy-cane-red*0.35', XM + 'candy-cane-green*0.35'], 3, { zs: [0.03] }) })),
+    up('Train table', pw('Table_Promo_Tiered_01', ST[1], -2.9, 's', { on: [[XM + 'train-locomotive*0.3', -0.12, 0.125, 0, 0.225], [XM + 'train-wagon*0.3', 0.12, 0.125, 0, 0.225], [XM + 'train-tender*0.3', 0, 0, 0, 0.35]] })),
+    up('Stocking shelf', pw('Gondola_Wall_10', SW[1], -4.55, 's', { on: shelfGoods([XM + 'sock-green*0.3', XM + 'sock-red*0.3'], 3, { zs: [0.03] }) })),
+    up('Snowman table', pw('Table_Promo_Tiered_01', ST[2], -2.9, 's', { on: [[XM + 'snowman*0.25', -0.15, 0.125, 0.3, 0.225], [XM + 'nutcracker*0.3', 0.1, 0.1, 0, 0.225], [XM + 'gingerbread-man*0.4', 0.25, 0.12, 0, 0.225], [XM + 'snowman*0.2', 0, -0.02, 0, 0.35]] })),
+    up('Gift wrap shelf', pw('Gondola_Wall_10', SW[2], -4.55, 's', { on: shelfGoods(SGIFT.slice(2), 3, { zs: [0.03] }) })),
+    xmasTree('Spruce tree', 'nature/tree_pineRoundC*0.4', TREES[1], -4.45),
+    up('Lantern shelf', pw('Gondola_Wall_10', SW[3], -4.55, 's', { on: shelfGoods([XM + 'lantern*0.3', SGIFT[1], 'furn/lampSquareTable*0.8'], 3, { zs: [0.03] }) })),
+    xmasTree('Pine tree', 'nature/tree_small*0.5', TREES[2], -4.45),
+    up('Sled bin', pw('DumpBin_Wire_01', -11.7, -2.9, 's', { on: [[XM + 'sled*0.3', 0, 0.02, 0.3, 0.3], [XM + 'sled*0.3', 0.05, -0.04, -0.2, 0.36], [XM + 'nutcracker*0.3', -0.15, 0.04, 0, 0.3]] })),
+    perch('Wreath', XM + 'wreath-decorated*0.5', SW[2], -4.6, 0.92),
     mat('Snow patch', -14.3, -10.2, -1.7, -0.6, 0xf6f6fa),
-    mat('Holiday rug', -13.9, -10.9, -3.3, -2.2, 0xcf8d8d),
-    perch('Star lantern', 'furn/lampRoundTable', -11.4, -4.55, 0.92),
-    up('Gift bin', pw('DumpBin_Wire_01', -14.4, -4.3, 'b', { spots: 0, on: [[XP[0], 0, 0.03, 0, 0.2], [XP[1], 0.08, -0.05, 0.5, 0.2], [XP[2], -0.08, 0.05, 1, 0.2]] })),
-    up('Holiday planter', pw('Planter_Tall_01', -14.45, -1.9, 0, { spots: 0 })),
-    perch('Candy cane', XM + 'candy-cane-red*0.5', -10.55, -4.55, 0.92),
-    perch('Shelf snowman', XM + 'snowman*0.25', -12.9, -4.55, 0.92),
-    d('Present pile', XP[1], -10.1, -0.55, 0.3, 1.3),
-    perch('Shelf presents', XP[0], -12.2, -4.55, 0.92),
-    d('Gingerbread', XM + 'gingerbread-man*0.4', -10.05, -3.2, 0.2, 1.2),
-    perch('Stocking topper', XM + 'sock-red*0.5', -13.8, -4.55, 0.92)
-  ], [SIGN, counter('Gift counter', -9.95, -4.5, 'k', -9.5, -4.5),
-    xmasTree('Giant tree', 'nature/tree_fat*0.45', -14.15, -1.25),
-    lights([[-13, -2.5], [-11.2, -3.2]]), HELP,
-    up('Santa display', { sign: 'gold' }, pw('PalletDisplay_Half_01', -14.4, -3.35, 'b', { on: [[XM + 'sled*0.35', 0, 0.1, 0, 0.225], [XM + 'reindeer*0.35', 0, 0, 0, 0.375]] }))])
+    mat('Holiday rug', -13.9, -11.4, -3.35, -2.45, 0xcf8d8d),
+    perch('Star lantern', 'furn/lampRoundTable', SW[3], -4.55, 0.92),
+    up('Gift bin', pw('DumpBin_Wire_01', -14.45, -2.9, 'b', { spots: 0, on: [[XP[0], 0, 0.03, 0, 0.2], [XP[1], 0.08, -0.05, 0.5, 0.2], [XP[2], -0.08, 0.05, 1, 0.2]] })),
+    up('Holiday planter', pw('Planter_Tall_01', -14.45, -1.0, 0, { spots: 0 })),
+    perch('Candy cane', XM + 'candy-cane-red*0.5', -9.825, -4.55, 0.92),
+    perch('Shelf snowman', XM + 'snowman*0.25', SW[0], -4.55, 0.92),
+    d('Present pile', XP[1], -10.4, -0.75, 0.3, 1.3),
+    perch('Shelf presents', XP[0], SW[1], -4.55, 0.92),
+    d('Gingerbread', XM + 'gingerbread-man*0.4', -10.4, -2.1, 0.2, 1.2),
+    perch('Stocking topper', XM + 'sock-red*0.5', SW[1], -4.55, 0.92)
+  ], [SIGN, counter('Gift counter', -10.1, -1.2, 'k', -9.82, -1.2),
+    xmasTree('Giant tree', 'nature/tree_fat*0.45', TREES[3], -4.45),
+    lights([[-13, -3.4], [-11.2, -3.4]]), HELP,
+    up('Santa display', { sign: 'gold' }, pw('PalletDisplay_Half_01', -11.1, -2.9, 's', { on: [[XM + 'sled*0.35', 0, 0.1, 0, 0.225], [XM + 'reindeer*0.35', 0, 0, 0, 0.375]] }))])
 };
 
 AREAS.clothes = {
