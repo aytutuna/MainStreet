@@ -244,7 +244,7 @@ export function scenery() {
       }
       if (rand() < f * 0.8 + near * (1 - f)) {
         var high = h > 8 || rand() < 0.2 + 0.4 * smooth(-60, -120, z);
-        var ref = high || (f > 0.6 && rand() < 0.3) ? pick(CONIFER) : rand() < 0.07 ? pick(FALL) : pick(BROAD);
+        var ref = high || (f > 0.6 && rand() < 0.3) ? pick(CONIFER) : rand() < 0.04 ? pick(FALL) : pick(BROAD);
         out.trees.push([ref, x, z, turn, k * (1 + h * 0.012), 1]);
         if (rand() < 0.3) out.low.push([pick(BUSH), x + (rand() - 0.5) * 3, z + (rand() - 0.5) * 3, turn, 0.8 + rand() * 0.6]);
       } else if (f < 0.3 && rand() < 0.05 && d > 8) {
