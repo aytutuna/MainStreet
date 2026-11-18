@@ -1274,22 +1274,21 @@ export var NATURE = {
     { r: [17.2, 19.2, 4.3, 6.0], tr: [], t: 0, b: 12, g: 58, f: 8, k: 0 },
     { r: [-19.2, -17.2, 4.3, 6.0], tr: [], t: 0, b: 12, g: 58, f: 8, k: 0 },
     // along the west side, round the garden center and the tire bay
-    { r: [-22.4, -16.6, -13.4, -2.7], tr: ['oak', 'lol'], t: 3, b: 12, g: 52, f: 6, k: 1 },
+    { r: [-22.4, -16.6, -13.4, -2.7], tr: ['oak', 'lol'], t: 3, b: 12, g: 0, f: 0, k: 0 },
     { r: [-22.4, -20.7, -2.5, 3.1], tr: [], t: 0, b: 12, g: 39, f: 8, k: 0 },
-    { r: [-22.4, -16.6, -28.5, -20.8], tr: ['pine', 'oak'], t: 4, b: 6, g: 29, f: 4, k: 1 },
-    { r: [-27.3, -19.6, -40.5, -28.9], tr: ['pine', 'col'], t: 4, b: 5, g: 23, f: 3, k: 1 },
+    { r: [-22.4, -16.6, -28.5, -20.8], tr: ['pine', 'oak'], t: 4, b: 0, g: 0, f: 0, k: 0 },
+    { r: [-27.3, -19.6, -40.5, -28.9], tr: ['pine', 'col'], t: 4, b: 0, g: 0, f: 0, k: 0 },
     // between the wing's hedge and the service road
     { r: [22.0, 22.35, -28, 2.2], tr: [], t: 0, b: 0, g: 52, f: 40, k: 0 },
     // beyond the service road and the west drive, then behind the yard
-    { r: [27.4, 40, -41, 9.4], tr: ['pine', 'oak', 'col'], t: 4, b: 6, g: 39, f: 4, k: 1 },
-    { r: [40, 48, -41, 9.4], tr: ['col', 'lol'], t: 2.5, b: 0, g: 12, f: 0, k: 0 },
-    { r: [-40, -27.3, -41, 9.4], tr: ['oak', 'pine', 'lol'], t: 4, b: 6, g: 39, f: 4, k: 1 },
-    { r: [-48, -40, -41, 9.4], tr: ['col', 'lol'], t: 2.5, b: 0, g: 12, f: 0, k: 0 },
-    { r: [-48, 48, -66, -41], tr: ['col', 'lol', 'pine'], t: 2.5, b: 0, g: 12, f: 0, k: 0 },
+    { r: [27.4, 40, -41, 9.4], tr: ['pine', 'oak', 'col'], t: 4, b: 0, g: 0, f: 0, k: 0 },
+    { r: [40, 48, -41, 9.4], tr: ['col', 'lol'], t: 2.5, b: 0, g: 0, f: 0, k: 0 },
+    { r: [-40, -27.3, -41, 9.4], tr: ['oak', 'pine', 'lol'], t: 4, b: 0, g: 0, f: 0, k: 0 },
+    { r: [-48, -40, -41, 9.4], tr: ['col', 'lol'], t: 2.5, b: 0, g: 0, f: 0, k: 0 },
     // across the street: front yards, the gaps between the houses, and the gardens behind them
     { r: [-34, 34, 15.05, 15.85], tr: [], t: 0, b: 22, g: 65, f: 40, k: 0 },
     { r: [-48, 48, 19.8, 28], tr: ['oak', 'lol', 'col'], t: 4, b: 6, g: 32, f: 6, k: 1 },
-    { r: [-48, 48, 28, 40], tr: ['col', 'lol', 'pine'], t: 2.5, b: 0, g: 12, f: 0, k: 0 },
+    { r: [-48, 48, 28, 40], tr: ['col', 'lol', 'pine'], t: 2.5, b: 0, g: 0, f: 0, k: 0 },
     { r: [-48, -33, 14.8, 19.8], tr: ['oak', 'col'], t: 4, b: 6, g: 26, f: 4, k: 0 },
     { r: [33, 48, 14.8, 19.8], tr: ['oak', 'col'], t: 4, b: 6, g: 26, f: 4, k: 0 }
   ],
