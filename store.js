@@ -2111,14 +2111,15 @@ function sharedWithLater(s, x, z) {
   });
 }
 
-// the department's name painted across the empty floor, its top toward the back wall so the default view reads it
+// the department's name painted across the empty floor, its top toward the back wall so the default view reads it. The
+// small line goes at the back: the price tag and a neighbour's hanging sign cover the front
 function floorName(id, w, h) {
   var c = document.createElement('canvas');
   c.width = 512;
   c.height = Math.round(512 * h / w);
   var g = c.getContext('2d');
   var name = BZ[id].name.toUpperCase();
-  var size = c.height * 0.7;
+  var size = c.height * 0.62;
   g.font = '900 ' + size + 'px "Arial Black", Impact, sans-serif';
   size = Math.min(size, size * c.width * 0.98 / g.measureText(name).width);
   g.font = '900 ' + size + 'px "Arial Black", Impact, sans-serif';
@@ -2128,13 +2129,13 @@ function floorName(id, w, h) {
   g.lineWidth = size * 0.06;
   g.strokeStyle = 'rgba(255,255,255,0.55)';
   g.fillStyle = DEPT[id];
-  g.strokeText(name, c.width / 2, c.height * 0.4);
-  g.fillText(name, c.width / 2, c.height * 0.4);
+  g.strokeText(name, c.width / 2, c.height * 0.54);
+  g.fillText(name, c.width / 2, c.height * 0.54);
   var small = Math.min(c.height * 0.15, c.width * 0.05);
   g.font = '800 ' + small + 'px "Arial Black", Impact, sans-serif';
   g.letterSpacing = small * 0.25 + 'px';
   g.fillStyle = 'rgba(70,70,80,0.75)';
-  g.fillText('OPENING SOON', c.width / 2, c.height * 0.9);
+  g.fillText('OPENING SOON', c.width / 2, c.height * 0.1);
   // scuffs, so it reads as paint on concrete
   g.globalCompositeOperation = 'destination-out';
   for (var i = 0; i < 130; i++) {
