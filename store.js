@@ -1025,10 +1025,12 @@ function Batch() {
         o = new THREE.Mesh(mergeGeometries(list, false), sets[k].mat);
         var rk = ord.map(function (i) { return sets[k].rank[i]; });
         o.userData.shelf = { rank: rk, cum: cum };
-        lo = new THREE.Mesh(mergeGeometries(ord.map(function (i) { return sets[k].low[i]; }), false), sets[k].mat);
-        lc = [0];
-        ord.forEach(function (i) { lc.push(lc[lc.length - 1] + sets[k].low[i].attributes.position.count); });
-        lo.userData.shelf = { rank: rk, cum: lc };
+        if (sets[k].low) {
+          lo = new THREE.Mesh(mergeGeometries(ord.map(function (i) { return sets[k].low[i]; }), false), sets[k].mat);
+          lc = [0];
+          ord.forEach(function (i) { lc.push(lc[lc.length - 1] + sets[k].low[i].attributes.position.count); });
+          lo.userData.shelf = { rank: rk, cum: lc };
+        }
       } else {
         o = new THREE.Mesh(mergeGeometries(list, false), sets[k].mat);
         if (sets[k].low) {
