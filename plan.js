@@ -854,34 +854,39 @@ AREAS.tools = {
 };
 
 // something of the kitchen kit standing on a lane gondola, at slot i of the run (two to a gondola)
+var KZ = -17.2;
+var KX = xs(-6.9, [0.25, 0.5, 0.5, 0.38, 0.5, 0.5, 0.5, 0.5, 0.5, 0.25]);
+var KG = [KX[1], KX[2], KX[4], KX[5], KX[7], KX[8]];
 function kt(name, ref, i, k) {
-  var x = -5.35 + Math.floor(i / 2) * 0.5 + (i % 2 ? 0.12 : -0.12);
-  return perch(name, 'pw/' + ref + '*' + (k || 1.6), x, -17.2, 0.7);
+  var x = KG[Math.floor(i / 2)] + (i % 2 ? 0.12 : -0.12);
+  return perch(name, 'pw/' + ref + '*' + (k || 1.6), x, KZ, 0.7);
+}
+function kg(name, i) {
+  return up(name, pw('Gondola_Island_Low_10', KG[i], KZ, 's', { stock: 1, spots: 2 }));
 }
 AREAS.kitchen = {
   cx: -4.1, cz: -17.2, vacant: [-6.9, -1.25, -18.3, -16.1], sign: [-3.2, -18.05, 2.2],
   floor: [{ poly: rbox(-6.9, -1.25, -18.3, -16.1, 0.5), finish: 0xdcebd5 }],
-  ups: ups((function () {
-    var u = pwrun([gond('Pot gondola', 'Gondola_Island_Low_10'), gond('Pan gondola', 'Gondola_Island_Low_10'), gond('Plate gondola', 'Gondola_Island_Low_10'),
-      gond('Bowl gondola', 'Gondola_Island_Low_10'), gond('Mug gondola', 'Gondola_Island_Low_10'), gond('Glass gondola', 'Gondola_Island_Low_10')], -5.6, -17.2, 's', 1);
-    return [u[0],
-      up('Knife end cap', pw('Gondola_EndCap_10', -5.75, -17.2, 'k', { stock: 1 })),
-      u[1],
-      up('Display range', pw('Range_Gas_01', -7.6, -16.75, 'k')),
-      u[2], u[3],
-      up('Display sink', pw('KitCab_Base_Sink_10', -7.6, -17.65, 'k'), pw('KitTop_Sink_10', -7.6, -17.65, 'k', { y: 0.44, spots: 0 })),
-      u[4], u[5],
-      up('Pan end cap', pw('Gondola_EndCap_10', -2.45, -17.2, 'b', { stock: 1 })),
-      kt('Coffee maker', 'CoffeeMaker_Drip_01', 0), kt('Toaster', 'Toaster_01', 1), kt('Blender', 'Blender_01', 2), kt('Microwave', 'Microwave_Counter_01', 3, 1.1),
-      board('Cookware deal', 'COOKWARE SALE', -6.8, -16.6, 1.0),
-      kt('Knife block', 'KnifeBlock_01', 4), kt('Plate stack', 'Plate_Stack_01', 5), board('Kitchen sale', 'KITCHEN SALE', -6.8, -18.0, 1.0),
-      kt('Stand mixer', 'StandMixer_01', 6), kt('Cast iron pan', 'Pan_CastIron_01', 7, 1.2), kt('Mixing bowls', 'MixingBowls_01', 8, 1.4),
-      kt('Mug tree', 'MugTree_01', 9), kt('Pitcher', 'Pitcher_01', 10),
-      mat('Cook mat', -6.5, -5, -16.75, -15.65, 0xd3e4cc)];
-  })(), [SIGN, up('Kitchen desk', till(-0.85, -16.4, 'k'), { staff: [-0.4, -16.4, 'k'] }),
-    up('Pot tower', on('pw/Pot_Stock_01*1.5', -5.75, -17.2, 0.9), on('pw/Pot_Sauce_01*1.5', -5.75, -17.2, 1.08, 1, 0.4), on('pw/Pan_Frying_01*1.5', -5.75, -17.2, 1.22)),
-    lights([[-5, -17.2], [-2.8, -17.2]]), HELP,
-    up('Big pot', { sign: 'gold' }, on('pw/Pot_Stock_01*2.2', -4.1, -17.2, 0.7))])
+  ups: ups([
+    kg('Pot gondola', 0),
+    up('Knife end cap', pw('Gondola_EndCap_10', KX[0], KZ, 'k', { stock: 1 })),
+    kg('Pan gondola', 1),
+    up('Display range', pw('Range_Gas_01', KX[3], KZ, 's')),
+    kg('Plate gondola', 2), kg('Bowl gondola', 3),
+    up('Display sink', pw('KitCab_Base_Sink_10', KX[6], KZ, 's'), pw('KitTop_Sink_10', KX[6], KZ, 's', { y: 0.44, spots: 0 })),
+    kg('Mug gondola', 4), kg('Glass gondola', 5),
+    up('Pan end cap', pw('Gondola_EndCap_10', KX[9], KZ, 'b', { stock: 1 })),
+    kt('Coffee maker', 'CoffeeMaker_Drip_01', 0), kt('Toaster', 'Toaster_01', 1), kt('Blender', 'Blender_01', 2), kt('Microwave', 'Microwave_Counter_01', 3, 1.1),
+    deal('Cookware deal', 'COOKWARE SALE', -6.55, KZ + 0.85),
+    kt('Knife block', 'KnifeBlock_01', 4), kt('Plate stack', 'Plate_Stack_01', 5),
+    up('Cookware bin', pw('DumpBin_Wire_01', -2.3, KZ - 0.85, 'b', { on: [['food/pot*0.5', -0.1, 0.03, 0, 0.3], ['food/pan*0.5', 0.1, -0.03, 0.4, 0.3], ['food/plate*0.4', 0, 0.06, 0, 0.3]] })),
+    kt('Stand mixer', 'StandMixer_01', 6), kt('Cast iron pan', 'Pan_CastIron_01', 7, 1.2), kt('Mixing bowls', 'MixingBowls_01', 8, 1.4),
+    kt('Mug tree', 'MugTree_01', 9), kt('Pitcher', 'Pitcher_01', 10),
+    mat('Cook mat', -6.5, -2.5, -17.95, -16.45, 0xd3e4cc)
+  ], [SIGN, counter('Kitchen desk', -6.6, KZ - 0.75, 's', -6.6, KZ - 1.05),
+    up('Pot tower', on('pw/Pot_Stock_01*1.5', KX[0], KZ, 0.9), on('pw/Pot_Sauce_01*1.5', KX[0], KZ, 1.08, 1, 0.4), on('pw/Pan_Frying_01*1.5', KX[0], KZ, 1.22)),
+    lights([[-5, KZ + 0.6], [-3, KZ + 0.6]]), HELP,
+    up('Big pot', { sign: 'gold' }, on('pw/Pot_Stock_01*2.2', KG[3], KZ, 0.7))])
 };
 
 // what stands in the front, the stockroom and outside from the first day: the same entries as an upgrade, plus
