@@ -3181,7 +3181,7 @@ function canStand(x, z) {
 }
 
 function clearLine(ax, az, bx, bz) {
-  var n = Math.ceil(Math.hypot(bx - ax, bz - az) / 0.05);
+  var n = Math.ceil(Math.hypot(bx - ax, bz - az) / 0.01);
   for (var i = 1; i < n; i++) if (blockedAt(ax + (bx - ax) * i / n, az + (bz - az) * i / n)) return false;
   return true;
 }
