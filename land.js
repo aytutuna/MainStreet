@@ -259,21 +259,27 @@ export function scenery(blocked) {
       }
     }
   }
-  // patches of flowers in the meadows, one colour mostly, a few of another
-  for (var n = 0; n < 3000 && out.flowers.length < 320; n++) {
+  // patches of flowers in the meadows near the lot, one colour mostly, a few of another. Tight and dense, so a patch
+  // still reads from the far view
+  for (var n = 0; n < 6000 && out.flowers.length < 210; n++) {
     var px = SEEN[0] + rand() * (SEEN[1] - SEEN[0]);
     var pz = SEEN[2] + rand() * (SEEN[3] - SEEN[2]);
-    if (away(px, pz) < 2.5 || shore(px, pz) < 1.6 || forest(px, pz) > 0.3 || onTrack(px, pz, 2) || slope(px, pz) > 0.5) continue;
+    // half of them in the strip of meadow right behind the lot, the only ground the top bars leave in view when zoomed out
+    if (n % 2) {
+      px = -36 + rand() * 72;
+      pz = -50 + rand() * 6;
+    }
+    if (away(px, pz) < 2.5 || away(px, pz) > 36 || shore(px, pz) < 1.6 || forest(px, pz) > 0.3 || onTrack(px, pz, 2) || slope(px, pz) > 0.5) continue;
     if (meadow(px, pz) < 0.35 && rand() < 0.7) continue;
     var base = pick(FLOWER);
-    var rad = 1.6 + rand() * 2.6;
-    for (var q = 5 + Math.floor(rand() * 8); q > 0; q--) {
+    var rad = 0.9 + rand() * 1.1;
+    for (var q = 16 + Math.floor(rand() * 10); q > 0; q--) {
       var a = rand() * 6.283;
       var r = Math.sqrt(rand()) * rad;
       var fx = px + Math.cos(a) * r;
       var fz = pz + Math.sin(a) * r;
       if (shore(fx, fz) < 1.2) continue;
-      out.flowers.push([rand() < 0.8 ? base : pick(FLOWER), fx, fz, rand() * 6.283, 0.9 + rand() * 0.5]);
+      out.flowers.push([rand() < 0.85 ? base : pick(FLOWER), fx, fz, rand() * 6.283, 1.2 + rand() * 0.6]);
     }
   }
   // stones on the banks and in the shallows, reeds where the bank meets the water, lily pads on the lake
@@ -301,7 +307,7 @@ export function scenery(blocked) {
       var bl = rand();
       if (blocked(lx, lz) || LAMPS.some(function (q) { return Math.hypot(lx - q[0], lz - q[1]) < 3.5; })) continue;
       if (bl < 0.5) for (var m = 3; m > 0; m--) out.low.push([pick(BUSH), lx + (rand() - 0.5) * 3, lz + (rand() - 0.5) * 3, rand() * 6.283, 1 + rand() * 0.7]);
-      else if (bl < 0.8) for (var q2 = 5; q2 > 0; q2--) out.flowers.push([pick(FLOWER), lx + (rand() - 0.5) * 4, lz + (rand() - 0.5) * 4, rand() * 6.283, 0.9 + rand() * 0.5]);
+      else if (bl < 0.8) for (var q2 = 6; q2 > 0; q2--) out.flowers.push([pick(FLOWER), lx + (rand() - 0.5) * 2.4, lz + (rand() - 0.5) * 2.4, rand() * 6.283, 1.2 + rand() * 0.6]);
     }
   });
   // a canoe out on the lake and one pulled up on the sand
