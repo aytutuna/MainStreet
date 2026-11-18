@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
-import { PLAN, PW } from './plan.js';
+import { PLAN, PW, NATURE } from './plan.js';
 
 var BASE = 'assets/models/';
 var TILT = 52 * Math.PI / 180;
@@ -258,6 +258,10 @@ function joinParts(parts) {
   return out.map(function (e) { return { geom: e.list.length > 1 ? mergeGeometries(e.list, false) : e.list[0], mat: e.mat }; });
 }
 
+// the old kit's teal bushes give way to the greener ones of the scenery
+var SWAP = { 'nature/plant_bush': 'flora/sn-stylised-bush*0.17', 'nature/plant_bushLarge': 'flora/sn-stylised-bush*0.26', 'nature/tree_small': 'flora/sn-stylised-tree-8*0.2' };
+// scenery that is too small to be worth a shadow
+var GROUND = /^flora\/(sn-grass|sn-stylised-grass|flower|fern|sn-stone)/;
 // pw/Gondola_Island_10.goods is the goods of Gondola_Island_10_Stocked; pw/ProduceTable_15.goods-Apples those of ProduceTable_15_Apples
 var GOODS = /^goods(-(\w+))?$/;
 
@@ -273,24 +277,38 @@ function loadModels(list, progress, done) {
   });
   var names = Object.keys(files);
   var n = 0;
-  function material(src, kit, tint) {
+  // Every file of the scenery carries its own copy of a texture, so the copies are told apart by their name and size in
+  // the file and the first one stands for all
+  function sameTexture(g, src) {
+    var a = g.parser.associations.get(src);
+    var j = g.parser.json;
+    var d = a && j.materials[a.materials];
+    var t = d && d.pbrMetallicRoughness.baseColorTexture;
+    return t ? d.name + ':' + j.bufferViews[j.images[j.textures[t.index].source].bufferView].byteLength + ':' + src.color.getHex() : '';
+  }
+  function material(src, kit, tint, g, file) {
     var see = src.transparent || src.opacity < 1;
-    var key = kit + '|' + (src.map ? 'map' : tint ? '' : src.name + src.color.getHex()) + (tint || '') + (see ? 't' + src.opacity : '');
+    var key = kit + '|' + (src.map ? 'map' : tint ? '' : src.name + src.color.getHex()) + (tint || '') + (see ? 't' + src.opacity : '') + (kit === 'flora' && src.map ? sameTexture(g, src) : '');
     if (mats[key]) return mats[key];
-    if (src.map) {
+    if (src.map && kit !== 'flora') {
       src.map.magFilter = THREE.NearestFilter;
       src.map.minFilter = THREE.NearestFilter;
       src.map.generateMipmaps = false;
       src.map.colorSpace = THREE.SRGBColorSpace;
     }
-    var c = tint ? new THREE.Color(parseInt(tint, 16)) : src.map ? new THREE.Color(1, 1, 1) : src.color;
+    var c = tint ? new THREE.Color(parseInt(tint, 16)) : src.map && kit !== 'flora' ? new THREE.Color(1, 1, 1) : src.color;
     var opt = src.map ? { map: src.map, color: c } : { color: c };
+    if (src.alphaTest) {
+      opt.alphaTest = src.alphaTest;
+      opt.side = THREE.DoubleSide;
+    }
     if (see) {
       opt.transparent = true;
       opt.opacity = src.opacity;
       opt.depthWrite = false;
     }
     mats[key] = new THREE.MeshLambertMaterial(opt);
+    if (GROUND.test(file)) mats[key].userData.noShadow = true;
     return mats[key];
   }
   var missing = { parts: [], box: { x0: -0.3, x1: 0.3, z0: -0.3, z1: 0.3, y0: 0, h: 0.3 }, gltf: null };
@@ -440,9 +458,9 @@ function loadModels(list, progress, done) {
         if (r.cells) recolour(oc.body, r.cells);
         // glass recoloured blue holds water: a fish tank
         var wet = !!r.cells && r.cells.some(function (c) { return c[0][0] === 3 && c[0][1] === 2; });
-        parts.push({ geom: oc.body, mat: material(o.material, kit, tint) }, { geom: oc.glass, mat: wet ? waterMat : glassMat }, { geom: oc.inner, mat: wet ? tankMat : innerMat });
+        parts.push({ geom: oc.body, mat: material(o.material, kit, tint, g, r.file) }, { geom: oc.glass, mat: wet ? waterMat : glassMat }, { geom: oc.inner, mat: wet ? tankMat : innerMat });
         if (oc.shelf) parts.push({ geom: oc.shelf, mat: shelfMat });
-      } else parts.push({ geom: geom, mat: material(o.material, kit, tint) });
+      } else parts.push({ geom: geom, mat: material(o.material, kit, tint, g, r.file) });
     });
     if (r.lay) {
       var turn = new THREE.Matrix4()[r.lay === 'x' ? 'makeRotationX' : 'makeRotationZ'](Math.PI / 2);
@@ -485,7 +503,7 @@ function loadModels(list, progress, done) {
       one();
     });
   });
-  return { model: function (ref) { return models[ref] || missing; } };
+  return { model: function (ref) { return models[SWAP[ref] || ref] || missing; } };
 }
 
 // every model the store can show, gathered from the tables
@@ -502,6 +520,8 @@ function modelList() {
   walk(PLAN.front);
   walk(PLAN.decor);
   walk(PLAN.wing);
+  walk(NATURE);
+  walk(SWAP);
   walk(FLOWERS);
   walk(OVERSTOCK.boxes);
   walk(['food/plate-rectangle*0.55', 'skate/pallet', 'shop/character-employee@5,3>2,2', 'shop/freezers-standing@13,3>2,2',
@@ -912,7 +932,7 @@ function Batch() {
         o = new THREE.Mesh(mergeGeometries(list, false), sets[k].mat);
         o.userData.shelf = { rank: ord.map(function (i) { return sets[k].rank[i]; }), cum: cum };
       } else o = new THREE.Mesh(mergeGeometries(list, false), sets[k].mat);
-      o.castShadow = shadow !== false && !sets[k].goods && !sets[k].mat.transparent && sets[k].mat !== poolMat && sets[k].mat !== bulbMat && sets[k].mat !== innerMat;
+      o.castShadow = shadow !== false && !sets[k].goods && !sets[k].mat.transparent && !sets[k].mat.userData.noShadow && sets[k].mat !== poolMat && sets[k].mat !== bulbMat && sets[k].mat !== innerMat;
       o.receiveShadow = true;
       g.add(o);
     });
@@ -992,7 +1012,7 @@ function dye(g, mat) {
   g.setAttribute('color', new THREE.BufferAttribute(a, 3));
   return vcMat;
 }
-var GRASS = 0x84c26c;
+var GRASS = 0x7bbb63;
 var PAVE = 0xd9d3c7;
 var ASPHALT = 0x5b5e66;
 var GRAVEL = 0xa39886;
@@ -2614,7 +2634,6 @@ function buildOutside() {
   var houses = ['sub/building-type-a', 'sub/building-type-c', 'sub/building-type-e', 'sub/building-type-h', 'sub/building-type-k'];
   for (var hx = -30, hi = 0; hx <= 30; hx += 6, hi++) {
     b.add(houses[hi % houses.length], hx, 17.6, Math.PI);
-    b.add('sub/tree-large', hx + 3, 15.6, hi);
   }
   // the yard behind the store, the service road down the east side and the tire bay's drive on the west
   b.slab(flat(ASPHALT), -EDGE - 4, 26.5, -40, SB - 0.3, 0.008, 0.02);
@@ -2633,29 +2652,89 @@ function buildOutside() {
   b.add('furn/cardboardBoxClosed', -EDGE - 1.2, tz + 2.2, 0.2);
   b.add('car/wheel-dark', -EDGE - 1.5, tz + 2.6, 0, 0);
   b.add('car/wheel-default', -EDGE - 2.2, tz + 2.6, 0, 0);
-  // woods round the site, leaving the lot, the service road and the tire bay's drive clear
-  var n = 0;
-  for (var gz = 6; gz > -62; gz -= 2.6) {
-    for (var gx = -46; gx <= 46; gx += 2.6) {
-      n++;
-      var jx = gx + Math.sin(n * 12.9) * 0.9;
-      var jz = gz + Math.cos(n * 7.3) * 0.9;
-      if (jx > -31 && jx < 29.5 && jz > -43 && jz < 11.5) continue;
-      if (Math.sin(n * 3.1) > 0.75) continue;
-      b.add(TREES[n % 5], jx, jz, n);
-      if (n % 3 === 0) b.add('nature/plant_bushLarge', jx + 1.1, jz + 0.7, n);
-      if (n % 4 === 1) b.add(['nature/flower_redA', 'nature/flower_yellowA', 'nature/flower_purpleA'][n % 3], jx - 0.9, jz + 1.0, n);
-    }
-  }
   decor(PLAN.decor.out);
   root.add(b.group());
+  buildNature();
   buildLot();
   buildTaxi();
   buildDock();
   buildGarden();
   buildPylon();
 }
-var TREES = ['nature/tree_oak', 'nature/tree_default', 'nature/tree_fat', 'nature/tree_detailed', 'nature/tree_pineRoundC'];
+// Trees, bushes, grass and flowers scattered over the zones of NATURE on a jittered grid. Each 16 unit tile of ground is
+// its own batch, so what is off the screen is not drawn
+var TILE = 16;
+function buildNature() {
+  var tiles = {};
+  var seed = 7;
+  function rand() {
+    seed = (seed * 1664525 + 1013904223) >>> 0;
+    return seed / 4294967296;
+  }
+  function pick(list) {
+    return list[Math.floor(rand() * list.length)];
+  }
+  function put(ref, x, z, big) {
+    var key = Math.floor(x / TILE) + ',' + Math.floor(z / TILE);
+    var b = tiles[key] = tiles[key] || new Batch();
+    var k = (big ? 0.85 + rand() * 0.4 : 0.8 + rand() * 0.5);
+    b.model(ref, x, -lib.model(ref).box.y0 * k, z, rand() * 6.283, k);
+  }
+  function clear(x, z) {
+    return NATURE.clear.some(function (c) { return x > c[0] && x < c[1] && z > c[2] && z < c[3]; });
+  }
+  function scatter(r, per, add) {
+    if (!per) return;
+    var w = r[1] - r[0];
+    var d = r[3] - r[2];
+    var step = Math.sqrt(100 / per);
+    var nx = Math.max(1, Math.round(w / step));
+    var nz = Math.max(1, Math.round(d / step));
+    var p = per * (w / nx) * (d / nz) / 100;
+    for (var i = 0; i < nx; i++) {
+      for (var j = 0; j < nz; j++) {
+        for (var n = Math.floor(p + rand()); n > 0; n--) {
+          var x = r[0] + (i + rand()) * w / nx;
+          var z = r[2] + (j + rand()) * d / nz;
+          if (!clear(x, z)) add(x, z);
+        }
+      }
+    }
+  }
+  // patches of lighter and darker lawn, so the ground is not one flat green
+  function mow(r) {
+    var w = r[1] - r[0];
+    var d = r[3] - r[2];
+    var top = Math.min(w, d) / 2 * 0.8;
+    if (top < 0.5) return;
+    for (var n = Math.min(14, Math.round(w * d / 50)); n > 0; n--) {
+      var rad = Math.min(top, 1.2 + rand() * 1.8);
+      var cx = r[0] + rad + rand() * (w - 2 * rad);
+      var cz = r[2] + rad + rand() * (d - 2 * rad);
+      var pts = [];
+      for (var a = 0; a < 14; a++) pts.push([cx + Math.cos(a / 14 * 6.283) * rad * (1 + rand() * 0.2), cz + Math.sin(a / 14 * 6.283) * rad * (0.8 + rand() * 0.2)]);
+      var g = patch(pts);
+      g.deleteAttribute('uv');
+      var key = Math.floor(cx / TILE) + ',' + Math.floor(cz / TILE);
+      (tiles[key] = tiles[key] || new Batch()).geom(g, flat([0x91ca72, 0x6cae58, 0x84c468][Math.floor(rand() * 3)]), -0.02 + rand() * 0.004);
+    }
+  }
+  NATURE.zones.forEach(function (zn) {
+    mow(zn.r);
+    var trees = [];
+    zn.tr.forEach(function (s) { trees = trees.concat(NATURE.tree[s]); });
+    scatter(zn.r, zn.t, function (x, z) { put(pick(trees), x, z, true); });
+    scatter(zn.r, zn.b, function (x, z) { put(pick(NATURE.bush), x, z); });
+    scatter(zn.r, zn.g, function (x, z) { put(pick(NATURE.grass), x, z); });
+    scatter(zn.r, zn.f, function (x, z) { put(pick(NATURE.flower), x, z); });
+    scatter(zn.r, zn.k, function (x, z) { put(pick(NATURE.rock), x, z); });
+    scatter(zn.r, zn.t ? zn.b / 3 : 0, function (x, z) { put(pick(NATURE.fern), x, z); });
+  });
+  NATURE.singles.forEach(function (q) {
+    put(pick(NATURE.tree[q[0]]), q[1], q[2], true);
+  });
+  Object.keys(tiles).forEach(function (k) { root.add(tiles[k].group()); });
+}
 
 // parking bays: two rows across the front split by a walkway to each entrance; the lot paints more of them at each level
 function buildLot() {

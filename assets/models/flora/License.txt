@@ -1,0 +1,7 @@
+Vegetation and rocks used for the scenery.
+
+st-oak-*, st-columnar-*, st-pine-*: Stylized Trees pack (maker unknown).
+sn-*: Stylised Nature by Elijah Cobden (no licence file shipped with the pack).
+flower-*, fern-1: Stylized Nature MegaKit by Quaternius, CC0 (public domain).
+
+The models were resized, their textures reduced to 256 px and their leaves cut out for use in this game.

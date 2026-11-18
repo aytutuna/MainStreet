@@ -1140,3 +1140,49 @@ function tent(name, x, z) {
 function oil(y) {
   return [['pw/OilJug_01', -0.14, 0.1, 0, y, 2], ['pw/OilBottle_01', 0, 0.1, 0, y, 2.4], ['pw/OilJug_01', 0.14, 0.1, 0, y, 2]];
 }
+
+// Scenery on the grass round the site. Species are refs with their scale; a zone is a rectangle with how many of each
+// kind to scatter per 100 square units (trees from the species named in tr). Spots in clear are left bare
+export var NATURE = {
+  tree: {
+    oak: ['flora/st-oak-1*0.12', 'flora/st-oak-2*0.125', 'flora/st-oak-3*0.13', 'flora/st-oak-4*0.115'],
+    col: ['flora/st-columnar-1*0.2', 'flora/st-columnar-2*0.18', 'flora/st-columnar-3*0.18', 'flora/st-columnar-4*0.185'],
+    pine: ['flora/st-pine-1*0.2', 'flora/st-pine-2*0.2', 'flora/st-pine-3*0.2', 'flora/st-pine-4*0.2'],
+    lol: ['flora/sn-stylised-tree-8*0.5', 'flora/sn-stylised-tree-9*0.55']
+  },
+  bush: ['flora/sn-stylised-bush-1*0.15', 'flora/sn-stylised-bush-2*0.15', 'flora/sn-stylised-bush-3*0.14', 'flora/sn-stylised-bush-1*0.12'],
+  grass: ['flora/sn-stylised-grass*0.7', 'flora/sn-stylised-grass*0.55', 'flora/sn-grass-patch*0.3'],
+  flower: ['flora/flower-3-single*0.17', 'flora/flower-4-single*0.15'],
+  fern: ['flora/fern-1*0.15'],
+  rock: ['flora/sn-rock-1*0.07', 'flora/sn-rock-2*0.12', 'flora/sn-rock-3*0.075', 'flora/sn-stone-collection-4*0.6', 'flora/sn-stone-collection-5*0.6'],
+  zones: [
+    // the lawns at the front corners, either side of the lot's drives
+    { r: [19.2, 22.7, 4.3, 9.4], tr: ['col', 'oak'], t: 3, b: 11, g: 90, f: 8, k: 1.5 },
+    { r: [-22.4, -19.2, 3.3, 9.4], tr: ['col', 'oak'], t: 3, b: 11, g: 90, f: 8, k: 1.5 },
+    { r: [17.2, 19.2, 4.3, 6.0], tr: [], t: 0, b: 12, g: 90, f: 8, k: 0 },
+    { r: [-19.2, -17.2, 4.3, 6.0], tr: [], t: 0, b: 12, g: 90, f: 8, k: 0 },
+    // along the west side, round the garden center and the tire bay
+    { r: [-22.4, -16.6, -13.4, -2.7], tr: ['oak', 'lol'], t: 3, b: 12, g: 80, f: 6, k: 1 },
+    { r: [-22.4, -20.7, -2.5, 3.1], tr: [], t: 0, b: 12, g: 60, f: 8, k: 0 },
+    { r: [-22.4, -16.6, -28.5, -20.8], tr: ['pine', 'oak'], t: 4, b: 6, g: 45, f: 4, k: 1 },
+    { r: [-27.3, -19.6, -40.5, -28.9], tr: ['pine', 'col'], t: 4, b: 5, g: 35, f: 3, k: 1 },
+    // between the wing's hedge and the service road
+    { r: [22.0, 22.35, -28, 2.2], tr: [], t: 0, b: 0, g: 80, f: 40, k: 0 },
+    // beyond the service road and the west drive, then behind the yard
+    { r: [27.4, 40, -41, 9.4], tr: ['pine', 'oak', 'col'], t: 4, b: 6, g: 60, f: 4, k: 1 },
+    { r: [40, 48, -41, 9.4], tr: ['col', 'lol'], t: 2.5, b: 0, g: 12, f: 0, k: 0 },
+    { r: [-40, -27.3, -41, 9.4], tr: ['oak', 'pine', 'lol'], t: 4, b: 6, g: 60, f: 4, k: 1 },
+    { r: [-48, -40, -41, 9.4], tr: ['col', 'lol'], t: 2.5, b: 0, g: 12, f: 0, k: 0 },
+    { r: [-48, 48, -66, -41], tr: ['col', 'lol', 'pine'], t: 2.5, b: 0, g: 12, f: 0, k: 0 },
+    // across the street: front yards, the gaps between the houses, and the gardens behind them
+    { r: [-34, 34, 15.05, 15.85], tr: [], t: 0, b: 22, g: 100, f: 40, k: 0 },
+    { r: [-48, 48, 19.8, 28], tr: ['oak', 'lol', 'col'], t: 4, b: 6, g: 50, f: 6, k: 1 },
+    { r: [-48, 48, 28, 40], tr: ['col', 'lol', 'pine'], t: 2.5, b: 0, g: 12, f: 0, k: 0 },
+    { r: [-48, -33, 14.8, 19.8], tr: ['oak', 'col'], t: 4, b: 6, g: 40, f: 4, k: 0 },
+    { r: [33, 48, 14.8, 19.8], tr: ['oak', 'col'], t: 4, b: 6, g: 40, f: 4, k: 0 }
+  ],
+  // the garden center and the pylon sign by the street
+  clear: [[-20.6, -15, -2.5, 3.1], [20.4, 22.1, 8.0, 9.6]],
+  // one oak in the gap between each pair of houses
+  singles: [-27, -21, -15, -9, -3, 3, 9, 15, 21, 27, 33].map(function (x) { return ['oak', x, 15.5]; })
+};
