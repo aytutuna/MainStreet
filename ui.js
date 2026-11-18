@@ -751,7 +751,7 @@ function updateMeters() {
   var st = stockCap();
   meter('m-in', inr / cap, k, perMin(inr) + '/m', 'Too few');
   meter('m-tills', cap / inr, k, perMin(cap) + '/m', 'Too slow');
-  meter('m-shelf', st / served(), k, perMin(st) + '/m', 'Low');
+  meter('m-shelf', st / served(), k, isFinite(st) ? perMin(st) + '/m' : '-', 'Low');
 }
 
 // what brings the most shoppers for the money: Parking, the Taxi Stand or the cheapest draw item in a department
