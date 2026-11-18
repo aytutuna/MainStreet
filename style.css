@@ -386,6 +386,13 @@ small {
   background: #d8443a;
 }
 
+@media (max-width: 379px) {
+  #meters button {
+    padding: 4px 5px 0;
+    font-size: 9px;
+  }
+}
+
 #side {
   position: absolute;
   left: 10px;
