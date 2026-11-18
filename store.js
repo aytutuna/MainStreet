@@ -3,6 +3,7 @@ import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
 import { PLAN, PW, NATURE } from './plan.js';
+import * as LAND from './land.js';
 
 var BASE = 'assets/models/';
 var TILT = 52 * Math.PI / 180;
@@ -22,6 +23,7 @@ var WALK_S = 13.95;
 var AISLE = 6.8;
 var DRIVE = 18;
 var ROAD = 24.8;
+var STREET = 76;
 var WALKS = [-9.5, 9.5];
 var CROSS = PLAN.bank.cross;
 var EXIT = PLAN.bank.exit;
@@ -308,6 +310,7 @@ function loadModels(list, progress, done) {
       opt.depthWrite = false;
     }
     mats[key] = new THREE.MeshLambertMaterial(opt);
+    mats[key].name = src.name;
     if (GROUND.test(file)) mats[key].userData.noShadow = true;
     return mats[key];
   }
@@ -521,6 +524,7 @@ function modelList() {
   walk(PLAN.decor);
   walk(PLAN.wing);
   walk(NATURE);
+  walk(LAND.REFS);
   walk(SWAP);
   walk(FLOWERS);
   walk(OVERSTOCK.boxes);
@@ -574,6 +578,8 @@ function dayStep(dt) {
   doorMats.forEach(function (m) { m.emissive.setScalar(0.3 + 0.7 * (1 - k)); });
   poolMat.opacity = 0.5 * (1 - k);
   poolMat.visible = k < 0.98;
+  waterU.t.value = dayT * 0.9;
+  waterU.sun.value = k;
 }
 
 function sceneUp() {
@@ -2742,12 +2748,11 @@ function paintPylon() {
 // and across the street a row of houses. Behind and beside: the yard with the service road, the tire bay drive, woods
 function buildOutside() {
   var b = new Batch();
-  b.slab(flat(GRASS), -150, 150, -150, 150, -0.03, 0.02);
   b.slab(flat(PAVE), -EDGE - 3, 22.9, FRONT, LOT[0], 0, 0.02);
-  b.slab(flat(PAVE), -60, 60, LOT[1], 10.5, 0, 0.02);
-  b.slab(flat(PAVE), -60, 60, 13.5, 14.4, 0, 0.02);
-  b.slab(flat(ASPHALT), -60, 60, 10.5, 13.5, 0, 0.015);
-  for (var x = -60; x <= 60; x += 3) b.add(Math.abs(x) < 1 ? 'roads/road-crossing' : 'roads/road-straight', x, 12, 0, 0.002);
+  b.slab(flat(PAVE), -STREET - 1.5, STREET + 1.5, LOT[1], 10.5, 0, 0.02);
+  b.slab(flat(PAVE), -STREET - 1.5, STREET + 1.5, 13.5, 14.4, 0, 0.02);
+  b.slab(flat(ASPHALT), -STREET - 1.5, STREET + 1.5, 10.5, 13.5, 0, 0.015);
+  for (var x = -STREET; x <= STREET; x += 3) b.add(Math.abs(x) < 1 ? 'roads/road-crossing' : 'roads/road-straight', x, 12, 0, 0.002);
   for (var lx = -48; lx <= 48; lx += 8) lamp(b, 'roads/light-curved', lx + 4, 14.15, 0);
   var houses = ['sub/building-type-a', 'sub/building-type-c', 'sub/building-type-e', 'sub/building-type-h', 'sub/building-type-k'];
   for (var hx = -30, hi = 0; hx <= 30; hx += 6, hi++) {
@@ -2767,12 +2772,20 @@ function buildOutside() {
   b.slab(flat(0xf2c230), -21.4, -17.4, tz + 1.5, tz + 1.55, 0.02, 0.008);
   b.slab(flat(0xf2c230), -21.4, -21.35, tz - 1.55, tz + 1.55, 0.02, 0.008);
   [[-EDGE - 0.9, tz - 3.0], [-EDGE - 0.9, tz + 3.0], [-22.0, tz - 3.0], [-22.0, tz + 3.0]].forEach(function (q) { b.add('roads/construction-cone', q[0], q[1], 0); });
+  // the stream on the west runs under the street on a short bridge
+  var bx = LAND.BRIDGE.x;
+  b.block(flat(0x9a968c), bx - 8, bx + 8, 9.35, 14.65, -0.75, -0.02);
+  [9.35, 14.4].forEach(function (rz) {
+    b.block(flat(0xb9b4a8), bx - 8, bx + 8, rz, rz + 0.25, -0.02, 0.5);
+    [-8, 7.7].forEach(function (rx) { b.block(flat(0xa39e92), bx + rx, bx + rx + 0.3, rz - 0.05, rz + 0.3, -0.02, 0.75); });
+  });
   b.add('furn/cardboardBoxClosed', -EDGE - 1.2, tz + 2.2, 0.2);
   b.add('car/wheel-dark', -EDGE - 1.5, tz + 2.6, 0, 0);
   b.add('car/wheel-default', -EDGE - 2.2, tz + 2.6, 0, 0);
   decor(PLAN.decor.out);
   root.add(b.group());
   buildNature();
+  buildLand();
   buildLot();
   buildTaxi();
   buildDock();
@@ -2854,6 +2867,274 @@ function buildNature() {
   Object.keys(tiles).forEach(function (k) { root.add(tiles[k].group()); });
 }
 
+// The country beyond the yards: hills, lakes and streams as one vertex-coloured ground, water laid over it, and the
+// trees, rocks and flowers merged by 50 unit chunk so what is off the screen is not drawn
+var LAND_STEP = 2;
+var LAND_CHUNK = 50;
+var landWater = new THREE.MeshLambertMaterial({ vertexColors: true, transparent: true, depthWrite: false });
+var waterU = { t: { value: 0 }, sun: { value: 1 } };
+landWater.onBeforeCompile = function (sh) {
+  sh.uniforms.wt = waterU.t;
+  sh.uniforms.wsun = waterU.sun;
+  sh.vertexShader = 'varying vec2 wp;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\nwp = (modelMatrix * vec4(position, 1.0)).xz;');
+  sh.fragmentShader = 'varying vec2 wp;\nuniform float wt;\nuniform float wsun;\n' + sh.fragmentShader.replace('#include <color_fragment>',
+    '#include <color_fragment>\nfloat rip = sin(wp.x * 0.7 + wt) * sin(wp.y * 0.9 - wt * 0.8) + sin(wp.x * 1.9 - wt * 1.6 + wp.y * 1.7) * 0.7;\n' +
+    'diffuseColor.rgb *= 1.0 + 0.05 * rip;\ndiffuseColor.rgb += smoothstep(1.2, 1.6, rip) * 0.22 * wsun;');
+};
+
+// the colours the kit's flat materials take, one picked for each tree or stone
+var LEAF = {
+  leafsGreen: [0x5cb54e, 0x4aa34a, 0x72c05a, 0x3f9247, 0x86c961],
+  leafsDark: [0x2f7d4c, 0x3a8c52, 0x28704a, 0x4b9a58],
+  leafsFall: [0xf1a43c, 0xe27a30, 0xf3c24c],
+  woodBark: [0x8a5e3c, 0x7a5236], woodBarkDark: [0x6b4a34], woodBirch: [0xe8e2d4], woodInner: [0xe9cfa6],
+  grass: [0x68bd5c, 0x58ad58, 0x82c860], dirt: [0x938b7c, 0x8a8478, 0xa09886], stone: [0xa9a79e, 0xb7b4aa],
+  wood: [0xa97b50], colorRed: [0xe0484f], colorYellow: [0xffc247], colorPurple: [0x9a86ff], _defaultMat: [0xcfcac0]
+};
+
+function buildLand() {
+  var X0 = LAND.DOM[0];
+  var Z0 = LAND.DOM[2];
+  var nx = Math.round((LAND.DOM[1] - X0) / LAND_STEP);
+  var nz = Math.round((LAND.DOM[3] - Z0) / LAND_STEP);
+  var W = nx + 1;
+  var hh = new Float32Array(W * (nz + 1));
+  var wl = new Float32Array(W * (nz + 1));
+  var NONE = -99;
+  for (var j = 0; j <= nz; j++) {
+    for (var i = 0; i <= nx; i++) {
+      var x = X0 + i * LAND_STEP;
+      var z = Z0 + j * LAND_STEP;
+      hh[j * W + i] = LAND.ground(x, z);
+      var w = LAND.waterAt(x, z);
+      wl[j * W + i] = w === null ? NONE : w;
+    }
+  }
+  function hAt(i, j) { return hh[Math.max(0, Math.min(nz, j)) * W + Math.max(0, Math.min(nx, i))]; }
+  var c = new THREE.Color();
+  var c2 = new THREE.Color();
+  var cMeadow = [new THREE.Color(0x9bd06a), new THREE.Color(0x6db555)];
+  var cDry = new THREE.Color(0xbcc86a);
+  var cBloom = [new THREE.Color(0xf0d95e), new THREE.Color(0xd8c4f0), new THREE.Color(0xf0a2bb)];
+  var cWood = [new THREE.Color(0x4f9a4d), new THREE.Color(0x3f8447)];
+  var cRock = new THREE.Color(0x9a9b8e);
+  var cHigh = new THREE.Color(0x7aa267);
+  var cSand = new THREE.Color(0xd9c88e);
+  var cBed = new THREE.Color(0x6d9486);
+  var cLot = new THREE.Color(GRASS);
+  function tint(i, j, ny) {
+    var x = X0 + i * LAND_STEP;
+    var z = Z0 + j * LAND_STEP;
+    var h = hh[j * W + i];
+    var d = LAND.away(x, z);
+    var n = LAND.noise(x / 6 + 5, z / 6) - 0.5;
+    c.copy(cMeadow[0]).lerp(cMeadow[1], LAND.noise(x / 13, z / 13 + 8));
+    var fo = LAND.forest(x, z);
+    c.lerp(cDry, LAND.smooth(0.55, 0.75, LAND.noise(x / 17 + 30, z / 17)) * 0.55 * (1 - fo));
+    c.lerp(cBloom[Math.floor(LAND.noise(x / 23, z / 23) * 2.99)], LAND.smooth(0.6, 0.78, LAND.noise(x / 6 + 70, z / 6 + 10)) * LAND.meadow(x, z) * 0.75 * (1 - fo));
+    c.lerp(c2.copy(cWood[0]).lerp(cWood[1], LAND.noise(x / 9, z / 9)), fo * 0.8);
+    c.lerp(cHigh, LAND.smooth(5, 16, h) * 0.5);
+    c.lerp(cRock, LAND.smooth(0.7, 0.9, 1 - ny) * 0.55 + LAND.smooth(14, 26, h) * 0.35);
+    c.multiplyScalar(1 + n * 0.12);
+    var w = wl[j * W + i];
+    if (w > NONE) {
+      var up = h - w;
+      c.lerp(cSand, 1 - LAND.smooth(0.15, 0.8, up));
+      if (up < 0) c.lerp(cBed, LAND.smooth(0.2, 2.2, -up));
+    }
+    c.lerp(cLot, 1 - LAND.smooth(0, 12, d));
+    return c;
+  }
+
+  var span = LAND_CHUNK / LAND_STEP;
+  for (var cj = 0; cj * span < nz; cj++) {
+    for (var ci = 0; ci * span < nx; ci++) {
+      var i0 = ci * span;
+      var j0 = cj * span;
+      var i1 = Math.min(nx, i0 + span);
+      var j1 = Math.min(nz, j0 + span);
+      var cw = i1 - i0 + 1;
+      var pos = [];
+      var col = [];
+      var idx = [];
+      var wp = [];
+      var wc = [];
+      var wi = [];
+      var wmap = {};
+      for (var gj = j0; gj <= j1; gj++) {
+        for (var gi = i0; gi <= i1; gi++) {
+          var nxv = hAt(gi - 1, gj) - hAt(gi + 1, gj);
+          var nzv = hAt(gi, gj - 1) - hAt(gi, gj + 1);
+          pos.push(X0 + gi * LAND_STEP, hh[gj * W + gi], Z0 + gj * LAND_STEP);
+          tint(gi, gj, 2 * LAND_STEP / Math.hypot(nxv, 2 * LAND_STEP, nzv));
+          col.push(c.r, c.g, c.b);
+        }
+      }
+      for (var cy = 0; cy < j1 - j0; cy++) {
+        for (var cx = 0; cx < i1 - i0; cx++) {
+          var a = cy * cw + cx;
+          idx.push(a, a + cw, a + 1, a + 1, a + cw, a + cw + 1);
+        }
+      }
+      // water covers every triangle that has a corner under it, flat, and clear where the ground comes up through it
+      var wv = function (gi, gj, lv) {
+        var key = gi + ',' + gj;
+        if (wmap[key] === undefined) {
+          var depth = lv - hh[gj * W + gi];
+          wmap[key] = wp.length / 3;
+          wp.push(X0 + gi * LAND_STEP, lv, Z0 + gj * LAND_STEP);
+          c.setHex(0x62c9cf).lerp(c2.setHex(0x1b6fa3), LAND.smooth(0.1, 1.8, depth));
+          wc.push(c.r, c.g, c.b, Math.max(0, Math.min(0.92, 0.45 + depth * 0.8)));
+        }
+        return wmap[key];
+      };
+      for (var gj2 = j0; gj2 < j1; gj2++) {
+        for (var gi2 = i0; gi2 < i1; gi2++) {
+          [[[0, 0], [0, 1], [1, 0]], [[1, 0], [0, 1], [1, 1]]].forEach(function (t) {
+            var lv = NONE;
+            var under = false;
+            t.forEach(function (o) {
+              var k = (gj2 + o[1]) * W + gi2 + o[0];
+              if (wl[k] > NONE && lv === NONE) lv = wl[k];
+            });
+            if (lv === NONE) return;
+            t.forEach(function (o) { if (hh[(gj2 + o[1]) * W + gi2 + o[0]] < lv) under = true; });
+            if (!under) return;
+            t.forEach(function (o) {
+              var k = (gj2 + o[1]) * W + gi2 + o[0];
+              wi.push(wv(gi2 + o[0], gj2 + o[1], wl[k] > NONE ? wl[k] : lv));
+            });
+          });
+        }
+      }
+      // every face has its own normal, so the hills read as low-poly facets
+      var fp = [];
+      var fc = [];
+      var fn = [];
+      for (var ti = 0; ti < idx.length; ti += 3) {
+        var ia = idx[ti] * 3;
+        var ib = idx[ti + 1] * 3;
+        var ic = idx[ti + 2] * 3;
+        var ux = pos[ib] - pos[ia];
+        var uy = pos[ib + 1] - pos[ia + 1];
+        var uz = pos[ib + 2] - pos[ia + 2];
+        var vx = pos[ic] - pos[ia];
+        var vy = pos[ic + 1] - pos[ia + 1];
+        var vz = pos[ic + 2] - pos[ia + 2];
+        var fx = uy * vz - uz * vy;
+        var fy = uz * vx - ux * vz;
+        var fz = ux * vy - uy * vx;
+        var fl = Math.hypot(fx, fy, fz) * (fy < 0 ? -1 : 1);
+        [ia, ib, ic].forEach(function (o) {
+          fp.push(pos[o], pos[o + 1], pos[o + 2]);
+          fc.push(col[o], col[o + 1], col[o + 2]);
+          fn.push(fx / fl, fy / fl, fz / fl);
+        });
+      }
+      var g = new THREE.BufferGeometry();
+      g.setAttribute('position', new THREE.Float32BufferAttribute(fp, 3));
+      g.setAttribute('normal', new THREE.Float32BufferAttribute(fn, 3));
+      g.setAttribute('color', new THREE.Float32BufferAttribute(fc, 3));
+      var m = new THREE.Mesh(g, vcMat);
+      var wx0 = X0 + i0 * LAND_STEP;
+      var wz0 = Z0 + j0 * LAND_STEP;
+      // only the ground the store's shadows reach takes them
+      m.receiveShadow = wx0 < 26 && wx0 + LAND_CHUNK > -26 && wz0 < 22 && wz0 + LAND_CHUNK > -38;
+      root.add(m);
+      if (wi.length) {
+        var wg = new THREE.BufferGeometry();
+        wg.setAttribute('position', new THREE.Float32BufferAttribute(wp, 3));
+        wg.setAttribute('color', new THREE.Float32BufferAttribute(wc, 4));
+        wg.setIndex(wi);
+        wg.computeVertexNormals();
+        var wm = new THREE.Mesh(wg, landWater);
+        wm.renderOrder = 1;
+        root.add(wm);
+      }
+    }
+  }
+
+  // trees, rocks and the rest, each standing on the ground and coloured from the kit's palette
+  var seed = 5;
+  function rand() {
+    seed = (seed * 1664525 + 1013904223) >>> 0;
+    return seed / 4294967296;
+  }
+  var mtx = new THREE.Matrix4();
+  var q = new THREE.Quaternion();
+  var up = new THREE.Vector3(0, 1, 0);
+  var lists = {};
+  function stand(ref, x, y, z, rot, k) {
+    var key = Math.floor((x - X0) / LAND_CHUNK) + ',' + Math.floor((z - Z0) / LAND_CHUNK);
+    var list = lists[key] = lists[key] || [];
+    mtx.compose(new THREE.Vector3(x, y, z), q.setFromAxisAngle(up, rot), new THREE.Vector3(k, k, k));
+    var pick = rand();
+    var shade = 0.92 + rand() * 0.16;
+    lib.model(ref).parts.forEach(function (p) {
+      var g = p.geom.index ? p.geom.toNonIndexed() : p.geom.clone();
+      g.deleteAttribute('uv');
+      g.applyMatrix4(mtx);
+      var pal = LEAF[p.mat.name];
+      var n = g.attributes.position.count;
+      var a = new Float32Array(n * 3);
+      if (pal) c.setHex(pal[Math.floor(pick * pal.length)]);
+      else c.copy(p.mat.color);
+      c.multiplyScalar(shade);
+      for (var v = 0; v < n; v++) c.toArray(a, v * 3);
+      g.setAttribute('color', new THREE.BufferAttribute(a, 3));
+      list.push(g);
+    });
+  }
+  LAND.TRACKS.forEach(function (tr) {
+    var l = tr.line;
+    var tp = [];
+    var tc = [];
+    var pp = [];
+    l.forEach(function (p, i) {
+      var a = l[Math.max(0, i - 1)];
+      var e = l[Math.min(l.length - 1, i + 1)];
+      var tl = Math.hypot(e[0] - a[0], e[1] - a[1]);
+      var nx = -(e[1] - a[1]) / tl;
+      var nz = (e[0] - a[0]) / tl;
+      [-1, 0, 1].forEach(function (s) {
+        var px = p[0] + nx * s * tr.w / 2;
+        var pz = p[1] + nz * s * tr.w / 2;
+        pp.push(px, LAND.ground(px, pz) + 0.05, pz);
+        c.setHex(s ? 0xb9a67c : 0xd3be92);
+        tc.push(c.r, c.g, c.b);
+      });
+    });
+    var ti = [];
+    for (var k = 0; k < l.length - 1; k++) {
+      for (var s = 0; s < 2; s++) {
+        var o = k * 3 + s;
+        ti.push(o, o + 3, o + 1, o + 1, o + 3, o + 4);
+      }
+    }
+    var tg = new THREE.BufferGeometry();
+    tg.setAttribute('position', new THREE.Float32BufferAttribute(pp, 3));
+    tg.setAttribute('color', new THREE.Float32BufferAttribute(tc, 3));
+    tg.setIndex(ti);
+    tg.computeVertexNormals();
+    root.add(new THREE.Mesh(tg, vcMat));
+  });
+
+  var sc = LAND.scenery();
+  ['trees', 'low', 'rocks', 'flowers'].forEach(function (kind) {
+    sc[kind].forEach(function (s) {
+      var r = kind === 'trees' ? 0.4 : kind === 'rocks' ? 0.8 : 0.2;
+      var gy = Math.min(LAND.ground(s[1], s[2]), LAND.ground(s[1] + r, s[2]), LAND.ground(s[1] - r, s[2]), LAND.ground(s[1], s[2] + r), LAND.ground(s[1], s[2] - r));
+      stand(s[0], s[1], gy - (kind === 'trees' ? 0.08 : kind === 'rocks' ? 0.1 * s[4] : 0), s[2], s[3], s[4]);
+    });
+  });
+  sc.water.forEach(function (s) {
+    var rock = /stone/.test(s[0]);
+    stand(s[0], s[1], s[5] === null ? LAND.ground(s[1], s[2]) : rock ? s[5] - 0.12 : s[5], s[2], s[3], s[4]);
+  });
+  Object.keys(lists).forEach(function (key) {
+    root.add(new THREE.Mesh(mergeGeometries(lists[key], false), vcMat));
+  });
+}
 // parking bays: two rows across the front split by a walkway to each entrance; the lot paints more of them at each level
 function buildLot() {
   var lv = levels(4);
@@ -3491,7 +3772,7 @@ function addCar(ref, path, kind, extra) {
 }
 
 function road(dir) {
-  return dir > 0 ? [{ x: -62, z: LANE_E }, { x: 62, z: LANE_E }] : [{ x: 62, z: LANE_W }, { x: -62, z: LANE_W }];
+  return dir > 0 ? [{ x: -STREET, z: LANE_E }, { x: STREET, z: LANE_E }] : [{ x: STREET, z: LANE_W }, { x: -STREET, z: LANE_W }];
 }
 
 var trafficT = 0;
@@ -3527,7 +3808,7 @@ function trafficStep(dt) {
   if (carT <= 0 && carQ.length) {
     var bay = freeBay();
     if (bay) {
-      var p = [{ x: 62, z: LANE_W }, { x: DRIVE + 0.6, z: LANE_W, lane: -1 }, { x: DRIVE, z: 10.2 }, { x: DRIVE, z: AISLE + 0.4 }, { x: DRIVE - 0.6, z: AISLE },
+      var p = [{ x: STREET, z: LANE_W }, { x: DRIVE + 0.6, z: LANE_W, lane: -1 }, { x: DRIVE, z: 10.2 }, { x: DRIVE, z: AISLE + 0.4 }, { x: DRIVE - 0.6, z: AISLE },
         { x: bay.x + 0.6, z: AISLE }, { x: bay.x, z: AISLE + bay.nose * 0.6 }, { x: bay.x, z: bay.z, park: true }];
       bay.car = addCar(CARS[Math.floor(Math.random() * CARS.length)], p, 'shop', { bay: bay, lane: -1, cust: carQ.shift() });
     }
@@ -3536,7 +3817,7 @@ function trafficStep(dt) {
   // with no bay free the driver parks down the street and walks over
   if (carQ.length && carQ[0].age > 15) onFoot(carQ.shift());
   if (taxiT <= 0 && taxiQ.length && cars.filter(function (c) { return c.kind === 'taxi'; }).length < 3) {
-    addCar('car/taxi', [{ x: 62, z: LANE_W }, { x: 0, z: LANE_W, stop: 2.2, drop: taxiQ.splice(0, 2), lane: -1 }, { x: -62, z: LANE_W, lane: -1 }],
+    addCar('car/taxi', [{ x: STREET, z: LANE_W }, { x: 0, z: LANE_W, stop: 2.2, drop: taxiQ.splice(0, 2), lane: -1 }, { x: -STREET, z: LANE_W, lane: -1 }],
       'taxi', { lane: -1 });
     taxiT = 3;
   }
@@ -3550,9 +3831,9 @@ function trafficStep(dt) {
     // down the service road to the yard, then backing into a dock
     var dx = PLAN.docks[2 + (docked++ & 1)];
     var dz = SB - 1.95;
-    var van = addCar('car/delivery', [{ x: 62, z: LANE_W }, { x: ROAD + 0.6, z: LANE_W, lane: -1 }, { x: ROAD, z: 10.2 }, { x: ROAD, z: -37 }, { x: dx, z: -37 },
+    var van = addCar('car/delivery', [{ x: STREET, z: LANE_W }, { x: ROAD + 0.6, z: LANE_W, lane: -1 }, { x: ROAD, z: 10.2 }, { x: ROAD, z: -37 }, { x: dx, z: -37 },
       { x: dx, z: dz, rev: true, stop: 5, unload: true }, { x: dx, z: -37 }, { x: ROAD, z: -37 }, { x: ROAD, z: 10.2 }, { x: ROAD - 0.6, z: LANE_W, lane: -1 },
-      { x: -62, z: LANE_W, lane: -1 }], 'truck', { lane: 0 });
+      { x: -STREET, z: LANE_W, lane: -1 }], 'truck', { lane: 0 });
     van.o.scale.setScalar(1.7);
   }
   for (var i = cars.length - 1; i >= 0; i--) {
@@ -3648,7 +3929,7 @@ function leaveBay(c) {
   var b = c.bay;
   c.parked = false;
   c.path = [{ x: b.x, z: b.z }, { x: b.x, z: AISLE, rev: true }, { x: b.x - 0.6, z: AISLE }, { x: -DRIVE + 0.6, z: AISLE }, { x: -DRIVE, z: AISLE + 0.4 },
-    { x: -DRIVE, z: 10.2 }, { x: -DRIVE - 0.6, z: LANE_W, lane: -1 }, { x: -62, z: LANE_W, lane: -1 }];
+    { x: -DRIVE, z: 10.2 }, { x: -DRIVE - 0.6, z: LANE_W, lane: -1 }, { x: -STREET, z: LANE_W, lane: -1 }];
   c.i = 1;
   c.speed = 0;
   setTimeout(function () { if (b.car === c) b.car = null; }, 2500);
@@ -4142,7 +4423,7 @@ function crowdStep(dt) {
     if (p) {
       var sd = Math.random() < 0.5 ? -1 : 1;
       var wz = Math.random() < 0.5 ? WALK_N : WALK_S;
-      start(p, [{ x: sd * 60, z: wz + (Math.random() - 0.5) * 0.3 }, { x: -sd * 60, z: wz }]);
+      start(p, [{ x: sd * (STREET - 2), z: wz + (Math.random() - 0.5) * 0.3 }, { x: -sd * (STREET - 2), z: wz }]);
     }
     passT = 3 + Math.random() * 3;
   }
