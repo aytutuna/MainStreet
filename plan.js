@@ -341,20 +341,20 @@ AREAS.dairy = {
     dairyIsland('Dessert island', 2.4, [PUD, 'pw/Carton_JuiceBox_3Pack_01', PUD], 1.8),
     dairyIsland('Dip island', 3.4, ['pw/Carton_JuiceBox_3Pack_01', PUD, 'pw/Carton_Milk_01'], 1.8),
     dairyIsland('Spread island', 4.4, ['pw/Carton_Eggs_01', 'pw/Carton_Milk_01', 'pw/Jug_Milk_01'], 1.6),
-    dairyIsland('Sour cream island', 5.4, ['pw/Yogurt_4Pack_01', 'pw/Carton_Milk_01', PUD], 1.8),
+    dairyIsland('Sour cream island', 5.4, ['pw/Carton_JuiceBox_3Pack_01', 'pw/Carton_Milk_01', PUD], 1.8),
     dairyIsland('Snack cheese', 6.4, ['pw/Carton_JuiceBox_3Pack_01', PUD, 'pw/Carton_Milk_01'], 1.8),
-    board('Fresh dairy board', 'FRESH DAIRY', 4.0, -18.9, 1.1),
-    up('Recycling', pw('TrashRecycle_Station_01', 7.2, -21.6, 's', { spots: 0 })),
-    up('Dairy plant', pw('Planter_Tall_01', 0.3, -18.7, 0, { spots: 0 })),
-    up('Hand truck', pw('DeliveryBoxes_Dolly_01', 8.2, -21.4, 0.2, { spots: 0 })),
-    up('Juice end cap', pw('Gondola_EndCap_Low_10', 8.55, -19.4, 's', { stock: 1 })),
-    up('Stock pallet', pw('PalletLoad_Cases_01', 8.9, -20.4, 0.1, { spots: 0 })),
-    up('Full basket', pw('Basket_Hand_Full_01', 0.75, -20.8, 0.3, { spots: 0 })),
-    up('Basket stack', pw('Basket_Stack_01', -0.2, -19.1, 0.2, { spots: 0 })),
-    board('Milk deal', 'MILK 2 FOR 6', 7.0, -18.9, 1.0),
+    talk('Fresh dairy board', 'FRESH DAIRY', 4.0, -18.85),
+    up('Recycling', pw('TrashRecycle_Station_01', 6.6, -22.05, 's', { spots: 0 })),
+    up('Dairy plant', pw('Planter_Tall_01', 0.3, -21.55, 0, { spots: 0 })),
+    up('Hand truck', pw('DeliveryBoxes_Dolly_01', 7.1, -22.03, 0, { spots: 0 })),
+    up('Juice end cap', pw('Gondola_EndCap_Low_10', 6.1, -22.07, 's', { stock: 1 })),
+    up('Ice bags', pw('IceBag_01', 7.6, -22.1, 0, { n: 3, spots: 0 })),
+    up('Full basket', pw('Basket_Hand_Full_01', 1.0, -20.55, 0, { spots: 0 })),
+    up('Basket stack', pw('Basket_Stack_01', 0.4, -20.35, 'b', { spots: 0 })),
+    up('Wet floor sign', pw('WetFloorSign_01', 7.85, -19.1, 's', { spots: 0 })),
     mat('Dairy mat', 1.4, 2.9, -21.0, -19.9, 0xd7e6f6),
-    board('Cheese deals', 'CHEESE 2 FOR 5', 2.4, -18.9, 1.0)
-  ], [SIGN, clerk(7.6, -20.5, 'k'), dairyIsland('Cheese display', 7.4, [CHEESE, PUD, 'pw/Carton_JuiceBox_3Pack_01', PUD], 1.6), lights([[2.5, -20.6], [5.5, -20.6]]), HELP,
+    up('Spare baskets', pw('Basket_Stack_01', 0.3, -20.95, 'b', { spots: 0 }))
+  ], [SIGN, counter('Dairy desk', 7.1, -20.7, 'k', 7.55, -20.7), dairyIsland('Cheese display', 7.4, [CHEESE, PUD, 'pw/Carton_JuiceBox_3Pack_01', PUD], 1.6), lights([[2.5, -20.6], [5.5, -20.6]]), HELP,
     up('Showcase', { sign: 'gold' }, pw('IceCream_Chest_01', 0.45, -19.7, 's', { on: [[CHEESE, -0.1, 0, 0.5, 0.3], [CHEESE, 0.1, 0, 1.4, 0.3], ['pw/Yogurt_4Pack_01', 0, 0.05, 0, 0.35, 1.6]] }))])
 };
 
