@@ -147,8 +147,12 @@ function popAt(text, x, y, cls) {
   var half = d.offsetWidth * 0.58 + 4;
   d.style.left = Math.max(half, Math.min($('fly').clientWidth - half, x)) + 'px';
   d.style.top = Math.max(70, y) + 'px';
-  var a = d.animate([{ transform: 'translate(-50%, 0) scale(0.6)', opacity: 0 }, { transform: 'translate(-50%, -14px) scale(1.15)', opacity: 1, offset: 0.2 },
-    { transform: 'translate(-50%, -52px) scale(1)', opacity: 0 }], { duration: 1100, easing: 'ease-out' });
+  var keys = [{ transform: 'translate(-50%, 0) scale(0.6)', opacity: 0 }, { transform: 'translate(-50%, -14px) scale(1.15)', opacity: 1, offset: 0.2 },
+    { transform: 'translate(-50%, -52px) scale(1)', opacity: 0 }];
+  // a buy's pill stays readable longer and rises less
+  if (cls === 'item') keys = [{ transform: 'translate(-50%, 0) scale(0.7)', opacity: 0 }, { transform: 'translate(-50%, -8px) scale(1.08)', opacity: 1, offset: 0.15 },
+    { transform: 'translate(-50%, -20px) scale(1)', opacity: 1, offset: 0.75 }, { transform: 'translate(-50%, -30px) scale(1)', opacity: 0 }];
+  var a = d.animate(keys, { duration: cls === 'item' ? 1800 : 1100, easing: 'ease-out' });
   a.onfinish = function () { d.remove(); };
 }
 
@@ -648,7 +652,11 @@ function upgrade(id, j) {
   // above whatever panel is open, so the text is never under it
   var pane = sheetOpen ? $('sheet') : $('card').hidden ? $('bottom') : $('card');
   var top = pane.getBoundingClientRect().top - $('app').getBoundingClientRect().top;
-  popAt(gain || '+ ' + x.name, at.x, Math.min(at.y - 46, top - 40), 'item');
+  // above the piece's name bubble; under it when the piece is too high for that
+  var hud = $('meters').getBoundingClientRect().bottom - $('app').getBoundingClientRect().top;
+  var y = at.y - 96;
+  if (y < hud + 6) y = at.y + 24;
+  popAt(gain || '+ ' + x.name, at.x, Math.min(y, top - 40), 'item');
 }
 
 function claimGoalAt(i, el) {

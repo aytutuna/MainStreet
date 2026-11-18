@@ -440,7 +440,14 @@ small {
 }
 
 .pop.item {
-  font-size: 15px;
+  font-size: 14px;
+  color: #ffd84a;
+  text-shadow: none;
+  background: var(--ink);
+  border: 2px solid #ffd84a;
+  border-radius: 14px;
+  padding: 3px 10px;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.3);
 }
 
 .pop.gem {
