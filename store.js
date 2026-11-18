@@ -595,6 +595,7 @@ function sceneUp() {
   scene.add(hemi);
   wash = new THREE.Mesh(new THREE.PlaneGeometry(WING_X + EDGE, FRONT - SB).rotateX(-Math.PI / 2), washMat);
   wash.position.set((WING_X - EDGE) / 2, 0.08, (FRONT + SB) / 2);
+  wash.renderOrder = 2;
   scene.add(wash);
   sun = new THREE.DirectionalLight(0xfff3dc, 2.0);
   sun.position.set(-12, 30, 10);
@@ -959,24 +960,25 @@ function Batch() {
   this.sets = sets;
   // where each model stands and the way it faces, kept so an icon can be framed on and turned to the piece itself
   var fp = [];
-  function note(ref, x, z, rot, k) {
+  function note(ref, x, z, rot, k, y) {
     var b = lib.model(ref).box;
     if (b.x1 <= b.x0) return;
     k = k || 1;
+    y = y || 0;
     var c = rotY((b.x0 + b.x1) / 2 * k, (b.z0 + b.z1) / 2 * k, rot || 0);
     var w = (b.x1 - b.x0) * k;
     var d = (b.z1 - b.z0) * k;
     var a = w * d * (b.h * k > 0.3 ? 1 : 0.2);
-    fp.push([x + c[0], z + c[1], Math.hypot(w, d) / 2, b.h * k, a * Math.sin(rot || 0), a * Math.cos(rot || 0)]);
+    fp.push([x + c[0], z + c[1], Math.hypot(w, d) / 2, y + b.y0 * k, y + b.h * k, a * Math.sin(rot || 0), a * Math.cos(rot || 0)]);
   }
   this.fp = fp;
   this.add = function (ref, x, z, rot, y, skip) {
-    note(ref, x, z, rot);
     var m = lib.model(ref);
+    note(ref, x, z, rot, 1, (y || 0) - Math.min(0, m.box.y0));
     m.parts.forEach(function (p) { if (p.mat !== skip) put(p.geom, p.mat, x, (y || 0) - Math.min(0, m.box.y0), z, rot); });
   };
   this.model = function (ref, x, y, z, rot, k) {
-    note(ref, x, z, rot, k);
+    note(ref, x, z, rot, k, y);
     lib.model(ref).parts.forEach(function (p) { put(p.geom, p.mat, x, y, z, rot, k); });
   };
   this.plane = function (mat, w, h, x, y, z, rot, rank) {
@@ -984,7 +986,7 @@ function Batch() {
     put(g, mat, x, y, z, rot, 0, rank);
   };
   this.raw = function (ref, x, z, rot, y, k, rank) {
-    note(ref, x, z, rot, k);
+    if (rank === undefined) note(ref, x, z, rot, k, y);
     lib.model(ref).parts.forEach(function (p) { put(p.geom, p.mat, x, y, z, rot, k, rank === undefined ? -1 : rank); });
   };
   // the goods of a stocked Pipework fixture, each product at its own rank shifted by salt
@@ -2100,13 +2102,10 @@ function sharedWithLater(s, x, z) {
 }
 
 // the department's name painted across the empty floor, its top toward the back wall so the default view reads it
-var floorNames = {};
 function floorName(id, w, h) {
-  var key = id + w.toFixed(1) + h.toFixed(1);
-  if (floorNames[key]) return floorNames[key];
   var c = document.createElement('canvas');
-  c.width = 1024;
-  c.height = Math.round(1024 * h / w);
+  c.width = 512;
+  c.height = Math.round(512 * h / w);
   var g = c.getContext('2d');
   var name = BZ[id].name.toUpperCase();
   var size = c.height * 0.7;
@@ -2128,10 +2127,10 @@ function floorName(id, w, h) {
   g.fillText('OPENING SOON', c.width / 2, c.height * 0.9);
   // scuffs, so it reads as paint on concrete
   g.globalCompositeOperation = 'destination-out';
-  for (var i = 0; i < 260; i++) {
+  for (var i = 0; i < 130; i++) {
     g.globalAlpha = 0.2 + (i * 7 % 10) / 20;
     g.beginPath();
-    g.arc(c.width * ((i * 0.618) % 1), c.height * ((i * 0.377 + i * i * 0.0013) % 1), 1.5 + i % 4, 0, 7);
+    g.arc(c.width * ((i * 0.618) % 1), c.height * ((i * 0.377 + i * i * 0.0013) % 1), 1 + i % 3, 0, 7);
     g.fill();
   }
   var t = new THREE.CanvasTexture(c);
@@ -2140,8 +2139,26 @@ function floorName(id, w, h) {
   var m = new THREE.Mesh(new THREE.PlaneGeometry(w, h).rotateX(-Math.PI / 2),
     new THREE.MeshLambertMaterial({ map: t, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
   m.position.y = 0.03;
-  floorNames[key] = m;
+  m.renderOrder = 1;
   return m;
+}
+
+// the name is drawn only while the lot is empty, and its picture is freed when the department opens
+function lotName(s, on) {
+  var n = s.name;
+  if (on === !!n.mesh) return;
+  if (on) {
+    n.mesh = floorName(s.id, n.w, n.h);
+    n.mesh.position.x = n.x;
+    n.mesh.position.z = n.z;
+    s.vacant.add(n.mesh);
+    return;
+  }
+  s.vacant.remove(n.mesh);
+  n.mesh.geometry.dispose();
+  n.mesh.material.map.dispose();
+  n.mesh.material.dispose();
+  n.mesh = null;
 }
 
 // an area that is not open yet: plain floor behind a low hoarding in the department's colour along the edges that open
@@ -2177,10 +2194,7 @@ function vacantSite(s) {
   // front edge and a neighbour's hanging sign reaches over the front of the lot from the aisle
   var pw = Math.min((r[1] - r[0]) * 0.8, 6);
   var ph = Math.min((r[3] - r[2]) * 0.56, pw * 0.4);
-  var nm = floorName(s.id, pw, ph);
-  nm.position.x = mx;
-  nm.position.z = r[2] + (r[3] - r[2]) * 0.03 + ph / 2;
-  g.add(nm);
+  s.name = { w: pw, h: ph, x: mx, z: r[2] + (r[3] - r[2]) * 0.03 + ph / 2, mesh: null };
   return g;
 }
 
@@ -2352,7 +2366,7 @@ function lane(hall, li, lv, x) {
   var zc = PLAN.bank.z;
   var m = new THREE.Group();
   m.position.set(x, 0, zc);
-  m.userData.fp = [[-0.15, -0.35, 1.1, 1, -2, 0]];
+  m.userData.fp = [[-0.15, -0.35, 1.1, 0, 1, -2, 0]];
   // the belt runs south toward the cashier's end, so the shopper pays at the south end of the lane's west side
   m.add(mesh('pw/Checkout_Lane_30', -0.15, -0.35, -Math.PI / 2));
   var cashier = crew('shop/character-employee', 'idle');
@@ -3460,6 +3474,7 @@ function syncArea(s, animate, now) {
   }
   s.open = own;
   s.vacant.visible = !own;
+  lotName(s, !own);
   s.floorG.visible = own;
   if (!grew && !s.pcs.some(function (pc) { return pc && pc.rising; })) settle(s);
   var on = standing(s);
@@ -5423,11 +5438,11 @@ function focusOf(g) {
   g.traverse(function (o) {
     if (!o.userData.fp) return;
     o.userData.fp.forEach(function (e) {
-      var d = new THREE.Vector3(e[4], 0, e[5]);
+      var d = new THREE.Vector3(e[5], 0, e[6]);
       var n = d.length();
       d.transformDirection(o.matrixWorld).multiplyScalar(n);
       v.set(e[0], 0, e[1]).applyMatrix4(o.matrixWorld);
-      pts.push({ x: v.x, z: v.z, r: e[2], h: e[3], fx: d.x, fz: d.z, a: n });
+      pts.push({ x: v.x, z: v.z, r: e[2], lo: e[3], hi: e[4], fx: d.x, fz: d.z, a: n });
     });
   });
   if (!pts.length) return null;
@@ -5449,7 +5464,7 @@ function focusOf(g) {
   var box = new THREE.Box3();
   cl.forEach(function (p) {
     var q = rotY(p.x, p.z, turn);
-    box.expandByPoint(new THREE.Vector3(q[0] - p.r, 0, q[1] - p.r)).expandByPoint(new THREE.Vector3(q[0] + p.r, Math.max(0.3, p.h), q[1] + p.r));
+    box.expandByPoint(new THREE.Vector3(q[0] - p.r, p.lo, q[1] - p.r)).expandByPoint(new THREE.Vector3(q[0] + p.r, Math.max(p.lo + 0.3, p.hi), q[1] + p.r));
   });
   g.updateMatrixWorld(true);
   return box;
@@ -5490,9 +5505,12 @@ function placeIcon(id, k) {
   g.traverse(function (o) { o.visible = true; });
   g.traverse(function (o) { if (o.userData.lod) o.visible = o.userData.lod === 'hi'; });
   // a level with some pieces that stand alone is drawn without the people who go with the others
+  g.traverse(function (o) { if (o.material && o.material.blending === THREE.AdditiveBlending) o.visible = false; });
   if (people && id !== 'dock') g.traverse(function (o) { if (o.isSkinnedMesh) o.visible = false; });
   g.updateMatrixWorld(true);
-  icons[key] = snap(g, id === 'dock' ? null : focusOf(g));
+  // the lot's levels spread paving, bays and lamps over the whole front, so each is shown by the stretch of bays it opens
+  var lotBox = new THREE.Box3(new THREE.Vector3(k < 3 ? -6 : -9, 0, LOT[0]), new THREE.Vector3(k < 3 ? 6 : 9, 0.3, LOT[1]));
+  icons[key] = snap(g, id === 'dock' ? null : id === 'lot' ? lotBox : focusOf(g));
   return icons[key];
 }
 
