@@ -629,36 +629,41 @@ AREAS.sports = {
     up('Go-kart', { sign: 'gold' }, ['car/kart-oobi', -10.7, -12.2, 's'])])
 };
 
+// two island rows from the aisle side, each closed by a turned cap, with the wall pieces and the desk at the west end
+var AZ1 = -15.75;
+var AZ2 = -18.0;
+var AR1 = [-10.3, -10.8, -11.3, -11.72];
+var AR2 = [-10.3, -10.8, -11.3, -11.915];
 AREAS.auto = {
   cx: -12.2, cz: -17.0, vacant: [-14.7, -9.7, -19.0, -14.9], sign: [-11.2, -17.45, 1.4],
   floor: [{ poly: rbox(-14.7, -9.7, -19.0, -14.9, 0.6), finish: 0xd5d5d8 }],
   ups: ups([
-    up('Wiper blades', pw('Gondola_Island_10', -10.8, -15.75, 's', { stock: 1, spots: 2 })),
-    up('Wheel display', pw('Gondola_EndCap_10', -10.0, -15.75, 'b', { stock: 1, on: [['pw/Wheel_01', 0, 0, 0, 0.9, 1.3]] })),
-    up('Motor oil', pw('Gondola_Island_Low_10', -11.6, -15.75, 's', { spots: 2, on: oil(0.24).concat(oil(0.42)) })),
-    up('Battery end', pw('Gondola_EndCap_Low_10', -10.0, -18.0, 'b', { stock: 1, on: [['pw/Battery_Car_01', -0.1, 0, 0, 0.7, 2.2], ['pw/Battery_Car_01', 0.1, 0, 0, 0.7, 2.2]] })),
-    up('Car care', pw('Gondola_Island_10', -12.4, -15.75, 's', { stock: 1, spots: 2 })),
-    up('Batteries', pw('Gondola_Island_Low_10', -10.8, -18.0, 's', { spots: 2, on: [['pw/Battery_Car_01', -0.12, 0.1, 0, 0.24, 2.2], ['pw/Battery_Car_01', 0.12, 0.1, 0, 0.24, 2.2], ['pw/Battery_Car_01', 0, 0.1, 0, 0.42, 2.2]] })),
-    up('Car accessories', pw('Gondola_Island_10', -11.6, -18.0, 's', { stock: 1, spots: 2 })),
-    up('Tire stack', pw('Tire_Stack_01', -13.2, -15.75, 's')),
-    up('Cleaning kits', pw('Gondola_Island_10', -12.4, -18.0, 's', { stock: 1, spots: 2 })),
-    up('Racing wheels', pw('TireRack_Wall_01', -13.2, -18.0, 's')),
-    d('Traffic cones', 'car/cone', -9.9, -16.4, 0),
-    mat('Garage mat', -13.4, -10.3, -17.45, -16.35, 0xb8b8be),
-    d('Auto boxes', 'furn/cardboardBoxClosed', -9.9, -18.7, 0.2, 1.1),
-    d('Auto plant', 'furn/pottedPlant', -9.85, -14.95, 0, 0.9),
-    perch('Jerry can', 'pw/JerryCan_01', -12.4, -15.75, 0.9, 1.6),
-    perch('Oil jug', 'pw/OilJug_01', -11.6, -15.75, 0.7, 2.4),
-    board('Tire sale board', 'TIRES 4 FOR 3', -11.2, -16.95, 0.9),
-    d('Spare cones', 'roads/construction-cone', -9.95, -17.62, 0),
-    mat('Bay mat', -14.8, -13.3, -18.2, -15.9, 0x9a9aa0),
-    up('Spare bin', pw('TrashCan_Outdoor_01', -14.4, -18.7, 's', { spots: 0 })),
-    perch('Rim on unit', 'pw/Rim_01', -10.8, -15.75, 0.9, 1.6),
-    perch('Battery on unit', 'pw/Battery_Car_01', -10.8, -18.0, 0.7, 2.2),
-    d('Hand truck', 'shop/hand-truck', -14.4, -15.2, 0.6),
-    up('Spare wheel', pw('Wheel_01', -9.9, -19.3, Math.PI / 2, { spots: 0 }))
-  ], [SIGN, up('Tire desk', till(-14.35, -15.9, 'b'), { staff: [-13.85, -15.9, 'b'] }),
-    up('Tire tower', pw('Tire_Stack_01', -14.3, -17.9, 'b', { n: 2, spots: 0 })), lights([[-12.4, -16.9], [-10.8, -16.9]]), HELP,
+    up('Wiper blades', pw('Gondola_Island_10', AR1[0], AZ1, 's', { stock: 1, spots: 2 })),
+    up('Wheel display', pw('Gondola_EndCap_10', -9.9, AZ1, 'b', { stock: 1, on: [['pw/Wheel_01', 0, 0, 0, 0.9, 1.3]] })),
+    up('Motor oil', pw('Gondola_Island_Low_10', AR1[1], AZ1, 's', { spots: 2, on: oil(0.24).concat(oil(0.42)) })),
+    up('Battery end', pw('Gondola_EndCap_Low_10', -9.9, AZ2, 'b', { stock: 1, on: [['pw/Battery_Car_01', -0.1, 0, 0, 0.7, 2.2], ['pw/Battery_Car_01', 0.1, 0, 0, 0.7, 2.2]] })),
+    up('Car care', pw('Gondola_Island_10', AR1[2], AZ1, 's', { stock: 1, spots: 2 })),
+    up('Batteries', pw('Gondola_Island_Low_10', AR2[0], AZ2, 's', { spots: 2, on: [['pw/Battery_Car_01', -0.12, 0.1, 0, 0.24, 2.2], ['pw/Battery_Car_01', 0.12, 0.1, 0, 0.24, 2.2], ['pw/Battery_Car_01', 0, 0.1, 0, 0.42, 2.2]] })),
+    up('Car accessories', pw('Gondola_Island_10', AR2[1], AZ2, 's', { stock: 1, spots: 2 })),
+    up('Tire stack', pw('Tire_Stack_01', AR1[3], AZ1, 's')),
+    up('Cleaning kits', pw('Gondola_Island_10', AR2[2], AZ2, 's', { stock: 1, spots: 2 })),
+    up('Racing wheels', pw('TireRack_Wall_01', AR2[3], AZ2 + 0.16, 's')),
+    d('Traffic cones', 'car/cone', -10.1, -16.9, 0),
+    mat('Garage mat', -13.4, -10.3, -16.45, -15.35, 0xb8b8be),
+    d('Auto boxes', 'furn/cardboardBoxClosed', -14.55, -18.7, 0.2, 1.1),
+    d('Auto plant', 'furn/pottedPlant', -10.05, -15.1, 0, 0.9),
+    perch('Jerry can', 'pw/JerryCan_01', AR1[2], AZ1, 0.9, 1.6),
+    perch('Oil jug', 'pw/OilJug_01', AR1[1], AZ1, 0.7, 2.4),
+    deal('Tire sale board', 'TIRES 4 FOR 3', -12.6, -16.9),
+    d('Spare cones', 'roads/construction-cone', -10.1, -17.1, 0),
+    mat('Bay mat', -14.4, -12.9, -18.2, -16.6, 0x9a9aa0),
+    up('Spare bin', pw('TrashCan_Outdoor_01', -14.45, -15.2, 's', { spots: 0 })),
+    perch('Rim on unit', 'pw/Rim_01', AR1[0], AZ1, 0.9, 1.6),
+    perch('Battery on unit', 'pw/Battery_Car_01', AR2[0], AZ2, 0.7, 2.2),
+    d('Hand truck', 'shop/hand-truck', -14.1, -18.4, 0.6),
+    up('Spare wheel', pw('Wheel_01', -13.5, -18.65, Math.PI / 2, { spots: 0 }))
+  ], [SIGN, counter('Tire desk', -14.4, -15.5, 'b', -13.95, -15.5),
+    up('Tire tower', pw('Tire_Stack_01', -14.5, -16.9, 'b', { n: 2, spots: 0 })), lights([[-12.4, -16.9], [-10.8, -16.9]]), HELP,
     up('Kart showcase', { sign: 'gold' }, ['car/kart-oobi', -13.3, -16.9, 'b'])])
 };
 
