@@ -364,11 +364,12 @@ function makeRoom(id) {
   b.items.forEach(function (x, j) {
     var row = document.createElement('div');
     row.className = 'biz it';
-    row.innerHTML = '<img class="ic" alt=""><div class="mid"><div class="l1"><b></b><span></span></div><div class="l3 fx"><span></span></div>' +
-      '<div class="l3 nx"><span></span></div></div><div class="btns"><button type="button" class="up"></button></div>';
-    var q = { el: row, k: {}, pic: row.querySelector('.ic'), n: row.querySelector('.l1 span'), fx: row.querySelector('.fx span'),
-      nx: row.querySelector('.nx span'), up: row.querySelector('.up') };
+    row.innerHTML = '<div class="pic"><img class="ic" alt=""><span class="cap"></span></div><div class="l1"><b></b></div><div class="segs"></div>' +
+      '<div class="l3 fx"><span></span></div><div class="btns"><button type="button" class="up"></button></div>';
+    var q = { el: row, k: {}, pic: row.querySelector('.ic'), n: row.querySelector('.segs'), fx: row.querySelector('.fx span'),
+      nx: row.querySelector('.cap'), up: row.querySelector('.up') };
     row.querySelector('b').textContent = x.name;
+    for (var s = 0; s < x.at.length; s++) q.n.appendChild(document.createElement('i'));
     q.up.addEventListener('click', function () {
       cardSel = j;
       upgrade(id, j);
@@ -468,7 +469,9 @@ function upRoom(r) {
     flag(qk, 'best', q.el, 'best', hl);
     flag(qk, 'done', q.el, 'done', done);
     flag(qk, 'sel', q.el, 'sel', j === cardSel);
-    set(qk, 'n', q.n, 'textContent', lvl + '/' + x.at.length);
+    if (set(qk, 'n', q.n, 'title', lvl + '/' + x.at.length)) {
+      for (var s = 0; s < q.n.children.length; s++) q.n.children[s].className = s < lvl ? 'on' : '';
+    }
     set(qk, 'fx', q.fx, 'textContent', done ? '' : effect(id, x, j));
     set(qk, 'nx', q.nx, 'textContent', done ? 'Complete' : 'Next: ' + name);
     if (set(qk, 'pc', q.pic, 'title', name)) q.pic.src = p ? placeIcon(id, piece + 1) : upIcon(id, piece);
