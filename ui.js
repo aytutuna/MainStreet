@@ -657,7 +657,8 @@ function upgrade(id, j) {
   // above the piece's name bubble; under it when the piece is too high for that
   var hud = $('meters').getBoundingClientRect().bottom - $('app').getBoundingClientRect().top;
   var y = at.y - 96;
-  if (y < hud + 6) y = at.y + 24;
+  // the pill rises 30px as it fades
+  if (y - 30 < hud + 6) y = at.y + 24;
   popAt(gain || '+ ' + x.name, at.x, Math.min(y, top - 40), 'item');
 }
 
@@ -726,6 +727,7 @@ function meterHint(id) {
   var m = $(id).getBoundingClientRect();
   t.innerHTML = '<b>' + METER_HINT[id][0] + '</b><small>' + METER_HINT[id][1] + '</small>';
   t.hidden = false;
+  t.style.left = '0px';
   var w = t.offsetWidth;
   var left = Math.max(8, Math.min(a.width - w - 8, m.left - a.left + m.width / 2 - w / 2));
   t.style.left = left + 'px';
@@ -1306,6 +1308,7 @@ function start() {
   paintFree();
   $('stars').addEventListener('click', openSell);
   $('mtoast').addEventListener('click', hideToast);
+  ['m-in', 'm-tills', 'm-shelf'].forEach(function (id) { $(id).addEventListener('click', hideToast); });
   $('m-in').addEventListener('click', openDraw);
   $('m-tills').addEventListener('click', function () { tapMeter('hall', capacity); });
   $('m-shelf').addEventListener('click', function () { tapMeter('dock', stockCap); });

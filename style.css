@@ -1375,7 +1375,7 @@ small {
 
 #mtoast {
   position: absolute;
-  z-index: 30;
+  z-index: 15;
   max-width: 270px;
   padding: 7px 12px;
   background: var(--ink);
