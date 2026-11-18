@@ -1,0 +1,3 @@
+Pizza and cafe props by Vira Voloshyn (no licence file shipped with the pack).
+
+The models were exported as flat-colour GLBs for use in this game.
