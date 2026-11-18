@@ -354,36 +354,35 @@ AREAS.dairy = {
 function freezer(name, kind, x) {
   return up(name, pw(kind, x, -19.7, 's', { stock: 1 }));
 }
+// a freezer door on the back wall
+function door(name, x) {
+  return up(name, pw('FreezerDoors_2Door_15', x, -21.97, 's', { stock: 1 }));
+}
 AREAS.frozen = {
   cx: -4.5, cz: -21.0, vacant: [-8.0, -1.0, -22.2, -18.9], sign: [-4.5, -20.5, 1.8],
   floor: [{ poly: rbox(-7.9, -1.1, -21.7, -19.5, 0.5), finish: 0xafcdee }],
   ups: ups([
-    up('Ice cream cooler', pw('FreezerDoors_2Door_15', -7.5, -21.97, 's', { stock: 1 })),
-    up('Pizza cooler', pw('FreezerDoors_2Door_15', -6.75, -21.97, 's', { stock: 1 })),
-    up('Veg cooler', pw('FreezerDoors_2Door_15', -6, -21.97, 's', { stock: 1 })),
-    up('Popsicle cooler', pw('FreezerDoors_2Door_15', -5.25, -21.97, 's', { stock: 1 })),
-    up('Dinner cooler', pw('FreezerDoors_2Door_15', -4.5, -21.97, 's', { stock: 1 })),
-    up('Fries cooler', pw('FreezerDoors_2Door_15', -3.75, -21.97, 's', { stock: 1 })),
-    freezer('Ice cream chest', 'IslandFreezer_Coffin_20', -6.4),
-    freezer('Pizza chest', 'IslandFreezer_Open_20', -5.4),
-    freezer('Pops chest', 'IslandFreezer_Coffin_20', -4.4),
-    freezer('Bagged veg chest', 'IslandFreezer_Open_20', -3.4),
-    freezer('Waffle chest', 'IslandFreezer_Coffin_20', -2.4),
-    board('Ice cream deal', 'ICE CREAM 2 FOR 6', -2.9, -18.9, 1.1),
-    up('Recycling', pw('TrashRecycle_Station_01', -1.7, -21.65, 's', { spots: 0 })),
-    up('Frozen plant', pw('Planter_Tall_01', -8.1, -18.6, 0, { spots: 0 })),
-    up('Full basket', pw('Basket_Hand_Full_01', -2.0, -20.9, 0.4, { spots: 0 })),
-    board('Pizza deal', 'PIZZA 3 FOR 10', -6.3, -18.9, 1.0),
-    up('Basket stack', pw('Basket_Stack_01', -1.2, -21.6, 0.2, { spots: 0 })),
-    up('Ice bags', pw('IceBag_01', -3.05, -21.6, 0, { n: 3, spots: 0 })),
-    board('Frozen veg deal', 'FROZEN VEG 4 FOR 5', -4.6, -18.9, 1.1),
-    up('Tub chest', pw('IceCream_Chest_01', -2.4, -21.6, 's', { on: [['pw/Tub_IceCream_01', -0.12, 0, 0, 0.43, 2.4], ['pw/Tub_IceCream_01', 0.02, 0, 1, 0.43, 2.4], ['pw/Tub_IceCream_01', 0.14, 0, 2, 0.43, 2.4]] })),
-    board('Frozen specials', 'FROZEN SPECIALS', -8.0, -20.3, 1.0),
-    up('Dolly', pw('DeliveryBoxes_Dolly_01', -8.15, -21.3, 0.2, { spots: 0 })),
-    board('Bagged ice deal', 'BAGGED ICE 2 FOR 5', -1.1, -18.85, 1.0),
-    mat('Cold floor mat', -3.4, -1.8, -20.9, -19.9, 0xc7dcf0)
-  ], [SIGN, clerk(-1.5, -20.5, 'k'), up('Ice cream island', pw('IslandFreezer_End_10', -1.45, -19.55, 's', { stock: 1 })), lights([[-6, -20.6], [-3, -20.6]]), HELP,
-    up('Showcase', { sign: 'gold' }, pw('IslandFreezer_Coffin_20', -7.4, -19.7, 's', { stock: 1 }))])
+    door('Ice cream cooler', -7.5), door('Pizza cooler', -6.75), door('Veg cooler', -6), door('Popsicle cooler', -5.25), door('Dinner cooler', -4.5), door('Fries cooler', -3.75),
+    freezer('Ice cream chest', 'IslandFreezer_Coffin_20', -5.9),
+    freezer('Pizza chest', 'IslandFreezer_Open_20', -4.9),
+    freezer('Pops chest', 'IslandFreezer_Coffin_20', -3.9),
+    freezer('Bagged veg chest', 'IslandFreezer_Open_20', -2.9),
+    freezer('Waffle chest', 'IslandFreezer_End_10', -2.15),
+    deal('Ice cream deal', 'ICE CREAM 2 FOR 6', -7.2, -20.4),
+    up('Recycling', pw('TrashRecycle_Station_01', -6.2, -20.3, 's', { spots: 0 })),
+    up('Frozen plant', pw('Planter_Tall_01', -6.75, -20.3, 0, { spots: 0 })),
+    up('Full basket', pw('Basket_Hand_Full_01', -5.75, -20.3, 0.4, { spots: 0 })),
+    door('Meal cooler', -3.0),
+    up('Basket stack', pw('Basket_Stack_01', -5.4, -20.3, 0.2, { spots: 0 })),
+    up('Ice bags', pw('IceBag_01', -4.7, -20.3, 0, { n: 3, spots: 0 })),
+    door('Dessert cooler', -2.25),
+    up('Tub chest', pw('IceCream_Chest_01', -2.8, -20.9, 's', { on: [['pw/Tub_IceCream_01', -0.12, 0, 0, 0.43, 2.4], ['pw/Tub_IceCream_01', 0.02, 0, 1, 0.43, 2.4], ['pw/Tub_IceCream_01', 0.14, 0, 2, 0.43, 2.4]] })),
+    up('Ice cream bin', pw('DumpBin_Wire_01', -3.5, -20.9, 's')),
+    up('Dolly', pw('DeliveryBoxes_Dolly_01', -4.05, -20.3, 0.2, { spots: 0 })),
+    up('Ice bin', pw('DumpBin_Wire_01', -2.1, -20.9, 's')),
+    mat('Cold floor mat', -6.6, -2.2, -20.95, -20.0, 0xc7dcf0)
+  ], [SIGN, counter('Frozen desk', -1.55, -21.5, 'k', -1.32, -21.5), up('Ice cream island', pw('IslandFreezer_End_10', -6.65, -19.7, 's', { stock: 1 })), lights([[-6, -20.6], [-3, -20.6]]), HELP,
+    up('Showcase', { sign: 'gold' }, pw('IslandFreezer_End_10', -1.65, -19.7, 'b', { stock: 1 }))])
 };
 
 function deli(name, z) {
