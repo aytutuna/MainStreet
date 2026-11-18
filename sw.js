@@ -1,4 +1,4 @@
-var CACHE = 'mainstreet-862ad111';
+var CACHE = 'mainstreet-a5c45753';
 var FILES = [
   './',
   'data.js',
@@ -264,11 +264,8 @@ var FILES = [
   'assets/models/nature/License.txt',
   'assets/models/nature/canoe.glb',
   'assets/models/nature/flower_purpleA.glb',
-  'assets/models/nature/flower_purpleB.glb',
   'assets/models/nature/flower_redA.glb',
-  'assets/models/nature/flower_redB.glb',
   'assets/models/nature/flower_yellowA.glb',
-  'assets/models/nature/flower_yellowB.glb',
   'assets/models/nature/grass_large.glb',
   'assets/models/nature/grass_leafs.glb',
   'assets/models/nature/lily_large.glb',
