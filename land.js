@@ -3,7 +3,7 @@
 export var DOM = [-150, 150, -150, 64];
 // the camera never gets further out than this, so nothing grows past it
 var LAWNS = [[27.8, 47.5, -40, 8], [-47.5, -28, -40, 8]];
-var SEEN = [-112, 112, -116, 54];
+var SEEN = [-72, 72, -84, 50];
 export var FLAT = [[-48, 48, -42, 44], [-80, 80, 2, 22]];
 
 var LAKES = [
@@ -206,7 +206,7 @@ var LONE = ['nature/tree_oak*2.3', 'nature/tree_plateau*2.3', 'nature/tree_defau
 var BUSH = ['nature/plant_bush*2.5', 'nature/plant_bushLarge*2.5', 'nature/plant_bushSmall*2.8'];
 var CLIFF = ['nature/stone_largeA*2.4', 'nature/stone_largeB*2.4', 'nature/stone_largeC*2.4', 'nature/stone_largeA*1.6'];
 var STONE = ['nature/stone_largeA*1.2', 'nature/stone_largeB*1.2', 'nature/stone_largeC*1.2', 'nature/stone_smallA*1.6', 'nature/stone_smallB*1.6'];
-var FLOWER = ['nature/flower_redB*1.5', 'nature/flower_yellowB*1.5', 'nature/flower_purpleB*1.5', 'nature/flower_redA*1.5', 'nature/flower_yellowA*1.5', 'nature/flower_purpleA*1.5'];
+var FLOWER = ['nature/flower_redA*1.5', 'nature/flower_yellowA*1.5', 'nature/flower_purpleA*1.5'];
 var GRASS = ['nature/grass_leafs*2', 'nature/grass_large*1.5', 'nature/grass_leafs*1.6'];
 var CANOE = 'nature/canoe*2.2';
 var REED = ['nature/plant_flatTall*2.2'];
@@ -215,7 +215,9 @@ export var REFS = [[CANOE], CONIFER, BROAD, FALL, LONE, BUSH, CLIFF, STONE, FLOW
 
 // Everything that grows or lies about, as [ref, x, z, turn, size, water]. Trees come on a jittered grid, thick where the
 // wood is and thin in the meadows; flowers and grass in patches; stones and reeds at the water
-export function scenery() {
+// blocked says where something already stands on the lawns
+var LAMPS = [[-26.6, 0], [-26.6, -14]];
+export function scenery(blocked) {
   var seed = 11;
   function rand() {
     seed = (seed * 1664525 + 1013904223) >>> 0;
@@ -256,7 +258,7 @@ export function scenery() {
     }
   }
   // patches of flowers in the meadows, one colour mostly, a few of another
-  for (var n = 0; n < 3000 && out.flowers.length < 900; n++) {
+  for (var n = 0; n < 3000 && out.flowers.length < 320; n++) {
     var px = SEEN[0] + rand() * (SEEN[1] - SEEN[0]);
     var pz = SEEN[2] + rand() * (SEEN[3] - SEEN[2]);
     if (away(px, pz) < 2.5 || shore(px, pz) < 1.6 || forest(px, pz) > 0.3 || onTrack(px, pz, 2) || slope(px, pz) > 0.5) continue;
@@ -295,8 +297,9 @@ export function scenery() {
       var lx = r[0] + 1 + rand() * (w - 2);
       var lz = r[2] + 1 + rand() * (d - 2);
       var bl = rand();
+      if (blocked(lx, lz) || LAMPS.some(function (q) { return Math.hypot(lx - q[0], lz - q[1]) < 3.5; })) continue;
       if (bl < 0.5) for (var m = 3; m > 0; m--) out.low.push([pick(BUSH), lx + (rand() - 0.5) * 3, lz + (rand() - 0.5) * 3, rand() * 6.283, 1 + rand() * 0.7]);
-      else if (bl < 0.8) for (var q2 = 8; q2 > 0; q2--) out.flowers.push([pick(FLOWER), lx + (rand() - 0.5) * 4, lz + (rand() - 0.5) * 4, rand() * 6.283, 0.9 + rand() * 0.5]);
+      else if (bl < 0.8) for (var q2 = 5; q2 > 0; q2--) out.flowers.push([pick(FLOWER), lx + (rand() - 0.5) * 4, lz + (rand() - 0.5) * 4, rand() * 6.283, 0.9 + rand() * 0.5]);
     }
   });
   // a canoe out on the lake and one pulled up on the sand
