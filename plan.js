@@ -536,38 +536,52 @@ AREAS.seasonal = {
     up('Santa display', { sign: 'gold' }, pw('PalletDisplay_Half_01', -11.1, -2.9, 's', { on: [[XM + 'sled*0.35', 0, 0.1, 0, 0.225], [XM + 'reindeer*0.35', 0, 0, 0, 0.375]] }))])
 };
 
+// two rows of racks and tables from the aisle side, shoe caps along the north line, the window and mirror on the west wall
+function xw(x0, ws) {
+  var out = [];
+  ws.forEach(function (w) {
+    out.push(+(x0 - w / 2).toFixed(3));
+    x0 -= w;
+  });
+  return out;
+}
+var CRA = xw(-10.35, [0.5, 0.6, 0.5, 0.5, 0.6]);
+var CRB = xw(-10.35, [0.5, 0.6, 0.6, 0.5, 0.5, 0.6]);
+var CSH = xw(-10.6, [0.5, 0.5, 0.5, 0.5]);
+var CZA = -6.1;
+var CZB = -7.6;
 AREAS.clothes = {
   cx: -12.2, cz: -8.0, vacant: [-14.7, -9.7, -10.9, -5.0], sign: [-12.5, -10.3, 1.9],
   floor: [{ poly: rbox(-14.7, -9.7, -10.8, -5.1, 0.6), finish: 'carpet' }],
   ups: ups([
-    rail('Shirt rack', -10.9, -5.9, 's'),
-    up('Tee table', pw('Table_Promo_Tiered_01', -12.0, -5.9, 's', { stock: 1 })),
-    dummy('Window mannequin', -10.0, -5.9),
-    rail('Jacket rack', -13.1, -5.9, 's'),
-    rail('Coat rack', -10.9, -7.4, 's'),
-    up('Sweater table', pw('Table_Promo_Tiered_01', -14.2, -5.9, 's', { stock: 1 })),
-    rail('Kids rack', -12.0, -7.4, 's'),
-    dummy('Suit mannequin', -10.0, -7.4),
-    up('Denim table', pw('Table_Promo_Tiered_01', -10.9, -8.9, 's', { stock: 1 })),
-    up('Sock table', pw('Table_Promo_Tiered_01', -13.1, -7.4, 's', { stock: 1 })),
-    rail('Skirt rack', -12.0, -8.9, 's'),
-    rail('Hoodie rack', -13.1, -8.9, 's'),
-    up('Hoodie table', pw('Table_Promo_Tiered_01', -14.2, -8.9, 's', { stock: 1 })),
-    up('Sneaker end', pw('Gondola_EndCap_Low_10', -10.45, -10.65, 's', { stock: 1 })),
-    up('Boot end', pw('Gondola_EndCap_Low_10', -11.0, -10.65, 's', { stock: 1 })),
-    up('Sandal end', pw('Gondola_EndCap_Low_10', -11.55, -10.65, 's', { stock: 1 })),
-    up('Slipper end', pw('Gondola_EndCap_Low_10', -12.1, -10.65, 's', { stock: 1 })),
+    rail('Shirt rack', CRA[0], CZA, 's'),
+    up('Tee table', pw('Table_Promo_Tiered_01', CRA[1], CZA, 's', { stock: 1 })),
+    dummy('Window mannequin', -10.0, CZA),
+    rail('Jacket rack', CRA[2], CZA, 's'),
+    rail('Coat rack', CRA[3], CZA, 's'),
+    up('Sweater table', pw('Table_Promo_Tiered_01', CRA[4], CZA, 's', { stock: 1 })),
+    rail('Kids rack', CRB[0], CZB, 's'),
+    dummy('Suit mannequin', -10.0, CZB),
+    up('Denim table', pw('Table_Promo_Tiered_01', CRB[1], CZB, 's', { stock: 1 })),
+    up('Sock table', pw('Table_Promo_Tiered_01', CRB[2], CZB, 's', { stock: 1 })),
+    rail('Skirt rack', CRB[3], CZB, 's'),
+    rail('Hoodie rack', CRB[4], CZB, 's'),
+    up('Hoodie table', pw('Table_Promo_Tiered_01', CRB[5], CZB, 's', { stock: 1 })),
+    up('Sneaker end', pw('Gondola_EndCap_Low_10', CSH[0], -10.76, 's', { stock: 1 })),
+    up('Boot end', pw('Gondola_EndCap_Low_10', CSH[1], -10.76, 's', { stock: 1 })),
+    up('Sandal end', pw('Gondola_EndCap_Low_10', CSH[2], -10.76, 's', { stock: 1 })),
+    up('Slipper end', pw('Gondola_EndCap_Low_10', CSH[3], -10.76, 's', { stock: 1 })),
     up('Fitting rooms', { box: [-14.7, -13.55, -10.8, -9.95, 0, 0.9], c: 0x8a7a68 }, { box: [-14.55, -13.7, -9.97, -9.93, 0.05, 0.85], c: 0xe9dcc4 }),
-    up('Wall mirror', { box: [-14.7, -14.62, -9.5, -8.3, 0.1, 0.85], c: 0xb8d4e0 }),
-    d('Kids mannequin', 'shop/mannequin*0.7', -14.4, -9.55, 0.3),
-    d('Clothes plant', 'furn/pottedPlant', -14.4, -5.25, 0, 0.9),
-    mat('Carpet runner', -13.3, -10.5, -7.15, -6.05, 0x6f84a8),
-    d('Hanger boxes', 'furn/cardboardBoxOpen', -14.4, -6.5, 0.2, 1.2),
-    d('Hat boxes', 'furn/cardboardBoxOpen', -9.95, -6.6, 0.2, 1.1)
-  ], [SIGN, up('Cash wrap', till(-9.95, -10.35, 'k'), { staff: [-9.5, -10.35, 'k'] }),
-    up('Window display', { box: [-14.65, -13.75, -8.0, -6.8, 0, 0.12], c: 0xd9c9a8, flat: 1 }, pw('Slatwall_Panel_10', -14.58, -7.4, 'b', { n: 2, spots: 0 }), m('shop/mannequin', -14.2, -7.75, Math.PI / 2), m('shop/mannequin', -14.2, -7.05, Math.PI / 2)),
-    lights([[-13, -7.0], [-11, -8.7]]), HELP,
-    up('Fashion podium', { sign: 'gold' }, { box: [-10.4, -9.6, -9.3, -8.5, 0, 0.1], c: 0xe0b43a }, m('shop/mannequin', -10.0, -8.9, Math.PI / 2))])
+    up('Wall mirror', { box: [-14.7, -14.62, -9.95, -8.75, 0.1, 0.85], c: 0xb8d4e0 }),
+    d('Kids mannequin', 'shop/mannequin*0.7', -14.2, -9.4, Math.PI / 2),
+    d('Clothes plant', 'furn/pottedPlant', -14.45, -5.3, 0, 0.9),
+    mat('Carpet runner', -13.3, -10.5, -9.1, -8.6, 0x6f84a8),
+    d('Hanger boxes', 'furn/cardboardBoxOpen', -14.35, -6.2, 0.2, 1.2),
+    perch('Hat boxes', 'furn/cardboardBoxOpen', CRA[4], CZA, 0.475, 0.6)
+  ], [SIGN, counter('Cash wrap', -10.05, -10.35, 'k', -9.8, -10.35),
+    up('Window display', { box: [-14.65, -13.75, -8.75, -7.75, 0, 0.12], c: 0xd9c9a8, flat: 1 }, pw('Slatwall_Panel_10', -14.58, -8.25, 'b', { n: 2, spots: 0 }), m('shop/mannequin', -14.2, -8.5, Math.PI / 2), m('shop/mannequin', -14.2, -8.0, Math.PI / 2)),
+    lights([[-13, -6.8], [-11, -8.3]]), HELP,
+    up('Fashion podium', { sign: 'gold' }, { box: [-10.4, -9.75, -9.3, -8.6, 0, 0.1], c: 0xe0b43a }, m('shop/mannequin', -10.05, -8.95, Math.PI / 2))])
 };
 
 AREAS.sports = {
