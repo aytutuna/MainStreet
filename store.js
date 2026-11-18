@@ -4601,7 +4601,7 @@ function tagText(id, st, mode) {
     if (!st.lv) return st.name;
     return mode ? st.name + ' ' + st.lv : st.name + '  Lv ' + st.lv + (PL[id] ? '' : '/' + UPS + '  ' + '★'.repeat(st.stars));
   }
-  return st.avail ? st.name + '  $' + short(st.price) : st.name + '  locked';
+  return st.name + '  $' + short(st.price);
 }
 
 function clash(a, b) {
@@ -4624,7 +4624,7 @@ function overlay(now) {
     var vis = open && sp.z < 1 && sp.x > -20 && sp.x < cw + 20 && sp.y > IT + 34 && sp.y < ch - IB;
     if (open && sp.z < 1) anchorXY[id] = { x: sp.x, y: sp.y, top: sp.y };
     else delete anchorXY[id];
-    var want = vis && (st.own || st.avail || focus.dist < 40) && !says.some(function (w) { return w.id === id; });
+    var want = vis && (st.own || st.avail) && !says.some(function (w) { return w.id === id; });
     var ready = !st.own && st.avail && S.cash >= st.price;
     list.push({ id: id, t: t, st: st, x: sp.x, y: sp.y, want: want, ready: ready, below: selId === id,
       pri: selId === id ? 5 : st.alert ? 4 : ready ? 3 : st.own ? 2 : st.avail ? 1 : 0 });
