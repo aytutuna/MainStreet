@@ -957,11 +957,26 @@ function Batch() {
     if (sets[key].low) sets[key].low.push(lowOf(geom, goods ? GOODS_CELL : FIX_CELL).clone().applyMatrix4(mtx));
   }
   this.sets = sets;
+  // where each model stands and the way it faces, kept so an icon can be framed on and turned to the piece itself
+  var fp = [];
+  function note(ref, x, z, rot, k) {
+    var b = lib.model(ref).box;
+    if (b.x1 <= b.x0) return;
+    k = k || 1;
+    var c = rotY((b.x0 + b.x1) / 2 * k, (b.z0 + b.z1) / 2 * k, rot || 0);
+    var w = (b.x1 - b.x0) * k;
+    var d = (b.z1 - b.z0) * k;
+    var a = w * d * (b.h * k > 0.3 ? 1 : 0.2);
+    fp.push([x + c[0], z + c[1], Math.hypot(w, d) / 2, b.h * k, a * Math.sin(rot || 0), a * Math.cos(rot || 0)]);
+  }
+  this.fp = fp;
   this.add = function (ref, x, z, rot, y, skip) {
+    note(ref, x, z, rot);
     var m = lib.model(ref);
     m.parts.forEach(function (p) { if (p.mat !== skip) put(p.geom, p.mat, x, (y || 0) - Math.min(0, m.box.y0), z, rot); });
   };
   this.model = function (ref, x, y, z, rot, k) {
+    note(ref, x, z, rot, k);
     lib.model(ref).parts.forEach(function (p) { put(p.geom, p.mat, x, y, z, rot, k); });
   };
   this.plane = function (mat, w, h, x, y, z, rot, rank) {
@@ -969,6 +984,7 @@ function Batch() {
     put(g, mat, x, y, z, rot, 0, rank);
   };
   this.raw = function (ref, x, z, rot, y, k, rank) {
+    note(ref, x, z, rot, k);
     lib.model(ref).parts.forEach(function (p) { put(p.geom, p.mat, x, y, z, rot, k, rank === undefined ? -1 : rank); });
   };
   // the goods of a stocked Pipework fixture, each product at its own rank shifted by salt
@@ -979,6 +995,7 @@ function Batch() {
     });
   };
   this.take = function (o) {
+    fp.push.apply(fp, o.fp);
     Object.keys(o.sets).forEach(function (key) {
       var from = o.sets[key];
       if (!sets[key]) sets[key] = { mat: from.mat, list: [], rank: [], low: from.low ? [] : null };
@@ -1012,6 +1029,7 @@ function Batch() {
   };
   this.group = function (shadow) {
     var g = new THREE.Group();
+    if (fp.length) g.userData.fp = fp.slice();
     Object.keys(sets).forEach(function (k) {
       var list = sets[k].list;
       var o;
@@ -2334,6 +2352,7 @@ function lane(hall, li, lv, x) {
   var zc = PLAN.bank.z;
   var m = new THREE.Group();
   m.position.set(x, 0, zc);
+  m.userData.fp = [[-0.15, -0.35, 1.1, 1, -2, 0]];
   // the belt runs south toward the cashier's end, so the shopper pays at the south end of the lane's west side
   m.add(mesh('pw/Checkout_Lane_30', -0.15, -0.35, -Math.PI / 2));
   var cashier = crew('shop/character-employee', 'idle');
@@ -5396,19 +5415,58 @@ function upIcon(id, k) {
   return url;
 }
 
+// the biggest cluster of models in a group of a place's pieces, which the icon is framed on, and the group turned so the
+// cluster's front faces +z. Returns its box, or null when the group holds no models
+function focusOf(g) {
+  var pts = [];
+  var v = new THREE.Vector3();
+  g.traverse(function (o) {
+    if (!o.userData.fp) return;
+    o.userData.fp.forEach(function (e) {
+      var d = new THREE.Vector3(e[4], 0, e[5]);
+      var n = d.length();
+      d.transformDirection(o.matrixWorld).multiplyScalar(n);
+      v.set(e[0], 0, e[1]).applyMatrix4(o.matrixWorld);
+      pts.push({ x: v.x, z: v.z, r: e[2], h: e[3], fx: d.x, fz: d.z, a: n });
+    });
+  });
+  if (!pts.length) return null;
+  var grp = pts.map(function (p, i) { return i; });
+  function root(i) { return grp[i] === i ? i : (grp[i] = root(grp[i])); }
+  pts.forEach(function (p, i) {
+    for (var j = 0; j < i; j++) if (Math.hypot(p.x - pts[j].x, p.z - pts[j].z) < p.r + pts[j].r + 1) grp[root(i)] = root(j);
+  });
+  var size = {};
+  pts.forEach(function (p, i) { size[root(i)] = (size[root(i)] || 0) + p.r * p.r; });
+  var best = Object.keys(size).sort(function (a, b) { return size[b] - size[a]; })[0];
+  var cl = pts.filter(function (p, i) { return root(i) === +best; });
+  var sx = 0;
+  var sz = 0;
+  var sa = 0;
+  cl.forEach(function (p) { sx += p.fx; sz += p.fz; sa += p.a; });
+  var turn = Math.hypot(sx, sz) < 0.3 * sa ? 0 : -Math.atan2(sx, sz);
+  g.rotation.y = turn;
+  var box = new THREE.Box3();
+  cl.forEach(function (p) {
+    var q = rotY(p.x, p.z, turn);
+    box.expandByPoint(new THREE.Vector3(q[0] - p.r, 0, q[1] - p.r)).expandByPoint(new THREE.Vector3(q[0] + p.r, Math.max(0.3, p.h), q[1] + p.r));
+  });
+  g.updateMatrixWorld(true);
+  return box;
+}
+
 // what level k of a place adds, or null when it only changes the paint
 function placeIcon(id, k) {
   var key = id + '#' + k;
   if (icons[key] !== undefined) return icons[key];
   var pl = places[id];
   var g = new THREE.Group();
-  // the parking lot's levels are paving, bays and lamps spread over the whole front
-  if (id === 'lot') return (icons[key] = null);
+  var people = false;
   if (pl) {
     // people stand apart from the piece, so a level with some without them is drawn without them
     var its = pl.items.filter(function (it) { return it.lv === k && k > 0; });
     var bare = its.filter(function (it) { var sk = false; it.g.traverse(function (o) { if (o.isSkinnedMesh) sk = true; }); return !sk; });
-    its = bare.length ? bare : its;
+    people = bare.length > 0;
     its.forEach(function (it) { g.add(clone(it.g)); });
     // a level that spreads over the whole site is drawn by the first piece and what stands near it
     if (g.children.length > 1 && boxOf(g).getSize(new THREE.Vector3()).length() > 20) {
@@ -5431,8 +5489,10 @@ function placeIcon(id, k) {
   }
   g.traverse(function (o) { o.visible = true; });
   g.traverse(function (o) { if (o.userData.lod) o.visible = o.userData.lod === 'hi'; });
+  // a level with some pieces that stand alone is drawn without the people who go with the others
+  if (people && id !== 'dock') g.traverse(function (o) { if (o.isSkinnedMesh) o.visible = false; });
   g.updateMatrixWorld(true);
-  icons[key] = snap(g);
+  icons[key] = snap(g, id === 'dock' ? null : focusOf(g));
   return icons[key];
 }
 
