@@ -29,6 +29,7 @@ var bestAt = 0;
 var sheetOpen = false;
 var bq = [];
 var bqBusy = false;
+var toastTimer = 0;
 var testTaps = 0;
 var FREE_KEY = 'mainstreet.free';
 var free = false;
@@ -214,6 +215,7 @@ function nextBanner() {
   bqBusy = true;
   setTimeout(function () {
     var b = $('banner');
+    hideToast();
     b.innerHTML = q.h;
     b.hidden = false;
     b.style.animation = 'none';
@@ -714,12 +716,28 @@ var METER_HINT = {
 
 // the first time a meter runs low, once ever, and not over a box or before the first purchase
 function meterHint(id) {
-  if (hinted[id] || !started() || veilUp()) return;
+  if (hinted[id] || !started() || veilUp() || bqBusy || toastTimer) return;
   hinted[id] = 1;
   try {
     localStorage.setItem(HINT_KEY, JSON.stringify(hinted));
   } catch (e) {}
-  banner('<b>' + METER_HINT[id][0] + '</b><small>' + METER_HINT[id][1] + '</small>', 0.5);
+  var t = $('mtoast');
+  var a = $('app').getBoundingClientRect();
+  var m = $(id).getBoundingClientRect();
+  t.innerHTML = '<b>' + METER_HINT[id][0] + '</b><small>' + METER_HINT[id][1] + '</small>';
+  t.hidden = false;
+  var w = t.offsetWidth;
+  var left = Math.max(8, Math.min(a.width - w - 8, m.left - a.left + m.width / 2 - w / 2));
+  t.style.left = left + 'px';
+  t.style.top = m.bottom - a.top + 10 + 'px';
+  t.style.setProperty('--caret', Math.round(m.left - a.left + m.width / 2 - left) + 'px');
+  toastTimer = setTimeout(hideToast, 4000);
+}
+
+function hideToast() {
+  clearTimeout(toastTimer);
+  toastTimer = 0;
+  $('mtoast').hidden = true;
 }
 
 function veilUp() {
@@ -1287,6 +1305,7 @@ function start() {
   setFree(free);
   paintFree();
   $('stars').addEventListener('click', openSell);
+  $('mtoast').addEventListener('click', hideToast);
   $('m-in').addEventListener('click', openDraw);
   $('m-tills').addEventListener('click', function () { tapMeter('hall', capacity); });
   $('m-shelf').addEventListener('click', function () { tapMeter('dock', stockCap); });
