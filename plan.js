@@ -709,37 +709,52 @@ AREAS.home = {
 var CARS = ['toy/vehicle-suv*0.2', 'toy/vehicle-racer*0.2', 'toy/vehicle-truck*0.2', 'toy/vehicle-speedster*0.2', 'toy/vehicle-monster-truck*0.2', 'toy/vehicle-vintage-racer*0.2'];
 var DOLLS = [XM + 'nutcracker*0.22', XM + 'gingerbread-man*0.45', XM + 'gingerbread-woman*0.45', XM + 'snowman*0.25'];
 var PLUSH = ['pets/animal-cat*1.1', 'pets/animal-dog*1.0', 'pets/animal-fish*1.4', XM + 'reindeer*0.3'];
+// a row of centres along x from x0 for things of the given widths, side by side
+function xs(x0, ws) {
+  var out = [];
+  ws.forEach(function (w) {
+    out.push(+(x0 + w / 2).toFixed(3));
+    x0 += w;
+  });
+  return out;
+}
+// a low deal board at floor level beside a run
+function deal(name, text, x, z) {
+  return up(name, { text: text, x: x, z: z, r: 0, y: 0.5, w: 0.55, h: 0.22, post: true });
+}
+var TZ = -10.5;
+var TX = xs(-6.9, [0.25, 0.5, 0.6, 0.65, 0.5, 0.5, 0.45, 0.5, 0.6, 0.25]);
 AREAS.toys = {
   cx: -4.1, cz: -10.5, vacant: [-6.9, -1.25, -11.7, -9.3], sign: [-3.2, -11.45, 1.6],
   floor: [{ poly: rbox(-6.9, -1.25, -11.7, -9.3, 0.5), finish: 0xe6dff3 }],
   ups: ups([
-    up('Toy car shelf', pw('Gondola_Island_10', -6.05, -10.6, 's', { spots: 2, on: shelfGoods(CARS, 2, { turn: Math.PI / 2 }) })),
-    up('Monster truck end', pw('Gondola_EndCap_Low_10', -6.65, -10.6, 'k', { on: shelfGoods(CARS.slice(2), 2, { zs: [0.03], ys: [0.15, 0.55, 0.95], turn: Math.PI / 2 }) })),
-    up('Block table', pw('Table_Promo_Tiered_01', -5.25, -10.6, 's', { on: tierGoods(TBOX) })),
-    fx('Claw machine', 'arcade/claw-machine', -7.6, -10.15, 'k'),
-    up('Doll pegs', pw('Gondola_Island_Peg_10', -4.45, -10.6, 's', { spots: 2, on: pegGoods(DOLLS, 0.16, { xs: [-0.22, 0.22] }) })),
-    up('Board game shelf', pw('Gondola_Island_10', -3.65, -10.6, 's', { spots: 2, on: shelfGoods(TBOX, 3) })),
-    fx('Gacha machine', 'shop/gacha-machine', -7.6, -11.05, 'k'),
-    up('Puzzle pegs', pw('Gondola_Island_Peg_10', -2.85, -10.6, 's', { spots: 2, on: pegGoods(TBOX, 0.09) })),
-    up('Plush table', pw('Table_Promo_Tiered_01', -2.05, -10.6, 's', { on: tierGoods(PLUSH) })),
-    up('Toy tower end', pw('Gondola_EndCap_10', -1.45, -10.6, 'b', { on: shelfGoods([XM + 'present-a-cube*0.35', XM + 'present-b-round*0.35'], 2, { zs: [0.03] }) })),
-    perch('Toy racer', 'toy/vehicle-racer*0.4', -6.05, -10.6, 0.92),
-    perch('Nutcracker doll', XM + 'nutcracker*0.4', -4.45, -10.6, 0.92),
-    perch('Toy truck', 'toy/vehicle-truck*0.45', -3.7, -10.6, 0.92),
-    perch('Plush cat', 'pets/animal-cat*2.2', -2.85, -10.6, 0.92),
-    board('Toy sale board', 'TOY SALE', -6.8, -9.5, 0.9),
-    perch('Block tower', TBOX[1], -5.25, -10.72, 0.475),
-    mat('Play mat', -6.5, -5, -11.75, -10.65, 0xf2c6d8),
-    perch('Monster truck', 'toy/vehicle-monster-truck*0.4', -2.95, -10.6, 0.92),
-    perch('Toy snowman', XM + 'snowman*0.3', -6.05, -10.5, 0.92),
-    perch('Puzzle box', TBOX[4], -3.55, -10.6, 0.92),
-    perch('Toy train', XM + 'train-locomotive*0.45', -1.45, -10.6, 0.92),
-    perch('Toy reindeer', XM + 'reindeer*0.3', -2.05, -10.72, 0.475),
-    board('Kids board', 'KIDS CORNER', -6.8, -11.2, 0.9),
-    mat('Game mat', -3.9, -2.4, -10.35, -9.25, 0xe8d9f4)
-  ], [SIGN, counter('Toy desk', -0.85, -9.8, 'k', -0.4, -9.8),
-    up('Present tower', on(XP[0], -6.65, -10.6, 0.72, 1.6), on(XP[1], -6.65, -10.6, 1.04, 1.3, 0.4)), lights([[-5, -10.6], [-2.8, -10.6]]), HELP,
-    up('Giant plush', { sign: 'gold' }, on('pets/animal-dog*3', -4.45, -10.6, 0.92))])
+    up('Toy car shelf', pw('Gondola_Island_10', TX[1], TZ, 's', { spots: 2, on: shelfGoods(CARS, 2, { turn: Math.PI / 2 }) })),
+    up('Monster truck end', pw('Gondola_EndCap_Low_10', TX[0], TZ, 'k', { on: shelfGoods(CARS.slice(2), 2, { zs: [0.03], ys: [0.15, 0.55, 0.95], turn: Math.PI / 2 }) })),
+    up('Block table', pw('Table_Promo_Tiered_01', TX[2], TZ, 's', { on: tierGoods(TBOX) })),
+    fx('Claw machine', 'arcade/claw-machine', TX[3], TZ, 's'),
+    up('Doll pegs', pw('Gondola_Island_Peg_10', TX[4], TZ, 's', { spots: 2, on: pegGoods(DOLLS, 0.16, { xs: [-0.22, 0.22] }) })),
+    up('Board game shelf', pw('Gondola_Island_10', TX[5], TZ, 's', { spots: 2, on: shelfGoods(TBOX, 3) })),
+    fx('Gacha machine', 'shop/gacha-machine', TX[6], TZ, 's'),
+    up('Puzzle pegs', pw('Gondola_Island_Peg_10', TX[7], TZ, 's', { spots: 2, on: pegGoods(TBOX, 0.09) })),
+    up('Plush table', pw('Table_Promo_Tiered_01', TX[8], TZ, 's', { on: tierGoods(PLUSH) })),
+    up('Toy tower end', pw('Gondola_EndCap_10', TX[9], TZ, 'b', { on: shelfGoods([XM + 'present-a-cube*0.35', XM + 'present-b-round*0.35'], 2, { zs: [0.03] }) })),
+    perch('Toy racer', 'toy/vehicle-racer*0.4', TX[1], TZ, 0.92),
+    perch('Nutcracker doll', XM + 'nutcracker*0.4', TX[4], TZ, 0.92),
+    perch('Toy truck', 'toy/vehicle-truck*0.45', TX[5], TZ, 0.92),
+    perch('Plush cat', 'pets/animal-cat*2.2', TX[7], TZ, 0.92),
+    deal('Toy sale board', 'TOY SALE', -6.55, TZ - 0.85),
+    perch('Block tower', TBOX[1], TX[2], TZ - 0.12, 0.475),
+    mat('Play mat', -6.5, -5, -11.55, -9.45, 0xf2c6d8),
+    perch('Monster truck', 'toy/vehicle-monster-truck*0.4', TX[7] - 0.1, TZ, 0.92),
+    perch('Toy snowman', XM + 'snowman*0.3', TX[1], TZ + 0.1, 0.92),
+    perch('Puzzle box', TBOX[4], TX[5] + 0.1, TZ, 0.92),
+    perch('Toy train', XM + 'train-locomotive*0.45', TX[9], TZ, 0.92),
+    perch('Toy reindeer', XM + 'reindeer*0.3', TX[8], TZ - 0.12, 0.475),
+    perch('Plush pile', 'pets/animal-dog*1.0', TX[8] + 0.15, TZ - 0.12, 0.475),
+    mat('Game mat', -3.9, -2.4, -11.55, -9.45, 0xe8d9f4)
+  ], [SIGN, counter('Toy desk', -6.65, TZ + 0.75, 's', -6.65, TZ + 1.05),
+    up('Present tower', on(XP[0], TX[0], TZ, 0.72, 1.6), on(XP[1], TX[0], TZ, 1.04, 1.3, 0.4)), lights([[-5.4, TZ + 0.6], [-3.2, TZ + 0.6]]), HELP,
+    up('Giant plush', { sign: 'gold' }, on('pets/animal-dog*3', TX[4], TZ, 0.92))])
 };
 
 var BOOKS = ['furn/books', 'furn/books*1.2', TBOX[0], 'furn/books', TBOX[2], 'furn/books*1.2', TBOX[4], 'furn/books'];
