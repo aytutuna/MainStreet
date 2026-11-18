@@ -561,6 +561,7 @@ function daylight() {
   return (t - 440) / 40;
 }
 
+var wash;
 function dayStep(dt) {
   dayT += dt;
   var l = daylight();
@@ -574,6 +575,8 @@ function dayStep(dt) {
   doorMats.forEach(function (m) { m.emissive.setScalar(0.3 + 0.7 * (1 - k)); });
   poolMat.opacity = 0.5 * (1 - k);
   poolMat.visible = k < 0.98;
+  washMat.opacity = 0.2 * (1 - k);
+  wash.visible = k < 0.98;
 }
 
 function sceneUp() {
@@ -590,6 +593,9 @@ function sceneUp() {
   cam = new THREE.PerspectiveCamera(40, 1, 1, 400);
   hemi = new THREE.HemisphereLight(0xffffff, 0xb4bedc, 2.4);
   scene.add(hemi);
+  wash = new THREE.Mesh(new THREE.PlaneGeometry(WING_X + EDGE, FRONT - SB).rotateX(-Math.PI / 2), washMat);
+  wash.position.set((WING_X - EDGE) / 2, 0.08, (FRONT + SB) / 2);
+  scene.add(wash);
   sun = new THREE.DirectionalLight(0xfff3dc, 2.0);
   sun.position.set(-12, 30, 10);
   sun.target.position.set(0, 0, -6);
@@ -1004,9 +1010,6 @@ function Batch() {
   this.pool = function (x, z) {
     put(poolGeo, poolMat, x, 0.07, z, 0);
   };
-  this.light = function (x, z) {
-    put(roomGeo, poolMat, x, 0.06, z, 0);
-  };
   this.group = function (shadow) {
     var g = new THREE.Group();
     Object.keys(sets).forEach(function (k) {
@@ -1099,8 +1102,8 @@ function fade() {
 var poolMat = new THREE.MeshBasicMaterial({ color: 0xffc870, map: fade(), transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
 var poolGeo = new THREE.PlaneGeometry(2.8, 2.8).rotateX(-Math.PI / 2);
 poolGeo.deleteAttribute('normal');
-var roomGeo = new THREE.PlaneGeometry(4.4, 4.4).rotateX(-Math.PI / 2);
-roomGeo.deleteAttribute('normal');
+// the store floor is lit evenly at night: the roof is cut away, so pools of light under no visible lamp read as stains
+var washMat = new THREE.MeshBasicMaterial({ color: 0xffd9a0, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending });
 var LAMP = { 'roads/light-curved': [1.9, -0.55], 'roads/light-square': [1.72, -0.58] };
 
 // a street lamp, and the bulb under the end of its arm
@@ -2001,8 +2004,6 @@ function entry(pc, s, e) {
   } else if (e.slab) {
     var sl = e.slab;
     b.slab(flat(e.c), sl[0], sl[1], sl[2], sl[3], sl[4] || 0.014, sl[5] || 0.01);
-  } else if (e.light) {
-    e.light.forEach(function (q) { b.light(q[0], q[1]); });
   } else if (e.lamp) {
     lamp(b, e.lamp, e.x, e.z, e.r || 0);
     pc.foot.push({ x: e.x, z: e.z, hw: 0.08, hd: 0.08, a: 0 });
@@ -2194,8 +2195,6 @@ function buildAreas() {
     a.floor.forEach(function (f, j) { fb.geom(patch(square(f.poly)), finishMat(f.finish), 0.02 + j * 0.002); });
     s.floorG = fb.group(false);
     s.group.add(s.floorG);
-    s.lights = new Batch();
-    [0.3, 0.7].forEach(function (u) { s.lights.light(r[0] + (r[1] - r[0]) * u, (r[2] + r[3]) / 2); });
     s.pick = addPick(bz.id, (r[0] + r[1]) / 2, (r[2] + r[3]) / 2, r[1] - r[0], r[3] - r[2]);
   });
   var fl = new Batch();
@@ -2218,10 +2217,6 @@ function settle(s) {
   }
   var all = new Batch();
   var any = false;
-  if (s.open) {
-    all.take(s.lights);
-    any = true;
-  }
   s.pcs.forEach(function (pc) {
     if (!pc || !pc.on || pc.rising) return;
     all.take(pc.b);
@@ -2451,7 +2446,6 @@ function buildFront() {
   PLAN.entrances.forEach(function (en) {
     [-0.5, 0.5].forEach(function (o) { b.add('furn/rugDoormat', en.x + o, FRONT - 0.45, 0, 0.004); });
     b.add('pw/Basket_Stack_01', en.basket[0], en.basket[1], 0);
-    b.light(en.x, -0.3);
     hall.solids.push({ r: [en.basket[0] - 0.2, en.basket[0] + 0.2, en.basket[1] - 0.2, en.basket[1] + 0.2], lv: 0 });
     // the greeter stands by the baskets from the first day
     var g = crew('shop/character-employee', 'idle');
@@ -2462,7 +2456,6 @@ function buildFront() {
     hall.staff.push(g);
     hall.solids.push({ r: [en.greeter[0] - 0.2, en.greeter[0] + 0.2, en.greeter[1] - 0.2, en.greeter[1] + 0.2], lv: 0 });
   });
-  [-4.4, 0, 4.4].forEach(function (x) { b.light(x, -0.3); });
   root.add(b.group());
   var li = 0;
   var ki = 0;

@@ -935,7 +935,6 @@ AREAS.kitchen = {
 // what stands in the front, the stockroom and outside from the first day: the same entries as an upgrade, plus
 //   { slab: [x0, x1, z0, z1, y, h], c }   paint or paving of one colour
 //   { lamp: ref, x, z, r }                a street lamp that lights at night
-//   { light: [[x, z]...] }                light falling on the floor at night
 // a board without post is hung flat at its height; with r it turns about y
 function bd(text, x, z, w, h, y, r) {
   return { text: text, x: x, z: z, r: r || 0, y: y, w: w, h: h };
@@ -971,7 +970,6 @@ var DECOR = {};
 DECOR.front = cat([
   { patch: rbox(-10.9, -8.1, 0.9, 1.95, 0.25), finish: 0x8791ad },
   { patch: rbox(8.1, 10.9, 0.9, 1.95, 0.25), finish: 0x8791ad },
-  { light: [[-9.5, 1.0], [9.5, 1.0], [-9.5, -1.6], [9.5, -1.6], [-3, 1.5], [3, 1.5]] },
   { text: 'CHECKOUT', x: 0, z: -1.35, r: 0, y: 1.75, w: 2.0, h: 0.5, post: true },
   tx('WELCOME\nHOME & MORE', -7.6, 1.0, 1.0, 0.95),
   tx('WELCOME\nGROCERY', 11.7, 0.25, 1.0, 0.95),
@@ -991,8 +989,7 @@ DECOR.front = cat([
 // the stockroom: z -22.5 to -28.5, the lane for the stockers along z -23.45, dock doors in the north wall
 var DOCKS = [-10.5, -4.5, 4.5, 10.5];
 DECOR.stock = cat(
-  [{ slab: [-14.5, 14.5, -22.9, -22.82], c: 0xf2c230 }, { slab: [-14.5, 14.5, -24.1, -24.02], c: 0xf2c230 },
-    { light: [[-10.5, -25.5], [-4.5, -25.5], [0, -25.5], [4.5, -25.5], [10.5, -25.5], [-12.5, -23.5], [12.5, -23.5]] }],
+  [{ slab: [-14.5, 14.5, -22.9, -22.82], c: 0xf2c230 }, { slab: [-14.5, 14.5, -24.1, -24.02], c: 0xf2c230 }],
   DOCKS.map(function (d) { return { slab: [d - 1.3, d + 1.3, -27.6, -27.54], c: 0xf2c230 }; }),
   DOCKS.map(function (d) { return { slab: [d - 1.3, d - 1.24, -28.2, -27.6], c: 0xf2c230 }; }),
   DOCKS.map(function (d) { return { slab: [d + 1.24, d + 1.3, -28.2, -27.6], c: 0xf2c230 }; }),
@@ -1206,8 +1203,7 @@ DECOR.wing = cat(
   [room(15.3, 21.5, -2.9, 2.2, 'lino'), room(15.3, 21.5, -7.9, -3.1, 'tile'), room(15.3, 21.5, -13.9, -8.1, 'boards'), room(15.3, 21.5, -28.2, -14.1, 'carpet')],
   // dividers: a door at the west end of the first and the third, the head office split into a meeting room, an open office and the manager's
   low(15.3, 15.9, -3.1, -2.9), low(17.1, 21.5, -3.1, -2.9), low(15.3, 21.5, -8.1, -7.9), low(15.3, 15.9, -14.1, -13.9), low(17.1, 21.5, -14.1, -13.9),
-  low(17.1, 21.5, -18.6, -18.4), low(17.1, 21.5, -24.6, -24.4),
-  [{ light: [[18.4, 0], [18.4, -5.5], [18.4, -11], [18.4, -17], [18.4, -23], [18.4, -27]] }]
+  low(17.1, 21.5, -18.6, -18.4), low(17.1, 21.5, -24.6, -24.4)
 );
 
 export var PLAN = {
