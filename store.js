@@ -2080,8 +2080,53 @@ function sharedWithLater(s, x, z) {
   });
 }
 
+// the department's name painted across the empty floor, its top toward the back wall so the default view reads it
+var floorNames = {};
+function floorName(id, w, h) {
+  var key = id + w.toFixed(1) + h.toFixed(1);
+  if (floorNames[key]) return floorNames[key];
+  var c = document.createElement('canvas');
+  c.width = 1024;
+  c.height = Math.round(1024 * h / w);
+  var g = c.getContext('2d');
+  var name = BZ[id].name.toUpperCase();
+  var size = c.height * 0.58;
+  g.font = '900 ' + size + 'px "Arial Black", Impact, sans-serif';
+  size = Math.min(size, size * c.width * 0.94 / g.measureText(name).width);
+  g.font = '900 ' + size + 'px "Arial Black", Impact, sans-serif';
+  g.textAlign = 'center';
+  g.textBaseline = 'middle';
+  g.lineJoin = 'round';
+  g.lineWidth = size * 0.06;
+  g.strokeStyle = 'rgba(255,255,255,0.55)';
+  g.fillStyle = DEPT[id];
+  g.strokeText(name, c.width / 2, c.height * 0.4);
+  g.fillText(name, c.width / 2, c.height * 0.4);
+  var small = c.height * 0.13;
+  g.font = '800 ' + small + 'px "Arial Black", Impact, sans-serif';
+  g.letterSpacing = small * 0.25 + 'px';
+  g.fillStyle = 'rgba(70,70,80,0.75)';
+  g.fillText('OPENING SOON', c.width / 2, c.height * 0.84);
+  // scuffs, so it reads as paint on concrete
+  g.globalCompositeOperation = 'destination-out';
+  for (var i = 0; i < 260; i++) {
+    g.globalAlpha = 0.2 + (i * 7 % 10) / 20;
+    g.beginPath();
+    g.arc(c.width * ((i * 0.618) % 1), c.height * ((i * 0.377 + i * i * 0.0013) % 1), 1.5 + i % 4, 0, 7);
+    g.fill();
+  }
+  var t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  t.anisotropy = 4;
+  var m = new THREE.Mesh(new THREE.PlaneGeometry(w, h).rotateX(-Math.PI / 2),
+    new THREE.MeshLambertMaterial({ map: t, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 }));
+  m.position.y = 0.03;
+  floorNames[key] = m;
+  return m;
+}
+
 // an area that is not open yet: plain floor behind a low hoarding in the department's colour along the edges that open
-// onto aisles, and an opening soon board
+// onto aisles, and its name painted on the floor
 function vacantSite(s) {
   var r = s.a.vacant;
   var g = new THREE.Group();
@@ -2109,7 +2154,11 @@ function vacantSite(s) {
     }
   });
   g.add(b.group());
-  g.add(board({ text: 'OPENING SOON\n' + BZ[s.id].name.toUpperCase(), x: mx, z: mz + 0.6, y: 0.6, w: 1.2, h: 0.5, post: true }));
+  var pw = Math.min(r[1] - r[0] - 1, 6);
+  var nm = floorName(s.id, pw, Math.min(r[3] - r[2] - 0.8, pw * 0.4));
+  nm.position.x = mx;
+  nm.position.z = mz;
+  g.add(nm);
   return g;
 }
 
