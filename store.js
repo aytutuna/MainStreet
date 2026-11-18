@@ -2613,7 +2613,7 @@ function buildGarden() {
 }
 
 // The east wing: four rooms along the east wall, each a place whose levels add one piece from plan.js. Before a room is
-// bought it holds a coming soon board; its floor and walls are part of the building
+// bought it holds an opening soon board; its floor and walls are part of the building
 var WING_IDS = ['serv', 'rest', 'lounge', 'head'];
 
 function buildWing() {
@@ -2630,7 +2630,7 @@ function buildWing() {
     var cx = (r.rect[0] + r.rect[1]) / 2;
     var cz = (r.rect[2] + r.rect[3]) / 2;
     var pl = { items: [], shown: -1, add: true, staff: [], foot: [] };
-    var site = board({ text: 'COMING SOON\n' + PL[id].name.toUpperCase(), x: cx, z: cz, y: 0.6, w: 1.3, h: 0.5, post: true });
+    var site = board({ text: 'OPENING SOON\n' + PL[id].name.toUpperCase(), x: cx, z: cz, y: 0.6, w: 1.3, h: 0.5, post: true });
     site.visible = false;
     root.add(site);
     pl.items.push({ g: site, lv: 0, only: true });
