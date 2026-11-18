@@ -671,38 +671,39 @@ AREAS.tech = {
     up('Sound system', { sign: 'gold' }, pw('GlassCase_Locked_10', -10.0, -21.15, 's', { on: shelfGoods(['furn/speakerSmall*0.55', 'furn/radio*0.7', 'furn/speaker*0.3'], 2, { zs: [0], ys: [0.45, 0.8, 1.15, 1.5] }) })) ])
 };
 
+// the back run of furniture and the front run of appliances, with the living and dining corners between them
 AREAS.home = {
   cx: -4.1, cz: -7.0, vacant: [-6.9, -1.25, -9.3, -4.7], sign: [-3.0, -6.15, 1.6],
   floor: [{ poly: rbox(-6.9, -1.25, -9.3, -4.7, 0.5), finish: 'wood' }],
   ups: ups([
-    fx('Sofa', 'furn/loungeSofa%carpet=5b7fc4*1.4', -5.4, -8.15, 's', null, [['furn/pillowBlue*1.4', -0.4, -0.02, 0.3, 0.3], ['furn/pillow*1.4', 0.4, -0.02, -0.3, 0.3]]),
-    perch('Living rug', 'furn/rugRectangle%=b9c9e6', -5.5, -7.3, 0, 1.6),
-    d('Coffee table', 'furn/tableCoffee', -5.4, -6.5, 0, 1.4),
-    fx('Double bed', 'furn/bedDouble*1.2', -2.6, -8.3, 's', null, [['furn/pillow*1.4', -0.22, -0.42, 0.1, 0.4], ['furn/pillowBlue*1.4', 0.22, -0.42, -0.1, 0.4]]),
-    d('Armchair', 'furn/loungeChair%carpet=e0a44a', -6.5, -6.5, Math.PI / 2, 1.4),
-    up('Dining table', pw('DiningTable_Rect_01', -5.4, -5.4, 's')),
-    up('Night stand', m('furn/cabinetBedDrawer', -3.45, -8.95, 0, 1.6), on('pw/Towel_Stack_01*1.4', -3.45, -8.95, 0.4)),
-    d('Floor lamp', 'furn/lampRoundFloor', -4.4, -8.8, 0, 1.3),
-    up('Dining chairs', pw('DiningChair_Padded_01', -5.4, -5.88, 's', { n: 2, spots: 0 }), pw('DiningChair_Padded_01', -6.0, -5.4, 'b', { spots: 0 }),
-      pw('DiningChair_Padded_01', -4.8, -5.4, 'k', { spots: 0 })),
-    up('Sideboard', pw('Sideboard_01', -1.5, -7.85, 'k'), on('pw/Pack_ToiletPaper_12_01*1.3', -1.5, -8.05, 0.43), on('pw/Pack_PaperTowel_6_01*1.3', -1.5, -7.65, 0.43)),
-    perch('Bedroom rug', 'furn/rugRound%=e6b8a8', -2.6, -6.9, 0, 1.5),
-    up('Washer and dryer', pw('Washer_Front_01', -3.65, -5.2, 's'), pw('Dryer_Front_01', -3.3, -5.2, 's'), on('pw/Bottle_Laundry_01*1.5', -3.3, -5.2, 0.48), on('pw/Detergent_Jug_Blue_01*1.3', -3.65, -5.2, 0.48)),
-    d('Bookcase', 'furn/bookcaseOpenLow', -6.75, -8.85, 0, 2.2),
-    perch('Bed lamp', 'furn/lampRoundTable', -3.45, -8.95, 0.38, 1.3),
-    up('Fridge', pw('Fridge_FrenchDoor_01', -2.5, -5.2, 's')),
-    up('Newspaper rack', pw('NewspaperRack_01', -4.7, -6.5, 'b')),
-    d('Potted palm', 'furn/pottedPlant', -6.75, -5.75, 0, 1.3),
-    mat('Dining rug', -6.3, -4.5, -6.2, -4.85, 0xd8c3a5),
-    d('Side table', 'furn/sideTableDrawers', -4.3, -9.1, 0, 1.5),
-    up('Runner rug', pw('Rug_Runner_01', -1.7, -6.9, 'b', { spots: 0 })),
-    d('Corner lamp', 'furn/lampSquareFloor', -5.0, -5.95, 0, 1.3),
-    perch('Shelf plant', 'furn/plantSmall1', -6.75, -8.85, 0.79, 2),
-    up('Range', pw('Range_Gas_01', -1.8, -5.2, 's')),
-    perch('Table lamp', 'furn/lampSquareTable', -4.3, -9.1, 0.52, 1.3)
-  ], [SIGN, up('Home desk', till(-1.5, -6.0, 'k'), { staff: [-1.0, -6.0, 'k'] }),
-    up('Entertainment center', ['furn/cabinetTelevisionDoors', -6.2, -4.95, 's', null, [['furn/televisionModern*1.15', 0, -0.03, 0, 0.45]]]), lights([[-5.2, -6.8], [-2.9, -6.8]]), HELP,
-    up('Wardrobe', { sign: 'gold' }, pw('KitCab_Tall_Pantry_10', -1.5, -8.85, 'k'))])
+    fx('Sofa', 'furn/loungeSofa%carpet=5b7fc4*1.4', -5.48, -9.0, 's', null, [['furn/pillowBlue*1.4', -0.4, -0.02, 0.3, 0.3], ['furn/pillow*1.4', 0.4, -0.02, -0.3, 0.3]]),
+    perch('Living rug', 'furn/rugRectangle%=b9c9e6', -5.48, -7.9, 0, 1.6),
+    d('Coffee table', 'furn/tableCoffee', -5.48, -7.6, 0, 1.4),
+    fx('Double bed', 'furn/bedDouble*1.2', -3.76, -8.69, 's', null, [['furn/pillow*1.4', -0.22, -0.42, 0.1, 0.4], ['furn/pillowBlue*1.4', 0.22, -0.42, -0.1, 0.4]]),
+    d('Armchair', 'furn/loungeChair%carpet=e0a44a', -6.45, -7.3, Math.PI / 2, 1.4),
+    up('Dining table', pw('DiningTable_Rect_01', -5.26, -5.2, 's')),
+    up('Night stand', m('furn/cabinetBedDrawer', -4.47, -9.1, 0, 1.6), on('pw/Towel_Stack_01*1.4', -4.47, -9.1, 0.4)),
+    d('Floor lamp', 'furn/lampRoundFloor', -4.76, -9.15, 0, 1.3),
+    up('Dining chairs', pw('DiningChair_Padded_01', -5.26, -5.55, 's', { n: 2, spots: 0 }), pw('DiningChair_Padded_01', -5.77, -5.2, 'b', { spots: 0 }),
+      pw('DiningChair_Padded_01', -4.75, -5.2, 'k', { spots: 0 })),
+    up('Sideboard', pw('Sideboard_01', -2.3, -6.9, 'k'), on('pw/Pack_ToiletPaper_12_01*1.3', -2.3, -7.1, 0.43), on('pw/Pack_PaperTowel_6_01*1.3', -2.3, -6.7, 0.43)),
+    perch('Bedroom rug', 'furn/rugRound%=e6b8a8', -3.76, -7.35, 0, 1.5),
+    up('Washer and dryer', pw('Washer_Front_01', -4.415, -5.14, 's'), pw('Dryer_Front_01', -4.065, -5.14, 's'), on('pw/Bottle_Laundry_01*1.5', -4.065, -5.14, 0.48), on('pw/Detergent_Jug_Blue_01*1.3', -4.415, -5.14, 0.48)),
+    d('Bookcase', 'furn/bookcaseOpenLow', -6.5, -9.0, 0, 2.2),
+    perch('Bed lamp', 'furn/lampRoundTable', -4.47, -9.1, 0.38, 1.3),
+    up('Fridge', pw('Fridge_FrenchDoor_01', -3.67, -5.13, 's')),
+    up('Newspaper rack', pw('NewspaperRack_01', -2.845, -5.05, 's')),
+    d('Potted palm', 'furn/pottedPlant', -2.35, -6.3, 0, 1.3),
+    mat('Dining rug', -6.0, -4.6, -5.75, -5.05, 0xd8c3a5),
+    d('Side table', 'furn/sideTableDrawers', -2.88, -9.1, 0, 1.5),
+    up('Runner rug', pw('Rug_Runner_01', -3.0, -5.8, 's', { spots: 0 })),
+    d('Corner lamp', 'furn/lampSquareFloor', -4.3, -6.1, 0, 1.3),
+    perch('Shelf plant', 'furn/plantSmall1', -6.5, -9.0, 0.79, 2),
+    up('Range', pw('Range_Gas_01', -3.26, -5.1, 's')),
+    perch('Table lamp', 'furn/lampSquareTable', -2.88, -9.1, 0.52, 1.3)
+  ], [SIGN, counter('Home desk', -6.6, -6.3, 's', -6.6, -6.6),
+    up('Entertainment center', ['furn/cabinetTelevisionDoors', -6.24, -5.1, 's', null, [['furn/televisionModern*1.15', 0, -0.03, 0, 0.45]]]), lights([[-5.2, -6.6], [-3.4, -6.6]]), HELP,
+    up('Wardrobe', { sign: 'gold' }, pw('KitCab_Tall_Pantry_10', -2.27, -9.05, 's'))])
 };
 
 var CARS = ['toy/vehicle-suv*0.2', 'toy/vehicle-racer*0.2', 'toy/vehicle-truck*0.2', 'toy/vehicle-speedster*0.2', 'toy/vehicle-monster-truck*0.2', 'toy/vehicle-vintage-racer*0.2'];
