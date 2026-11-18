@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
-import { PLAN, PW } from './plan.js';
+import { PLAN, PW, NATURE } from './plan.js';
 
 var BASE = 'assets/models/';
 var TILT = 52 * Math.PI / 180;
@@ -86,7 +86,7 @@ var goal = null;
 var azGoal = null;
 var DMIN = 8;
 var DMAX = 80;
-var BOUNDS = [-26, 26, -36, 14];
+var BOUNDS = [-30, 32, -42, 16];
 var bump = {};
 var tagsEl;
 var arrowEl;
@@ -258,6 +258,10 @@ function joinParts(parts) {
   return out.map(function (e) { return { geom: e.list.length > 1 ? mergeGeometries(e.list, false) : e.list[0], mat: e.mat }; });
 }
 
+// the old kit's teal bushes give way to the greener ones of the scenery
+var SWAP = { 'nature/plant_bush': 'flora/sn-stylised-bush*0.17', 'nature/plant_bushLarge': 'flora/sn-stylised-bush*0.26', 'nature/tree_small': 'flora/sn-stylised-tree-8*0.2' };
+// scenery that is too small to be worth a shadow
+var GROUND = /^flora\/(sn-grass|sn-stylised-grass|flower|fern|sn-stone)/;
 // pw/Gondola_Island_10.goods is the goods of Gondola_Island_10_Stocked; pw/ProduceTable_15.goods-Apples those of ProduceTable_15_Apples
 var GOODS = /^goods(-(\w+))?$/;
 
@@ -273,24 +277,38 @@ function loadModels(list, progress, done) {
   });
   var names = Object.keys(files);
   var n = 0;
-  function material(src, kit, tint) {
+  // Every file of the scenery carries its own copy of a texture, so the copies are told apart by their name and size in
+  // the file and the first one stands for all
+  function sameTexture(g, src) {
+    var a = g.parser.associations.get(src);
+    var j = g.parser.json;
+    var d = a && j.materials[a.materials];
+    var t = d && d.pbrMetallicRoughness.baseColorTexture;
+    return t ? d.name + ':' + j.bufferViews[j.images[j.textures[t.index].source].bufferView].byteLength + ':' + src.color.getHex() : '';
+  }
+  function material(src, kit, tint, g, file) {
     var see = src.transparent || src.opacity < 1;
-    var key = kit + '|' + (src.map ? 'map' : tint ? '' : src.name + src.color.getHex()) + (tint || '') + (see ? 't' + src.opacity : '');
+    var key = kit + '|' + (src.map ? 'map' : tint ? '' : src.name + src.color.getHex()) + (tint || '') + (see ? 't' + src.opacity : '') + (kit === 'flora' && src.map ? sameTexture(g, src) : '');
     if (mats[key]) return mats[key];
-    if (src.map) {
+    if (src.map && kit !== 'flora') {
       src.map.magFilter = THREE.NearestFilter;
       src.map.minFilter = THREE.NearestFilter;
       src.map.generateMipmaps = false;
       src.map.colorSpace = THREE.SRGBColorSpace;
     }
-    var c = tint ? new THREE.Color(parseInt(tint, 16)) : src.map ? new THREE.Color(1, 1, 1) : src.color;
+    var c = tint ? new THREE.Color(parseInt(tint, 16)) : src.map && kit !== 'flora' ? new THREE.Color(1, 1, 1) : src.color;
     var opt = src.map ? { map: src.map, color: c } : { color: c };
+    if (src.alphaTest) {
+      opt.alphaTest = src.alphaTest;
+      opt.side = THREE.DoubleSide;
+    }
     if (see) {
       opt.transparent = true;
       opt.opacity = src.opacity;
       opt.depthWrite = false;
     }
     mats[key] = new THREE.MeshLambertMaterial(opt);
+    if (GROUND.test(file)) mats[key].userData.noShadow = true;
     return mats[key];
   }
   var missing = { parts: [], box: { x0: -0.3, x1: 0.3, z0: -0.3, z1: 0.3, y0: 0, h: 0.3 }, gltf: null };
@@ -440,9 +458,9 @@ function loadModels(list, progress, done) {
         if (r.cells) recolour(oc.body, r.cells);
         // glass recoloured blue holds water: a fish tank
         var wet = !!r.cells && r.cells.some(function (c) { return c[0][0] === 3 && c[0][1] === 2; });
-        parts.push({ geom: oc.body, mat: material(o.material, kit, tint) }, { geom: oc.glass, mat: wet ? waterMat : glassMat }, { geom: oc.inner, mat: wet ? tankMat : innerMat });
+        parts.push({ geom: oc.body, mat: material(o.material, kit, tint, g, r.file) }, { geom: oc.glass, mat: wet ? waterMat : glassMat }, { geom: oc.inner, mat: wet ? tankMat : innerMat });
         if (oc.shelf) parts.push({ geom: oc.shelf, mat: shelfMat });
-      } else parts.push({ geom: geom, mat: material(o.material, kit, tint) });
+      } else parts.push({ geom: geom, mat: material(o.material, kit, tint, g, r.file) });
     });
     if (r.lay) {
       var turn = new THREE.Matrix4()[r.lay === 'x' ? 'makeRotationX' : 'makeRotationZ'](Math.PI / 2);
@@ -485,7 +503,7 @@ function loadModels(list, progress, done) {
       one();
     });
   });
-  return { model: function (ref) { return models[ref] || missing; } };
+  return { model: function (ref) { return models[SWAP[ref] || ref] || missing; } };
 }
 
 // every model the store can show, gathered from the tables
@@ -502,6 +520,8 @@ function modelList() {
   walk(PLAN.front);
   walk(PLAN.decor);
   walk(PLAN.wing);
+  walk(NATURE);
+  walk(SWAP);
   walk(FLOWERS);
   walk(OVERSTOCK.boxes);
   walk(['food/plate-rectangle*0.55', 'skate/pallet', 'shop/character-employee@5,3>2,2', 'shop/freezers-standing@13,3>2,2',
@@ -637,11 +657,19 @@ function cutaway() {
 // everything in the store faces the doors, so the camera turns no more than an eighth either way
 var TURN = Math.PI / 4;
 
+// the middle of the view stays far enough in that its edges don't run past the dressed ground, so the room to pan grows
+// as the camera comes in
 function clamp() {
   focus.az = Math.max(-TURN, Math.min(TURN, focus.az));
   focus.dist = Math.max(DMIN, Math.min(DMAX, focus.dist));
-  focus.x = Math.max(BOUNDS[0], Math.min(BOUNDS[1], focus.x));
-  focus.z = Math.max(BOUNDS[2], Math.min(BOUNDS[3], focus.z));
+  var hw = (focus.dist - 2) * Math.tan(Math.atan(Math.tan(cam.fov * Math.PI / 360) * cw / ch));
+  var lim = function (v, lo, hi, m) {
+    lo += m;
+    hi -= m;
+    return lo > hi ? (lo + hi) / 2 : Math.max(lo, Math.min(hi, v));
+  };
+  focus.x = lim(focus.x, BOUNDS[0], BOUNDS[1], hw * 0.5);
+  focus.z = lim(focus.z, BOUNDS[2], BOUNDS[3], hw * 0.7);
 }
 
 function under(sx, sy, out) {
@@ -814,6 +842,92 @@ function mesh(ref, x, z, rot, y) {
   return g;
 }
 
+// Seen from far off a model is drawn as a coarse copy: the corners that fall in the same cell of a grid are joined into
+// one, the triangles that collapse go, and each keeps the colour spot of its source triangle. Goods take a coarser grid
+// than fixtures. Worked out once per source geometry
+var LOD_DIST = 40;
+var GOODS_CELL = 0.04;
+var FIX_CELL = 0.02;
+var lodFar = false;
+var lowCache = new WeakMap();
+function lowOf(geom, LOW_CELL) {
+  var all = lowCache.get(geom);
+  if (!all) lowCache.set(geom, all = {});
+  var low = all[LOW_CELL];
+  if (low) return low;
+  var pos = geom.attributes.position;
+  var uv = geom.attributes.uv;
+  var ix = geom.index;
+  var n = ix ? ix.count : pos.count;
+  var sum = {};
+  var ids = [];
+  var i;
+  for (i = 0; i < n; i++) {
+    var v = ix ? ix.getX(i) : i;
+    var key = Math.round(pos.getX(v) / LOW_CELL) + ',' + Math.round(pos.getY(v) / LOW_CELL) + ',' + Math.round(pos.getZ(v) / LOW_CELL);
+    var c = sum[key] = sum[key] || { x: 0, y: 0, z: 0, n: 0 };
+    c.x += pos.getX(v);
+    c.y += pos.getY(v);
+    c.z += pos.getZ(v);
+    c.n++;
+    ids.push(key);
+  }
+  var seen = {};
+  var pp = [];
+  var tt = [];
+  var nn = [];
+  for (i = 0; i < n; i += 3) {
+    if (ids[i] === ids[i + 1] || ids[i + 1] === ids[i + 2] || ids[i] === ids[i + 2]) continue;
+    var tri = [ids[i], ids[i + 1], ids[i + 2]];
+    var tk = tri.slice().sort().join('|');
+    if (seen[tk]) continue;
+    seen[tk] = 1;
+    var q = tri.map(function (k) { return [sum[k].x / sum[k].n, sum[k].y / sum[k].n, sum[k].z / sum[k].n]; });
+    var ux = q[1][0] - q[0][0];
+    var uy = q[1][1] - q[0][1];
+    var uz = q[1][2] - q[0][2];
+    var wx = q[2][0] - q[0][0];
+    var wy = q[2][1] - q[0][1];
+    var wz = q[2][2] - q[0][2];
+    var nx = uy * wz - uz * wy;
+    var ny = uz * wx - ux * wz;
+    var nz = ux * wy - uy * wx;
+    var l = Math.hypot(nx, ny, nz) || 1;
+    // the corner order of the source triangle gives which way it faced
+    var a0 = ix ? ix.getX(i) : i;
+    var a1 = ix ? ix.getX(i + 1) : i + 1;
+    var a2 = ix ? ix.getX(i + 2) : i + 2;
+    var ox = (pos.getY(a1) - pos.getY(a0)) * (pos.getZ(a2) - pos.getZ(a0)) - (pos.getZ(a1) - pos.getZ(a0)) * (pos.getY(a2) - pos.getY(a0));
+    var oy = (pos.getZ(a1) - pos.getZ(a0)) * (pos.getX(a2) - pos.getX(a0)) - (pos.getX(a1) - pos.getX(a0)) * (pos.getZ(a2) - pos.getZ(a0));
+    var oz = (pos.getX(a1) - pos.getX(a0)) * (pos.getY(a2) - pos.getY(a0)) - (pos.getY(a1) - pos.getY(a0)) * (pos.getX(a2) - pos.getX(a0));
+    var order = nx * ox + ny * oy + nz * oz < 0 ? [0, 2, 1] : [0, 1, 2];
+    if (order[1] === 2) {
+      nx = -nx;
+      ny = -ny;
+      nz = -nz;
+    }
+    order.forEach(function (j) {
+      pp.push(q[j][0], q[j][1], q[j][2]);
+      nn.push(nx / l, ny / l, nz / l);
+      tt.push(uv ? uv.getX(a0) : 0, uv ? uv.getY(a0) : 0);
+    });
+  }
+  var g = new THREE.BufferGeometry();
+  // too little saved: keep the model
+  if (pp.length / 9 > n / 3 * 0.7) {
+    g = geom.index ? geom.toNonIndexed() : geom.clone();
+    if (!g.attributes.uv) g.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2));
+    ['color', 'tangent', 'uv1', 'uv2'].forEach(function (k) { if (g.attributes[k]) g.deleteAttribute(k); });
+    if (!g.attributes.normal) g.computeVertexNormals();
+  } else {
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pp, 3));
+    g.setAttribute('normal', new THREE.Float32BufferAttribute(nn, 3));
+    g.setAttribute('uv', new THREE.Float32BufferAttribute(tt, 2));
+  }
+  all[LOW_CELL] = g;
+  return g;
+}
+
 // fixed pieces are merged into one mesh per material, so a row of the mall is a few draw calls
 function Batch() {
   var sets = {};
@@ -826,11 +940,12 @@ function Batch() {
   function put(geom, mat, x, y, z, rot, k, rank) {
     var goods = rank !== undefined;
     var key = mat.uuid + (geom.index ? 'i' : 'n') + Object.keys(geom.attributes).sort().join() + (goods ? 'g' : '');
-    if (!sets[key]) sets[key] = { mat: mat, list: [], goods: goods, rank: [] };
+    if (!sets[key]) sets[key] = { mat: mat, list: [], goods: goods, rank: [], low: mat === vcMat ? null : [] };
     q.setFromAxisAngle(up, rot || 0);
     mtx.compose(new THREE.Vector3(x, y, z), q, k ? new THREE.Vector3(k, k, k) : one);
     sets[key].list.push(geom.clone().applyMatrix4(mtx));
     if (goods) sets[key].rank.push(rank);
+    if (sets[key].low) sets[key].low.push(lowOf(geom, goods ? GOODS_CELL : FIX_CELL).clone().applyMatrix4(mtx));
   }
   this.sets = sets;
   this.add = function (ref, x, z, rot, y, skip) {
@@ -857,10 +972,11 @@ function Batch() {
   this.take = function (o) {
     Object.keys(o.sets).forEach(function (key) {
       var from = o.sets[key];
-      if (!sets[key]) sets[key] = { mat: from.mat, list: [], rank: [] };
+      if (!sets[key]) sets[key] = { mat: from.mat, list: [], rank: [], low: from.low ? [] : null };
       sets[key].goods = from.goods;
       sets[key].list = sets[key].list.concat(from.list);
       sets[key].rank = sets[key].rank.concat(from.rank);
+      sets[key].low = sets[key].low && from.low ? sets[key].low.concat(from.low) : null;
     });
   };
   // a flat slab of one colour, for paving, asphalt and paint
@@ -893,6 +1009,8 @@ function Batch() {
     Object.keys(sets).forEach(function (k) {
       var list = sets[k].list;
       var o;
+      var lo = null;
+      var lc = null;
       if (sets[k].goods) {
         // lowest rank first, so the mesh can draw just the first part of its index
         var ord = list.map(function (x, i) { return i; }).sort(function (a, c) { return sets[k].rank[a] - sets[k].rank[c]; });
@@ -902,11 +1020,33 @@ function Batch() {
           return list[i];
         });
         o = new THREE.Mesh(mergeGeometries(list, false), sets[k].mat);
-        o.userData.shelf = { rank: ord.map(function (i) { return sets[k].rank[i]; }), cum: cum };
-      } else o = new THREE.Mesh(mergeGeometries(list, false), sets[k].mat);
-      o.castShadow = shadow !== false && !sets[k].goods && !sets[k].mat.transparent && sets[k].mat !== poolMat && sets[k].mat !== bulbMat && sets[k].mat !== innerMat;
+        var rk = ord.map(function (i) { return sets[k].rank[i]; });
+        o.userData.shelf = { rank: rk, cum: cum };
+        lo = new THREE.Mesh(mergeGeometries(ord.map(function (i) { return sets[k].low[i]; }), false), sets[k].mat);
+        lc = [0];
+        ord.forEach(function (i) { lc.push(lc[lc.length - 1] + sets[k].low[i].attributes.position.count); });
+        lo.userData.shelf = { rank: rk, cum: lc };
+      } else {
+        o = new THREE.Mesh(mergeGeometries(list, false), sets[k].mat);
+        if (sets[k].low) {
+          lo = new THREE.Mesh(mergeGeometries(sets[k].low, false), sets[k].mat);
+          // a model that barely shrinks stays as it is
+          var tris = function (m) { return (m.geometry.index ? m.geometry.index.count : m.geometry.attributes.position.count) / 3; };
+          if (tris(lo) > tris(o) * 0.8) lo = null;
+        }
+      }
+      o.castShadow = shadow !== false && !sets[k].goods && !sets[k].mat.transparent && !sets[k].mat.userData.noShadow && sets[k].mat !== poolMat && sets[k].mat !== bulbMat && sets[k].mat !== innerMat;
       o.receiveShadow = true;
       g.add(o);
+      if (lo) {
+        o.userData.lod = 'hi';
+        lo.userData.lod = 'lo';
+        o.visible = !lodFar;
+        lo.visible = lodFar;
+        lo.castShadow = o.castShadow;
+        lo.receiveShadow = true;
+        g.add(lo);
+      }
     });
     return g;
   };
@@ -984,7 +1124,7 @@ function dye(g, mat) {
   g.setAttribute('color', new THREE.BufferAttribute(a, 3));
   return vcMat;
 }
-var GRASS = 0x84c26c;
+var GRASS = 0x7bbb63;
 var PAVE = 0xd9d3c7;
 var ASPHALT = 0x5b5e66;
 var GRAVEL = 0xa39886;
@@ -1872,10 +2012,8 @@ function entry(pc, s, e) {
     pc.staff = f;
     pc.foot.push({ x: e.staff[0], z: e.staff[1], hw: 0.2, hd: 0.2, a: 0 });
   } else if (e.helper) {
-    var h = { f: crew('shop/character-employee', 'walk'), i: 0, wait: 0, path: null };
-    if (nav.dirty) navBuild();
-    var c = nearFree(s.a.cx, s.a.cz);
-    h.f.obj.position.set(c < 0 ? s.a.cx : NX0 + (c % NX + 0.5) * NC, 0, c < 0 ? s.a.cz : NZ0 + (((c / NX) | 0) + 0.5) * NC);
+    var h = { f: crew('shop/character-employee', 'walk'), i: 0, wait: 0, path: null, placed: false };
+    h.f.obj.position.set(s.a.cx, 0, s.a.cz);
     pc.x.add(h.f.obj);
     pc.helper = h;
   } else if (e.lights) {
@@ -1903,6 +2041,14 @@ function makePiece(s, k) {
   return pc;
 }
 
+// a helper starts on the free floor nearest the middle of its area, found when its piece turns on
+function startHelper(s, h) {
+  if (nav.dirty) navBuild();
+  var c = nearFree(s.a.cx, s.a.cz);
+  if (c >= 0) h.f.obj.position.set(NX0 + (c % NX + 0.5) * NC, 0, NZ0 + (((c / NX) | 0) + 0.5) * NC);
+  h.placed = true;
+}
+
 function pieceOf(s, k) {
   if (!s.pcs[k]) s.pcs[k] = makePiece(s, k);
   return s.pcs[k];
@@ -1928,23 +2074,18 @@ function sharedWithLater(s, x, z) {
   });
 }
 
-// an area that is not open yet: bare concrete fenced off along the edges that open onto aisles, a pallet of boxes, a
-// hand truck and a coming soon board
+// an area that is not open yet: plain floor behind a low hoarding in the department's colour along the edges that open
+// onto aisles, and an opening soon board
 function vacantSite(s) {
   var r = s.a.vacant;
   var g = new THREE.Group();
   var b = new Batch();
-  b.slab(flat(0xb9b6ae), r[0], r[1], r[2], r[3], 0.012, 0.01);
+  b.slab(flat(0xcdcac2), r[0], r[1], r[2], r[3], 0.012, 0.01);
   var mx = (r[0] + r[1]) / 2;
   var mz = (r[2] + r[3]) / 2;
-  b.add('skate/pallet', mx - 0.9, mz, 0.3);
-  var pb = [];
-  stock(KIND.stock, 'boxes', pb);
-  pb.forEach(function (q) {
-    var p = rotY(q[1], q[2], 0.3);
-    b.raw(q[0], mx - 0.9 + p[0], mz + p[1], 0.3 + q[3], q[4] - lib.model(q[0]).box.y0 * q[5], q[5]);
-  });
-  b.add('shop/hand-truck', mx + 0.8, mz + 0.3, 0.5);
+  var stripe = flat(parseInt(DEPT[s.id].slice(1), 16));
+  var panel = flat(0xe4e7ef);
+  var postC = flat(0x8d93a6);
   var edges = [[r[0], r[2], r[1], r[2], 0], [r[0], r[3], r[1], r[3], 0], [r[0], r[2], r[0], r[3], 1], [r[1], r[2], r[1], r[3], 1]];
   edges.forEach(function (e) {
     var len = Math.hypot(e[2] - e[0], e[3] - e[1]);
@@ -1953,12 +2094,32 @@ function vacantSite(s) {
       var x = e[0] + (e[2] - e[0]) * (i + 0.5) / n;
       var z = e[1] + (e[3] - e[1]) * (i + 0.5) / n;
       if (x < -14.4 || x > 14.4 || z < BACK + 0.3 || sharedWithLater(s, x, z)) continue;
-      b.add('roads/construction-barrier', x, z, e[4] ? 0 : Math.PI / 2);
+      var hx = e[4] ? 0.04 : 0.38;
+      var hz = e[4] ? 0.38 : 0.04;
+      b.block(panel, x - hx, x + hx, z - hz, z + hz, 0.02, 0.4);
+      b.block(stripe, x - hx, x + hx, z - hz, z + hz, 0.4, 0.45);
+      if (e[4]) b.block(postC, x - 0.05, x + 0.05, z - hz - 0.04, z - hz + 0.04, 0.02, 0.5);
+      else b.block(postC, x - hx - 0.04, x - hx + 0.04, z - 0.05, z + 0.05, 0.02, 0.5);
     }
   });
   g.add(b.group());
-  g.add(board({ text: 'COMING SOON\n' + BZ[s.id].name.toUpperCase(), x: mx, z: mz + 0.9, y: 0.6, w: 1.2, h: 0.5, post: true }));
+  g.add(board({ text: 'OPENING SOON\n' + BZ[s.id].name.toUpperCase(), x: mx, z: mz + 0.6, y: 0.6, w: 1.2, h: 0.5, post: true }));
   return g;
+}
+
+// the plain rectangle round a rounded one, so a department's floor meets the aisles and walls squarely
+function square(poly) {
+  var x0 = 1e9;
+  var x1 = -1e9;
+  var z0 = 1e9;
+  var z1 = -1e9;
+  poly.forEach(function (p) {
+    x0 = Math.min(x0, p[0]);
+    x1 = Math.max(x1, p[0]);
+    z0 = Math.min(z0, p[1]);
+    z1 = Math.max(z1, p[1]);
+  });
+  return [[x0, z1], [x1, z1], [x1, z0], [x0, z0]];
 }
 
 function buildAreas() {
@@ -1975,7 +2136,7 @@ function buildAreas() {
     s.vacant = vacantSite(s);
     s.group.add(s.vacant);
     var fb = new Batch();
-    a.floor.forEach(function (f, j) { fb.geom(patch(f.poly), finishMat(f.finish), 0.02 + j * 0.002); });
+    a.floor.forEach(function (f, j) { fb.geom(patch(square(f.poly)), finishMat(f.finish), 0.02 + j * 0.002); });
     s.floorG = fb.group(false);
     s.group.add(s.floorG);
     s.lights = new Batch();
@@ -2253,13 +2414,12 @@ function buildFront() {
   // the first till stands at the east end, by the grocery entrance
   var cx = bk.x + TILLS.reduce(function (w, t) { return w + (t.k === 'lane' ? 1.9 : 1.3); }, 0);
   TILLS.forEach(function (t) {
-    if (t.k === 'lane') {
-      cx -= 1.9;
-      hall.tills.push(lane(hall, li++, t.lv, cx + 0.95));
-    } else {
-      cx -= 1.3;
-      hall.tills.push(kiosk(hall, ki++, t.lv, cx + 0.35));
-    }
+    var tw = t.k === 'lane' ? 1.9 : 1.3;
+    cx -= tw;
+    // the floor of the bank grows with its tills
+    hall.lv[t.lv] = hall.lv[t.lv] || new Batch();
+    hall.lv[t.lv].geom(patch(square([[cx, -1.25], [cx + tw, 1.35]])), finishMat(0xc4cad8), 0.045);
+    hall.tills.push(t.k === 'lane' ? lane(hall, li++, t.lv, cx + 0.95) : kiosk(hall, ki++, t.lv, cx + 0.35));
   });
   hall.tills.push(gardenTill);
   hall.staff.push(gardenTill.cashier);
@@ -2310,7 +2470,7 @@ function buildFront() {
   places.hall = hall;
   addPick('hall', 0, 0.5, EDGE * 2, 3.2);
   buildDoors();
-  decor(PLAN.decor.front, true);
+  decor(PLAN.decor.front.filter(function (e) { return !(e.patch && e.finish === 0xc4cad8); }), true);
 }
 
 // glass doors that slide apart when someone comes near; a fixed pane either side, a rail across the top
@@ -2453,7 +2613,7 @@ function buildGarden() {
 }
 
 // The east wing: four rooms along the east wall, each a place whose levels add one piece from plan.js. Before a room is
-// bought it holds a coming soon board; its floor and walls are part of the building
+// bought it holds an opening soon board; its floor and walls are part of the building
 var WING_IDS = ['serv', 'rest', 'lounge', 'head'];
 
 function buildWing() {
@@ -2470,7 +2630,7 @@ function buildWing() {
     var cx = (r.rect[0] + r.rect[1]) / 2;
     var cz = (r.rect[2] + r.rect[3]) / 2;
     var pl = { items: [], shown: -1, add: true, staff: [], foot: [] };
-    var site = board({ text: 'COMING SOON\n' + PL[id].name.toUpperCase(), x: cx, z: cz, y: 0.6, w: 1.3, h: 0.5, post: true });
+    var site = board({ text: 'OPENING SOON\n' + PL[id].name.toUpperCase(), x: cx, z: cz, y: 0.6, w: 1.3, h: 0.5, post: true });
     site.visible = false;
     root.add(site);
     pl.items.push({ g: site, lv: 0, only: true });
@@ -2586,7 +2746,6 @@ function buildOutside() {
   var houses = ['sub/building-type-a', 'sub/building-type-c', 'sub/building-type-e', 'sub/building-type-h', 'sub/building-type-k'];
   for (var hx = -30, hi = 0; hx <= 30; hx += 6, hi++) {
     b.add(houses[hi % houses.length], hx, 17.6, Math.PI);
-    b.add('sub/tree-large', hx + 3, 15.6, hi);
   }
   // the yard behind the store, the service road down the east side and the tire bay's drive on the west
   b.slab(flat(ASPHALT), -EDGE - 4, 26.5, -40, SB - 0.3, 0.008, 0.02);
@@ -2605,29 +2764,89 @@ function buildOutside() {
   b.add('furn/cardboardBoxClosed', -EDGE - 1.2, tz + 2.2, 0.2);
   b.add('car/wheel-dark', -EDGE - 1.5, tz + 2.6, 0, 0);
   b.add('car/wheel-default', -EDGE - 2.2, tz + 2.6, 0, 0);
-  // woods round the site, leaving the lot, the service road and the tire bay's drive clear
-  var n = 0;
-  for (var gz = 6; gz > -62; gz -= 2.6) {
-    for (var gx = -46; gx <= 46; gx += 2.6) {
-      n++;
-      var jx = gx + Math.sin(n * 12.9) * 0.9;
-      var jz = gz + Math.cos(n * 7.3) * 0.9;
-      if (jx > -31 && jx < 29.5 && jz > -43 && jz < 11.5) continue;
-      if (Math.sin(n * 3.1) > 0.75) continue;
-      b.add(TREES[n % 5], jx, jz, n);
-      if (n % 3 === 0) b.add('nature/plant_bushLarge', jx + 1.1, jz + 0.7, n);
-      if (n % 4 === 1) b.add(['nature/flower_redA', 'nature/flower_yellowA', 'nature/flower_purpleA'][n % 3], jx - 0.9, jz + 1.0, n);
-    }
-  }
   decor(PLAN.decor.out);
   root.add(b.group());
+  buildNature();
   buildLot();
   buildTaxi();
   buildDock();
   buildGarden();
   buildPylon();
 }
-var TREES = ['nature/tree_oak', 'nature/tree_default', 'nature/tree_fat', 'nature/tree_detailed', 'nature/tree_pineRoundC'];
+// Trees, bushes, grass and flowers scattered over the zones of NATURE on a jittered grid. Each 16 unit tile of ground is
+// its own batch, so what is off the screen is not drawn
+var TILE = 12;
+function buildNature() {
+  var tiles = {};
+  var seed = 7;
+  function rand() {
+    seed = (seed * 1664525 + 1013904223) >>> 0;
+    return seed / 4294967296;
+  }
+  function pick(list) {
+    return list[Math.floor(rand() * list.length)];
+  }
+  function put(ref, x, z, big) {
+    var key = Math.floor(x / TILE) + ',' + Math.floor(z / TILE);
+    var b = tiles[key] = tiles[key] || new Batch();
+    var k = (big ? 0.85 + rand() * 0.4 : 0.8 + rand() * 0.5);
+    b.model(ref, x, -lib.model(ref).box.y0 * k, z, rand() * 6.283, k);
+  }
+  function clear(x, z) {
+    return NATURE.clear.some(function (c) { return x > c[0] && x < c[1] && z > c[2] && z < c[3]; });
+  }
+  function scatter(r, per, add) {
+    if (!per) return;
+    var w = r[1] - r[0];
+    var d = r[3] - r[2];
+    var step = Math.sqrt(100 / per);
+    var nx = Math.max(1, Math.round(w / step));
+    var nz = Math.max(1, Math.round(d / step));
+    var p = per * (w / nx) * (d / nz) / 100;
+    for (var i = 0; i < nx; i++) {
+      for (var j = 0; j < nz; j++) {
+        for (var n = Math.floor(p + rand()); n > 0; n--) {
+          var x = r[0] + (i + rand()) * w / nx;
+          var z = r[2] + (j + rand()) * d / nz;
+          if (!clear(x, z)) add(x, z);
+        }
+      }
+    }
+  }
+  // patches of lighter and darker lawn, so the ground is not one flat green
+  function mow(r) {
+    var w = r[1] - r[0];
+    var d = r[3] - r[2];
+    var top = Math.min(w, d) / 2 * 0.8;
+    if (top < 0.5) return;
+    for (var n = Math.min(14, Math.round(w * d / 50)); n > 0; n--) {
+      var rad = Math.min(top, 1.2 + rand() * 1.8);
+      var cx = r[0] + rad + rand() * (w - 2 * rad);
+      var cz = r[2] + rad + rand() * (d - 2 * rad);
+      var pts = [];
+      for (var a = 0; a < 14; a++) pts.push([cx + Math.cos(a / 14 * 6.283) * rad * (1 + rand() * 0.2), cz + Math.sin(a / 14 * 6.283) * rad * (0.8 + rand() * 0.2)]);
+      var g = patch(pts);
+      g.deleteAttribute('uv');
+      var key = Math.floor(cx / TILE) + ',' + Math.floor(cz / TILE);
+      (tiles[key] = tiles[key] || new Batch()).geom(g, flat([0x91ca72, 0x6cae58, 0x84c468][Math.floor(rand() * 3)]), -0.02 + rand() * 0.004);
+    }
+  }
+  NATURE.zones.forEach(function (zn) {
+    mow(zn.r);
+    var trees = [];
+    zn.tr.forEach(function (s) { trees = trees.concat(NATURE.tree[s]); });
+    scatter(zn.r, zn.t, function (x, z) { put(pick(trees), x, z, true); });
+    scatter(zn.r, zn.b, function (x, z) { put(pick(NATURE.bush), x, z); });
+    scatter(zn.r, zn.g, function (x, z) { put(pick(NATURE.grass), x, z); });
+    scatter(zn.r, zn.f, function (x, z) { put(pick(NATURE.flower), x, z); });
+    scatter(zn.r, zn.k, function (x, z) { put(pick(NATURE.rock), x, z); });
+    scatter(zn.r, zn.t ? zn.b / 3 : 0, function (x, z) { put(pick(NATURE.fern), x, z); });
+  });
+  NATURE.singles.forEach(function (q) {
+    put(pick(NATURE.tree[q[0]]), q[1], q[2], true);
+  });
+  Object.keys(tiles).forEach(function (k) { root.add(tiles[k].group()); });
+}
 
 // parking bays: two rows across the front split by a walkway to each entrance; the lot paints more of them at each level
 function buildLot() {
@@ -3144,6 +3363,7 @@ function syncArea(s, animate, now) {
     if (!pc) continue;
     if (inn && !pc.on && animate && s.shown >= 0) {
       pc.on = true;
+      if (pc.helper && !pc.helper.placed) startHelper(s, pc.helper);
       pc.x.visible = true;
       pc.gb = pc.b.group();
       pc.g = new THREE.Group();
@@ -3155,6 +3375,7 @@ function syncArea(s, animate, now) {
       grew = true;
     } else if (inn) {
       pc.on = true;
+      if (pc.helper && !pc.helper.placed) startHelper(s, pc.helper);
       pc.x.visible = true;
       if (!pc.g && !pc.x.parent) s.group.add(pc.x);
     } else {
@@ -4351,7 +4572,39 @@ function anchor(id) {
   return [s.cx, 0.2, Math.max(s.a.vacant[3] - 0.2, s.a.sign[1] + 1.1)];
 }
 
+// the rotate buttons sit over the picture, so a tag keeps out from under them
+var btnRects = [];
+var btnAt = -1e9;
+function buttonRects(now) {
+  if (now - btnAt < 1000) return btnRects;
+  btnAt = now;
+  var o = tagsEl.getBoundingClientRect();
+  btnRects = ['turn-l', 'turn-r'].map(function (id) {
+    var r = document.getElementById(id).getBoundingClientRect();
+    return { x0: r.left - o.left - 4, x1: r.right - o.left + 4, y0: r.top - o.top - 4, y1: r.bottom - o.top + 4 };
+  });
+  return btnRects;
+}
+
+function tagText(id, st, mode) {
+  if (st.alert) return st.name + '  ' + st.said;
+  if (st.own) {
+    if (!st.lv) return st.name;
+    return mode ? st.name + ' ' + st.lv : st.name + '  Lv ' + st.lv + (PL[id] ? '' : '/' + UPS + '  ' + '★'.repeat(st.stars));
+  }
+  return st.avail ? st.name + '  $' + short(st.price) : st.name + '  locked';
+}
+
+function clash(a, b) {
+  return a.x0 < b.x1 && a.x1 > b.x0 && a.y0 < b.y1 && a.y1 > b.y0;
+}
+
+// Tags read in full close up, short at the start view and as a dot far out. When two would overlap the more urgent one
+// stays: the open card's, then an alert, a department ready to buy, an open one, one for sale
 function overlay(now) {
+  var mode = focus.dist < 36 ? 0 : focus.dist < 66 ? 1 : 2;
+  var sc = Math.max(0.6, Math.min(1.1, 30 / focus.dist + 0.12));
+  var list = [];
   tagIds().forEach(function (id) {
     var s = shops[id] || places[id];
     var t = s.tag;
@@ -4362,49 +4615,70 @@ function overlay(now) {
     var vis = open && sp.z < 1 && sp.x > -60 && sp.x < cw + 60 && sp.y > IT + 34 && sp.y < ch - IB;
     if (open && sp.z < 1) anchorXY[id] = { x: sp.x, y: sp.y, top: sp.y };
     else delete anchorXY[id];
-    var show = vis && (st.own || st.avail || focus.dist < 40) && !says.some(function (w) { return w.id === id; });
+    var want = vis && (st.own || st.avail || focus.dist < 40) && !says.some(function (w) { return w.id === id; });
+    var ready = !st.own && st.avail && S.cash >= st.price;
+    list.push({ id: id, t: t, st: st, x: sp.x, y: sp.y, want: want, ready: ready, below: selId === id,
+      pri: selId === id ? 5 : st.alert ? 4 : ready ? 3 : st.own ? 2 : st.avail ? 1 : 0 });
+  });
+  var taken = buttonRects(now).slice();
+  list.sort(function (p, q) { return q.pri - p.pri || q.y - p.y; });
+  list.forEach(function (e) {
+    var t = e.t;
+    var st = e.st;
+    var show = e.want;
+    var dot = mode === 2;
+    var line = tagText(e.id, st, mode);
+    var w = dot ? 14 : t.w || Math.max(82, line.length * 6.4 + 18);
+    var h = dot ? 14 : t.h || 24;
+    var tx = Math.round(Math.max(w * sc / 2 + 4, Math.min(cw - w * sc / 2 - 4, e.x)));
+    var ty = Math.round(e.y);
+    var oy = dot ? ty + h * sc / 2 : e.below ? ty + 8 + h * sc : ty;
+    var box = { x0: tx - w * sc / 2, x1: tx + w * sc / 2, y0: oy - h * sc, y1: oy };
+    if (show && e.pri < 5 && taken.some(function (q) { return clash(q, box); })) show = false;
+    if (show) taken.push(box);
     if (t.shown !== show) {
       t.shown = show;
       t.el.style.display = show ? '' : 'none';
     }
-    if (show) {
-      var line = st.alert ? st.name + '  ' + st.said : st.own ? (st.lv ? st.name + '  Lv ' + st.lv + (PL[id] ? '' : '/' + UPS + '  ' + '★'.repeat(st.stars)) : st.name) : st.avail ? st.name + '  $' + short(st.price) : st.name + '  locked';
-      if (line !== t.text) {
-        t.text = line;
-        t.line.textContent = line;
-        t.h = t.el.offsetHeight;
-      }
-      var cls = 'tag' + (st.own ? ' own' : st.avail ? ' buy' : ' lock') + (!st.own && st.avail && S.cash >= st.price ? ' ready' : '') + (st.alert ? ' alert' : '') + (selId ? (selId === id ? ' sel' : ' dim') : '');
-      if (cls !== t.cls) {
-        t.cls = cls;
-        t.el.className = cls;
-      }
-      var fw = st.own ? (st.frac * 100).toFixed(1) + '%' : '';
-      if (fw !== t.fw) {
-        t.fw = fw;
-        t.bar.style.width = fw;
-      }
-      var full = st.frac >= 1 ? 'full' : '';
-      if (full !== t.full) {
-        t.full = full;
-        t.bar.className = full;
-      }
-      var sc = Math.max(0.6, Math.min(1.1, 30 / focus.dist + 0.12));
-      var tx = Math.round(sp.x);
-      var ty = Math.round(sp.y);
-      var below = selId === id;
-      if (tx !== t.x || ty !== t.y || sc !== t.sc || below !== t.below) {
-        t.x = tx;
-        t.y = ty;
-        t.sc = sc;
-        t.below = below;
-        // the open card's tag hangs under the outline, clear of the pieces inside it
-        t.el.style.transform = 'translate(' + tx + 'px,' + ty + 'px) translate(-50%,' + (below ? '8px' : '-100%') + ') scale(' + sc + ')';
-      }
-      anchorXY[id].top = ty - (t.h || 24) * sc;
+    if (!show) return;
+    if (line !== t.text) {
+      t.text = line;
+      t.line.textContent = line;
+      t.w = 0;
     }
+    var cls = 'tag' + (st.own ? ' own' : st.avail ? ' buy' : ' lock') + (e.ready ? ' ready' : '') + (st.alert ? ' alert' : '') + (selId ? (selId === e.id ? ' sel' : ' dim') : '') + (dot ? ' dot' : '');
+    if (cls !== t.cls) {
+      t.cls = cls;
+      t.el.className = cls;
+      t.w = 0;
+    }
+    if (!t.w) {
+      t.w = t.el.offsetWidth;
+      t.h = t.el.offsetHeight;
+    }
+    var fw = st.own ? (st.frac * 100).toFixed(1) + '%' : '';
+    if (fw !== t.fw) {
+      t.fw = fw;
+      t.bar.style.width = fw;
+    }
+    var full = st.frac >= 1 ? 'full' : '';
+    if (full !== t.full) {
+      t.full = full;
+      t.bar.className = full;
+    }
+    var below = e.below;
+    if (tx !== t.x || ty !== t.y || sc !== t.sc || below !== t.below || dot !== t.dot) {
+      t.x = tx;
+      t.y = ty;
+      t.sc = sc;
+      t.below = below;
+      t.dot = dot;
+      // the open card's tag hangs under the outline, clear of the pieces inside it; a dot sits on its spot
+      t.el.style.transform = 'translate(' + tx + 'px,' + ty + 'px) translate(-50%,' + (dot ? '-50%' : below ? '8px' : '-100%') + ') scale(' + sc + ')';
+    }
+    anchorXY[e.id].top = ty - (dot ? 7 : t.h || 24) * sc;
   });
-  var a2 = bestId && anchorXY[bestId];
+  var a2 = bestId && bestId !== selId && anchorXY[bestId];
   if (!a2) {
     arrowEl.hidden = true;
     return;
@@ -4483,6 +4757,12 @@ function draw(now) {
     clamp();
     place();
   }
+  var far = focus.dist >= LOD_DIST;
+  if (far !== lodFar) {
+    lodFar = far;
+    root.traverse(function (o) { if (o.userData.lod) o.visible = (o.userData.lod === 'lo') === far; });
+    shadowDirty = true;
+  }
   dayStep(dt);
   trafficStep(dt);
   crowdStep(dt);
@@ -4544,17 +4824,13 @@ function spot(id) {
   return { x: 0, y: 0.5 };
 }
 
-function go(x, z) {
-  flyTo(x, z, Math.min(focus.dist, fit(11)));
-}
-
-// the start view: the grocery entrance and the produce market at the phone's portrait width
+// the start view: the grocery entrance, the produce market and the east wing at the phone's portrait width
 function focusNow() {
   goal = null;
   azGoal = null;
-  focus.x = 9;
-  focus.z = -3.5;
-  focus.dist = fit(16);
+  focus.x = 10.5;
+  focus.z = -4.5;
+  focus.dist = fit(19);
   focus.az = VIEW_AZ;
   clamp();
   place();
@@ -4727,7 +5003,15 @@ function pieceBox(id, k) {
     var g = pc.b.group();
     box = boxOf(g);
     g.traverse(function (o) { if (o.geometry) o.geometry.dispose(); });
-  } else if (places[id] && places[id].items[k + 1]) box = boxOf(places[id].items[k + 1].g);
+  } else if (places[id] && places[id].items[k + 1]) {
+    // a level that is still rising is squashed flat, so measure it at full height
+    var ig = places[id].items[k + 1].g;
+    var sy = ig.scale.y;
+    ig.scale.y = 1;
+    box = boxOf(ig);
+    ig.scale.y = sy;
+    ig.updateMatrixWorld(true);
+  }
   var out;
   if (!box.isEmpty() && box.getSize(new THREE.Vector3()).length() < 10) out = { x0: box.min.x, x1: box.max.x, z0: box.min.z, z1: box.max.z, top: box.max.y };
   else {
@@ -4835,13 +5119,28 @@ function flashStep(now) {
   }
 }
 
-// where a piece is on the screen, kept inside the part of it the game uses
+// where a piece is on the screen once the camera has arrived, or null when that is outside the part the game uses
 function pieceScreen(id, k) {
   if (!shops[id] && !places[id]) return null;
   var b = pieceBox(id, k);
+  var was = null;
+  if (goal) {
+    was = { x: focus.x, z: focus.z, dist: focus.dist };
+    focus.x = goal.x;
+    focus.z = goal.z;
+    focus.dist = goal.k;
+    clamp();
+    place();
+  }
   toScreen((b.x0 + b.x1) / 2, Math.min(1.4, b.top * 0.6), (b.z0 + b.z1) / 2, sp);
-  if (sp.z > 1) return null;
-  return { x: Math.max(40, Math.min(cw - 40, sp.x)), y: Math.max(IT + 90, Math.min(ch - IB - 30, sp.y)) };
+  if (was) {
+    focus.x = was.x;
+    focus.z = was.z;
+    focus.dist = was.dist;
+    place();
+  }
+  if (sp.z > 1 || sp.x < 40 || sp.x > cw - 40 || sp.y < IT + 90 || sp.y > ch - IB - 30) return null;
+  return { x: sp.x, y: sp.y };
 }
 
 // each upgrade shows: its piece rises, its name pops over it, and the camera goes to it, closer for a small piece
@@ -4860,9 +5159,12 @@ function event(res, now) {
     var size = pc ? pieceSize(pc) : 1;
     var close = fit(size < 0.6 ? 6 : size < 1.5 ? 8 : 11);
     if (!onScreen(at[0], at[1]) || !framed && (res.unlock || focus.dist > close * 1.2)) out = flyTo(at[0], at[1], Math.min(focus.dist, close)) + 0.1;
-  } else if (res.place && !framed) {
-    var p = spot(res.id);
-    out = flyTo(p.x, p.y, Math.min(focus.dist, fit(PLAN.wing[res.id] ? 11 : EDGE * 2 + 2))) + 0.1;
+  } else if (res.place) {
+    var pb = pieceBox(res.id, res.piece);
+    if (!framed) {
+      var p = spot(res.id);
+      out = flyTo(p.x, p.y, Math.min(focus.dist, fit(PLAN.wing[res.id] ? 11 : EDGE * 2 + 2))) + 0.1;
+    } else if (!onScreen((pb.x0 + pb.x1) / 2, (pb.z0 + pb.z1) / 2)) out = flyTo((pb.x0 + pb.x1) / 2, (pb.z0 + pb.z1) / 2, Math.min(focus.dist, fit(11))) + 0.1;
   }
   return out;
 }
@@ -4973,12 +5275,14 @@ function upIcon(id, k) {
   var seen = figs.length;
   var sm = s.signMat;
   var pc = makePiece(s, k);
+  var made = s.signMat !== sm ? s.signMat : null;
   figs.length = seen;
   s.signMat = sm;
   var g = new THREE.Group();
   pc.x.visible = true;
   var bg = pc.b.group();
   g.add(bg, pc.x);
+  bg.traverse(function (o) { if (o.userData.lod) o.visible = o.userData.lod === 'hi'; });
   pc.x.traverse(function (o) { if (o.material && o.material.blending === THREE.AdditiveBlending) o.visible = false; });
   var fig = pc.staff || pc.helper && pc.helper.f;
   var box = null;
@@ -4989,6 +5293,10 @@ function upIcon(id, k) {
   }
   var url = snap(g, box);
   g.traverse(function (o) { if (o.geometry) o.geometry.dispose(); });
+  if (made) {
+    made.map.dispose();
+    made.dispose();
+  }
   icons[key] = url;
   return url;
 }
@@ -5027,6 +5335,7 @@ function placeIcon(id, k) {
     g.add(dol);
   }
   g.traverse(function (o) { o.visible = true; });
+  g.traverse(function (o) { if (o.userData.lod) o.visible = o.userData.lod === 'hi'; });
   g.updateMatrixWorld(true);
   icons[key] = snap(g);
   return icons[key];
@@ -5093,7 +5402,6 @@ window.View = {
   },
   ready: function () { return ready; },
   event: event,
-  go: go,
   refresh: refresh,
   confetti: confetti,
   populate: function () { sync(true, performance.now()); },
