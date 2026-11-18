@@ -1,6 +1,8 @@
 // The country round the store: ground height, lakes, rivers, tracks and where the trees, rocks and flowers stand.
 // Heights are above the lot's lawn. The lot, the street and the yards stay flat; the hills grow out from there.
 export var DOM = [-150, 150, -150, 64];
+// the camera never gets further out than this, so nothing grows past it
+var SEEN = [-112, 112, -116, 54];
 export var FLAT = [[-48, 48, -42, 44], [-80, 80, 2, 22]];
 
 var LAKES = [
@@ -16,8 +18,8 @@ var STREAMS = [
 
 // the dirt tracks the street turns into where it leaves the flat ground, and the bridge over the stream on the west
 export var TRACKS = [
-  { pts: [[78, 12], [92, 12.5], [104, 6], [112, -8], [124, -24], [146, -34]], w: 2.6 },
-  { pts: [[-78, 12], [-92, 14], [-106, 24], [-122, 28], [-146, 40]], w: 2.6 }
+  { pts: [[76, 12], [90, 13], [102, 10], [112, 2], [118, -8]], w: 2.6 },
+  { pts: [[-76, 12], [-90, 14], [-102, 20], [-110, 30], [-114, 42]], w: 2.6 }
 ];
 export var BRIDGE = { x: -66, z: 12 };
 
@@ -59,7 +61,7 @@ export function away(x, z) {
   return d;
 }
 
-var PEAKS = [[66, -30, 20, 9], [-8, -98, 24, 22], [32, -88, 20, 17], [-48, -86, 20, 16], [66, -78, 20, 14], [-88, -50, 20, 12], [100, 4, 20, 8], [-70, 80, 20, 8], [-34, -122, 30, 26], [30, -126, 30, 24]];
+var PEAKS = [[66, -30, 20, 9], [-8, -98, 24, 22], [32, -88, 20, 17], [-48, -86, 20, 16], [66, -78, 20, 14], [-88, -50, 20, 12], [-70, 80, 20, 8], [-34, -122, 30, 26], [30, -126, 30, 24]];
 
 function hills(x, z) {
   var d = away(x, z);
@@ -75,14 +77,14 @@ function hills(x, z) {
 }
 
 // splines through the control points, sampled about every 2.5 units, with the water level at each
-function spline(c) {
+function spline(c, step) {
   var out = [];
   for (var i = 0; i < c.length - 1; i++) {
     var p0 = c[Math.max(0, i - 1)];
     var p1 = c[i];
     var p2 = c[i + 1];
     var p3 = c[Math.min(c.length - 1, i + 2)];
-    var n = Math.max(2, Math.round(Math.hypot(p2[0] - p1[0], p2[1] - p1[1]) / 2.5));
+    var n = Math.max(2, Math.round(Math.hypot(p2[0] - p1[0], p2[1] - p1[1]) / (step || 2.5)));
     for (var k = 0; k < n; k++) {
       var t = k / n;
       var f = function (a, b, c2, d) { return 0.5 * (2 * b + (-a + c2) * t + (2 * a - 5 * b + 4 * c2 - d) * t * t + (-a + 3 * b - 3 * c2 + d) * t * t * t); };
@@ -175,7 +177,7 @@ export function onTrack(x, z, m) {
   }
   return false;
 }
-TRACKS.forEach(function (t) { t.line = spline(t.pts); });
+TRACKS.forEach(function (t) { t.line = spline(t.pts, 1.2); });
 
 // the woods that stand close round the store, so the view from the yard always has some
 var GROVES = [[-40, -52, 9], [-20, -49, 5], [-4, -47, 5], [14, -50, 7], [34, -54, 10], [55, -46, 9], [-58, -40, 9], [60, -16, 8], [-56, -10, 6], [58, 22, 9], [-60, 30, 8], [-30, 60, 12], [30, 58, 12], [-8, 56, 8]];
@@ -224,8 +226,8 @@ export function scenery() {
   function slope(x, z) {
     return Math.hypot(ground(x + 1, z) - ground(x - 1, z), ground(x, z + 1) - ground(x, z - 1)) / 2;
   }
-  for (var cx = DOM[0] + 4; cx < DOM[1] - 4; cx += CELL) {
-    for (var cz = DOM[2] + 4; cz < DOM[3] - 6; cz += CELL) {
+  for (var cx = SEEN[0]; cx < SEEN[1]; cx += CELL) {
+    for (var cz = SEEN[2]; cz < SEEN[3]; cz += CELL) {
       var x = cx + rand() * CELL;
       var z = cz + rand() * CELL;
       var d = away(x, z);
@@ -237,7 +239,7 @@ export function scenery() {
       var turn = rand() * 6.283;
       var k = 0.85 + rand() * 0.5;
       if (sl > 0.7) {
-        if (rand() < 0.25) out.rocks.push([pick(CLIFF), x, z, turn, 0.8 + rand() * 0.9]);
+        if (rand() < 0.07) out.rocks.push([pick(CLIFF), x, z, turn, 0.6 + rand() * 0.8]);
         continue;
       }
       if (rand() < f * 0.8 + near * (1 - f)) {
@@ -254,8 +256,8 @@ export function scenery() {
   }
   // patches of flowers in the meadows, one colour mostly, a few of another
   for (var n = 0; n < 3000 && out.flowers.length < 900; n++) {
-    var px = DOM[0] + 8 + rand() * (DOM[1] - DOM[0] - 16);
-    var pz = DOM[2] + 8 + rand() * (DOM[3] - DOM[2] - 20);
+    var px = SEEN[0] + rand() * (SEEN[1] - SEEN[0]);
+    var pz = SEEN[2] + rand() * (SEEN[3] - SEEN[2]);
     if (away(px, pz) < 2.5 || shore(px, pz) < 1.6 || forest(px, pz) > 0.3 || onTrack(px, pz, 2) || slope(px, pz) > 0.5) continue;
     if (meadow(px, pz) < 0.35 && rand() < 0.7) continue;
     var base = pick(FLOWER);
@@ -271,8 +273,8 @@ export function scenery() {
   }
   // stones on the banks and in the shallows, reeds where the bank meets the water, lily pads on the lake
   for (var tries = 0; tries < 12000; tries++) {
-    var wx = DOM[0] + rand() * (DOM[1] - DOM[0]);
-    var wz = DOM[2] + rand() * (DOM[3] - DOM[2] - 6);
+    var wx = SEEN[0] + rand() * (SEEN[1] - SEEN[0]);
+    var wz = SEEN[2] + rand() * (SEEN[3] - SEEN[2]);
     var s = shore(wx, wz);
     if (s > 3.5 || away(wx, wz) < 5 || onTrack(wx, wz, 2)) continue;
     var lv = waterAt(wx, wz);

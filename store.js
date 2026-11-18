@@ -3071,7 +3071,7 @@ function buildLand() {
     var pick = rand();
     var shade = 0.92 + rand() * 0.16;
     lib.model(ref).parts.forEach(function (p) {
-      var g = p.geom.index ? p.geom.toNonIndexed() : p.geom.clone();
+      var g = p.geom.clone();
       g.deleteAttribute('uv');
       g.applyMatrix4(mtx);
       var pal = LEAF[p.mat.name];
@@ -3096,11 +3096,12 @@ function buildLand() {
       var tl = Math.hypot(e[0] - a[0], e[1] - a[1]);
       var nx = -(e[1] - a[1]) / tl;
       var nz = (e[0] - a[0]) / tl;
+      var taper = Math.min(1, (l.length - 1 - i) / 12);
       [-1, 0, 1].forEach(function (s) {
-        var px = p[0] + nx * s * tr.w / 2;
-        var pz = p[1] + nz * s * tr.w / 2;
-        pp.push(px, LAND.ground(px, pz) + 0.05, pz);
-        c.setHex(s ? 0xb9a67c : 0xd3be92);
+        var px = p[0] + nx * s * tr.w / 2 * taper;
+        var pz = p[1] + nz * s * tr.w / 2 * taper;
+        pp.push(px, LAND.ground(px, pz) + 0.12, pz);
+        c.setHex(s ? 0xb6a47c : 0xcdb98c);
         tc.push(c.r, c.g, c.b);
       });
     });
@@ -3108,7 +3109,7 @@ function buildLand() {
     for (var k = 0; k < l.length - 1; k++) {
       for (var s = 0; s < 2; s++) {
         var o = k * 3 + s;
-        ti.push(o, o + 3, o + 1, o + 1, o + 3, o + 4);
+        ti.push(o, o + 1, o + 3, o + 1, o + 4, o + 3);
       }
     }
     var tg = new THREE.BufferGeometry();
