@@ -68,15 +68,13 @@ function hills(x, z) {
   var d = away(x, z);
   var h = 0.8 + noise(x / 30 + 3, z / 30) * 11 + noise(x / 14, z / 14 + 9) * 4 + noise(x / 7, z / 7 + 4) * 1.4;
   h += smooth(-60, -95, z) * 9 + smooth(8, 44, d) * 5 + Math.max(0, d - 42) * 0.2;
-  // a bank close to the lot on either side of the lake, so the hills show above the top bars
-  h += smooth(2, 16, d) * 12 * smooth(1.3, 2.4, Math.min(lakeR(LAKES[0], x, z), lakeR(LAKES[1], x, z)));
   for (var i = 0; i < PEAKS.length; i++) {
     var p = PEAKS[i];
     h += p[3] * Math.exp(-(((x - p[0]) * (x - p[0]) + (z - p[1]) * (z - p[1])) / (p[2] * p[2])));
   }
   var m = 1 - Math.abs(noise(x / 34 + 20, z / 34 + 7) * 2 - 1);
   h += smooth(-84, -140, z) * (8 + m * m * 14) + smooth(70, 140, Math.abs(x)) * m * m * 10;
-  return smooth(0, 9, d) * h;
+  return smooth(0, 14, d) * h;
 }
 
 // splines through the control points, sampled about every 2.5 units, with the water level at each
