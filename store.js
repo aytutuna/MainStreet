@@ -975,7 +975,11 @@ function Batch() {
     var w = (b.x1 - b.x0) * k;
     var d = (b.z1 - b.z0) * k;
     var a = w * d * (b.h * k > 0.3 ? 1 : 0.2);
-    fp.push([x + c[0], z + c[1], Math.hypot(w, d) / 2, y + b.y0 * k, y + b.h * k, a * Math.sin(rot || 0), a * Math.cos(rot || 0)]);
+    var cn = [[b.x0, b.z0], [b.x1, b.z0], [b.x1, b.z1], [b.x0, b.z1]].map(function (q) {
+      var o = rotY(q[0] * k, q[1] * k, rot || 0);
+      return [x + o[0], z + o[1]];
+    });
+    fp.push([x + c[0], z + c[1], Math.hypot(w, d) / 2, y + b.y0 * k, y + b.h * k, a * Math.sin(rot || 0), a * Math.cos(rot || 0), cn]);
   }
   this.fp = fp;
   this.add = function (ref, x, z, rot, y, skip) {
@@ -5610,7 +5614,7 @@ function boxOf(group) {
     if (!o.isMesh || (o.material && o.material.blending === THREE.AdditiveBlending)) return;
     if (o.isSkinnedMesh) {
       o.getWorldPosition(v);
-      box.expandByPoint(new THREE.Vector3(v.x - 0.4, 0, v.z - 0.4)).expandByPoint(new THREE.Vector3(v.x + 0.4, 1.5, v.z + 0.4));
+      box.expandByPoint(new THREE.Vector3(v.x - 0.3, 0, v.z - 0.3)).expandByPoint(new THREE.Vector3(v.x + 0.3, 1.05, v.z + 0.3));
     } else box.union(new THREE.Box3().setFromObject(o));
   });
   return box;
@@ -5637,10 +5641,25 @@ function snap(group, box) {
   scn.add(sunl);
   scn.add(group);
   var mid = box.getCenter(new THREE.Vector3());
-  var rad = box.getSize(new THREE.Vector3()).length() / 2;
   var cm = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
   var dir = new THREE.Vector3(0.55, 0.62, 0.85).normalize();
-  cm.position.copy(mid).addScaledVector(dir, rad / Math.sin(cm.fov * Math.PI / 360) * 1.05);
+  cm.position.copy(mid).add(dir);
+  cm.lookAt(mid);
+  cm.updateMatrixWorld(true);
+  // fit the box's corners to the view, not its bounding sphere, which leaves a long thin piece small
+  var ax = new THREE.Matrix4().extractRotation(cm.matrixWorld);
+  var right = new THREE.Vector3(1, 0, 0).applyMatrix4(ax);
+  var upv = new THREE.Vector3(0, 1, 0).applyMatrix4(ax);
+  var cs = [];
+  for (var ci = 0; ci < 8; ci++) {
+    var rel = new THREE.Vector3(ci & 1 ? box.max.x : box.min.x, ci & 2 ? box.max.y : box.min.y, ci & 4 ? box.max.z : box.min.z).sub(mid);
+    cs.push([rel.dot(right), rel.dot(upv), rel.dot(dir)]);
+  }
+  var cx = (Math.min.apply(null, cs.map(function (q) { return q[0]; })) + Math.max.apply(null, cs.map(function (q) { return q[0]; }))) / 2;
+  var cy = (Math.min.apply(null, cs.map(function (q) { return q[1]; })) + Math.max.apply(null, cs.map(function (q) { return q[1]; }))) / 2;
+  var reach = Math.max.apply(null, cs.map(function (q) { return Math.max(Math.abs(q[0] - cx), Math.abs(q[1] - cy)) / Math.tan(cm.fov * Math.PI / 360) + q[2]; }));
+  mid.addScaledVector(right, cx).addScaledVector(upv, cy);
+  cm.position.copy(mid).addScaledVector(dir, reach * 1.1);
   cm.lookAt(mid);
   if (!iconRT) {
     iconRT = new THREE.WebGLRenderTarget(ICON, ICON, { samples: 4 });
@@ -5730,8 +5749,9 @@ function focusOf(g) {
       var d = new THREE.Vector3(e[5], 0, e[6]);
       var n = d.length();
       d.transformDirection(o.matrixWorld).multiplyScalar(n);
+      var cn = e[7] && e[7].map(function (q) { var w = new THREE.Vector3(q[0], 0, q[1]).applyMatrix4(o.matrixWorld); return [w.x, w.z]; });
       v.set(e[0], 0, e[1]).applyMatrix4(o.matrixWorld);
-      pts.push({ x: v.x, z: v.z, r: e[2], lo: e[3], hi: e[4], fx: d.x, fz: d.z, a: n });
+      pts.push({ x: v.x, z: v.z, r: e[2], lo: e[3], hi: e[4], fx: d.x, fz: d.z, a: n, cn: cn });
     });
   });
   if (!pts.length) return null;
@@ -5753,7 +5773,15 @@ function focusOf(g) {
   var box = new THREE.Box3();
   cl.forEach(function (p) {
     var q = rotY(p.x, p.z, turn);
-    box.expandByPoint(new THREE.Vector3(q[0] - p.r, p.lo, q[1] - p.r)).expandByPoint(new THREE.Vector3(q[0] + p.r, Math.max(p.lo + 0.3, p.hi), q[1] + p.r));
+    var top = Math.max(p.lo + 0.3, p.hi);
+    if (!p.cn) {
+      box.expandByPoint(new THREE.Vector3(q[0] - p.r, p.lo, q[1] - p.r)).expandByPoint(new THREE.Vector3(q[0] + p.r, top, q[1] + p.r));
+      return;
+    }
+    p.cn.forEach(function (c) {
+      var u = rotY(c[0], c[1], turn);
+      box.expandByPoint(new THREE.Vector3(u[0], p.lo, u[1])).expandByPoint(new THREE.Vector3(u[0], top, u[1]));
+    });
   });
   g.updateMatrixWorld(true);
   return box;
