@@ -2,18 +2,19 @@
 // Heights are above the lot's lawn. The lot, the street and the yards stay flat; the hills grow out from there.
 export var DOM = [-150, 150, -150, 64];
 // the camera never gets further out than this, so nothing grows past it
+var LAWNS = [[27.8, 47.5, -40, 8], [-47.5, -28, -40, 8]];
 var SEEN = [-112, 112, -116, 54];
 export var FLAT = [[-48, 48, -42, 44], [-80, 80, 2, 22]];
 
 var LAKES = [
-  { x: -12, z: -66, a: 28, b: 13, lv: -1, s: 3 },
-  { x: 72, z: -50, a: 12, b: 9, lv: -0.8, s: 8 }
+  { x: -6, z: -57, a: 25, b: 9, lv: -1, s: 3 },
+  { x: 44, z: -54, a: 9, b: 6, lv: -0.8, s: 8 }
 ];
 
 // control points run downhill; drop is the least the water falls per unit, floor where it stops
 var STREAMS = [
-  { pts: [[58, -128], [46, -108], [36, -92], [26, -78], [16, -68], [8, -64]], w0: 2.2, w1: 4.2, drop: 0.03, end: 0 },
-  { pts: [[-32, -64], [-50, -60], [-62, -46], [-66, -26], [-66, -6], [-66, 12], [-66, 34], [-74, 54], [-90, 70]], w0: 4.2, w1: 4.8, drop: 0.004, end: -2.4 }
+  { pts: [[44, -112], [34, -94], [26, -78], [20, -66], [12, -58], [4, -56]], w0: 2.2, w1: 4.2, drop: 0.03, end: 0 },
+  { pts: [[-24, -58], [-36, -54], [-47, -51], [-56, -43], [-58, -28], [-57, -6], [-57, 12], [-57, 34], [-66, 54], [-84, 70]], w0: 4.2, w1: 4.8, drop: 0.004, end: -2.4 }
 ];
 
 // the dirt tracks the street turns into where it leaves the flat ground, and the bridge over the stream on the west
@@ -21,7 +22,7 @@ export var TRACKS = [
   { pts: [[76, 12], [90, 13], [102, 10], [112, 2], [118, -8]], w: 2.6 },
   { pts: [[-76, 12], [-90, 14], [-102, 20], [-110, 30], [-114, 42]], w: 2.6 }
 ];
-export var BRIDGE = { x: -66, z: 12 };
+export var BRIDGE = { x: -57, z: 12 };
 
 function clamp(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
 export function smooth(a, b, x) {
@@ -61,19 +62,19 @@ export function away(x, z) {
   return d;
 }
 
-var PEAKS = [[66, -30, 20, 9], [-8, -98, 24, 22], [32, -88, 20, 17], [-48, -86, 20, 16], [66, -78, 20, 14], [-88, -50, 20, 12], [-70, 80, 20, 8], [-34, -122, 30, 26], [30, -126, 30, 24]];
+var PEAKS = [[-10, -72, 12, 14], [16, -70, 11, 12], [-34, -68, 11, 12], [40, -66, 10, 10], [-4, -86, 16, 20], [26, -82, 14, 16], [-32, -80, 14, 15], [50, -66, 16, 14], [-62, -70, 16, 14], [78, -20, 14, 10], [-80, -34, 14, 12], [-70, 80, 20, 8], [-30, -122, 30, 26], [30, -126, 30, 24]];
 
 function hills(x, z) {
   var d = away(x, z);
   var h = 0.8 + noise(x / 30 + 3, z / 30) * 11 + noise(x / 14, z / 14 + 9) * 4 + noise(x / 7, z / 7 + 4) * 1.4;
-  h += smooth(8, 44, d) * 5 + Math.max(0, d - 42) * 0.2;
+  h += smooth(-60, -95, z) * 9 + smooth(8, 44, d) * 5 + Math.max(0, d - 42) * 0.2;
   for (var i = 0; i < PEAKS.length; i++) {
     var p = PEAKS[i];
     h += p[3] * Math.exp(-(((x - p[0]) * (x - p[0]) + (z - p[1]) * (z - p[1])) / (p[2] * p[2])));
   }
   var m = 1 - Math.abs(noise(x / 34 + 20, z / 34 + 7) * 2 - 1);
   h += smooth(-84, -140, z) * (8 + m * m * 14) + smooth(70, 140, Math.abs(x)) * m * m * 10;
-  return smooth(0, 18, d) * h;
+  return smooth(0, 14, d) * h;
 }
 
 // splines through the control points, sampled about every 2.5 units, with the water level at each
@@ -180,7 +181,7 @@ export function onTrack(x, z, m) {
 TRACKS.forEach(function (t) { t.line = spline(t.pts, 1.2); });
 
 // the woods that stand close round the store, so the view from the yard always has some
-var GROVES = [[-40, -52, 9], [-20, -49, 5], [-4, -47, 5], [14, -50, 7], [34, -54, 10], [55, -46, 9], [-58, -40, 9], [60, -16, 8], [-56, -10, 6], [58, 22, 9], [-60, 30, 8], [-30, 60, 12], [30, 58, 12], [-8, 56, 8]];
+var GROVES = [[-34, -48, 11], [-18, -45, 6], [8, -45, 7], [24, -48, 11], [38, -55, 14], [-44, -64, 13], [48, -52, 13], [-14, -72, 14], [14, -74, 13], [66, -10, 11], [70, 20, 11], [-70, -8, 8], [-70, 28, 11], [-30, 60, 17], [30, 58, 17], [-8, 56, 11]];
 
 // how wooded a place is, 0 to 1
 export function forest(x, z) {
@@ -237,7 +238,7 @@ export function scenery() {
       var f = forest(x, z);
       var near = shore(x, z) < 7 ? 0.35 : 0;
       var turn = rand() * 6.283;
-      var k = 0.85 + rand() * 0.5;
+      var k = 0.8 + rand() * 0.5 + (rand() < 0.15 ? 0.6 : 0);
       if (sl > 0.7) {
         if (rand() < 0.07) out.rocks.push([pick(CLIFF), x, z, turn, 0.6 + rand() * 0.8]);
         continue;
@@ -246,7 +247,7 @@ export function scenery() {
         var high = h > 8 || rand() < 0.2 + 0.4 * smooth(-60, -120, z);
         var ref = high || (f > 0.6 && rand() < 0.3) ? pick(CONIFER) : rand() < 0.04 ? pick(FALL) : pick(BROAD);
         out.trees.push([ref, x, z, turn, k * (1 + h * 0.012), 1]);
-        if (rand() < 0.3) out.low.push([pick(BUSH), x + (rand() - 0.5) * 3, z + (rand() - 0.5) * 3, turn, 0.8 + rand() * 0.6]);
+        for (var bn = rand() < 0.55 ? 1 + Math.floor(rand() * 2) : 0; bn > 0; bn--) out.low.push([pick(BUSH), x + (rand() - 0.5) * 4, z + (rand() - 0.5) * 4, turn, 0.9 + rand() * 0.8]);
       } else if (f < 0.3 && rand() < 0.05 && d > 8) {
         out.trees.push([pick(LONE), x, z, turn, 1 + rand() * 0.35, 1]);
       } else if (f < 0.6 && rand() < 0.45) {
@@ -278,14 +279,26 @@ export function scenery() {
     var s = shore(wx, wz);
     if (s > 3.5 || away(wx, wz) < 5 || onTrack(wx, wz, 2)) continue;
     var lv = waterAt(wx, wz);
-    if (s > 0.1 && s < 0.9 && rand() < 0.04) out.rocks.push([pick(STONE), wx, wz, rand() * 6.283, 0.8 + rand() * 1.1]);
+    if (s > 0.1 && s < 0.9 && rand() < 0.09) out.rocks.push([pick(STONE), wx, wz, rand() * 6.283, 0.8 + rand() * 1.1]);
     else if (s < 0.1 && s > -0.45 && rand() < 0.012) out.water.push([pick(STONE), wx, wz, rand() * 6.283, 0.8 + rand() * 1.1, lv]);
-    else if (s > -0.2 && s < 0.5 && rand() < 0.03) {
-      for (var r2 = 0; r2 < 4; r2++) out.water.push([pick(REED), wx + (rand() - 0.5) * 1.6, wz + (rand() - 0.5) * 1.6, rand() * 6.283, 0.8 + rand() * 0.7, null]);
+    else if (s > -0.2 && s < 0.5 && rand() < 0.07) {
+      for (var r2 = 0; r2 < 6; r2++) out.water.push([pick(REED), wx + (rand() - 0.5) * 1.6, wz + (rand() - 0.5) * 1.6, rand() * 6.283, 0.8 + rand() * 0.7, null]);
     } else if (s < -0.5 && s > -1.5 && rand() < 0.012) {
       for (var p = 0; p < 3; p++) out.water.push([pick(PAD), wx + (rand() - 0.5) * 2.2, wz + (rand() - 0.5) * 2.2, rand() * 6.283, 0.9 + rand() * 0.6, lv + 0.02]);
     }
   }
+  // the side and back lawns keep to bushes and a few flower patches
+  LAWNS.forEach(function (r) {
+    var w = r[1] - r[0];
+    var d = r[3] - r[2];
+    for (var n2 = Math.round(w * d / 90); n2 > 0; n2--) {
+      var lx = r[0] + 1 + rand() * (w - 2);
+      var lz = r[2] + 1 + rand() * (d - 2);
+      var bl = rand();
+      if (bl < 0.5) for (var m = 3; m > 0; m--) out.low.push([pick(BUSH), lx + (rand() - 0.5) * 3, lz + (rand() - 0.5) * 3, rand() * 6.283, 1 + rand() * 0.7]);
+      else if (bl < 0.8) for (var q2 = 8; q2 > 0; q2--) out.flowers.push([pick(FLOWER), lx + (rand() - 0.5) * 4, lz + (rand() - 0.5) * 4, rand() * 6.283, 0.9 + rand() * 0.5]);
+    }
+  });
   // a canoe out on the lake and one pulled up on the sand
   out.water.push([CANOE, -4, -64, 0.6, 1, waterAt(-4, -64) + 0.02]);
   for (var cz = -46; cz > -62 && shore(-26, cz) > 0.45; cz -= 0.5);
