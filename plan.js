@@ -1081,86 +1081,133 @@ function wp(name, x, z, face, y) {
   return pw(name, x, z, face, { spots: 0, y: y });
 }
 
-// a low partition between two toilet stalls
+// a low partition between two toilet stalls, and a door standing ajar on one
 function stall(x) {
   return { box: [x - 0.02, x + 0.02, -7.9, -6.95, 0, 0.5], c: 0xb9c6d4 };
 }
+function sdoor(x) {
+  return det(x - 0.28, x + 0.08, -6.99, -6.95, 0.03, 0.47, 0x8fb4d8);
+}
+// an upgrade from lists of entries, flattened
+function pack(name) {
+  return { name: name, piece: Array.prototype.concat.apply([], Array.prototype.slice.call(arguments, 1)) };
+}
+// a thin rug above the floor patch
+function rug(x0, x1, z0, z1, c) {
+  return det(x0, x1, z0, z1, 0.05, 0.065, c);
+}
+// a desk with a rolling stool behind it, a screen and a low divider on its east side
+function pod(x, z, screen) {
+  return [pw('Workbench_Wood_01', x, z, 's', { spots: 0 }), pw('Chair_Metal_Cafe_01', x, z - 0.55, 's', { spots: 0 }), screen ? pc(x, z) : on('furn/laptop', x, z, 0.45, 0.9),
+    hi(x + 0.53, x + 0.57, z - 0.7, z + 0.35, 0, 0.45, 0xaab2c6)];
+}
+// a table with a chair at each end of both long sides
+function seats(x, z) {
+  return [pw('DiningTable_Rect_01', x, z, 's', { spots: 0 }), pw('DiningChair_Padded_01', x - 0.4, z - 0.65, 's', { spots: 0 }), pw('DiningChair_Padded_01', x + 0.4, z - 0.65, 's', { spots: 0 }),
+    pw('DiningChair_Padded_01', x - 0.4, z + 0.65, 'n', { spots: 0 }), pw('DiningChair_Padded_01', x + 0.4, z + 0.65, 'n', { spots: 0 })];
+}
+// the top of a kitchen counter with things on it
+function kitTop(list) {
+  return [['pw/KitTop_10', 0, 0, 0, 0.44]].concat(list);
+}
+// a screen and keyboard on a desk at x, z
+function pc(x, z) {
+  return [on('furn/computerScreen', x - 0.1, z, 0.45, 0.9), on('furn/computerKeyboard', x + 0.12, z + 0.2, 0.45, 0.9)];
+}
+
+// parcels on the shelves behind a service desk
+var boxes = [['furn/cardboardBoxClosed', -0.3, 0, 0, 0.2, 0.7], ['furn/cardboardBoxClosed', 0.1, 0, 0, 0.2, 0.9], ['furn/cardboardBoxOpen', 0.3, 0, 0, 0.45, 0.8], ['furn/cardboardBoxClosed', -0.2, 0, 0, 0.7, 0.8]];
 
 var WING = {
   serv: {
     rect: [15.3, 21.5, -3, 2.4],
-    visit: [[18.3, -1.2, Math.PI, 0], [19.3, -1.2, Math.PI, 4]],
+    visit: [[18.0, -0.9, Math.PI, 0], [19.0, -0.9, Math.PI, 4], [20.3, -1.25, Math.PI, 6]],
     ups: [
-      up('Service desk', pw('ServiceDesk_20', 18.3, -1.8, 's', { spots: 0 })),
-      up('Clerk', { staff: [18.3, -2.4, 's'] }),
-      up('Queue posts', pw('QueuePost_Pair_01', 18.8, -0.35, 's', { spots: 0 })),
-      up('Waiting chairs', pw('Chair_Metal_Cafe_01', 21.15, 1.3, 'k', { spots: 0 }), pw('Chair_Metal_Cafe_01', 21.15, 0.7, 'k', { spots: 0 }), pw('Chair_Metal_Cafe_01', 21.15, 0.1, 'k', { spots: 0 })),
-      up('Second desk', pw('ServiceDesk_20', 19.3, -1.8, 's', { spots: 0 })),
-      up('Second clerk', { staff: [19.3, -2.4, 's'] }),
-      up('Returns kiosk', pw('Kiosk_Cash_01', 20.7, -2.45, 's', { spots: 0 })),
-      up('Floor sign', pw('SignStand_Floor_01', 17.9, 1.6, 's', { spots: 0 })),
-      up('Waiting table', pw('Table_Four_01', 19.9, 0.9, 's', { spots: 0 }), pw('Planter_Tall_01', 21.1, 1.9, 's', { spots: 0 }))
+      pack('Service desk', pw('ServiceDesk_20', 18.0, -1.5, 's', { spots: 0 }), pw('Shelving_HD_01', 18.0, -2.75, 's', { spots: 0, on: boxes }), pw('CallBell_01', 17.6, -1.45, 's', { spots: 0, y: 0.45 })),
+      pack('Clerk', { staff: [18.0, -2.15, 's'] }),
+      pack('Queue posts', pw('QueuePost_Pair_01', 18.5, -0.1, 's', { spots: 0 }), pw('QueuePost_Pair_01', 18.5, 0.9, 's', { spots: 0 })),
+      pack('Waiting benches', pw('DiningBench_01', 19.7, 1.7, 'n', { spots: 0 }), pw('DiningBench_01', 20.55, 1.7, 'n', { spots: 0 }), m('furn/tableCoffee', 20.1, 1.1, 0, 0.6), pw('Planter_Tall_01', 21.1, 2.0, 's', { spots: 0 })),
+      pack('Second desk', pw('ServiceDesk_20', 19.0, -1.5, 's', { spots: 0 }), pw('Shelving_HD_01', 19.0, -2.75, 's', { spots: 0, on: boxes })),
+      pack('Second clerk', { staff: [19.0, -2.15, 's'] }),
+      pack('Parcel lockers and a returns counter', pw('Locker_Double_01', 19.95, -2.75, 's', { spots: 0 }), pw('Locker_Double_01', 20.35, -2.75, 's', { spots: 0 }), pw('Locker_Double_01', 20.75, -2.75, 's', { spots: 0 }),
+        pw('Kiosk_Cash_01', 20.3, -1.8, 's', { spots: 0 }), pw('UBoat_Cart_01', 16.85, -2.2, 's', { spots: 0, on: [['furn/cardboardBoxClosed', 0, 0, 0, 0.3, 0.9]] })),
+      pack('A floor sign and an information stand', pw('SignStand_Floor_01', 17.0, 1.5, 's', { spots: 0 }), pw('HostStand_01', 20.3, 0.1, 's', { spots: 0, on: [['furn/televisionModern', 0, 0, 0, 0.58, 0.9]] })),
+      pack('Waiting table, plants and a water cooler', pw('Table_Cafe_Round_01', 16.7, 0.55, 's', { spots: 0, on: [['furn/books', 0, 0, 0, 0.375, 0.9]] }), pw('Chair_Metal_Cafe_01', 16.7, 1.05, 'n', { spots: 0 }),
+        pw('DrinkCooler_Upright_01', 21.15, -0.9, 'k', { spots: 0 }), pw('Planter_Tall_01', 15.9, 2.0, 's', { spots: 0 }), wp('Menu_Board_Wall_01', 21.46, 0.4, 'k', 0.3))
     ]
   },
   rest: {
     rect: [15.3, 21.5, -8, -3],
-    visit: [[16.35, -4.2, -Math.PI / 2, 2], [16.35, -4.8, -Math.PI / 2, 2], [16.35, -5.4, -Math.PI / 2, 2], [17.2, -6.55, Math.PI, 0]],
+    visit: [[17.2, -6.55, Math.PI, 0], [17.65, -4.7, Math.PI, 2], [18.85, -4.7, Math.PI, 2], [16.35, -4.5, -Math.PI / 2, 5], [20.45, -7.1, Math.PI, 4]],
     ups: [
-      up('Two toilet stalls', pw('Toilet_01', 17.2, -7.55, 's', { spots: 0 }), pw('Toilet_02', 17.82, -7.55, 's', { spots: 0 }), stall(16.89), stall(17.51), stall(18.13)),
-      up('Two more stalls', pw('Toilet_01', 18.44, -7.55, 's', { spots: 0 }), pw('Toilet_02', 19.06, -7.55, 's', { spots: 0 }), stall(18.75), stall(19.37)),
-      up('A row of sinks with mirrors', pw('Vanity_Sink_01', 15.75, -4.2, 'b', { spots: 0 }), pw('Vanity_Sink_01', 15.75, -4.8, 'b', { spots: 0 }), pw('Vanity_Sink_01', 15.75, -5.4, 'b', { spots: 0 }),
-        wp('MirrorCabinet_01', 15.32, -4.2, 'b', 0.42), wp('MirrorCabinet_01', 15.32, -4.8, 'b', 0.42), wp('MirrorCabinet_01', 15.32, -5.4, 'b', 0.42)),
-      up('Two more stalls', pw('Toilet_01', 19.68, -7.55, 's', { spots: 0 }), pw('Toilet_02', 20.3, -7.55, 's', { spots: 0 }), stall(19.99), stall(20.61)),
-      up('Urinals', wp('Urinal_01', 21.48, -4.2, 'k', 0.22), wp('Urinal_01', 21.48, -4.8, 'k', 0.22), wp('Urinal_01', 21.48, -5.4, 'k', 0.22)),
-      up('Soap and paper towels', wp('SoapDispenser_01', 15.4, -4.5, 'b', 0.42), wp('SoapDispenser_01', 15.4, -5.1, 'b', 0.42), wp('PaperTowel_Dispenser_01', 15.32, -6.0, 'b', 0.45), wp('PaperTowel_Dispenser_01', 15.32, -6.5, 'b', 0.45)),
-      up('Bins and a plant', pw('WasteBin_01', 15.75, -6.9, 'b', { spots: 0 }), pw('WasteBin_01', 21.15, -6.3, 'k', { spots: 0 }), pw('Planter_Tall_01', 21.1, -7.4, 's', { spots: 0 })),
-      up('A mop bucket and a wet floor sign', pw('MopBucket_01', 20.9, -3.6, 'k', { spots: 0 }), pw('WetFloorSign_01', 20.3, -3.75, 's', { spots: 0 }))
+      pack('Three toilet stalls', pw('Toilet_01', 17.2, -7.55, 's', { spots: 0 }), pw('Toilet_02', 17.82, -7.55, 's', { spots: 0 }), pw('Toilet_01', 18.44, -7.55, 's', { spots: 0 }), stall(16.89), stall(17.51), stall(18.13), stall(18.75), sdoor(17.82)),
+      pack('A fourth stall and toilet brushes', pw('Toilet_02', 19.06, -7.55, 's', { spots: 0 }), stall(19.37), sdoor(19.06),
+        pw('ToiletBrush_01', 18.62, -7.75, 's', { spots: 0 }), pw('ToiletBrush_01', 17.38, -7.75, 's', { spots: 0 })),
+      pack('Mirrored sinks', hi(17.25, 19.15, -5.45, -5.41, 0, 0.8, 0xc9d3e0), pw('Vanity_Sink_01', 17.65, -5.22, 's', { spots: 0 }), pw('Vanity_Sink_01', 18.25, -5.22, 's', { spots: 0 }), pw('Vanity_Sink_01', 18.85, -5.22, 's', { spots: 0 }),
+        wp('MirrorCabinet_01', 17.65, -5.4, 's', 0.42), wp('MirrorCabinet_01', 18.25, -5.4, 's', 0.42), wp('MirrorCabinet_01', 18.85, -5.4, 's', 0.42)),
+      pack('A family room with a baby changing table', hi(19.5, 19.54, -3.55, -3.1, 0, 0.55, 0xd8c8d6), hi(19.5, 19.54, -5.4, -4.3, 0, 0.55, 0xd8c8d6), hi(19.5, 21.5, -5.44, -5.4, 0, 0.55, 0xd8c8d6),
+        pw('Toilet_02', 20.65, -5.2, 's', { spots: 0 }), pw('Vanity_Sink_01', 21.3, -3.75, 'k', { spots: 0 }), wp('MirrorCabinet_01', 21.48, -3.75, 'k', 0.42),
+        pw('KitCab_Base_Door_10', 21.25, -4.5, 'k', { spots: 0, on: [['pw/Towel_Stack_01', 0, 0, 0, 0.44]] }), pw('HighChair_Wood_01', 20.2, -3.7, 's', { spots: 0 }), rug(19.7, 20.9, -4.9, -3.4, 0xe9b7c8)),
+      pack('Urinals', wp('Urinal_01', 19.95, -7.9, 's', 0.22), wp('Urinal_01', 20.5, -7.9, 's', 0.22), wp('Urinal_01', 21.05, -7.9, 's', 0.22),
+        { box: [20.2, 20.24, -7.9, -7.5, 0, 0.4], c: 0xb9c6d4 }, { box: [20.75, 20.79, -7.9, -7.5, 0, 0.4], c: 0xb9c6d4 }),
+      pack('Sinks along the wall, soap and towels', pw('Vanity_Sink_01', 15.75, -4.2, 'b', { spots: 0 }), pw('Vanity_Sink_01', 15.75, -4.8, 'b', { spots: 0 }), pw('Vanity_Sink_01', 15.75, -5.4, 'b', { spots: 0 }),
+        wp('MirrorCabinet_01', 15.32, -4.2, 'b', 0.42), wp('MirrorCabinet_01', 15.32, -4.8, 'b', 0.42), wp('MirrorCabinet_01', 15.32, -5.4, 'b', 0.42),
+        wp('SoapDispenser_01', 15.4, -4.5, 'b', 0.42), wp('SoapDispenser_01', 15.4, -5.1, 'b', 0.42), wp('PaperTowel_Dispenser_01', 15.32, -6.0, 'b', 0.45), wp('PaperTowel_Dispenser_01', 15.32, -6.5, 'b', 0.45),
+        wp('TowelRail_01', 18.2, -5.4, 's', 0.5)),
+      pack('Supply shelves, a bench, bins and plants', pw('UtilityShelf_01', 15.65, -7.7, 's', { spots: 0, on: [['pw/Pack_ToiletPaper_12_01', -0.1, 0, 0, 0.3], ['pw/Pack_ToiletPaper_12_01', 0.1, 0, 0, 0.6], ['pw/Pack_PaperTowel_6_01', 0, 0, 0, 0.9]] }),
+        pw('WasteBin_01', 15.75, -6.9, 'b', { spots: 0 }), pw('TrashCan_StepOn_01', 19.25, -4.6, 's', { spots: 0 }), pw('Planter_Tall_01', 21.1, -6.5, 's', { spots: 0 }), pw('DiningBench_01', 18.0, -3.55, 's', { spots: 0 }), pw('Planter_Tall_01', 17.1, -3.5, 's', { spots: 0 }),
+        rug(17.3, 19.2, -4.95, -4.4, 0x9fc6d6)),
+      pack('A cleaning cart, mop bucket and a wet floor sign', pw('JanitorCart_01', 16.4, -7.5, 's', { spots: 0 }), wp('MopRack_Wall_01', 16.4, -7.9, 's', 0.2), pw('MopBucket_01', 16.95, -6.2, 's', { spots: 0 }), pw('WetFloorSign_01', 18.2, -3.9, 's', { spots: 0 }))
     ]
   },
   lounge: {
     rect: [15.3, 21.5, -14, -8],
     ups: [
-      up('Fridge', pw('Fridge_TopFreezer_01', 21.15, -8.7, 'k', { spots: 0 })),
-      up('Sink counter', pw('KitCab_Base_Sink_10', 21.25, -9.4, 'k', { spots: 0, on: [['pw/KitTop_10', 0, 0, 0, 0.44], ['pw/Kettle_Electric_01', 0.1, 0, 0, 0.48]] })),
-      up('Coffee counter', pw('KitCab_Base_Door_10', 21.25, -9.9, 'k', { spots: 0, on: [['pw/KitTop_10', 0, 0, 0, 0.44], ['pw/CoffeeMaker_Drip_01', -0.1, 0, 0, 0.48], ['pw/MugTree_01', 0.12, 0, 0, 0.48]] })),
-      up('Table and chairs', pw('DiningTable_Rect_01', 17.9, -11.3, 's', { spots: 0 }), pw('DiningChair_Padded_01', 17.5, -11.95, 's', { spots: 0 }), pw('DiningChair_Padded_01', 18.3, -11.95, 's', { spots: 0 }),
-        pw('DiningChair_Padded_01', 17.5, -10.65, 'n', { spots: 0 }), pw('DiningChair_Padded_01', 18.3, -10.65, 'n', { spots: 0 })),
-      up('Pizza boxes', on('pizza/pizza-box-closed', 17.65, -11.25, 0.375), on('pizza/pizza-box-closed', 17.65, -11.25, 0.41, 1, 0.3), on('pizza/pizza-box-opened', 18.3, -11.3, 0.375, 1, 0.2),
+      pack('A fridge, pantry and counters', pw('Fridge_TopFreezer_01', 17.5, -13.55, 's', { spots: 0 }), pw('KitCab_Tall_Pantry_10', 19.45, -13.6, 's', { spots: 0 }), pw('KitCab_Base_Sink_10', 17.95, -13.6, 's', { spots: 0 }),
+        pw('KitCab_Base_Door_10', 18.45, -13.6, 's', { spots: 0 }), pw('KitCab_Base_Door_10', 18.95, -13.6, 's', { spots: 0 })),
+      pack('Worktops, a kettle and wall cupboards', on('pw/KitTop_10', 17.95, -13.6, 0.44), on('pw/KitTop_10', 18.45, -13.6, 0.44), on('pw/KitTop_10', 18.95, -13.6, 0.44), on('pw/Kettle_Electric_01', 18.05, -13.6, 0.48),
+        pw('KitCab_Wall_Door_10', 17.95, -13.9, 's', { spots: 0, y: 0.62 }), pw('KitCab_Wall_Door_10', 18.45, -13.9, 's', { spots: 0, y: 0.62 }), pw('KitCab_Wall_Door_10', 18.95, -13.9, 's', { spots: 0, y: 0.62 })),
+      pack('Coffee, microwave and toaster', on('pw/CoffeeMaker_Drip_01', 18.35, -13.6, 0.48), on('pw/MugTree_01', 18.57, -13.6, 0.48), on('pw/Microwave_Counter_01', 18.85, -13.6, 0.48), on('pw/Toaster_01', 19.1, -13.6, 0.48)),
+      pack('A table with four chairs', rug(16.9, 18.9, -12.3, -10.3, 0xb5524c), seats(17.9, -11.3)),
+      pack('Pizza boxes on the table', on('pizza/pizza-box-closed', 17.65, -11.25, 0.375), on('pizza/pizza-box-closed', 17.65, -11.25, 0.41, 1, 0.3), on('pizza/pizza-box-opened', 18.3, -11.3, 0.375, 1, 0.2),
         on('pizza/pizza-pepperoni', 18.3, -11.3, 0.41, 0.7)),
-      up('Staff on break', { staff: [20.35, -9.7, 'b'] }),
-      up('A second table', pw('DiningTable_Rect_01', 19.9, -12.6, 's', { spots: 0 }), pw('DiningChair_Padded_01', 19.5, -13.25, 's', { spots: 0 }), pw('DiningChair_Padded_01', 20.3, -13.25, 's', { spots: 0 }),
-        pw('DiningChair_Padded_01', 19.5, -11.95, 'n', { spots: 0 }), pw('DiningChair_Padded_01', 20.3, -11.95, 'n', { spots: 0 })),
-      up('Lockers', pw('EmployeeLockers_3_01', 15.5, -9.2, 'b', { spots: 0 }), pw('EmployeeLockers_3_01', 15.5, -10.1, 'b', { spots: 0 }), pw('EmployeeLockers_3_01', 15.5, -11.0, 'b', { spots: 0 })),
-      up('Second staff member', { staff: [18.3, -10.7, 'n', 'sit'] }),
-      up('A rug, a clock and a first aid box', on('pw/Rug_Runner_01', 17.9, -11.3, 0.05), wp('WallClock_Kitchen_01', 15.32, -12.6, 'b', 0.6), wp('TimeClock_Wall_01', 15.32, -13.1, 'b', 0.6),
-        wp('FirstAid_Box_Wall_01', 15.32, -13.6, 'b', 0.6), pw('RecycleBin_Dual_01', 21.15, -13.3, 'k', { spots: 0 }))
+      pack('A staff member on break', { staff: [18.7, -12.5, 'n'] }),
+      pack('A second table', rug(19.0, 21.0, -12.6, -10.6, 0x4f7f97), seats(20.0, -11.6), pw('RecycleBin_Dual_01', 20.4, -13.55, 's', { spots: 0 })),
+      pack('Lockers and a bench', pw('EmployeeLockers_3_01', 15.5, -9.2, 'b', { spots: 0 }), pw('EmployeeLockers_3_01', 15.5, -10.1, 'b', { spots: 0 }), pw('EmployeeLockers_3_01', 15.5, -11.0, 'b', { spots: 0 }),
+        pw('DiningBench_01', 16.1, -10.1, 'b', { spots: 0 })),
+      pack('A second staff member', { staff: [18.3, -10.7, 'n', 'sit'] }),
+      pack('A sofa corner, notice board and clock', m('furn/loungeSofa%carpet=5b7fc4', 21.0, -9.4, -Math.PI / 2, 1.15), m('furn/tableCoffee', 20.3, -9.4, Math.PI / 2, 0.7), m('furn/lampRoundFloor', 21.15, -8.4, 0, 1.2),
+        wp('Menu_Board_Wall_01', 20.8, -13.9, 's', 0.35), wp('WallClock_Kitchen_01', 15.32, -12.6, 'b', 0.6), wp('TimeClock_Wall_01', 15.32, -13.1, 'b', 0.6),
+        wp('FirstAid_Box_Wall_01', 15.32, -13.6, 'b', 0.6), pw('VendingMachine_Drink_01', 21.1, -13.4, 'k', { spots: 0 }),
+        m('arcade/claw-machine', 21.0, -10.55, -Math.PI / 2, 0.9), m('shop/gacha-machine', 21.0, -11.25, -Math.PI / 2, 0.8), pw('Planter_Tall_01', 15.7, -8.5, 's', { spots: 0 }))
     ]
   },
   head: {
     rect: [15.3, 21.5, -28.2, -14],
     ups: [
-      up('Desk and chair', pw('Workbench_Wood_01', 19.0, -25.4, 's', { spots: 0 }), pw('Chair_Metal_Cafe_01', 19.0, -24.5, 'n', { spots: 0 }), pw('ShopStool_Rolling_01', 19.0, -26.05, 's', { spots: 0 })),
-      up('Computer', on('furn/computerScreen', 18.7, -25.4, 0.45, 0.9), on('furn/computerKeyboard', 19.05, -25.15, 0.45, 0.9)),
-      up('Manager', { staff: [19.0, -26.05, 's', 'sit'] }),
-      up('Filing cabinets', pw('GarageCab_Tall_05', 20.4, -27.9, 's', { spots: 0, n: 4 })),
-      up('Safe', pw('SafetyCabinet_01', 16.3, -27.8, 's', { spots: 0 })),
-      up('Meeting table', pw('Table_Four_01', 18.6, -18.6, 's', { spots: 0, n: 2 }), pw('Chair_Metal_Cafe_01', 18.2, -19.25, 's', { spots: 0 }), pw('Chair_Metal_Cafe_01', 19.0, -19.25, 's', { spots: 0 }),
-        pw('Chair_Metal_Cafe_01', 18.2, -17.95, 'n', { spots: 0 }), pw('Chair_Metal_Cafe_01', 19.0, -17.95, 'n', { spots: 0 })),
-      up('Whiteboard', wp('Menu_Board_Wall_01', 15.32, -18.6, 'b', 0.35)),
-      up('Two more desks', pw('Table_Four_01', 20.9, -21.6, 'k', { spots: 0 }), on('furn/laptop', 20.9, -21.6, 0.375, 0.9, -Math.PI / 2), pw('ShopStool_Rolling_01', 21.2, -21.6, 'k', { spots: 0 }),
-        pw('Table_Four_01', 20.9, -22.8, 'k', { spots: 0 }), on('furn/computerScreen', 20.9, -22.8, 0.375, 0.9, -Math.PI / 2), pw('ShopStool_Rolling_01', 21.2, -22.8, 'k', { spots: 0 })),
-      up('Shelving', pw('Shelving_HD_01', 15.6, -16.0, 'b', { spots: 0, n: 2 })),
-      up('Rug and plants', on('pw/Floor_Carpet_1m', 18.1, -18.35, 0.05), on('pw/Floor_Carpet_1m', 18.6, -18.35, 0.05), on('pw/Floor_Carpet_1m', 19.1, -18.35, 0.05),
-        on('pw/Floor_Carpet_1m', 18.1, -18.85, 0.05), on('pw/Floor_Carpet_1m', 18.6, -18.85, 0.05), on('pw/Floor_Carpet_1m', 19.1, -18.85, 0.05),
-        pw('Planter_Tall_01', 21.1, -15.0, 's', { spots: 0 }), pw('Planter_Tall_01', 21.1, -19.5, 's', { spots: 0 }))
+      pack('A manager desk and chairs', pw('Workbench_Wood_01', 19.2, -21.4, 's', { spots: 0 }), pw('ShopStool_Rolling_01', 19.2, -22.05, 's', { spots: 0 }), pw('Chair_Metal_Cafe_01', 19.2, -20.75, 'n', { spots: 0 })),
+      pack('A computer', pc(19.2, -21.5), pw('CallBell_01', 19.7, -21.3, 's', { spots: 0, y: 0.45 })),
+      pack('The manager', { staff: [19.2, -22.05, 's', 'sit'] }),
+      pack('Filing cabinets', pw('GarageCab_Tall_05', 20.9, -24.27, 's', { spots: 0, n: 4 }), pw('Planter_Tall_01', 21.2, -23.6, 's', { spots: 0 })),
+      pack('A safe and archive shelves', pw('SafetyCabinet_01', 17.7, -24.25, 's', { spots: 0 }), pw('Shelving_HD_Loaded_01', 19.0, -24.2, 's', { spots: 0 })),
+      pack('A meeting table with chairs', rug(17.5, 20.5, -17.3, -15.0, 0x4d6a94), pw('Table_Four_01', 19.0, -16.2, 's', { spots: 0, n: 3 }),
+        pw('Chair_Metal_Cafe_01', 18.4, -16.8, 's', { spots: 0 }), pw('Chair_Metal_Cafe_01', 19.0, -16.8, 's', { spots: 0 }), pw('Chair_Metal_Cafe_01', 19.6, -16.8, 's', { spots: 0 }),
+        pw('Chair_Metal_Cafe_01', 18.4, -15.6, 'n', { spots: 0 }), pw('Chair_Metal_Cafe_01', 19.0, -15.6, 'n', { spots: 0 }), pw('Chair_Metal_Cafe_01', 19.6, -15.6, 'n', { spots: 0 })),
+      pack('A whiteboard and a coffee station', pw('Sideboard_01', 20.2, -18.1, 's', { spots: 0, on: [['pw/CoffeeMaker_Drip_01', -0.15, 0, 0, 0.43], ['pw/Pitcher_01', 0.1, 0, 0, 0.43], ['pw/Kettle_Electric_01', 0.3, 0, 0, 0.43]] }), wp('Menu_Board_Wall_01', 21.46, -16.2, 'k', 0.35), wp('ShopClock_01', 21.46, -15.0, 'k', 0.6), wp('Menu_Board_Wall_01', 15.32, -16.2, 'b', 0.35)),
+      pack('Six more desks and a clerk', pod(17.9, -25.3, 1), pod(19.0, -25.3, 1), pod(20.1, -25.3, 0), pod(17.9, -26.75, 0), pod(19.0, -26.75, 1), pod(20.1, -26.75, 1),
+        { staff: [19.0, -25.85, 's', 'sit'] }),
+      pack('Archive shelving and a printer table', pw('Shelving_HD_01', 15.6, -18.9, 'b', { spots: 0, n: 2, on: boxes.map(function (b) { return [b[0], b[1] + 0.45, b[2], b[3] + Math.PI / 2, b[4], b[5]]; }) }), pw('Sideboard_01', 20.9, -20.4, 'k', { spots: 0, on: [['pw/OrderPrinter_01', 0, 0, 0, 0.43], ['furn/books', 0.2, 0, 0, 0.43, 0.9]] })),
+      pack('A rug, plants and a water cooler', rug(17.5, 20.9, -23.4, -19.9, 0x7488b0), m('furn/loungeSofa%carpet=7a8f6a', 21.0, -22.2, -Math.PI / 2, 1.1), pw('Planter_Tall_01', 17.5, -14.7, 's', { spots: 0 }),
+        pw('DrinkCooler_Upright_01', 21.15, -19.6, 'k', { spots: 0 }), pw('Planter_Tall_01', 17.5, -19.2, 's', { spots: 0 }))
     ]
   }
 };
 
 DECOR.wing = cat(
   [room(15.3, 21.5, -2.9, 2.2, 'lino'), room(15.3, 21.5, -7.9, -3.1, 'tile'), room(15.3, 21.5, -13.9, -8.1, 'boards'), room(15.3, 21.5, -28.2, -14.1, 'carpet')],
-  // dividers: a door at the west end of the first and the third
+  // dividers: a door at the west end of the first and the third, the head office split into a meeting room, an open office and the manager's
   low(15.3, 15.9, -3.1, -2.9), low(17.1, 21.5, -3.1, -2.9), low(15.3, 21.5, -8.1, -7.9), low(15.3, 15.9, -14.1, -13.9), low(17.1, 21.5, -14.1, -13.9),
+  low(17.1, 21.5, -18.6, -18.4), low(17.1, 21.5, -24.6, -24.4),
   [{ light: [[18.4, 0], [18.4, -5.5], [18.4, -11], [18.4, -17], [18.4, -23], [18.4, -27]] }]
 );
 
