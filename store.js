@@ -842,6 +842,92 @@ function mesh(ref, x, z, rot, y) {
   return g;
 }
 
+// Seen from far off a model is drawn as a coarse copy: the corners that fall in the same cell of a grid are joined into
+// one, the triangles that collapse go, and each keeps the colour spot of its source triangle. Goods take a coarser grid
+// than fixtures. Worked out once per source geometry
+var LOD_DIST = 40;
+var GOODS_CELL = 0.04;
+var FIX_CELL = 0.02;
+var lodFar = false;
+var lowCache = new WeakMap();
+function lowOf(geom, LOW_CELL) {
+  var all = lowCache.get(geom);
+  if (!all) lowCache.set(geom, all = {});
+  var low = all[LOW_CELL];
+  if (low) return low;
+  var pos = geom.attributes.position;
+  var uv = geom.attributes.uv;
+  var ix = geom.index;
+  var n = ix ? ix.count : pos.count;
+  var sum = {};
+  var ids = [];
+  var i;
+  for (i = 0; i < n; i++) {
+    var v = ix ? ix.getX(i) : i;
+    var key = Math.round(pos.getX(v) / LOW_CELL) + ',' + Math.round(pos.getY(v) / LOW_CELL) + ',' + Math.round(pos.getZ(v) / LOW_CELL);
+    var c = sum[key] = sum[key] || { x: 0, y: 0, z: 0, n: 0 };
+    c.x += pos.getX(v);
+    c.y += pos.getY(v);
+    c.z += pos.getZ(v);
+    c.n++;
+    ids.push(key);
+  }
+  var seen = {};
+  var pp = [];
+  var tt = [];
+  var nn = [];
+  for (i = 0; i < n; i += 3) {
+    if (ids[i] === ids[i + 1] || ids[i + 1] === ids[i + 2] || ids[i] === ids[i + 2]) continue;
+    var tri = [ids[i], ids[i + 1], ids[i + 2]];
+    var tk = tri.slice().sort().join('|');
+    if (seen[tk]) continue;
+    seen[tk] = 1;
+    var q = tri.map(function (k) { return [sum[k].x / sum[k].n, sum[k].y / sum[k].n, sum[k].z / sum[k].n]; });
+    var ux = q[1][0] - q[0][0];
+    var uy = q[1][1] - q[0][1];
+    var uz = q[1][2] - q[0][2];
+    var wx = q[2][0] - q[0][0];
+    var wy = q[2][1] - q[0][1];
+    var wz = q[2][2] - q[0][2];
+    var nx = uy * wz - uz * wy;
+    var ny = uz * wx - ux * wz;
+    var nz = ux * wy - uy * wx;
+    var l = Math.hypot(nx, ny, nz) || 1;
+    // the corner order of the source triangle gives which way it faced
+    var a0 = ix ? ix.getX(i) : i;
+    var a1 = ix ? ix.getX(i + 1) : i + 1;
+    var a2 = ix ? ix.getX(i + 2) : i + 2;
+    var ox = (pos.getY(a1) - pos.getY(a0)) * (pos.getZ(a2) - pos.getZ(a0)) - (pos.getZ(a1) - pos.getZ(a0)) * (pos.getY(a2) - pos.getY(a0));
+    var oy = (pos.getZ(a1) - pos.getZ(a0)) * (pos.getX(a2) - pos.getX(a0)) - (pos.getX(a1) - pos.getX(a0)) * (pos.getZ(a2) - pos.getZ(a0));
+    var oz = (pos.getX(a1) - pos.getX(a0)) * (pos.getY(a2) - pos.getY(a0)) - (pos.getY(a1) - pos.getY(a0)) * (pos.getX(a2) - pos.getX(a0));
+    var order = nx * ox + ny * oy + nz * oz < 0 ? [0, 2, 1] : [0, 1, 2];
+    if (order[1] === 2) {
+      nx = -nx;
+      ny = -ny;
+      nz = -nz;
+    }
+    order.forEach(function (j) {
+      pp.push(q[j][0], q[j][1], q[j][2]);
+      nn.push(nx / l, ny / l, nz / l);
+      tt.push(uv ? uv.getX(a0) : 0, uv ? uv.getY(a0) : 0);
+    });
+  }
+  var g = new THREE.BufferGeometry();
+  // too little saved: keep the model
+  if (pp.length / 9 > n / 3 * 0.7) {
+    g = geom.index ? geom.toNonIndexed() : geom.clone();
+    if (!g.attributes.uv) g.setAttribute('uv', new THREE.Float32BufferAttribute(new Float32Array(g.attributes.position.count * 2), 2));
+    ['color', 'tangent', 'uv1', 'uv2'].forEach(function (k) { if (g.attributes[k]) g.deleteAttribute(k); });
+    if (!g.attributes.normal) g.computeVertexNormals();
+  } else {
+    g.setAttribute('position', new THREE.Float32BufferAttribute(pp, 3));
+    g.setAttribute('normal', new THREE.Float32BufferAttribute(nn, 3));
+    g.setAttribute('uv', new THREE.Float32BufferAttribute(tt, 2));
+  }
+  all[LOW_CELL] = g;
+  return g;
+}
+
 // fixed pieces are merged into one mesh per material, so a row of the mall is a few draw calls
 function Batch() {
   var sets = {};
@@ -854,11 +940,12 @@ function Batch() {
   function put(geom, mat, x, y, z, rot, k, rank) {
     var goods = rank !== undefined;
     var key = mat.uuid + (geom.index ? 'i' : 'n') + Object.keys(geom.attributes).sort().join() + (goods ? 'g' : '');
-    if (!sets[key]) sets[key] = { mat: mat, list: [], goods: goods, rank: [] };
+    if (!sets[key]) sets[key] = { mat: mat, list: [], goods: goods, rank: [], low: mat === vcMat ? null : [] };
     q.setFromAxisAngle(up, rot || 0);
     mtx.compose(new THREE.Vector3(x, y, z), q, k ? new THREE.Vector3(k, k, k) : one);
     sets[key].list.push(geom.clone().applyMatrix4(mtx));
     if (goods) sets[key].rank.push(rank);
+    if (sets[key].low) sets[key].low.push(lowOf(geom, goods ? GOODS_CELL : FIX_CELL).clone().applyMatrix4(mtx));
   }
   this.sets = sets;
   this.add = function (ref, x, z, rot, y, skip) {
@@ -885,10 +972,11 @@ function Batch() {
   this.take = function (o) {
     Object.keys(o.sets).forEach(function (key) {
       var from = o.sets[key];
-      if (!sets[key]) sets[key] = { mat: from.mat, list: [], rank: [] };
+      if (!sets[key]) sets[key] = { mat: from.mat, list: [], rank: [], low: from.low ? [] : null };
       sets[key].goods = from.goods;
       sets[key].list = sets[key].list.concat(from.list);
       sets[key].rank = sets[key].rank.concat(from.rank);
+      sets[key].low = sets[key].low && from.low ? sets[key].low.concat(from.low) : null;
     });
   };
   // a flat slab of one colour, for paving, asphalt and paint
@@ -921,6 +1009,8 @@ function Batch() {
     Object.keys(sets).forEach(function (k) {
       var list = sets[k].list;
       var o;
+      var lo = null;
+      var lc = null;
       if (sets[k].goods) {
         // lowest rank first, so the mesh can draw just the first part of its index
         var ord = list.map(function (x, i) { return i; }).sort(function (a, c) { return sets[k].rank[a] - sets[k].rank[c]; });
@@ -930,11 +1020,33 @@ function Batch() {
           return list[i];
         });
         o = new THREE.Mesh(mergeGeometries(list, false), sets[k].mat);
-        o.userData.shelf = { rank: ord.map(function (i) { return sets[k].rank[i]; }), cum: cum };
-      } else o = new THREE.Mesh(mergeGeometries(list, false), sets[k].mat);
+        var rk = ord.map(function (i) { return sets[k].rank[i]; });
+        o.userData.shelf = { rank: rk, cum: cum };
+        lo = new THREE.Mesh(mergeGeometries(ord.map(function (i) { return sets[k].low[i]; }), false), sets[k].mat);
+        lc = [0];
+        ord.forEach(function (i) { lc.push(lc[lc.length - 1] + sets[k].low[i].attributes.position.count); });
+        lo.userData.shelf = { rank: rk, cum: lc };
+      } else {
+        o = new THREE.Mesh(mergeGeometries(list, false), sets[k].mat);
+        if (sets[k].low) {
+          lo = new THREE.Mesh(mergeGeometries(sets[k].low, false), sets[k].mat);
+          // a model that barely shrinks stays as it is
+          var tris = function (m) { return (m.geometry.index ? m.geometry.index.count : m.geometry.attributes.position.count) / 3; };
+          if (tris(lo) > tris(o) * 0.8) lo = null;
+        }
+      }
       o.castShadow = shadow !== false && !sets[k].goods && !sets[k].mat.transparent && !sets[k].mat.userData.noShadow && sets[k].mat !== poolMat && sets[k].mat !== bulbMat && sets[k].mat !== innerMat;
       o.receiveShadow = true;
       g.add(o);
+      if (lo) {
+        o.userData.lod = 'hi';
+        lo.userData.lod = 'lo';
+        o.visible = !lodFar;
+        lo.visible = lodFar;
+        lo.castShadow = o.castShadow;
+        lo.receiveShadow = true;
+        g.add(lo);
+      }
     });
     return g;
   };
@@ -2663,7 +2775,7 @@ function buildOutside() {
 }
 // Trees, bushes, grass and flowers scattered over the zones of NATURE on a jittered grid. Each 16 unit tile of ground is
 // its own batch, so what is off the screen is not drawn
-var TILE = 16;
+var TILE = 12;
 function buildNature() {
   var tiles = {};
   var seed = 7;
@@ -4645,6 +4757,12 @@ function draw(now) {
     clamp();
     place();
   }
+  var far = focus.dist >= LOD_DIST;
+  if (far !== lodFar) {
+    lodFar = far;
+    root.traverse(function (o) { if (o.userData.lod) o.visible = (o.userData.lod === 'lo') === far; });
+    shadowDirty = true;
+  }
   dayStep(dt);
   trafficStep(dt);
   crowdStep(dt);
@@ -5164,6 +5282,7 @@ function upIcon(id, k) {
   pc.x.visible = true;
   var bg = pc.b.group();
   g.add(bg, pc.x);
+  bg.traverse(function (o) { if (o.userData.lod) o.visible = o.userData.lod === 'hi'; });
   pc.x.traverse(function (o) { if (o.material && o.material.blending === THREE.AdditiveBlending) o.visible = false; });
   var fig = pc.staff || pc.helper && pc.helper.f;
   var box = null;
@@ -5216,6 +5335,7 @@ function placeIcon(id, k) {
     g.add(dol);
   }
   g.traverse(function (o) { o.visible = true; });
+  g.traverse(function (o) { if (o.userData.lod) o.visible = o.userData.lod === 'hi'; });
   g.updateMatrixWorld(true);
   icons[key] = snap(g);
   return icons[key];
