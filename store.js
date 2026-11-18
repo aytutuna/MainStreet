@@ -532,12 +532,13 @@ function modelList() {
     'furn/bench', 'furn/trashcan', 'furn/pottedPlant', 'sub/planter', 'roads/road-straight', 'roads/road-crossing', 'roads/light-square',
     'roads/light-curved', 'roads/construction-fence', 'roads/construction-light', 'roads/construction-barrier', 'roads/construction-cone',
     'roads/dumpster', 'roads/road-sign-street', 'car/taxi', 'car/delivery', 'car/tractor-shovel', 'car/box', 'car/truck-flat',
-    'nature/tree_oak', 'nature/tree_default', 'nature/tree_fat', 'nature/tree_detailed', 'nature/tree_pineRoundC', 'nature/plant_bush',
-    'nature/plant_bushLarge', 'food/bag', 'food/bag-flat', 'nature/flower_redA', 'nature/flower_yellowA', 'nature/flower_purpleA',
-    'forest/fence', 'nature/tree_small', 'furn/plantSmall2*1.6', 'sub/building-type-a', 'sub/building-type-c', 'sub/building-type-e', 'sub/building-type-h',
-    'sub/building-type-k', 'sub/tree-large'].forEach(function (r) { seen[r] = 1; });
+    'nature/tree_fat', 'nature/tree_pineRoundC', 'food/bag', 'food/bag-flat', 'nature/flower_redA', 'nature/flower_yellowA', 'nature/flower_purpleA',
+    'forest/fence', 'furn/plantSmall2*1.6', 'sub/building-type-a', 'sub/building-type-c', 'sub/building-type-e', 'sub/building-type-h',
+    'sub/building-type-k'].forEach(function (r) { seen[r] = 1; });
   FOLK.forEach(function (r) { seen[r] = 1; });
   CARS.forEach(function (r) { seen[r] = 1; });
+  // a swapped model is never drawn, so its file is not fetched
+  Object.keys(SWAP).forEach(function (r) { delete seen[r]; });
   return Object.keys(seen);
 }
 
@@ -849,6 +850,7 @@ var LOD_DIST = 40;
 var GOODS_CELL = 0.04;
 var FIX_CELL = 0.02;
 var lodFar = false;
+var noLow = false;
 var lowCache = new WeakMap();
 function lowOf(geom, LOW_CELL) {
   var all = lowCache.get(geom);
@@ -879,7 +881,14 @@ function lowOf(geom, LOW_CELL) {
   for (i = 0; i < n; i += 3) {
     if (ids[i] === ids[i + 1] || ids[i + 1] === ids[i + 2] || ids[i] === ids[i + 2]) continue;
     var tri = [ids[i], ids[i + 1], ids[i + 2]];
-    var tk = tri.slice().sort().join('|');
+    // the facing is part of the key, so the back of a thin model is not taken for a copy of its front
+    var a0 = ix ? ix.getX(i) : i;
+    var a1 = ix ? ix.getX(i + 1) : i + 1;
+    var a2 = ix ? ix.getX(i + 2) : i + 2;
+    var ox = (pos.getY(a1) - pos.getY(a0)) * (pos.getZ(a2) - pos.getZ(a0)) - (pos.getZ(a1) - pos.getZ(a0)) * (pos.getY(a2) - pos.getY(a0));
+    var oy = (pos.getZ(a1) - pos.getZ(a0)) * (pos.getX(a2) - pos.getX(a0)) - (pos.getX(a1) - pos.getX(a0)) * (pos.getZ(a2) - pos.getZ(a0));
+    var oz = (pos.getX(a1) - pos.getX(a0)) * (pos.getY(a2) - pos.getY(a0)) - (pos.getY(a1) - pos.getY(a0)) * (pos.getX(a2) - pos.getX(a0));
+    var tk = tri.slice().sort().join('|') + (ox < 0 ? 'x' : '') + (oy < 0 ? 'y' : '') + (oz < 0 ? 'z' : '');
     if (seen[tk]) continue;
     seen[tk] = 1;
     var q = tri.map(function (k) { return [sum[k].x / sum[k].n, sum[k].y / sum[k].n, sum[k].z / sum[k].n]; });
@@ -894,12 +903,6 @@ function lowOf(geom, LOW_CELL) {
     var nz = ux * wy - uy * wx;
     var l = Math.hypot(nx, ny, nz) || 1;
     // the corner order of the source triangle gives which way it faced
-    var a0 = ix ? ix.getX(i) : i;
-    var a1 = ix ? ix.getX(i + 1) : i + 1;
-    var a2 = ix ? ix.getX(i + 2) : i + 2;
-    var ox = (pos.getY(a1) - pos.getY(a0)) * (pos.getZ(a2) - pos.getZ(a0)) - (pos.getZ(a1) - pos.getZ(a0)) * (pos.getY(a2) - pos.getY(a0));
-    var oy = (pos.getZ(a1) - pos.getZ(a0)) * (pos.getX(a2) - pos.getX(a0)) - (pos.getX(a1) - pos.getX(a0)) * (pos.getZ(a2) - pos.getZ(a0));
-    var oz = (pos.getX(a1) - pos.getX(a0)) * (pos.getY(a2) - pos.getY(a0)) - (pos.getY(a1) - pos.getY(a0)) * (pos.getX(a2) - pos.getX(a0));
     var order = nx * ox + ny * oy + nz * oz < 0 ? [0, 2, 1] : [0, 1, 2];
     if (order[1] === 2) {
       nx = -nx;
@@ -940,7 +943,7 @@ function Batch() {
   function put(geom, mat, x, y, z, rot, k, rank) {
     var goods = rank !== undefined;
     var key = mat.uuid + (geom.index ? 'i' : 'n') + Object.keys(geom.attributes).sort().join() + (goods ? 'g' : '');
-    if (!sets[key]) sets[key] = { mat: mat, list: [], goods: goods, rank: [], low: mat === vcMat ? null : [] };
+    if (!sets[key]) sets[key] = { mat: mat, list: [], goods: goods, rank: [], low: mat === vcMat || noLow ? null : [] };
     q.setFromAxisAngle(up, rot || 0);
     mtx.compose(new THREE.Vector3(x, y, z), q, k ? new THREE.Vector3(k, k, k) : one);
     sets[key].list.push(geom.clone().applyMatrix4(mtx));
@@ -1032,7 +1035,8 @@ function Batch() {
           lo = new THREE.Mesh(mergeGeometries(sets[k].low, false), sets[k].mat);
           // a model that barely shrinks stays as it is
           var tris = function (m) { return (m.geometry.index ? m.geometry.index.count : m.geometry.attributes.position.count) / 3; };
-          if (tris(lo) > tris(o) * 0.8) lo = null;
+          var bytes = function (m) { var a = m.geometry.attributes; return Object.keys(a).reduce(function (t, n) { return t + a[n].array.byteLength; }, 0); };
+          if (tris(lo) > tris(o) * 0.8 || bytes(lo) >= bytes(o)) lo = null;
         }
       }
       o.castShadow = shadow !== false && !sets[k].goods && !sets[k].mat.transparent && !sets[k].mat.userData.noShadow && sets[k].mat !== poolMat && sets[k].mat !== bulbMat && sets[k].mat !== innerMat;
@@ -2470,7 +2474,7 @@ function buildFront() {
   places.hall = hall;
   addPick('hall', 0, 0.5, EDGE * 2, 3.2);
   buildDoors();
-  decor(PLAN.decor.front.filter(function (e) { return !(e.patch && e.finish === 0xc4cad8); }), true);
+  decor(PLAN.decor.front, true);
 }
 
 // glass doors that slide apart when someone comes near; a fixed pane either side, a rail across the top
@@ -2773,7 +2777,7 @@ function buildOutside() {
   buildGarden();
   buildPylon();
 }
-// Trees, bushes, grass and flowers scattered over the zones of NATURE on a jittered grid. Each 16 unit tile of ground is
+// Trees, bushes, grass and flowers scattered over the zones of NATURE on a jittered grid. Each 12 unit tile of ground is
 // its own batch, so what is off the screen is not drawn
 var TILE = 12;
 function buildNature() {
@@ -3357,13 +3361,14 @@ function syncArea(s, animate, now) {
   var key = have.join();
   if (key === s.key) return;
   var grew = false;
+  var late = [];
   for (var i = 0; i < s.a.ups.length; i++) {
     var inn = have.indexOf(i) >= 0;
     var pc = inn ? pieceOf(s, i) : s.pcs[i];
     if (!pc) continue;
     if (inn && !pc.on && animate && s.shown >= 0) {
       pc.on = true;
-      if (pc.helper && !pc.helper.placed) startHelper(s, pc.helper);
+      if (pc.helper && !pc.helper.placed) late.push(pc.helper);
       pc.x.visible = true;
       pc.gb = pc.b.group();
       pc.g = new THREE.Group();
@@ -3375,7 +3380,7 @@ function syncArea(s, animate, now) {
       grew = true;
     } else if (inn) {
       pc.on = true;
-      if (pc.helper && !pc.helper.placed) startHelper(s, pc.helper);
+      if (pc.helper && !pc.helper.placed) late.push(pc.helper);
       pc.x.visible = true;
       if (!pc.g && !pc.x.parent) s.group.add(pc.x);
     } else {
@@ -3409,6 +3414,8 @@ function syncArea(s, animate, now) {
   s.shown = n;
   s.key = key;
   nav.dirty = true;
+  // placed once every piece of the area is in, or the route grid misses the later ones
+  late.forEach(function (h) { startHelper(s, h); });
   shadowDirty = true;
 }
 
@@ -4612,7 +4619,7 @@ function overlay(now) {
     var a = anchor(id);
     toScreen(a[0], a[1], a[2], sp);
     var open = PL[id] ? st.own || st.avail : true;
-    var vis = open && sp.z < 1 && sp.x > -60 && sp.x < cw + 60 && sp.y > IT + 34 && sp.y < ch - IB;
+    var vis = open && sp.z < 1 && sp.x > -20 && sp.x < cw + 20 && sp.y > IT + 34 && sp.y < ch - IB;
     if (open && sp.z < 1) anchorXY[id] = { x: sp.x, y: sp.y, top: sp.y };
     else delete anchorXY[id];
     var want = vis && (st.own || st.avail || focus.dist < 40) && !says.some(function (w) { return w.id === id; });
@@ -4757,7 +4764,7 @@ function draw(now) {
     clamp();
     place();
   }
-  var far = focus.dist >= LOD_DIST;
+  var far = lodFar ? focus.dist > LOD_DIST - 2 : focus.dist >= LOD_DIST + 2;
   if (far !== lodFar) {
     lodFar = far;
     root.traverse(function (o) { if (o.userData.lod) o.visible = (o.userData.lod === 'lo') === far; });
@@ -5003,14 +5010,19 @@ function pieceBox(id, k) {
     var g = pc.b.group();
     box = boxOf(g);
     g.traverse(function (o) { if (o.geometry) o.geometry.dispose(); });
-  } else if (places[id] && places[id].items[k + 1]) {
+  } else if (places[id] && places[id].items.some(function (it) { return it.lv === k + 1 && !it.only; })) {
     // a level that is still rising is squashed flat, so measure it at full height
-    var ig = places[id].items[k + 1].g;
-    var sy = ig.scale.y;
-    ig.scale.y = 1;
-    box = boxOf(ig);
-    ig.scale.y = sy;
-    ig.updateMatrixWorld(true);
+    var its = places[id].items.filter(function (it) { return it.lv === k + 1 && !it.only; });
+    var saved = its.map(function (it) { return it.g.scale.y; });
+    box = new THREE.Box3();
+    its.forEach(function (it) {
+      it.g.scale.y = 1;
+      box.union(boxOf(it.g));
+    });
+    its.forEach(function (it, j) {
+      it.g.scale.y = saved[j];
+      it.g.updateMatrixWorld(true);
+    });
   }
   var out;
   if (!box.isEmpty() && box.getSize(new THREE.Vector3()).length() < 10) out = { x0: box.min.x, x1: box.max.x, z0: box.min.z, z1: box.max.z, top: box.max.y };
@@ -5139,8 +5151,11 @@ function pieceScreen(id, k) {
     focus.dist = was.dist;
     place();
   }
-  if (sp.z > 1 || sp.x < 40 || sp.x > cw - 40 || sp.y < IT + 90 || sp.y > ch - IB - 30) return null;
-  return { x: sp.x, y: sp.y };
+  var lo = IT + 90;
+  var hi = ch - IB - 30;
+  // a little outside the view is pulled in, so the popup still shows
+  if (sp.z > 1 || sp.x < -20 || sp.x > cw + 20 || sp.y < lo - 80 || sp.y > hi + 80) return null;
+  return { x: Math.max(40, Math.min(cw - 40, sp.x)), y: Math.max(lo, Math.min(hi, sp.y)) };
 }
 
 // each upgrade shows: its piece rises, its name pops over it, and the camera goes to it, closer for a small piece
@@ -5274,7 +5289,9 @@ function upIcon(id, k) {
   if (!s || !s.a.ups[k]) return null;
   var seen = figs.length;
   var sm = s.signMat;
+  noLow = true;
   var pc = makePiece(s, k);
+  noLow = false;
   var made = s.signMat !== sm ? s.signMat : null;
   figs.length = seen;
   s.signMat = sm;
