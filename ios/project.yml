@@ -40,6 +40,8 @@ targets:
         buildPhase: resources
       - path: ../plan.js
         buildPhase: resources
+      - path: ../land.js
+        buildPhase: resources
       - path: ../ui.js
         buildPhase: resources
       - path: ../vendor
