@@ -1211,6 +1211,7 @@ var figs = [];
 var blobs;
 var blobM = new THREE.Matrix4();
 var blobP = new THREE.Vector3();
+var blobS = new THREE.Vector3();
 function crew(ref, clip) {
   var f = figure(ref, clip);
   figs.push(f.obj);
@@ -1226,6 +1227,7 @@ function blobsStep() {
     if (!p.isScene || !o.visible) continue;
     o.getWorldPosition(blobP);
     blobM.makeRotationX(-Math.PI / 2).setPosition(blobP.x, 0.035, blobP.z);
+    if (o.scale.x !== 1) blobM.scale(blobS.setScalar(o.scale.x));
     blobs.setMatrixAt(n++, blobM);
   }
   blobs.count = n;
@@ -4138,6 +4140,7 @@ function grandOpening(s, now) {
   for (var k = 0; k < spots.length && o.crowd.length < 5; k++) {
     var q = spots[k];
     if (o.crowd.some(function (w) { return Math.hypot(w.x - q[0], w.z - q[1]) < 0.65; })) continue;
+    if (spare() <= 8) break;
     var p = idlePerson();
     if (!p) break;
     p.hold = true;
