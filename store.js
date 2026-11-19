@@ -3000,8 +3000,8 @@ landMat.onBeforeCompile = function (sh) {
   sh.uniforms.csun = cloudU.sun;
   sh.vertexShader = 'varying vec2 cp;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\ncp = (modelMatrix * vec4(position, 1.0)).xz;');
   sh.fragmentShader = 'varying vec2 cp;\nuniform float ct;\nuniform float csun;\n' + sh.fragmentShader.replace('#include <color_fragment>',
-    '#include <color_fragment>\nvec2 cq = cp * 0.03 + vec2(ct, ct * 0.4);\n' +
-    'float cn = sin(cq.x * 2.1) * sin(cq.y * 1.7 + 1.0) + 0.6 * sin(cq.x * 4.3 + 2.0) * sin(cq.y * 3.9) + 0.25 * sin(cq.x * 9.0 + cq.y * 7.0);\n' +
+    '#include <color_fragment>\nvec2 cq = cp * 0.03 + vec2(ct, ct * 0.5);\n' +
+    'float cn = sin(cq.x * 2.0) * sin(cq.y * 2.0 + 1.0) + 0.6 * sin(cq.x * 4.0 + 2.0) * sin(cq.y * 4.0) + 0.25 * sin(cq.x * 8.0 + cq.y * 6.0);\n' +
     'vec2 cf = max(vec2(-48.0 - cp.x, -42.0 - cp.y), vec2(cp.x - 48.0, cp.y - 44.0));\n' +
     'float cz = 0.15 + 0.85 * smoothstep(0.0, 14.0, max(cf.x, cf.y));\n' +
     'diffuseColor.rgb *= 1.0 - 0.17 * smoothstep(0.2, 0.7, cn) * cz * csun;');
@@ -3058,7 +3058,7 @@ function gullGeo() {
 
 function buildLife(sc) {
   var wy = function (x, z) { return LAND.waterAt(x, z) + 0.03; };
-  [[43, -54.3, 3, 2, 2, 0.12], [2, -56, 13, 3.4, 3, 0.07], [-8, -56, 5, 2.2, 2, -0.1]].forEach(function (l) {
+  [[43, -54.3, 3, 2, 2, 0.12], [8, -56, 6, 3, 4, 0.08]].forEach(function (l) {
     var lp = loopOn(l[0], l[1], l[2], l[3], 1);
     for (var i = 0; i < l[4]; i++) ducks.push({ x: lp.x, z: lp.z, rx: lp.rx, rz: lp.rz, a: i * 0.5 + (l[5] > 0 ? 0 : 2), w: l[5] * (1 + i * 0.05), y: wy(l[0], l[1]) });
   });
@@ -3071,8 +3071,9 @@ function buildLife(sc) {
   gullMesh.frustumCulled = false;
   root.add(gullMesh);
 
-  var cl = loopOn(0, -56, 9, 2.4, 1.6);
-  canoe = { g: mesh('nature/canoe*2.2', 0, 0, 0, wy(0, -56)), x: cl.x, z: cl.z, rx: cl.rx, rz: cl.rz, y: wy(0, -56) };
+  // its own end of the lake, going the other way
+  var cl = loopOn(-7, -56, 7, 2.4, 1.6);
+  canoe = { g: mesh('nature/canoe*2.2', 0, 0, 0, wy(-7, -56)), x: cl.x, z: cl.z, rx: cl.rx, rz: cl.rz, y: wy(-7, -56) };
   canoe.g.traverse(function (o) { o.castShadow = false; o.receiveShadow = false; });
   root.add(canoe.g);
 
@@ -3113,14 +3114,18 @@ function buildLife(sc) {
 
 function lifeStep(dt, k) {
   lifeT += dt;
-  cloudU.t.value = dayT * 0.03;
+  cloudU.t.value = (dayT * 0.03) % (2 * Math.PI);
   var t = lifeT;
   if (duckMesh) {
     for (var i = 0; i < ducks.length; i++) {
       var d = ducks[i];
       var a = d.a + d.w * t;
       var s = d.w < 0 ? -1 : 1;
-      lifeP.set(d.x + Math.cos(a) * d.rx, d.y + Math.sin(t * 1.3 + i) * 0.015, d.z + Math.sin(a) * d.rz);
+      var dx = d.x + Math.cos(a) * d.rx;
+      var dz = d.z + Math.sin(a) * d.rz;
+      var wl = LAND.waterAt(dx, dz);
+      if (wl !== null) d.y = wl + 0.03;
+      lifeP.set(dx, d.y + Math.sin(t * 1.3 + i) * 0.015, dz);
       lifeE.set(0, Math.atan2(-Math.sin(a) * d.rx * s, Math.cos(a) * d.rz * s), Math.sin(t * 0.9 + i * 2) * 0.05, 'YXZ');
       duckMesh.setMatrixAt(i, lifeM.compose(lifeP, lifeQ.setFromEuler(lifeE), lifeS));
     }
@@ -3135,16 +3140,22 @@ function lifeStep(dt, k) {
     for (var j = 0; j < gulls.length; j++) {
       var b = gulls[j];
       var ang = b.a + b.w * t;
-      lifeP.set(cx + Math.cos(ang) * b.r * 1.5, b.h + Math.sin(t * 0.7 + j) * 0.5, cz + Math.sin(ang) * b.r * 0.6);
+      var gx = cx + Math.cos(ang) * b.r * 1.5;
+      var gz = cz + Math.sin(ang) * b.r * 0.6;
+      lifeP.set(gx, Math.max(b.h + Math.sin(t * 0.7 + j) * 0.5, LAND.ground(gx, gz) + 3), gz);
       lifeE.set(Math.sin(t * 0.6 + j) * 0.05, Math.atan2(-Math.sin(ang) * 1.5, Math.cos(ang) * 0.6), 0.45 + Math.sin(t * 0.5 + j * 2) * 0.15, 'YXZ');
       gullMesh.setMatrixAt(j, lifeM.compose(lifeP, lifeQ.setFromEuler(lifeE), lifeS));
     }
     gullMesh.instanceMatrix.needsUpdate = true;
   }
   if (canoe) {
-    var ca = t * 0.035 + 1;
-    canoe.g.position.set(canoe.x + Math.cos(ca) * canoe.rx, canoe.y + Math.sin(t * 0.8) * 0.01, canoe.z + Math.sin(ca) * canoe.rz);
-    canoe.g.rotation.set(0, Math.atan2(-Math.sin(ca) * canoe.rx, Math.cos(ca) * canoe.rz), Math.sin(t * 0.6) * 0.03);
+    var ca = 1 - t * 0.035;
+    var cx2 = canoe.x + Math.cos(ca) * canoe.rx;
+    var cz2 = canoe.z + Math.sin(ca) * canoe.rz;
+    var cw = LAND.waterAt(cx2, cz2);
+    if (cw !== null) canoe.y = cw + 0.03;
+    canoe.g.position.set(cx2, canoe.y + Math.sin(t * 0.8) * 0.01, cz2);
+    canoe.g.rotation.set(0, Math.atan2(Math.sin(ca) * canoe.rx, -Math.cos(ca) * canoe.rz), Math.sin(t * 0.6) * 0.03);
   }
   if (flies) {
     var night = 1 - k;
