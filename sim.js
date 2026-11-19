@@ -439,6 +439,9 @@ var xdue = { walk: 0, car: 0, taxi: 0 };
 var extraRoom = 1e9;
 // seconds left of the calm after a rush, when full lines and empty shelves are not blamed on the store
 var calmT = 0;
+// what the till pays a second, averaged over the last half minute outside a rush
+var inc = 0;
+var incRate = 0;
 var onPerk = null;
 // how full each department's shelves are, 0 to 1, and the stockers: the department each is taking a load to and
 // how far into the trip it is (the view walks them by that)
@@ -526,6 +529,7 @@ function pay(c, t) {
   var v = (c.garden ? plant() : c.bk) * bmul();
   earn(v);
   if (rush) rush.got += v;
+  else inc += v;
   S.st.srv++;
   gone(c);
   if (onShopper) onShopper('paid', c, v, t);
@@ -611,6 +615,10 @@ function tick(dt) {
   if (S.x2 > 0) S.x2 = Math.max(0, S.x2 - dt);
   lostT -= dt;
   calmT -= dt;
+  if (!rush) {
+    incRate += (inc / dt - incRate) * Math.min(1, dt / 30);
+    inc = 0;
+  }
   var f = flow();
   for (var k in due) {
     due[k] += f[k] * dt;
@@ -663,6 +671,7 @@ function perkOff() {
   rush = null;
   xdue.walk = xdue.car = xdue.taxi = 0;
   calmT = 0;
+  inc = incRate = 0;
   giftT = rnd(GIFT.gap);
   rushT = rnd(RUSH.gap);
   if (was && onPerk) onPerk('off');
@@ -688,7 +697,7 @@ function perkStep(dt) {
       rushT = rnd(RUSH.gap);
       calmT = 8;
       // what the rush added to the steady income
-      r.extra = Math.max(0, r.got - rate() * RUSH.secs);
+      r.extra = Math.max(0, r.got - incRate * RUSH.secs);
       if (onPerk) onPerk('rushend', r);
     }
   } else if (!hold && (rushT -= dt) <= 0) {
