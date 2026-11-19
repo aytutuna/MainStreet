@@ -3943,7 +3943,8 @@ function syncArea(s, animate, now) {
       pc.x.visible = false;
     }
   }
-  if (animate && s.shown === 0 && n > 0) {
+  var first = animate && s.shown === 0 && n > 0;
+  if (first) {
     var r = s.a.vacant;
     dust(r[0], r[1], r[2], r[3], now, 30);
   }
@@ -3970,6 +3971,7 @@ function syncArea(s, animate, now) {
   s.shown = n;
   s.key = key;
   nav.dirty = true;
+  if (first) grandOpening(s, now);
   // placed once every piece of the area is in, or the route grid misses the later ones
   late.forEach(function (h) { startHelper(s, h); });
   shadowDirty = true;
@@ -4012,6 +4014,204 @@ function pop(now) {
       delete bump[id];
       shadowDirty = true;
     }
+  }
+}
+
+// A department's first purchase is its grand opening: a ribbon across the edge that is easiest to reach, cut a moment
+// later, balloons in the department's colour rising away, and a few spare figures cheering at the front. Purely visual:
+// the figures are not the sim's shoppers, and nothing here touches the sim or the saves
+var openings = [];
+var opened = false;
+var balloonGeo = new THREE.SphereGeometry(0.17, 8, 6).scale(1, 1.25, 1);
+var postGeo = new THREE.CylinderGeometry(0.03, 0.03, 0.58, 6).translate(0, 0.29, 0);
+var bandGeo = new THREE.BoxGeometry(1, 0.04, 0.18);
+var bowGeo = null;
+var fxS = new THREE.Vector3();
+var fxC = new THREE.Color();
+var OPEN_CUT = 1500;
+var OPEN_END = 4800;
+
+// the edge of the site with the most open floor in front of it, the one facing the front of the store first
+function frontEdge(r) {
+  var mx = (r[0] + r[1]) / 2;
+  var mz = (r[2] + r[3]) / 2;
+  var edges = [
+    { x: mx, z: r[3], nx: 0, nz: 1, len: r[1] - r[0] },
+    { x: r[0], z: mz, nx: -1, nz: 0, len: r[3] - r[2] },
+    { x: r[1], z: mz, nx: 1, nz: 0, len: r[3] - r[2] },
+    { x: mx, z: r[2], nx: 0, nz: -1, len: r[1] - r[0] }
+  ];
+  var best = edges[0];
+  var most = -1;
+  edges.forEach(function (e) {
+    var n = 0;
+    [-0.3, 0, 0.3].forEach(function (f) {
+      if (free(e.x + e.nx * 0.8 + e.nz * f * e.len, e.z + e.nz * 0.8 + e.nx * f * e.len)) n++;
+    });
+    if (n > most) {
+      most = n;
+      best = e;
+    }
+  });
+  return best;
+}
+
+function grandOpening(s, now) {
+  var e = frontEdge(s.a.vacant);
+  var L = e.len - 0.2;
+  var along = e.nz ? [1, 0] : [0, 1];
+  var col = new THREE.Color(DEPT[s.id]);
+  var o = { t0: now, ax: along[0], az: along[1], L: L, ex: e.x + e.nx * 0.06, ez: e.z + e.nz * 0.06, n: 6, crowd: [] };
+  if (!bowGeo) {
+    bowGeo = mergeGeometries([
+      new THREE.BoxGeometry(0.22, 0.05, 0.12).rotateY(0.5).translate(-0.12, 0.02, 0),
+      new THREE.BoxGeometry(0.22, 0.05, 0.12).rotateY(-0.5).translate(0.12, 0.02, 0),
+      new THREE.BoxGeometry(0.09, 0.07, 0.09)
+    ], false);
+  }
+  o.band = new THREE.MeshLambertMaterial({ color: 0xd93b3b, transparent: true });
+  o.gold = new THREE.MeshLambertMaterial({ color: 0xf2c230, transparent: true });
+  o.post = new THREE.MeshLambertMaterial({ color: col });
+  o.g = new THREE.Group();
+  o.g.position.set(o.ex, 0, o.ez);
+  o.g.rotation.y = e.nz ? 0 : Math.PI / 2;
+  o.g.scale.y = 0.01;
+  [-L / 2, L / 2].forEach(function (x) {
+    var p = new THREE.Mesh(postGeo, o.post);
+    p.position.x = x;
+    o.g.add(p);
+  });
+  o.pivots = [-1, 1].map(function (side) {
+    var pv = new THREE.Group();
+    pv.position.set(side * L / 2, 0.5, 0);
+    var m = new THREE.Mesh(bandGeo, o.band);
+    m.scale.x = L / 2;
+    m.position.x = -side * L / 4;
+    pv.add(m);
+    o.g.add(pv);
+    return pv;
+  });
+  o.bow = new THREE.Mesh(bowGeo, o.gold);
+  o.bow.position.set(0, 0.52, 0);
+  o.g.add(o.bow);
+  root.add(o.g);
+
+  o.bmat = new THREE.MeshLambertMaterial({ transparent: true });
+  o.balloons = new THREE.InstancedMesh(balloonGeo, o.bmat, o.n);
+  for (var i = 0; i < o.n; i++) o.balloons.setColorAt(i, fxC.copy(col).lerp(new THREE.Color(i % 3 === 1 ? 0xffffff : 0x202020), i % 3 === 0 ? 0 : i % 3 === 1 ? 0.45 : 0.2));
+  o.balloons.frustumCulled = false;
+  o.balloons.visible = false;
+  root.add(o.balloons);
+  o.strings = new THREE.LineSegments(new THREE.BufferGeometry(), new THREE.LineBasicMaterial({ color: 0xf4f2ea, transparent: true }));
+  o.strings.geometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(o.n * 6), 3));
+  o.strings.frustumCulled = false;
+  o.strings.visible = false;
+  root.add(o.strings);
+
+  // spare figures, a few steps in front of the ribbon where the floor is clear
+  var spots = [];
+  for (var row = 0; row < 3; row++) {
+    for (var c = -2; c <= 2; c++) {
+      var lat = Math.max(-L / 2, Math.min(L / 2, c * 0.75 + (row % 2) * 0.35));
+      var fwd = 0.9 + row * 0.7;
+      var x = o.ex + e.nx * fwd + along[0] * lat;
+      var z = o.ez + e.nz * fwd + along[1] * lat;
+      if (free(x, z)) spots.push([x, z, Math.random()]);
+    }
+  }
+  spots.sort(function (a, b) { return a[2] - b[2]; });
+  for (var k = 0; k < spots.length && o.crowd.length < 5; k++) {
+    var q = spots[k];
+    if (o.crowd.some(function (w) { return Math.hypot(w.x - q[0], w.z - q[1]) < 0.65; })) continue;
+    var p = idlePerson();
+    if (!p) break;
+    p.hold = true;
+    p.bag.visible = false;
+    p.basket.visible = false;
+    p.plant.visible = false;
+    p.f.obj.position.set(q[0], 0, q[1]);
+    p.f.obj.rotation.y = Math.atan2(o.ex - q[0], o.ez - q[1]);
+    p.f.obj.scale.setScalar(0.01);
+    p.f.obj.visible = false;
+    act(p.f, 'idle', 0);
+    o.crowd.push({ p: p, x: q[0], z: q[1], ph: Math.random() * 6 });
+  }
+  openings.push(o);
+  opened = true;
+}
+
+function endOpening(o) {
+  root.remove(o.g, o.balloons, o.strings);
+  o.balloons.dispose();
+  o.strings.geometry.dispose();
+  o.strings.material.dispose();
+  [o.band, o.gold, o.post, o.bmat].forEach(function (m) { m.dispose(); });
+  o.crowd.forEach(function (w) {
+    w.p.hold = false;
+    w.p.f.obj.visible = false;
+    w.p.f.obj.scale.setScalar(1);
+    w.p.f.obj.position.y = 0;
+  });
+}
+
+function openingsClear() {
+  openings.forEach(endOpening);
+  openings.length = 0;
+}
+
+function openingsStep(now) {
+  for (var i = openings.length - 1; i >= 0; i--) {
+    var o = openings[i];
+    var t = now - o.t0;
+    if (t >= OPEN_END) {
+      endOpening(o);
+      openings.splice(i, 1);
+      continue;
+    }
+    var cut = Math.max(0, Math.min(1, (t - OPEN_CUT) / 450));
+    var fade = Math.max(0, Math.min(1, (t - OPEN_CUT - 450) / 700));
+    o.g.scale.y = t > 3400 ? Math.max(0.01, 1 - (t - 3400) / 400) : Math.max(0.01, Math.min(1, t / 250));
+    if (fade < 1) {
+      o.pivots[0].rotation.z = -1.45 * cut * cut;
+      o.pivots[1].rotation.z = 1.45 * cut * cut;
+      o.bow.position.y = 0.52 - 0.47 * cut * cut;
+      o.bow.rotation.z = t < OPEN_CUT ? Math.sin(t * 0.012) * 0.12 : cut * 3;
+      o.band.opacity = o.gold.opacity = 1 - fade;
+    } else {
+      o.pivots[0].visible = o.pivots[1].visible = o.bow.visible = false;
+    }
+    // balloons let go at the cut
+    var u = (t - OPEN_CUT) / 3000;
+    o.balloons.visible = o.strings.visible = u > 0 && u < 1;
+    if (o.balloons.visible) {
+      var sp = o.strings.geometry.attributes.position.array;
+      o.bmat.opacity = o.strings.material.opacity = u > 0.6 ? 1 - (u - 0.6) / 0.4 : 1;
+      for (var b = 0; b < o.n; b++) {
+        var lat = -o.L / 2 + o.L * (b + 0.5) / o.n + Math.sin(u * 4 + b * 2) * 0.35;
+        var y = 0.75 + u * (3.2 + (b % 3) * 0.7);
+        var x = o.ex + o.ax * lat;
+        var z = o.ez + o.az * lat;
+        fxS.setScalar(1);
+        o.balloons.setMatrixAt(b, lifeM.compose(lifeP.set(x, y, z), lifeQ.identity(), fxS));
+        sp[b * 6] = x;
+        sp[b * 6 + 1] = y - 0.2;
+        sp[b * 6 + 2] = z;
+        sp[b * 6 + 3] = x + Math.sin(u * 3 + b) * 0.1;
+        sp[b * 6 + 4] = y - 0.95;
+        sp[b * 6 + 5] = z;
+      }
+      o.balloons.instanceMatrix.needsUpdate = true;
+      o.strings.geometry.attributes.position.needsUpdate = true;
+    }
+    o.crowd.forEach(function (w, k) {
+      var s0 = 300 + k * 90;
+      var f = w.p.f.obj;
+      var u2 = Math.max(0, Math.min(1, (t - s0) / 250));
+      var out = Math.max(0, Math.min(1, (t - 3700) / 300));
+      f.visible = u2 > 0 && out < 1;
+      f.scale.setScalar(Math.max(0.01, u2 * (1 - out)));
+      f.position.y = t > OPEN_CUT && t < 3500 ? Math.abs(Math.sin((t - OPEN_CUT) * 0.011 + w.ph)) * 0.14 : 0;
+    });
   }
 }
 
@@ -5346,6 +5546,7 @@ function draw(now) {
   crowdStep(dt);
   doorsStep(dt);
   popsStep(now);
+  openingsStep(now);
   saysStep(now);
   order.forEach(function (id) {
     var s = shops[id];
@@ -5734,6 +5935,8 @@ function event(res, now) {
   var s = shops[res.id];
   if (s) bump[res.id] = now;
   sync(true, now);
+  var grand = opened;
+  opened = false;
   flash(res.id, res.piece, now);
   var out = 0.25;
   // with the area's card open the camera stays on the area
@@ -5752,6 +5955,7 @@ function event(res, now) {
       out = flyTo(p.x, p.y, Math.min(focus.dist, fit(PLAN.wing[res.id] ? 11 : EDGE * 2 + 2))) + 0.1;
     } else if (!onScreen((pb.x0 + pb.x1) / 2, (pb.z0 + pb.z1) / 2)) out = flyTo((pb.x0 + pb.x1) / 2, (pb.z0 + pb.z1) / 2, Math.min(focus.dist, fit(11))) + 0.1;
   }
+  if (grand) out = Math.max(out, 1.3);
   return out;
 }
 
@@ -5778,6 +5982,7 @@ function refresh() {
   PLACES.forEach(function (p) { places[p.id].shown = -1; });
   sync(false, 0);
   nav.dirty = true;
+  openingsClear();
   resetCrowd();
   seed = 3;
   for (var i = 0; i < 3; i++) come('walk');
