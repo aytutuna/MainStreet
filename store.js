@@ -826,6 +826,22 @@ function bind() {
 }
 
 function hit(sx, sy) {
+  var g = giftScreen();
+  if (g && Math.hypot(g.x - sx, g.y - sy) < GIFT_R) return { kind: 'gift' };
+  if (rush) {
+    var best = -1;
+    var bd = TILL_R;
+    places.hall.tills.forEach(function (t, i) {
+      if (!tills[i] || !tills[i].q.length) return;
+      toScreen(t.till[0], t.till[1] + 0.3, t.till[2], sp);
+      var d = Math.hypot(sp.x - sx, sp.y - sy);
+      if (d < bd) {
+        bd = d;
+        best = i;
+      }
+    });
+    if (best >= 0) return { kind: 'till', i: best };
+  }
   ndc.set(sx / cw * 2 - 1, -(sy / ch * 2 - 1));
   ray.setFromCamera(ndc, cam);
   var h = ray.intersectObjects(picks.filter(function (p) { return p.visible; }), false);
@@ -5158,6 +5174,166 @@ function janitorReset() {
   jan.t = 40;
 }
 
+// Things to tap: a golden cart, a dropped wallet or a VIP with a crown, put on the floor near where the camera looks. The
+// sim says when one shows up and what a tap pays; here it is only drawn, with a marker that stays on screen
+var gv = null;
+var goldMat = new THREE.MeshLambertMaterial({ vertexColors: true, emissive: 0x4a3300 });
+var sparkMat = new THREE.MeshBasicMaterial({ color: 0xffd23a, map: fade(), transparent: true, opacity: 0.7, depthWrite: false, blending: THREE.AdditiveBlending });
+var markEl;
+var GIFT_R = 48;
+var TILL_R = 44;
+var GIFT_K = { cart: 1.5, wallet: 1.9, vip: 1.12 };
+
+function wheel(x, z) {
+  return tinted(new THREE.CylinderGeometry(0.07, 0.07, 0.04, 8).rotateZ(Math.PI / 2), 0x4a3a20, x, 0.07, z, 1, 1, 1);
+}
+
+function giftUp() {
+  var cart = new THREE.Mesh(mergeGeometries([
+    tinted(new THREE.BoxGeometry(0.5, 0.26, 0.62), 0xffc928, 0, 0.5, 0, 1, 1, 1),
+    tinted(new THREE.BoxGeometry(0.54, 0.04, 0.04), 0xfff0a0, 0, 0.64, 0.3, 1, 1, 1),
+    tinted(new THREE.BoxGeometry(0.46, 0.04, 0.5), 0xb8860b, 0, 0.34, 0, 1, 1, 1),
+    tinted(new THREE.BoxGeometry(0.04, 0.3, 0.04), 0xfff0a0, -0.22, 0.75, -0.3, 1, 1, 1),
+    tinted(new THREE.BoxGeometry(0.04, 0.3, 0.04), 0xfff0a0, 0.22, 0.75, -0.3, 1, 1, 1),
+    tinted(new THREE.BoxGeometry(0.5, 0.04, 0.04), 0xfff0a0, 0, 0.9, -0.3, 1, 1, 1),
+    wheel(-0.22, 0.22), wheel(0.22, 0.22), wheel(-0.22, -0.22), wheel(0.22, -0.22)
+  ], false), goldMat);
+  var wallet = new THREE.Mesh(mergeGeometries([
+    tinted(new THREE.BoxGeometry(0.34, 0.05, 0.24), 0x8a4b22, 0, 0.03, 0, 1, 1, 1),
+    tinted(new THREE.BoxGeometry(0.34, 0.02, 0.12), 0xa65e2e, 0, 0.065, -0.06, 1, 1, 1),
+    tinted(new THREE.BoxGeometry(0.07, 0.03, 0.05), 0xffd23a, 0, 0.075, 0.02, 1, 1, 1)
+  ], false), goldMat);
+  var vip = figure(FOLK[3], 'walk');
+  figs.push(vip.obj);
+  var crown = new THREE.Mesh(mergeGeometries([
+    tinted(new THREE.CylinderGeometry(0.1, 0.085, 0.06, 8), 0xffc928, 0, 0, 0, 1, 1, 1),
+    tinted(new THREE.ConeGeometry(0.03, 0.09, 4), 0xffc928, -0.07, 0.07, 0, 1, 1, 1),
+    tinted(new THREE.ConeGeometry(0.03, 0.11, 4), 0xffc928, 0, 0.08, 0, 1, 1, 1),
+    tinted(new THREE.ConeGeometry(0.03, 0.09, 4), 0xffc928, 0.07, 0.07, 0, 1, 1, 1)
+  ], false), goldMat);
+  crown.position.set(0, 0.92, 0);
+  crown.scale.setScalar(1.6);
+  vip.obj.add(crown);
+  var glow = new THREE.Mesh(new THREE.PlaneGeometry(1.5, 1.5).rotateX(-Math.PI / 2), sparkMat);
+  glow.position.y = 0.06;
+  glow.renderOrder = 2;
+  [cart, wallet, vip.obj, glow].forEach(function (o) {
+    o.visible = false;
+    root.add(o);
+  });
+  gv = { cart: cart, wallet: wallet, vip: vip, glow: glow, on: false, obj: null, path: null, i: 0, kind: '', out: 0, x: 0, z: 0 };
+}
+
+function giftStart(kind) {
+  if (!ready) return;
+  if (!gv) giftUp();
+  var spots = [];
+  order.forEach(function (id) {
+    if (has(id)) lookable(shops[id]).forEach(function (pc) { spotsOf(pc).forEach(function (q) { spots.push(q.at); }); });
+  });
+  if (!spots.length) return;
+  spots.sort(function (a, b) { return Math.hypot(a[0] - focus.x, a[1] - focus.z) - Math.hypot(b[0] - focus.x, b[1] - focus.z); });
+  var a = spots[Math.floor(Math.random() * Math.min(6, spots.length))];
+  gv.kind = kind;
+  gv.cart.visible = gv.wallet.visible = gv.vip.obj.visible = false;
+  gv.obj = kind === 'cart' ? gv.cart : kind === 'wallet' ? gv.wallet : gv.vip.obj;
+  gv.path = null;
+  if (kind !== 'wallet') {
+    var far = spots.filter(function (q) { var d = Math.hypot(q[0] - a[0], q[1] - a[1]); return d > 3 && d < 9; });
+    var b = far[Math.floor(Math.random() * far.length)];
+    var r = b && route(a[0], a[1], b[0], b[1]);
+    if (r) {
+      gv.path = [{ x: a[0], z: a[1] }].concat(r);
+      if (kind === 'vip') gv.path = gv.path.concat(gv.path.slice(0, -1).reverse());
+      gv.i = 1;
+    }
+  }
+  gv.obj.position.set(a[0], 0, a[1]);
+  gv.obj.rotation.y = Math.random() * 6.28;
+  gv.obj.scale.setScalar(GIFT_K[kind]);
+  gv.obj.visible = gv.glow.visible = true;
+  if (kind === 'vip') act(gv.vip, 'walk', 0);
+  gv.on = true;
+  gv.out = 0;
+  gv.x = a[0];
+  gv.z = a[1];
+  markEl.hidden = false;
+}
+
+function giftHide() {
+  if (!gv) return;
+  gv.on = false;
+  gv.cart.visible = gv.wallet.visible = gv.vip.obj.visible = gv.glow.visible = false;
+  markEl.hidden = true;
+}
+
+function giftStep(dt, now) {
+  if (!gv || !gv.on) return;
+  var o = gv.obj;
+  if (gv.out) {
+    var u = (now - gv.out) / 350;
+    if (u >= 1) return giftHide();
+    o.scale.setScalar(GIFT_K[gv.kind] * (1 - u));
+  }
+  if (gv.path) {
+    var q = gv.path[gv.i];
+    var dx = q.x - o.position.x;
+    var dz = q.z - o.position.z;
+    var d = Math.hypot(dx, dz);
+    var step = (gv.kind === 'vip' ? 0.8 : 1.4) * dt;
+    if (d > 0.001) {
+      var want = Math.atan2(dx, dz);
+      o.rotation.y += Math.atan2(Math.sin(want - o.rotation.y), Math.cos(want - o.rotation.y)) * Math.min(1, dt * 8);
+    }
+    if (d > step) {
+      o.position.x += dx / d * step;
+      o.position.z += dz / d * step;
+    } else {
+      o.position.x = q.x;
+      o.position.z = q.z;
+      if (++gv.i >= gv.path.length) {
+        if (gv.kind === 'vip') gv.i = 1;
+        else gv.path = null;
+      }
+    }
+    if (gv.kind === 'vip' && gv.vip.mixer) gv.vip.mixer.update(dt);
+  }
+  if (gv.kind === 'wallet') o.rotation.y += dt * 0.8;
+  o.position.y = gv.kind === 'vip' ? 0 : Math.abs(Math.sin(now / 260)) * 0.07;
+  gv.glow.position.x = o.position.x;
+  gv.glow.position.z = o.position.z;
+  sparkMat.opacity = 0.55 + 0.3 * Math.sin(now / 170);
+  gv.glow.scale.setScalar((gv.kind === 'vip' ? 1.5 : 1.1) * (1 + 0.12 * Math.sin(now / 230)));
+  gv.x = o.position.x;
+  gv.z = o.position.z;
+  toScreen(o.position.x, 1.5, o.position.z, sp);
+  var cx = Math.max(26, Math.min(cw - 26, sp.x));
+  var cy = Math.max(IT + 26, Math.min(ch - IB - 26, sp.y - 30 - Math.abs(Math.sin(now / 240)) * 10));
+  markEl.style.transform = 'translate(' + Math.round(cx) + 'px,' + Math.round(cy) + 'px) translate(-50%,-50%)';
+}
+
+// where the gift is on screen, or null when it is not there to be tapped
+function giftScreen() {
+  if (!gv || !gv.on || gv.out) return null;
+  toScreen(gv.x, 0.5, gv.z, sp);
+  return { x: sp.x, y: sp.y };
+}
+
+function giftTaken() {
+  var at = giftScreen();
+  if (!at) return null;
+  gv.out = performance.now();
+  markEl.hidden = true;
+  return at;
+}
+
+function giftLeaves() {
+  if (gv && gv.on && !gv.out) {
+    gv.out = performance.now();
+    markEl.hidden = true;
+  }
+}
+
 // an associate walks the area, stopping at a piece now and then to put goods out
 function staffStep(s, h, dt) {
   if (h.f.mixer) h.f.mixer.update(dt);
@@ -5500,6 +5676,14 @@ function makeTags() {
   arrowEl.innerHTML = '<svg viewBox="0 0 24 30"><path d="M12 29 L2 14 H8 V2 H16 V14 H22 Z"/></svg>';
   arrowEl.hidden = true;
   tagsEl.appendChild(arrowEl);
+  markEl = document.createElement('button');
+  markEl.type = 'button';
+  markEl.id = 'gift-mark';
+  markEl.setAttribute('aria-label', 'Tap for a bonus');
+  markEl.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7-6.2-3.7-6.2 3.7 1.6-7L2 9.2l7.1-.6z"/></svg>';
+  markEl.hidden = true;
+  markEl.addEventListener('click', function () { onTap({ kind: 'gift' }); });
+  tagsEl.appendChild(markEl);
 }
 
 function bstate(id) {
@@ -5736,6 +5920,7 @@ function draw(now) {
   WING_IDS.forEach(function (id) { places[id].staff.forEach(function (w) { if (w.f.mixer && w.g.visible) w.f.mixer.update(dt); }); });
   crewStep(dt, now);
   janitorStep(dt);
+  giftStep(dt, now);
   blobsStep();
   puffsStep(now);
   riseStep(now);
@@ -6469,6 +6654,10 @@ window.View = {
   pieceScreen: pieceScreen,
   setBest: function (id) { bestId = id; },
   shopper: shopperEvent,
+  gift: giftStart,
+  giftTaken: giftTaken,
+  giftLeaves: giftLeaves,
+  giftOff: giftHide,
   upName: function (id, k) { var u = PLAN.areas[id].ups[k]; return u ? u.name : ''; },
   upIcon: upIcon,
   placeIcon: placeIcon
