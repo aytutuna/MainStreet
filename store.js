@@ -4606,6 +4606,7 @@ function start(p, pts, extra) {
   pts.forEach(function (q, k) { if (k) p.cum.push(p.cum[k - 1] + Math.hypot(q.x - pts[k - 1].x, q.z - pts[k - 1].z)); });
   p.trip = 0;
   pts.forEach(function (q, k) { if (q.pick) p.trip = p.cum[k]; });
+  p.stow = false;
   p.in = 0;
   for (var j = 0; j < pts.length && !p.in; j++) if (pts[j].z < FRONT && j) p.in = p.cum[j];
   for (var k in extra) p[k] = extra[k];
@@ -4819,7 +4820,12 @@ function spawnFrom(kind, c, n, cu) {
     var ex = b.x + 0.5;
     ei = b.x < 0 ? 0 : 1;
     pts.push({ x: ex, z: b.z }, { x: ex, z: AISLE }, { x: WALKS[ei], z: AISLE }, { x: WALKS[ei], z: LOT[0] - 0.2 });
-    back = function (e) { return [{ x: WALKS[e], z: LOT[0] - 0.2 }, { x: WALKS[e], z: AISLE }, { x: ex, z: AISLE }, { x: ex, z: b.z }]; };
+    // the bag goes in the trunk, at the end of the car that faces the aisle, and then the driver gets in
+    var tz = b.z - b.nose * 0.85;
+    back = function (e) {
+      return [{ x: WALKS[e], z: LOT[0] - 0.2 }, { x: WALKS[e], z: AISLE }, { x: ex, z: AISLE }, { x: b.x, z: tz, wait: 1.4, act: 'pick-up', face: b.nose > 0 ? 0 : Math.PI, stow: true },
+        { x: ex, z: tz }, { x: ex, z: b.z }];
+    };
   } else if (kind === 'taxi') {
     var tx = -0.4 + n * 0.5;
     ei = Math.random() < 0.5 ? 0 : 1;
@@ -4916,7 +4922,13 @@ function crowdStep(dt) {
     if (p.f.mixer && !far) p.f.mixer.update(dt);
     if (p.wait > 0) {
       p.wait -= dt;
-      if (p.wait <= 0) act(p.f, 'walk', 0.2);
+      if (p.wait <= 0) {
+        act(p.f, 'walk', 0.2);
+        if (p.stow) {
+          p.stow = false;
+          p.bag.visible = false;
+        }
+      }
       return;
     }
     var q = p.path[p.i];
@@ -4937,8 +4949,9 @@ function crowdStep(dt) {
     o.position.x = q.x;
     o.position.z = q.z;
     p.i++;
-    if (q.wait) {
+    if (q.wait && (!q.stow || p.bag.visible)) {
       p.wait = q.wait;
+      p.stow = !!q.stow;
       if (q.face !== undefined) o.rotation.y = q.face;
       act(p.f, q.act || 'idle', 0.2);
     }
