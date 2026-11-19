@@ -6125,6 +6125,8 @@ function draw(now) {
     root.traverse(function (o) { if (o.userData.lod) o.visible = (o.userData.lod === 'lo') === far; });
     shadowDirty = true;
   }
+  // the sim's rush only brings in as many extra shoppers as there are figures beyond the reserve
+  extraRoom = spare() - 8;
   dayStep(dt);
   trafficStep(dt);
   crowdStep(dt);

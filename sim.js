@@ -434,6 +434,9 @@ var gift = null;
 var giftT = 0;
 var rush = null;
 var rushT = 0;
+// the rush's extra arrivals still owed, and how many of them the view has a figure for
+var xdue = { walk: 0, car: 0, taxi: 0 };
+var extraRoom = 1e9;
 var onPerk = null;
 // how full each department's shelves are, 0 to 1, and the stockers: the department each is taking a load to and
 // how far into the trip it is (the view walks them by that)
@@ -603,12 +606,22 @@ function tick(dt) {
   if (S.x2 > 0) S.x2 = Math.max(0, S.x2 - dt);
   lostT -= dt;
   var f = flow();
-  var m = rush ? RUSH.mul : 1;
   for (var k in due) {
-    due[k] += f[k] * dt * (k === 'garden' ? 1 : m);
+    due[k] += f[k] * dt;
     while (due[k] >= 1) {
       due[k]--;
       come(k);
+    }
+    // a rush's extra shoppers only come in while the view has figures to spare; the rest never arrive, so none is lost
+    if (rush && k !== 'garden') {
+      xdue[k] += f[k] * dt * (RUSH.mul - 1);
+      while (xdue[k] >= 1) {
+        xdue[k]--;
+        if (extraRoom > 0) {
+          extraRoom--;
+          come(k);
+        }
+      }
     }
   }
   for (var i = shoppers.length - 1; i >= 0; i--) {
@@ -642,6 +655,7 @@ function perkOff() {
   var was = gift || rush;
   gift = null;
   rush = null;
+  xdue.walk = xdue.car = xdue.taxi = 0;
   giftT = rnd(GIFT.gap);
   rushT = rnd(RUSH.gap);
   if (was && onPerk) onPerk('off');
