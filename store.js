@@ -2475,6 +2475,165 @@ function buildShell() {
   }
   root.add(hb.group());
   PLAN.entrances.forEach(function (en) { doorSign(en); });
+  buildWallArt();
+}
+
+// Posters, signs, a clock, pictures and a notice board on the inside of the side walls. Each wall's pieces are one
+// mesh of quads cut from a single painted sheet, and they go with the wall when the camera cuts it away. The walls are one
+// unit high, so everything hangs below that
+var WALL_ART = { fresh: [0, 0, 512, 128], low: [512, 0, 512, 128], right: [0, 128, 256, 64], left: [256, 128, 256, 64], clock: [512, 128, 128, 128],
+  sun: [640, 128, 128, 128], fruit: [768, 128, 128, 128], board: [0, 256, 256, 192] };
+
+function wallSheet() {
+  var c = document.createElement('canvas');
+  c.width = 1024;
+  c.height = 512;
+  var g = c.getContext('2d');
+  g.lineJoin = 'round';
+  function box(r, fill, line) {
+    g.fillStyle = fill;
+    g.fillRect(r[0], r[1], r[2], r[3]);
+    g.strokeStyle = line || '#2a1c10';
+    g.lineWidth = 8;
+    g.strokeRect(r[0] + 4, r[1] + 4, r[2] - 8, r[3] - 8);
+  }
+  function text(r, s, col, size) {
+    g.fillStyle = col;
+    g.font = 'bold ' + size + 'px sans-serif';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillText(s, r[0] + r[2] / 2, r[1] + r[3] / 2 + 3);
+  }
+  var r = WALL_ART.fresh;
+  box(r, '#3f9a4a');
+  text(r, 'FRESH EVERY DAY', '#fff', 54);
+  r = WALL_ART.low;
+  box(r, '#e8553a');
+  text(r, 'LOW PRICES', '#ffd84a', 66);
+  [WALL_ART.right, WALL_ART.left].forEach(function (a, i) {
+    box(a, '#3f78b8');
+    text([a[0] + (i ? 40 : 0), a[1], a[2] - 40, a[3]], 'CHECKOUT', '#fff', 30);
+    g.fillStyle = '#ffd84a';
+    g.beginPath();
+    if (i) {
+      g.moveTo(a[0] + 12, a[1] + 32);
+      g.lineTo(a[0] + 40, a[1] + 14);
+      g.lineTo(a[0] + 40, a[1] + 50);
+    } else {
+      g.moveTo(a[0] + a[2] - 12, a[1] + 32);
+      g.lineTo(a[0] + a[2] - 40, a[1] + 14);
+      g.lineTo(a[0] + a[2] - 40, a[1] + 50);
+    }
+    g.fill();
+  });
+  r = WALL_ART.clock;
+  g.fillStyle = '#fff';
+  g.strokeStyle = '#2a1c10';
+  g.lineWidth = 8;
+  g.beginPath();
+  g.arc(r[0] + 64, r[1] + 64, 56, 0, 6.2832);
+  g.fill();
+  g.stroke();
+  g.lineWidth = 4;
+  for (var t = 0; t < 12; t++) {
+    var a = t * Math.PI / 6;
+    g.beginPath();
+    g.moveTo(r[0] + 64 + Math.sin(a) * 44, r[1] + 64 - Math.cos(a) * 44);
+    g.lineTo(r[0] + 64 + Math.sin(a) * 50, r[1] + 64 - Math.cos(a) * 50);
+    g.stroke();
+  }
+  g.lineWidth = 6;
+  g.beginPath();
+  g.moveTo(r[0] + 64, r[1] + 64);
+  g.lineTo(r[0] + 64, r[1] + 26);
+  g.moveTo(r[0] + 64, r[1] + 64);
+  g.lineTo(r[0] + 92, r[1] + 76);
+  g.stroke();
+  r = WALL_ART.sun;
+  box(r, '#9fd0f0', '#8a5a36');
+  g.fillStyle = '#ffd84a';
+  g.beginPath();
+  g.arc(r[0] + 84, r[1] + 44, 18, 0, 6.2832);
+  g.fill();
+  g.fillStyle = '#5fae4a';
+  g.beginPath();
+  g.moveTo(r[0] + 8, r[1] + 120);
+  g.quadraticCurveTo(r[0] + 50, r[1] + 50, r[0] + 120, r[1] + 120);
+  g.fill();
+  r = WALL_ART.fruit;
+  box(r, '#f6e6c8', '#8a5a36');
+  g.fillStyle = '#d8452f';
+  g.beginPath();
+  g.arc(r[0] + 50, r[1] + 70, 22, 0, 6.2832);
+  g.fill();
+  g.fillStyle = '#f2c230';
+  g.beginPath();
+  g.arc(r[0] + 84, r[1] + 76, 18, 0, 6.2832);
+  g.fill();
+  g.fillStyle = '#4f9a40';
+  g.fillRect(r[0] + 48, r[1] + 36, 6, 14);
+  r = WALL_ART.board;
+  box(r, '#b98f63', '#6b4a2a');
+  [['#fff', 24, 28, 70, 56], ['#ffe9a8', 110, 24, 60, 70], ['#cfe4f6', 186, 36, 54, 60], ['#f6d1d1', 40, 104, 66, 64], ['#fff', 130, 112, 80, 56]].forEach(function (n) {
+    g.fillStyle = n[0];
+    g.fillRect(r[0] + n[1], r[1] + n[2], n[3], n[4]);
+    g.fillStyle = '#d8452f';
+    g.beginPath();
+    g.arc(r[0] + n[1] + n[3] / 2, r[1] + n[2] + 6, 5, 0, 6.2832);
+    g.fill();
+  });
+  var tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
+  return tex;
+}
+
+// items: [name, place along the wall, height of the middle, width, height] on the east, west or north wall, as seen from inside
+function wallArt(side, items, tex) {
+  var pos = [];
+  var uv = [];
+  var idx = [];
+  var at = side === 'e' ? EDGE - 0.31 : side === 'w' ? -EDGE + 0.31 : SB + 0.31;
+  var s = side === 'w' ? -1 : 1;
+  items.forEach(function (it) {
+    var a = WALL_ART[it[0]];
+    var u0 = a[0] / 1024;
+    var u1 = (a[0] + a[2]) / 1024;
+    var v0 = 1 - (a[1] + a[3]) / 512;
+    var v1 = 1 - a[1] / 512;
+    // the left edge of the piece, as the viewer faces the wall, is the low z on the east wall, the low x on the north wall
+    // and the high z on the west
+    var l = it[1] - s * it[3] / 2;
+    var r = it[1] + s * it[3] / 2;
+    var b = it[2] - it[4] / 2;
+    var t = it[2] + it[4] / 2;
+    var n = pos.length / 3;
+    if (side === 'n') pos.push(l, b, at, r, b, at, r, t, at, l, t, at);
+    else pos.push(at, b, l, at, b, r, at, t, r, at, t, l);
+    uv.push(u0, v0, u1, v0, u1, v1, u0, v1);
+    idx.push(n, n + 1, n + 2, n, n + 2, n + 3);
+  });
+  var geo = new THREE.BufferGeometry();
+  geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+  geo.setIndex(idx);
+  geo.computeVertexNormals();
+  var m = new THREE.Mesh(geo, new THREE.MeshLambertMaterial({ map: tex, alphaTest: 0.5 }));
+  var g = new THREE.Group();
+  g.add(m);
+  root.add(g);
+  return g;
+}
+
+function buildWallArt() {
+  var tex = wallSheet();
+  var e = wallArt('e', [['fresh', -5, 0.74, 1.6, 0.4], ['board', -10.6, 0.64, 0.8, 0.6], ['clock', -9.1, 0.76, 0.36, 0.36], ['low', -15, 0.76, 1.3, 0.33],
+    ['sun', -19.2, 0.74, 0.4, 0.4], ['right', -20.8, 0.78, 1.0, 0.25]], tex);
+  var w = wallArt('w', [['sun', -4.2, 0.74, 0.4, 0.4], ['fruit', -5.6, 0.74, 0.4, 0.4], ['low', -10, 0.76, 1.3, 0.33], ['clock', -14, 0.76, 0.36, 0.36],
+    ['board', -21.5, 0.64, 0.8, 0.6], ['left', -19.6, 0.78, 1.0, 0.25]], tex);
+  wallArt('n', [['sun', -13, 0.74, 0.4, 0.4], ['board', -7.5, 0.64, 0.8, 0.6], ['fresh', -2.2, 0.74, 1.6, 0.4], ['clock', 2.6, 0.76, 0.36, 0.36], ['low', 7.5, 0.76, 1.3, 0.33],
+    ['fruit', 13, 0.74, 0.4, 0.4]], tex);
+  outer.push({ g: e, n: [1, 0], both: 1, hide: 1 }, { g: w, n: [-1, 0], hide: 1 });
 }
 
 // a run of wall from (x0, z0) to (x1, z1), one piece per unit, its decorated side toward (inX, inZ); a gap is
