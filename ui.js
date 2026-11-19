@@ -1378,7 +1378,7 @@ function onPerkEvent(ev, o) {
     buzz('medium');
   } else if (ev === 'rushend') {
     View.rushEnd();
-    banner('<b>Rush over: +' + money(o.got) + '</b>', 0.3);
+    banner('<b>Rush over: +' + money(o.extra) + '</b>', 0.3);
     sfx('done');
   } else {
     View.giftOff();

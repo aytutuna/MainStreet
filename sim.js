@@ -687,6 +687,8 @@ function perkStep(dt) {
       rush = null;
       rushT = rnd(RUSH.gap);
       calmT = 8;
+      // what the rush added to the steady income
+      r.extra = Math.max(0, r.got - rate() * RUSH.secs);
       if (onPerk) onPerk('rushend', r);
     }
   } else if (!hold && (rushT -= dt) <= 0) {
@@ -719,7 +721,7 @@ function takeGift() {
 function rushTap(i) {
   var t = tills[i];
   if (!rush || !t || !t.q.length || (t.q[0].v && !t.q[0].here)) return false;
-  t.t = Math.min(t.t + RUSH.tap, svc(t.k) + GAP[t.k] - 0.05);
+  t.t = Math.min(t.t + RUSH.tap, svc(t.k) + (t.q[0].v ? 0 : GAP[t.k]) - 0.05);
   return true;
 }
 
