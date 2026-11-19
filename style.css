@@ -414,6 +414,26 @@ small {
   font-size: 13px;
 }
 
+#rush {
+  background: #ffd7cf;
+  color: #7a2a1c;
+  gap: 8px;
+}
+
+#rush i {
+  width: 70px;
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(122, 42, 28, 0.25);
+  overflow: hidden;
+}
+
+#rush u {
+  display: block;
+  height: 100%;
+  background: #e03a2e;
+}
+
 #fly {
   position: absolute;
   inset: 0;

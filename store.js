@@ -832,7 +832,7 @@ function hit(sx, sy) {
     var best = -1;
     var bd = TILL_R;
     places.hall.tills.forEach(function (t, i) {
-      if (!tills[i] || !tills[i].q.length) return;
+      if (!tills[i] || !tills[i].q.length || (tills[i].q[0].v && !tills[i].q[0].here)) return;
       toScreen(t.till[0], t.till[1] + 0.3, t.till[2], sp);
       var d = Math.hypot(sp.x - sx, sp.y - sy);
       if (d < bd) {
@@ -4280,7 +4280,7 @@ var blobMat = new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, 
 var carShadow = new THREE.PlaneGeometry(0.8, 1.3);
 
 function vehicle(ref) {
-  var g = mesh(ref, 0, 0, 0);
+  var g = typeof ref === 'string' ? mesh(ref, 0, 0, 0) : ref;
   g.traverse(function (o) { if (o.isMesh) o.castShadow = false; });
   var sh = new THREE.Mesh(carShadow, blobMat);
   sh.rotation.x = -Math.PI / 2;
@@ -4444,6 +4444,7 @@ function carStep(c, dt) {
     if (q.stop) {
       c.wait = q.stop;
       c.speed = 0;
+      if (q.bus) c.docked = true;
       if (q.drop) q.drop.forEach(function (r, n) { spawnFrom('taxi', c, n, r); });
       if (q.unload) shadowDirty = true;
     }
@@ -4483,7 +4484,9 @@ function arrive(c) {
 }
 
 function onFoot(c) {
-  spawnFrom('walk', null, 0, c);
+  // while the tour bus is in, most of the people on foot come off it
+  if (busStopped() && !c.garden && Math.random() < 0.9) spawnFrom('taxi', busC, (BUS_X + 0.4) / 0.5 + Math.random() * 3 - 1.5, c);
+  else spawnFrom('walk', null, 0, c);
 }
 
 // a coin that jumps off the till when a shopper pays
@@ -4498,9 +4501,10 @@ function paid(till, now) {
   m.position.set(till[0], till[1] + 0.1, till[2]);
   root.add(m);
   pops.push({ m: m, t0: now, y: till[1] + 0.1 });
-  if (focus.dist < 30 && now - tillAt > 1500 && window.sfx) {
+  // in a rush the tills ring faster and louder
+  if (focus.dist < 30 && now - tillAt > (rush ? 450 : 1500) && window.sfx) {
     tillAt = now;
-    sfx('till');
+    sfx('till', rush ? 1.3 : 1, rush ? 1.7 : 1);
   }
 }
 
@@ -5332,6 +5336,89 @@ function giftLeaves() {
     gv.out = performance.now();
     markEl.hidden = true;
   }
+}
+
+// Rush events: a tour bus that stops in the street and lets its crowd out, or a banner over each entrance for a flash
+// sale. The extra shoppers come from the sim; this only dresses the street and the doors
+var busC = null;
+var busGeo = null;
+var saleBan = null;
+var BUS_X = 6.5;
+
+function busStopped() {
+  return !!busC && !!busC.docked && busC.wait > 0 && cars.indexOf(busC) >= 0;
+}
+
+function busUp() {
+  if (!busGeo) {
+    busGeo = mergeGeometries([
+      tinted(new THREE.BoxGeometry(1.05, 0.7, 3.6), 0xe8553a, 0, 0.58, 0, 1, 1, 1),
+      tinted(new THREE.BoxGeometry(1.07, 0.24, 3.2), 0x24323f, 0, 0.82, -0.05, 1, 1, 1),
+      tinted(new THREE.BoxGeometry(1.1, 0.07, 3.62), 0xf6f0e0, 0, 0.5, 0, 1, 1, 1),
+      tinted(new THREE.BoxGeometry(0.96, 0.05, 3.5), 0xf6f0e0, 0, 0.96, 0, 1, 1, 1),
+      tinted(new THREE.CylinderGeometry(0.2, 0.2, 0.14, 10).rotateZ(Math.PI / 2), 0x23232b, -0.5, 0.2, 1.15, 1, 1, 1),
+      tinted(new THREE.CylinderGeometry(0.2, 0.2, 0.14, 10).rotateZ(Math.PI / 2), 0x23232b, 0.5, 0.2, 1.15, 1, 1, 1),
+      tinted(new THREE.CylinderGeometry(0.2, 0.2, 0.14, 10).rotateZ(Math.PI / 2), 0x23232b, -0.5, 0.2, -1.15, 1, 1, 1),
+      tinted(new THREE.CylinderGeometry(0.2, 0.2, 0.14, 10).rotateZ(Math.PI / 2), 0x23232b, 0.5, 0.2, -1.15, 1, 1, 1)
+    ], false);
+  }
+  var g = new THREE.Group();
+  g.add(new THREE.Mesh(busGeo, vcMat));
+  return g;
+}
+
+function saleUp() {
+  var c = document.createElement('canvas');
+  c.width = 256;
+  c.height = 64;
+  var x = c.getContext('2d');
+  x.fillStyle = '#e03a2e';
+  x.fillRect(0, 0, 256, 64);
+  x.fillStyle = '#ffd84a';
+  for (var i = 0; i < 16; i++) x.fillRect(i * 16 + 4, 0, 8, 6);
+  x.fillStyle = '#fff';
+  x.font = 'bold 33px sans-serif';
+  x.textAlign = 'center';
+  x.textBaseline = 'middle';
+  x.fillText('FLASH SALE!', 128, 36);
+  var mat = new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c) });
+  var geo = new THREE.PlaneGeometry(3.2, 0.8);
+  saleBan = [-9.5, 9.5].map(function (bx) {
+    var m = new THREE.Mesh(geo, mat);
+    m.position.set(bx, 2.7, FRONT);
+    m.visible = false;
+    root.add(m);
+    return m;
+  });
+}
+
+function rushStart(kind) {
+  if (!ready) return;
+  if (kind === 'bus') {
+    busC = addCar(busUp(), [{ x: 34, z: LANE_W }, { x: BUS_X, z: LANE_W, stop: 20, bus: true, lane: -1 }, { x: -STREET, z: LANE_W, lane: -1 }], 'bus', { lane: -1 });
+    var sh = busC.o.children[busC.o.children.length - 1];
+    sh.scale.set(1.4, 2.6, 1);
+  } else {
+    if (!saleBan) saleUp();
+    saleBan.forEach(function (m) { m.visible = true; });
+  }
+}
+
+// the sale is over, or the store was reset: the banners come down and a bus still on the way leaves
+function rushEnd() {
+  if (saleBan) saleBan.forEach(function (m) { m.visible = false; });
+  if (busC && cars.indexOf(busC) >= 0 && !busC.docked) {
+    root.remove(busC.o);
+    cars.splice(cars.indexOf(busC), 1);
+  }
+  busC = null;
+}
+
+function tillScreen(i) {
+  var t = places.hall.tills[i];
+  if (!t) return null;
+  toScreen(t.till[0], t.till[1] + 0.3, t.till[2], sp);
+  return { x: sp.x, y: sp.y };
 }
 
 // an associate walks the area, stopping at a piece now and then to put goods out
@@ -6658,6 +6745,9 @@ window.View = {
   giftTaken: giftTaken,
   giftLeaves: giftLeaves,
   giftOff: giftHide,
+  rush: rushStart,
+  rushEnd: rushEnd,
+  tillScreen: tillScreen,
   upName: function (id, k) { var u = PLAN.areas[id].ups[k]; return u ? u.name : ''; },
   upIcon: upIcon,
   placeIcon: placeIcon
