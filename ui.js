@@ -709,8 +709,13 @@ var saleAvg = 0;
 function onSale(ev, c, v, t) {
   var at = View.shopper(ev, c, t);
   if (ev !== 'paid') return;
-  var r = saleAvg ? v / saleAvg : 1;
-  saleAvg = saleAvg ? saleAvg + (v - saleAvg) * 0.05 : v;
+  // graded on the sale without a boost, and plant sales stay out of the average
+  var u = v / bmul();
+  var r = 1;
+  if (!c.garden) {
+    r = saleAvg ? u / saleAvg : 1;
+    saleAvg = saleAvg ? saleAvg + (u - saleAvg) * 0.05 : u;
+  }
   if (at) popAt('+' + money(v), at.x, at.y, r >= 1.8 ? 'small max' : r >= 1.25 ? 'small hot' : r < 0.6 ? 'small dim' : 'small');
 }
 
@@ -1096,6 +1101,7 @@ function flash(id, text, old) {
 }
 
 function afterLoad() {
+  saleAvg = 0;
   closeCard();
   closeSheet();
   View.refresh();
