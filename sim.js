@@ -427,6 +427,14 @@ var tills = [];
 var due = {};
 var sid = 0;
 var lostT = 0;
+// what the player can tap: a gift that shows up for a few seconds now and then, and a rush that doubles the arrivals for
+// a while. The ui sets hold while the player is busy elsewhere, so nothing new starts then
+var hold = false;
+var gift = null;
+var giftT = 0;
+var rush = null;
+var rushT = 0;
+var onPerk = null;
 // how full each department's shelves are, 0 to 1, and the stockers: the department each is taking a load to and
 // how far into the trip it is (the view walks them by that)
 var fill = {};
@@ -439,6 +447,7 @@ function clearShoppers() {
   tills.push({ i: TILLS.length, k: 'garden', lv: 0, q: [], t: 0 });
   due = { walk: 0.8, car: 0.4, taxi: 0, garden: 0.5 };
   lostT = 0;
+  perkOff();
   BIZ.forEach(function (b) { fill[b.id] = 1; });
   crew = [];
   outT = 0;
@@ -511,6 +520,7 @@ function take() {
 function pay(c, t) {
   var v = (c.garden ? plant() : c.bk) * bmul();
   earn(v);
+  if (rush) rush.got += v;
   S.st.srv++;
   gone(c);
   if (onShopper) onShopper('paid', c, v, t);
@@ -593,8 +603,9 @@ function tick(dt) {
   if (S.x2 > 0) S.x2 = Math.max(0, S.x2 - dt);
   lostT -= dt;
   var f = flow();
+  var m = rush ? RUSH.mul : 1;
   for (var k in due) {
-    due[k] += f[k] * dt;
+    due[k] += f[k] * dt * (k === 'garden' ? 1 : m);
     while (due[k] >= 1) {
       due[k]--;
       come(k);
@@ -620,6 +631,74 @@ function tick(dt) {
   }
   tills.forEach(function (t) { serve(t, dt); });
   stockStep(dt);
+  perkStep(dt);
+}
+
+function rnd(r) {
+  return r[0] + Math.random() * (r[1] - r[0]);
+}
+
+function perkOff() {
+  var was = gift || rush;
+  gift = null;
+  rush = null;
+  giftT = rnd(GIFT.gap);
+  rushT = rnd(RUSH.gap);
+  if (was && onPerk) onPerk('off');
+}
+
+function perkStep(dt) {
+  if (gift) {
+    gift.left -= dt;
+    if (gift.left <= 0) {
+      gift = null;
+      giftT = rnd(GIFT.gap);
+      if (onPerk) onPerk('giftgone');
+    }
+  } else if (!hold && (giftT -= dt) <= 0) {
+    gift = { kind: ['cart', 'wallet', 'vip'][Math.floor(Math.random() * 3)], left: rnd(GIFT.life) };
+    if (onPerk) onPerk('gift', gift);
+  }
+  if (rush) {
+    rush.left -= dt;
+    if (rush.left <= 0) {
+      var r = rush;
+      rush = null;
+      rushT = rnd(RUSH.gap);
+      if (onPerk) onPerk('rushend', r);
+    }
+  } else if (!hold && (rushT -= dt) <= 0) {
+    rush = { kind: Math.random() < 0.5 ? 'bus' : 'sale', left: RUSH.secs, got: 0 };
+    if (onPerk) onPerk('rush', rush);
+  }
+}
+
+// the player taps the gift: what it pays, or null when it has gone
+function takeGift() {
+  if (!gift) return null;
+  var r = { kind: gift.kind, cash: 0, gems: 0, x2: 0 };
+  var p = Math.random();
+  if (p < GIFT.x2) {
+    r.x2 = GIFT.x2Secs;
+    S.x2 += r.x2;
+  } else if (p < GIFT.x2 + GIFT.gems) {
+    r.gems = Math.round(rnd(GIFT.gemN));
+    S.gems += r.gems;
+  } else {
+    r.cash = Math.max(1, rate() * rnd(GIFT.cash));
+    earn(r.cash);
+  }
+  gift = null;
+  giftT = rnd(GIFT.gap);
+  return r;
+}
+
+// a tap on till i during a rush gives the shopper being served a head start
+function rushTap(i) {
+  var t = tills[i];
+  if (!rush || !t || !t.q.length || (t.q[0].v && !t.q[0].here)) return false;
+  t.t = Math.min(t.t + RUSH.tap, svc(t.k) + GAP[t.k] - 0.05);
+  return true;
 }
 
 // time away: the store runs at its steady rate; the pay is held until claimAway
@@ -629,6 +708,7 @@ function away(sec) {
   var gain = baseRate() * (s + xs) * (1 + HEAD * S.pl.head);
   var n = Math.floor((served() + gardenServed()) * s);
   S.x2 = Math.max(0, S.x2 - s);
+  perkOff();
   S.pend += gain;
   S.st.srv += n;
   return { secs: s, real: sec, gain: gain, n: n };
