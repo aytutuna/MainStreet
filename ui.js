@@ -7,6 +7,7 @@ var SND = {
   mile: ['triangle', 0.08, 0.22, [523, 659, 784, 1047, 1319, 1568]],
   unlock: ['triangle', 0.09, 0.2, [392, 523, 659, 784]],
   tap: ['sine', 0.04, 0.05, [1000]],
+  gift: ['triangle', 0.07, 0.2, [784, 988, 1175, 1568]],
   stock: ['sine', 0.06, 0.1, [196]]
 };
 var VOL = { till: 0.3, stock: 0.4, tap: 0.5, buy: 0.6, done: 0.6, unlock: 0.6, mile: 0.6 };
@@ -69,12 +70,14 @@ function loadSound(name) {
   req.send();
 }
 
-function sfx(name) {
+// rate shifts the pitch, vol scales the loudness
+function sfx(name, rate, vol) {
   if (!ac || !snd || document.hidden || ac.state !== 'running') return;
   if (buf[name]) {
     var s = ac.createBufferSource();
     var v = ac.createGain();
-    v.gain.value = VOL[name];
+    v.gain.value = VOL[name] * (vol || 1);
+    s.playbackRate.value = rate || 1;
     s.buffer = buf[name];
     s.connect(v);
     v.connect(out);
@@ -88,9 +91,9 @@ function sfx(name) {
     var o = ac.createOscillator();
     var g = ac.createGain();
     o.type = c[0];
-    o.frequency.value = f;
+    o.frequency.value = f * (rate || 1);
     g.gain.setValueAtTime(0.0001, at);
-    g.gain.linearRampToValueAtTime(0.05, at + 0.012);
+    g.gain.linearRampToValueAtTime(0.05 * (vol || 1), at + 0.012);
     g.gain.exponentialRampToValueAtTime(0.0001, at + c[2]);
     o.connect(g);
     g.connect(ac.destination);
@@ -176,6 +179,18 @@ function flyIcons(src, x, y, n, targetId) {
     a.onfinish = function (e) { e.target.effect.target.remove(); };
   }
   setTimeout(function () { bumpEl(targetId === 'gems' ? 'gem-n' : 'cash-n'); }, 560);
+}
+
+// a ring that swells and fades where something was tapped
+function ring(x, y) {
+  var d = document.createElement('i');
+  d.className = 'ring';
+  d.style.left = x + 'px';
+  d.style.top = y + 'px';
+  $('fly').appendChild(d);
+  var a = d.animate([{ transform: 'translate(-50%, -50%) scale(0.2)', opacity: 0.9 }, { transform: 'translate(-50%, -50%) scale(2.6)', opacity: 0 }],
+    { duration: 520, easing: 'ease-out' });
+  a.onfinish = function () { d.remove(); };
 }
 
 function flyCoins(x, y, n) {
@@ -1269,9 +1284,37 @@ function paintSpeed() {
   [].forEach.call(document.querySelectorAll('#t-speed button'), function (b) { b.classList.toggle('on', +b.dataset.s === speed); });
 }
 
+// a tapped gift pays cash, now and then gems or a minute of x2
+function collectGift() {
+  var r = takeGift();
+  if (!r) return;
+  var at = View.giftTaken() || { x: innerWidth / 2, y: innerHeight / 2 };
+  ring(at.x, at.y);
+  if (r.x2) {
+    popAt('x2 for ' + r.x2 / 60 + ' min', at.x, at.y - 20, 'big');
+    bumpEl('x2');
+  } else if (r.gems) {
+    popAt('+' + plural(r.gems, 'gem'), at.x, at.y - 20, 'big gem');
+    flyGems(at.x, at.y, r.gems);
+  } else {
+    popAt('+' + money(r.cash), at.x, at.y - 20, 'big');
+    flyCoins(at.x, at.y, 8);
+  }
+  sfx('gift');
+  buzz('success');
+  nudge();
+}
+
+function onPerkEvent(ev, o) {
+  if (ev === 'gift') View.gift(o.kind);
+  else if (ev === 'giftgone') View.giftLeaves();
+  else if (ev === 'off') View.giftOff();
+}
+
 function onTap(h) {
   wake();
-  if (h.kind === 'biz') showCard(h.id);
+  if (h.kind === 'gift') collectGift();
+  else if (h.kind === 'biz') showCard(h.id);
   else closeCard();
 }
 
@@ -1288,6 +1331,7 @@ function loop(t) {
     updateMeters();
     updateHint();
     fitInsets();
+    hold = !started() || !!cardId || sheetOpen || veilUp();
   }
   View.draw(t);
   updateHud();
@@ -1316,6 +1360,7 @@ function start() {
   $('m-tills').addEventListener('click', function () { tapMeter('hall', capacity); });
   $('m-shelf').addEventListener('click', function () { tapMeter('dock', stockCap); });
   onShopper = onSale;
+  onPerk = onPerkEvent;
   var wait = setInterval(function () {
     if (!View.ready()) return;
     clearInterval(wait);

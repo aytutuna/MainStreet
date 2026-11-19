@@ -127,7 +127,7 @@ var TILLS = [{ k: 'lane', lv: 0 }, { k: 'lane', lv: 1 }, { k: 'self', lv: 3 }, {
 
 // Things to tap: one shows up every gap seconds of play and stays life seconds. A tap pays cash worth cash seconds of
 // income, or now and then gems or a minute of x2. They add up to roughly a tenth more income for a player who taps all
-var GIFT = { gap: [30, 60], life: [10, 15], cash: [2, 6], gems: 0.04, gemN: [1, 2], x2: 0.02, x2Secs: 60 };
+var GIFT = { gap: [30, 60], life: [10, 15], cash: [3, 9], gems: 0.04, gemN: [1, 2], x2: 0.02, x2Secs: 60 };
 // Rush events: one every gap seconds of play, shoppers coming mul times as fast for secs, and each tap on a till gives
 // its front shopper tap seconds of service
 var RUSH = { gap: [240, 360], secs: 30, mul: 2, tap: 0.9 };
