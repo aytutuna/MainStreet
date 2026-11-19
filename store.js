@@ -4980,6 +4980,141 @@ function crowdStep(dt) {
   });
 }
 
+// Now and then a janitor comes out of a stock door, walks to a spot where shoppers stand, sets down a wet floor sign and
+// mops for a few seconds before heading back. Nothing the sim knows about
+var JAN = 'shop/character-employee@5,3>2,2';
+var jan = null;
+var janT = 40;
+var janM = new THREE.MeshBasicMaterial({ color: 0x9fd0ff, transparent: true, opacity: 0.35, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
+
+function janitorUp() {
+  var f = crew(JAN, 'walk');
+  f.obj.visible = false;
+  root.add(f.obj);
+  var mop = new THREE.Group();
+  mop.add(new THREE.Mesh(mergeGeometries([
+    tinted(new THREE.CylinderGeometry(0.014, 0.014, 0.5, 5).translate(0, 0.25, 0).rotateX(-0.25), 0xb08a5a, 0, 0, 0, 1, 1, 1),
+    tinted(new THREE.BoxGeometry(0.18, 0.04, 0.09), 0xc9d3dd, 0, 0.02, 0.01, 1, 1, 1)
+  ], false), vcMat));
+  mop.position.set(0.22, 0, 0.3);
+  mop.visible = false;
+  f.obj.add(mop);
+  var sign = new THREE.Mesh(mergeGeometries([
+    tinted(new THREE.BoxGeometry(0.2, 0.3, 0.012).translate(0, 0.15, 0).rotateX(-0.3).translate(0, 0, 0.07), 0xf5c518, 0, 0, 0, 1, 1, 1),
+    tinted(new THREE.BoxGeometry(0.2, 0.3, 0.012).translate(0, 0.15, 0).rotateX(0.3).translate(0, 0, -0.07), 0xf5c518, 0, 0, 0, 1, 1, 1),
+    tinted(new THREE.BoxGeometry(0.14, 0.06, 0.016).translate(0, 0.17, 0).rotateX(-0.3).translate(0, 0, 0.075), 0x2a2a30, 0, 0, 0, 1, 1, 1)
+  ], false), vcMat);
+  sign.visible = false;
+  root.add(sign);
+  var wet = new THREE.Mesh(new THREE.CircleGeometry(0.6, 16).rotateX(-Math.PI / 2), janM);
+  wet.position.y = 0.04;
+  wet.renderOrder = 1;
+  wet.visible = false;
+  root.add(wet);
+  jan = { f: f, mop: mop, sign: sign, wet: wet, st: 0, path: null, i: 0, t: 0 };
+}
+
+// walks the path at a person's pace; true on the last point
+function janWalk(dt) {
+  var o = jan.f.obj;
+  var q = jan.path[jan.i];
+  var dx = q.x - o.position.x;
+  var dz = q.z - o.position.z;
+  var d = Math.hypot(dx, dz);
+  var step = 0.95 * dt;
+  if (d > 0.001) {
+    var want = Math.atan2(dx, dz);
+    o.rotation.y += Math.atan2(Math.sin(want - o.rotation.y), Math.cos(want - o.rotation.y)) * Math.min(1, dt * 8);
+  }
+  if (d > step) {
+    o.position.x += dx / d * step;
+    o.position.z += dz / d * step;
+    return false;
+  }
+  o.position.x = q.x;
+  o.position.z = q.z;
+  jan.i++;
+  return jan.i >= jan.path.length;
+}
+
+function janGo(pts) {
+  jan.path = pts;
+  jan.i = 1;
+  act(jan.f, 'walk', 0.2);
+}
+
+function janitorStep(dt) {
+  if (!ready) return;
+  if (!jan) {
+    janT -= dt;
+    if (janT > 0) return;
+    janitorUp();
+    jan.t = 0;
+  }
+  var f = jan.f;
+  if (jan.st === 0) {
+    jan.t -= dt;
+    if (jan.t > 0 || speed !== 1) return;
+    var spots = [];
+    order.forEach(function (id) {
+      if (has(id)) lookable(shops[id]).forEach(function (pc) { spotsOf(pc).forEach(function (q) { spots.push(q); }); });
+    });
+    var door = PLAN.doors[Math.floor(Math.random() * PLAN.doors.length)];
+    var sp = spots.length ? spots[Math.floor(Math.random() * spots.length)] : null;
+    var r = sp && route(door, BACK + 0.6, sp.at[0], sp.at[1]);
+    if (!r) {
+      jan.t = 15;
+      return;
+    }
+    f.obj.position.set(door, 0, BACK + 0.6);
+    f.obj.rotation.y = 0;
+    f.obj.visible = true;
+    jan.face = sp.face;
+    janGo([{ x: door, z: BACK + 0.6 }].concat(r));
+    jan.st = 1;
+  } else if (jan.st === 1) {
+    if (f.mixer) f.mixer.update(dt);
+    if (!janWalk(dt)) return;
+    // the sign goes down beside the spot, the wet patch in front of it
+    var o = f.obj.position;
+    f.obj.rotation.y = jan.face;
+    var sx = Math.sin(jan.face);
+    var sz = Math.cos(jan.face);
+    jan.sign.position.set(o.x + sx * 0.7 + sz * 0.3, 0, o.z + sz * 0.7 - sx * 0.3);
+    jan.sign.rotation.y = jan.face;
+    jan.wet.position.set(o.x + sx * 0.4, 0.04, o.z + sz * 0.4);
+    jan.sign.visible = jan.wet.visible = jan.mop.visible = true;
+    janM.opacity = 0.35;
+    act(f, 'pick-up', 0.2);
+    jan.t = 0;
+    jan.st = 2;
+  } else if (jan.st === 2) {
+    if (f.mixer) f.mixer.update(dt);
+    jan.t += dt;
+    jan.mop.rotation.y = Math.sin(jan.t * 4.5) * 0.7;
+    if (jan.t < 7) return;
+    jan.sign.visible = jan.wet.visible = jan.mop.visible = false;
+    var p = f.obj.position;
+    var door2 = PLAN.doors.reduce(function (a, d) { return Math.abs(d - p.x) < Math.abs(a - p.x) ? d : a; });
+    var back = route(p.x, p.z, door2, BACK + 0.6);
+    janGo([{ x: p.x, z: p.z }].concat(back || [{ x: door2, z: BACK + 0.6 }]));
+    jan.st = 3;
+  } else {
+    if (f.mixer) f.mixer.update(dt);
+    if (!janWalk(dt)) return;
+    f.obj.visible = false;
+    jan.st = 0;
+    jan.t = 60 + Math.random() * 60;
+  }
+}
+
+function janitorReset() {
+  if (!jan) return;
+  jan.f.obj.visible = jan.sign.visible = jan.wet.visible = jan.mop.visible = false;
+  jan.st = 0;
+  jan.t = 40;
+}
+
 // an associate walks the area, stopping at a piece now and then to put goods out
 function staffStep(s, h, dt) {
   if (h.f.mixer) h.f.mixer.update(dt);
@@ -5574,6 +5709,7 @@ function draw(now) {
   places.hall.staff.forEach(function (f) { if (f.mixer && f.obj.parent.visible && f.obj.visible) f.mixer.update(dt); });
   WING_IDS.forEach(function (id) { places[id].staff.forEach(function (w) { if (w.f.mixer && w.g.visible) w.f.mixer.update(dt); }); });
   crewStep(dt, now);
+  janitorStep(dt);
   blobsStep();
   puffsStep(now);
   riseStep(now);
@@ -5997,6 +6133,7 @@ function refresh() {
   nav.dirty = true;
   openingsClear();
   resetCrowd();
+  janitorReset();
   seed = 3;
   for (var i = 0; i < 3; i++) come('walk');
   seed = 0;
