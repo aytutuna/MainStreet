@@ -4561,7 +4561,7 @@ function carStep(c, dt) {
   var dz = q.z - o.z;
   var d = Math.hypot(dx, dz);
   var onRoad = Math.abs(o.z - 12) < 1.6;
-  var top = onRoad ? 3.2 : 1.5;
+  var top = onRoad ? (c.bus ? 7 : 3.2) : 1.5;
   var want = blocked(c) ? 0 : top;
   if (q.stop || q.park) want = Math.min(want, Math.max(0.35, d * 1.6));
   c.speed += Math.max(-6 * dt, Math.min(3 * dt, want - c.speed));
@@ -5452,9 +5452,10 @@ function giftStep(dt, now) {
   gv.x = o.position.x;
   gv.z = o.position.z;
   toScreen(o.position.x, 1.5, o.position.z, sp);
-  var cx = Math.max(26, Math.min(cw - 26, sp.x));
-  var cy = Math.max(IT + 26, Math.min(ch - IB - 26, sp.y - 30 - Math.abs(Math.sin(now / 240)) * 10));
-  markEl.style.transform = 'translate(' + Math.round(cx) + 'px,' + Math.round(cy) + 'px) translate(-50%,-50%)';
+  // the marker only shows while the gift is on screen
+  var seen = !gv.out && sp.z < 1 && sp.x > 16 && sp.x < cw - 16 && sp.y - 30 > IT + 16 && sp.y < ch - IB;
+  if (markEl.hidden === seen) markEl.hidden = !seen;
+  if (seen) markEl.style.transform = 'translate(' + Math.round(sp.x) + 'px,' + Math.round(sp.y - 30 - Math.abs(Math.sin(now / 240)) * 10) + 'px) translate(-50%,-50%)';
 }
 
 // where the gift is on screen, or null when it is not there to be tapped
@@ -5536,7 +5537,7 @@ function saleUp() {
 function rushStart(kind) {
   if (!ready) return;
   if (kind === 'bus') {
-    busC = addCar(busUp(), [{ x: 34, z: LANE_W }, { x: BUS_X, z: LANE_W, stop: 20, bus: true, lane: -1 }, { x: -STREET, z: LANE_W, lane: -1 }], 'bus', { lane: -1 });
+    busC = addCar(busUp(), [{ x: STREET, z: LANE_W }, { x: BUS_X, z: LANE_W, stop: 20, bus: true, lane: -1 }, { x: -STREET, z: LANE_W, lane: -1 }], 'bus', { lane: -1, bus: true });
     var sh = busC.o.children[busC.o.children.length - 1];
     sh.scale.set(1.4, 2.6, 1);
   } else {
@@ -5545,12 +5546,12 @@ function rushStart(kind) {
   }
 }
 
-// the sale is over, or the store was reset: the banners come down and a bus still on the way leaves
+// the sale is over, or the store was reset: the banners come down and a bus still on the way drives past without stopping
 function rushEnd() {
   if (saleBan) saleBan.forEach(function (m) { m.visible = false; });
   if (busC && cars.indexOf(busC) >= 0 && !busC.docked) {
-    root.remove(busC.o);
-    cars.splice(cars.indexOf(busC), 1);
+    delete busC.path[1].stop;
+    delete busC.path[1].bus;
   }
   busC = null;
 }
