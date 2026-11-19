@@ -2114,17 +2114,31 @@ function sharedWithLater(s, x, z) {
   });
 }
 
+// every lot's name is painted the same size, in world units; one too long for its lot goes on three lines split at the &
+var NAME = 0.46;
+var SOON = 0.18;
+var meter;
+
+function nameLines(id, w) {
+  if (!meter) meter = document.createElement('canvas').getContext('2d');
+  meter.font = '900 100px "Arial Black", Impact, sans-serif';
+  var name = BZ[id].name.toUpperCase();
+  var fit = function (t) { return w * 0.98 * 100 / meter.measureText(t).width; };
+  var lines = fit(name) < NAME && name.indexOf(' & ') > 0 ? [name.split(' & ')[0], '&', name.split(' & ')[1]] : [name];
+  var size = Math.min.apply(null, [NAME].concat(lines.map(fit)));
+  return { lines: lines, size: size, h: 0.42 + lines.length * size * 0.95 + 0.06 };
+}
+
 // the department's name painted across the empty floor, its top toward the back wall so the default view reads it. The
 // small line goes at the back: the price tag and a neighbour's hanging sign cover the front
 function floorName(id, w, h) {
+  var L = nameLines(id, w);
+  var k = 512 / w;
   var c = document.createElement('canvas');
   c.width = 512;
-  c.height = Math.round(512 * h / w);
+  c.height = Math.round(h * k);
   var g = c.getContext('2d');
-  var name = BZ[id].name.toUpperCase();
-  var size = c.height * 0.62;
-  g.font = '900 ' + size + 'px "Arial Black", Impact, sans-serif';
-  size = Math.min(size, size * c.width * 0.98 / g.measureText(name).width);
+  var size = L.size * k;
   g.font = '900 ' + size + 'px "Arial Black", Impact, sans-serif';
   g.textAlign = 'center';
   g.textBaseline = 'middle';
@@ -2132,13 +2146,16 @@ function floorName(id, w, h) {
   g.lineWidth = size * 0.06;
   g.strokeStyle = 'rgba(255,255,255,0.55)';
   g.fillStyle = DEPT[id];
-  g.strokeText(name, c.width / 2, c.height * 0.54);
-  g.fillText(name, c.width / 2, c.height * 0.54);
-  var small = Math.min(c.height * 0.15, c.width * 0.05);
+  L.lines.forEach(function (t, i) {
+    var y = (0.36 + (i + 0.5) * L.size * 0.95) * k;
+    g.strokeText(t, c.width / 2, y);
+    g.fillText(t, c.width / 2, y);
+  });
+  var small = SOON * k;
   g.font = '800 ' + small + 'px "Arial Black", Impact, sans-serif';
   g.letterSpacing = small * 0.25 + 'px';
   g.fillStyle = 'rgba(70,70,80,0.75)';
-  g.fillText('OPENING SOON', c.width / 2, c.height * 0.1);
+  g.fillText('OPENING SOON', c.width / 2, 0.15 * k);
   // scuffs, so it reads as paint on concrete
   g.globalCompositeOperation = 'destination-out';
   for (var i = 0; i < 130; i++) {
@@ -2204,10 +2221,10 @@ function vacantSite(s) {
     }
   });
   g.add(b.group());
-  // the name fills 80% of the lot's width and about 45% of its depth. It sits in the back part: the price tag is at the
-  // front edge and a neighbour's hanging sign reaches over the front of the lot from the aisle
+  // the name gets 80% of the lot's width and sits in the back part: the price tag is at the front edge and a
+  // neighbour's hanging sign reaches over the front of the lot from the aisle
   var pw = Math.min((r[1] - r[0]) * 0.8, 6);
-  var ph = Math.min((r[3] - r[2]) * 0.56, pw * 0.4);
+  var ph = nameLines(s.id, pw).h;
   s.name = { w: pw, h: ph, x: mx, z: r[2] + (r[3] - r[2]) * 0.03 + ph / 2, mesh: null };
   return g;
 }
