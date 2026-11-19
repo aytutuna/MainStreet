@@ -710,6 +710,12 @@ function updateHud() {
   var x = $('x2');
   set(shown, 'x2h', x, 'hidden', !(S.x2 > 0));
   if (S.x2 > 0) set(shown, 'x2t', x, 'textContent', 'x2  ' + clock2(S.x2));
+  var r = $('rush');
+  set(shown, 'rh', r, 'hidden', !rush);
+  if (rush) {
+    set(shown, 'rt', r.firstChild, 'textContent', rush.kind === 'bus' ? 'Tour bus' : 'Flash sale');
+    set(shown, 'rw', r.querySelector('u').style, 'width', Math.round(rush.left / RUSH.secs * 100) + '%');
+  }
 }
 
 // each meter shows its rate a minute, or what is wrong when it is the limit
@@ -1305,15 +1311,41 @@ function collectGift() {
   nudge();
 }
 
+// a tap on a till in a rush serves its front shopper a little sooner
+function tapTill(i) {
+  if (!rushTap(i)) return;
+  var at = View.tillScreen(i);
+  if (at) {
+    ring(at.x, at.y);
+    popAt('Faster!', at.x, at.y - 24, 'small');
+  }
+  sfx('tap', 1.5);
+  buzz();
+}
+
 function onPerkEvent(ev, o) {
   if (ev === 'gift') View.gift(o.kind);
   else if (ev === 'giftgone') View.giftLeaves();
-  else if (ev === 'off') View.giftOff();
+  else if (ev === 'rush') {
+    View.rush(o.kind);
+    banner(o.kind === 'bus' ? '<b>Tour bus!</b><small>A crowd is coming in. Tap the checkouts to serve faster</small>' :
+      '<b>Flash sale!</b><small>Shoppers are rushing in. Tap the checkouts to serve faster</small>', 0);
+    sfx('unlock');
+    buzz('medium');
+  } else if (ev === 'rushend') {
+    View.rushEnd();
+    banner('<b>Rush over: +' + money(o.got) + '</b>', 0.3);
+    sfx('done');
+  } else {
+    View.giftOff();
+    View.rushEnd();
+  }
 }
 
 function onTap(h) {
   wake();
   if (h.kind === 'gift') collectGift();
+  else if (h.kind === 'till') tapTill(h.i);
   else if (h.kind === 'biz') showCard(h.id);
   else closeCard();
 }
