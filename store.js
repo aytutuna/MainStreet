@@ -828,9 +828,13 @@ function bind() {
 function hit(sx, sy) {
   var g = giftScreen();
   if (g && Math.hypot(g.x - sx, g.y - sy) < GIFT_R) return { kind: 'gift' };
-  if (rush) {
+  ndc.set(sx / cw * 2 - 1, -(sy / ch * 2 - 1));
+  ray.setFromCamera(ndc, cam);
+  var h = ray.intersectObjects(picks.filter(function (p) { return p.visible; }), false);
+  // in a rush a tap close to a busy till, or on the checkouts, serves faster; with a card or the list open it is a plain tap
+  if (rush && !cardId && !sheetOpen) {
     var best = -1;
-    var bd = TILL_R;
+    var bd = h.length && h[0].object.userData.id === 'hall' ? HALL_R : TILL_R;
     places.hall.tills.forEach(function (t, i) {
       if (!tills[i] || !tills[i].q.length || (tills[i].q[0].v && !tills[i].q[0].here)) return;
       toScreen(t.till[0], t.till[1] + 0.3, t.till[2], sp);
@@ -842,9 +846,6 @@ function hit(sx, sy) {
     });
     if (best >= 0) return { kind: 'till', i: best };
   }
-  ndc.set(sx / cw * 2 - 1, -(sy / ch * 2 - 1));
-  ray.setFromCamera(ndc, cam);
-  var h = ray.intersectObjects(picks.filter(function (p) { return p.visible; }), false);
   if (h.length) return { kind: 'biz', id: h[0].object.userData.id };
   return { kind: 'none' };
 }
@@ -5324,7 +5325,8 @@ var goldMat = new THREE.MeshLambertMaterial({ vertexColors: true, emissive: 0x4a
 var sparkMat = new THREE.MeshBasicMaterial({ color: 0xffd23a, map: fade(), transparent: true, opacity: 0.7, depthWrite: false, blending: THREE.AdditiveBlending });
 var markEl;
 var GIFT_R = 48;
-var TILL_R = 44;
+var TILL_R = 24;
+var HALL_R = 70;
 var GIFT_K = { cart: 1.5, wallet: 1.9, vip: 1.12 };
 
 function wheel(x, z) {
