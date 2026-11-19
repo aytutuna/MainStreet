@@ -583,6 +583,7 @@ function dayStep(dt) {
   wash.visible = k < 0.98;
   waterU.t.value = (dayT * 0.9) % (10 * Math.PI);
   waterU.sun.value = k;
+  lifeStep(dt, k);
 }
 
 function sceneUp() {
@@ -2977,6 +2978,168 @@ var LEAF = {
   wood: [0xa97b50], colorRed: [0xe0484f], colorYellow: [0xffc247], colorPurple: [0x9a86ff], _defaultMat: [0xcfcac0]
 };
 
+// Life on the land: ducks and a canoe on the water, gulls over the lake and fireflies on summer nights. Each is one mesh or
+// one draw call, moved in place by lifeStep
+var lifeT = 0;
+var lifeM = new THREE.Matrix4();
+var lifeQ = new THREE.Quaternion();
+var lifeP = new THREE.Vector3();
+var lifeS = new THREE.Vector3(1, 1, 1);
+var lifeE = new THREE.Euler();
+var ducks = [];
+var duckMesh;
+var gulls = [];
+var gullMesh;
+var canoe = null;
+var flies = null;
+// the widest loop round a point that stays over deep enough water, so nothing sails up the bank
+function loopOn(x0, z0, rx, rz, m) {
+  function wet(x, z) {
+    return [[0, 0], [m, 0], [-m, 0], [0, m], [0, -m]].every(function (d) { return LAND.shore(x + d[0], z + d[1]) < -0.4; });
+  }
+  for (var f = 1; f > 0.2; f -= 0.05) {
+    var ok = true;
+    for (var a = 0; a < 6.3 && ok; a += 0.3) ok = wet(x0 + Math.cos(a) * rx * f, z0 + Math.sin(a) * rz * f);
+    if (ok) return { x: x0, z: z0, rx: rx * f, rz: rz * f };
+  }
+  return { x: x0, z: z0, rx: 0.5, rz: 0.5 };
+}
+
+function tinted(g, hex, x, y, z, sx, sy, sz) {
+  g.scale(sx, sy, sz).translate(x, y, z);
+  var n = g.attributes.position.count;
+  var a = new Float32Array(n * 3);
+  var c = new THREE.Color(hex);
+  for (var i = 0; i < n; i++) c.toArray(a, i * 3);
+  g.setAttribute('color', new THREE.BufferAttribute(a, 3));
+  g.deleteAttribute('uv');
+  return g;
+}
+
+function duckGeo() {
+  return mergeGeometries([
+    tinted(new THREE.SphereGeometry(0.3, 8, 6), 0xf1ede0, 0, 0.1, 0, 0.8, 0.65, 1.3),
+    tinted(new THREE.ConeGeometry(0.12, 0.3, 5).rotateX(-Math.PI / 2.6), 0xd9d3c0, 0, 0.2, -0.42, 1, 1, 1),
+    tinted(new THREE.SphereGeometry(0.14, 7, 5), 0x2f8a5c, 0, 0.42, 0.34, 1, 1, 1),
+    tinted(new THREE.BoxGeometry(0.1, 0.04, 0.14), 0xf2a22e, 0, 0.38, 0.5, 1, 1, 1)
+  ], false);
+}
+
+function gullGeo() {
+  var p = [0, 0, 0.3, 0.12, 0, -0.1, 0, 0.05, -0.3, 0, 0, 0.3, 0, 0.05, -0.3, -0.12, 0, -0.1,
+    0.12, 0, 0.1, 1.1, 0.14, -0.15, 0.12, 0, -0.1, -0.12, 0, 0.1, -0.12, 0, -0.1, -1.1, 0.14, -0.15];
+  var g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(p, 3));
+  var col = [];
+  for (var i = 0; i < 12; i++) {
+    var tip = i === 7 || i === 11;
+    col.push(tip ? 0.32 : 0.96, tip ? 0.35 : 0.96, tip ? 0.4 : 0.98);
+  }
+  g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  g.computeVertexNormals();
+  return g;
+}
+
+function buildLife(sc) {
+  var wy = function (x, z) { return LAND.waterAt(x, z) + 0.03; };
+  [[43, -54.3, 3, 2, 2, 0.12], [2, -56, 13, 3.4, 3, 0.07], [-8, -56, 5, 2.2, 2, -0.1]].forEach(function (l) {
+    var lp = loopOn(l[0], l[1], l[2], l[3], 1);
+    for (var i = 0; i < l[4]; i++) ducks.push({ x: lp.x, z: lp.z, rx: lp.rx, rz: lp.rz, a: i * 0.5 + (l[5] > 0 ? 0 : 2), w: l[5] * (1 + i * 0.05), y: wy(l[0], l[1]) });
+  });
+  duckMesh = new THREE.InstancedMesh(duckGeo(), vcMat, ducks.length);
+  duckMesh.frustumCulled = false;
+  root.add(duckMesh);
+
+  for (var b = 0; b < 6; b++) gulls.push({ r: 11 + (b % 3) * 2.5, a: b * 1.05, h: 9 + (b % 4) * 1.3, w: 0.2 + (b % 3) * 0.015 });
+  gullMesh = new THREE.InstancedMesh(gullGeo(), new THREE.MeshLambertMaterial({ vertexColors: true, side: THREE.DoubleSide }), gulls.length);
+  gullMesh.frustumCulled = false;
+  root.add(gullMesh);
+
+  var cl = loopOn(0, -56, 9, 2.4, 1.6);
+  canoe = { g: mesh('nature/canoe*2.2', 0, 0, 0, wy(0, -56)), x: cl.x, z: cl.z, rx: cl.rx, rz: cl.rz, y: wy(0, -56) };
+  canoe.g.traverse(function (o) { o.castShadow = false; o.receiveShadow = false; });
+  root.add(canoe.g);
+
+  // by the reeds and over the flower beds
+  var spots = [];
+  sc.water.forEach(function (s, i) { if (s[5] === null && i % 2 === 0) spots.push(s); });
+  sc.flowers.forEach(function (s, i) { if (i % 3 === 0) spots.push(s); });
+  var n = spots.length;
+  var pos = new Float32Array(n * 3);
+  var seed = new Float32Array(n);
+  spots.forEach(function (s, i) {
+    var u = (i * 0.618) % 1;
+    pos[i * 3] = s[1] + (u - 0.5) * 1.6;
+    pos[i * 3 + 1] = LAND.ground(s[1], s[2]) + 0.4 + ((i * 0.377) % 1) * 1.4;
+    pos[i * 3 + 2] = s[2] + (((i * 0.839) % 1) - 0.5) * 1.6;
+    seed[i] = u;
+  });
+  var g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  g.setAttribute('seed', new THREE.BufferAttribute(seed, 1));
+  var mat = new THREE.ShaderMaterial({
+    uniforms: { t: { value: 0 }, night: { value: 0 }, px: { value: 400 } },
+    transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
+    vertexShader: 'attribute float seed;\nuniform float t;\nuniform float px;\nvarying float glow;\nvoid main() {\n' +
+      '  vec3 p = position + vec3(sin(t * 0.5 + seed * 40.0), sin(t * 0.8 + seed * 17.0) * 0.4, cos(t * 0.45 + seed * 23.0)) * 0.9;\n' +
+      '  vec4 mv = modelViewMatrix * vec4(p, 1.0);\n' +
+      '  glow = pow(0.5 + 0.5 * sin(t * 2.2 + seed * 90.0), 2.0);\n' +
+      '  gl_PointSize = max(px * 0.3 / -mv.z, 6.0);\n  gl_Position = projectionMatrix * mv;\n}',
+    fragmentShader: 'uniform float night;\nvarying float glow;\nvoid main() {\n' +
+      '  float d = length(gl_PointCoord - 0.5) * 2.0;\n  float a = pow(max(0.0, 1.0 - d), 1.6) * (0.35 + 0.65 * glow) * night;\n' +
+      '  gl_FragColor = vec4(0.85, 1.0, 0.4, 1.0) * a;\n}'
+  });
+  flies = new THREE.Points(g, mat);
+  flies.frustumCulled = false;
+  flies.visible = false;
+  root.add(flies);
+}
+
+function lifeStep(dt, k) {
+  lifeT += dt;
+  var t = lifeT;
+  if (duckMesh) {
+    for (var i = 0; i < ducks.length; i++) {
+      var d = ducks[i];
+      var a = d.a + d.w * t;
+      var s = d.w < 0 ? -1 : 1;
+      lifeP.set(d.x + Math.cos(a) * d.rx, d.y + Math.sin(t * 1.3 + i) * 0.015, d.z + Math.sin(a) * d.rz);
+      lifeE.set(0, Math.atan2(-Math.sin(a) * d.rx * s, Math.cos(a) * d.rz * s), Math.sin(t * 0.9 + i * 2) * 0.05, 'YXZ');
+      duckMesh.setMatrixAt(i, lifeM.compose(lifeP, lifeQ.setFromEuler(lifeE), lifeS));
+    }
+    duckMesh.instanceMatrix.needsUpdate = true;
+  }
+  if (gullMesh) {
+    // the gulls sleep at night
+    gullMesh.visible = k > 0.3;
+    var lake = LAND.LAKES[0];
+    var cx = lake.x + Math.sin(t * 0.03) * 8;
+    var cz = lake.z + Math.cos(t * 0.021) * 3;
+    for (var j = 0; j < gulls.length; j++) {
+      var b = gulls[j];
+      var ang = b.a + b.w * t;
+      lifeP.set(cx + Math.cos(ang) * b.r * 1.5, b.h + Math.sin(t * 0.7 + j) * 0.5, cz + Math.sin(ang) * b.r * 0.6);
+      lifeE.set(Math.sin(t * 0.6 + j) * 0.05, Math.atan2(-Math.sin(ang) * 1.5, Math.cos(ang) * 0.6), 0.45 + Math.sin(t * 0.5 + j * 2) * 0.15, 'YXZ');
+      gullMesh.setMatrixAt(j, lifeM.compose(lifeP, lifeQ.setFromEuler(lifeE), lifeS));
+    }
+    gullMesh.instanceMatrix.needsUpdate = true;
+  }
+  if (canoe) {
+    var ca = t * 0.035 + 1;
+    canoe.g.position.set(canoe.x + Math.cos(ca) * canoe.rx, canoe.y + Math.sin(t * 0.8) * 0.01, canoe.z + Math.sin(ca) * canoe.rz);
+    canoe.g.rotation.set(0, Math.atan2(-Math.sin(ca) * canoe.rx, Math.cos(ca) * canoe.rz), Math.sin(t * 0.6) * 0.03);
+  }
+  if (flies) {
+    var night = 1 - k;
+    flies.visible = night > 0.02;
+    if (flies.visible) {
+      flies.material.uniforms.t.value = t;
+      flies.material.uniforms.night.value = night;
+      flies.material.uniforms.px.value = ch * renderer.getPixelRatio() / 0.73;
+    }
+  }
+}
+
 function buildLand() {
   var X0 = LAND.DOM[0];
   var Z0 = LAND.DOM[2];
@@ -3225,6 +3388,7 @@ function buildLand() {
     var merged = mergeGeometries(lists[key], false);
     if (merged) root.add(new THREE.Mesh(merged, vcMat));
   });
+  buildLife(sc);
 }
 // parking bays: two rows across the front split by a walkway to each entrance; the lot paints more of them at each level
 function buildLot() {

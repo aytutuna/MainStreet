@@ -6,7 +6,7 @@ var LAWNS = [[27.8, 47.5, -40, 8], [-47.5, -28, -40, 8]];
 var SEEN = [-72, 72, -84, 50];
 export var FLAT = [[-48, 48, -42, 44], [-80, 80, 2, 22]];
 
-var LAKES = [
+export var LAKES = [
   { x: -6, z: -57, a: 25, b: 9, lv: -1, s: 3 },
   { x: 44, z: -54, a: 9, b: 6, lv: -0.8, s: 8 }
 ];
@@ -308,8 +308,7 @@ export function scenery(blocked) {
       else if (bl < 0.8) for (var q2 = 6; q2 > 0; q2--) out.flowers.push([pick(FLOWER), lx + (rand() - 0.5) * 2.4, lz + (rand() - 0.5) * 2.4, rand() * 6.283, 1.2 + rand() * 0.6]);
     }
   });
-  // a canoe out on the lake and one pulled up on the sand
-  out.water.push([CANOE, -4, -64, 0.6, 1, waterAt(-4, -64) + 0.02]);
+  // one canoe pulled up on the sand; the one out on the lake drifts, and the view moves it
   for (var cz = -46; cz > -62 && shore(-26, cz) > 0.45; cz -= 0.5);
   out.low.push([CANOE, -26, cz + 0.3, 1.2, 1]);
   return out;
