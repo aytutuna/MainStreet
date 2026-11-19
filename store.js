@@ -1496,7 +1496,6 @@ function fixture(fx, k) {
 
 var WOODMAT;
 var CARPET;
-var POLISH;
 var VINYL;
 var ROOMMAT = {};
 
@@ -1509,7 +1508,7 @@ function tiled(c, unit) {
   return new THREE.MeshLambertMaterial({ map: t });
 }
 
-// floor finishes for the patches: a colour, wood boards, carpet or the polish of the aisles
+// floor finishes for the patches: a colour, wood boards, vinyl or carpet
 function finishMat(f) {
   if (typeof f === 'number') return flat(f);
   if (f === 'wood') {
@@ -1567,20 +1566,6 @@ function finishMat(f) {
       ROOMMAT[f] = tiled(rc, f === 'tile' ? 0.8 : f === 'boards' ? 1.6 : 1.4);
     }
     return ROOMMAT[f];
-  }
-  if (f === 'polish') {
-    if (!POLISH) {
-      var pc = document.createElement('canvas');
-      pc.width = pc.height = 128;
-      var p = pc.getContext('2d');
-      p.fillStyle = '#d9d8d3';
-      p.fillRect(0, 0, 128, 128);
-      p.fillStyle = '#c3c1ba';
-      p.fillRect(0, 0, 128, 3);
-      p.fillRect(0, 0, 3, 128);
-      POLISH = tiled(pc, 2);
-    }
-    return POLISH;
   }
   if (!CARPET) {
     var cc = document.createElement('canvas');
@@ -2251,7 +2236,6 @@ function square(poly) {
 }
 
 function buildAreas() {
-  var hole = function (x0, x1) { return [[x0, -4.7], [x1, -4.7], [x1, -18.2], [x0, -18.2]]; };
   BIZ.forEach(function (bz, i) {
     var a = PLAN.areas[bz.id];
     var r = a.vacant;
@@ -2274,10 +2258,6 @@ function buildAreas() {
   floors(fl, 'shop/floor%=d5d5d8', -EDGE, EDGE, SB, BACK);
   floors(fl, 'shop/floor%=d5d5d8', EDGE, WING_X + 0.2, SB, FRONT);
   root.add(fl.group());
-  var lp = new THREE.Mesh(patch([[-9.6, -1.2], [9.6, -1.2], [9.6, -21.7], [-9.6, -21.7]], [hole(1.25, 6.9), hole(-6.9, -1.25)]), finishMat('polish'));
-  lp.position.y = 0.026;
-  lp.receiveShadow = true;
-  root.add(lp);
 }
 
 // once nothing in an area is moving, its pieces are drawn as one merged batch, a few draw calls for the lot

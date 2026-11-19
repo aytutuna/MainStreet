@@ -5,7 +5,7 @@
 //   { m: model ref, x, z, r, k, y, flat }                      a model turned r, scaled k, raised y; flat: no footprint
 //   { box: [x0, x1, z0, z1, y0, y1], c: colour }               a coloured box
 //   { text, x, z, r, y, w, h, post }                           a board with words, on a post when post is set
-//   { patch: [[x, z]...], finish }                             a floor patch: a colour, 'wood', 'carpet', 'polish' or 'vinyl'
+//   { patch: [[x, z]...], finish }                             a floor patch: a colour, 'wood', 'carpet' or 'vinyl'
 //   { m, x, z, r, pw: { n, stock, spots, on } }                a Pipework model (see pw() below)
 //   { sign: 1 | 'gold' }  { staff: [x, z, face] }  { helper: 1 }  { lights: [[x, z]...] }
 
