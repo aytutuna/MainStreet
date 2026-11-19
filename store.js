@@ -4158,6 +4158,22 @@ function grandOpening(s, now) {
   opened = true;
 }
 
+// the opening's materials are built once at load, so the first purchase does not stop to compile their shaders
+function warmFx() {
+  var mats = [new THREE.MeshLambertMaterial({ transparent: true }), new THREE.MeshBasicMaterial({ transparent: true }), new THREE.LineBasicMaterial({ transparent: true })];
+  var inst = new THREE.InstancedMesh(balloonGeo, mats[0], 1);
+  inst.setColorAt(0, fxC.set(0xffffff));
+  var parts = [new THREE.Mesh(postGeo, mats[0]), inst, new THREE.Mesh(postGeo, mats[1]), new THREE.LineSegments(new THREE.BufferGeometry().setAttribute('position', new THREE.Float32BufferAttribute(6, 3)), mats[2])];
+  parts.forEach(function (o) {
+    o.frustumCulled = false;
+    root.add(o);
+  });
+  renderer.compile(scene, cam);
+  parts.forEach(function (o) { root.remove(o); });
+  inst.dispose();
+  mats.forEach(function (m) { m.dispose(); });
+}
+
 function endOpening(o) {
   root.remove(o.g, o.balloons, o.strings);
   o.balloons.dispose();
@@ -5688,6 +5704,7 @@ function build() {
   fitShadow();
   sync(false, 0);
   focusNow();
+  warmFx();
   ready = true;
   loadingEl.classList.add('done');
 }
