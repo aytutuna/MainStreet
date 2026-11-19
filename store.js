@@ -4023,8 +4023,9 @@ function pop(now) {
 var openings = [];
 var opened = false;
 var balloonGeo = new THREE.SphereGeometry(0.17, 8, 6).scale(1, 1.25, 1);
-var postGeo = new THREE.CylinderGeometry(0.03, 0.03, 0.58, 6).translate(0, 0.29, 0);
-var bandGeo = new THREE.BoxGeometry(1, 0.04, 0.18);
+var postGeo = new THREE.CylinderGeometry(0.035, 0.035, 0.95, 6).translate(0, 0.475, 0);
+var bandGeo = new THREE.BoxGeometry(1, 0.05, 0.3);
+var RIB = 0.85;
 var bowGeo = null;
 var fxS = new THREE.Vector3();
 var fxC = new THREE.Color();
@@ -4061,7 +4062,9 @@ function grandOpening(s, now) {
   var L = e.len - 0.2;
   var along = e.nz ? [1, 0] : [0, 1];
   var col = new THREE.Color(DEPT[s.id]);
-  var o = { t0: now, ax: along[0], az: along[1], L: L, ex: e.x + e.nx * 0.06, ez: e.z + e.nz * 0.06, n: 6, crowd: [] };
+  var o = { t0: now, ax: along[0], az: along[1], L: L, ex: e.x + e.nx * 0.06, ez: e.z + e.nz * 0.06, n: 6, crowd: [],
+    // a half swings down no further than the floor
+    drop: Math.min(1.45, Math.asin(Math.min(1, (RIB - 0.05) / (L / 2)))) };
   if (!bowGeo) {
     bowGeo = mergeGeometries([
       new THREE.BoxGeometry(0.22, 0.05, 0.12).rotateY(0.5).translate(-0.12, 0.02, 0),
@@ -4083,7 +4086,7 @@ function grandOpening(s, now) {
   });
   o.pivots = [-1, 1].map(function (side) {
     var pv = new THREE.Group();
-    pv.position.set(side * L / 2, 0.5, 0);
+    pv.position.set(side * L / 2, RIB, 0);
     var m = new THREE.Mesh(bandGeo, o.band);
     m.scale.x = L / 2;
     m.position.x = -side * L / 4;
@@ -4092,7 +4095,8 @@ function grandOpening(s, now) {
     return pv;
   });
   o.bow = new THREE.Mesh(bowGeo, o.gold);
-  o.bow.position.set(0, 0.52, 0);
+  o.bow.scale.setScalar(1.8);
+  o.bow.position.set(0, RIB + 0.03, 0);
   o.g.add(o.bow);
   root.add(o.g);
 
@@ -4172,9 +4176,9 @@ function openingsStep(now) {
     var fade = Math.max(0, Math.min(1, (t - OPEN_CUT - 450) / 700));
     o.g.scale.y = t > 3400 ? Math.max(0.01, 1 - (t - 3400) / 400) : Math.max(0.01, Math.min(1, t / 250));
     if (fade < 1) {
-      o.pivots[0].rotation.z = -1.45 * cut * cut;
-      o.pivots[1].rotation.z = 1.45 * cut * cut;
-      o.bow.position.y = 0.52 - 0.47 * cut * cut;
+      o.pivots[0].rotation.z = -o.drop * cut * cut;
+      o.pivots[1].rotation.z = o.drop * cut * cut;
+      o.bow.position.y = RIB + 0.03 - (RIB - 0.02) * cut * cut;
       o.bow.rotation.z = t < OPEN_CUT ? Math.sin(t * 0.012) * 0.12 : cut * 3;
       o.band.opacity = o.gold.opacity = 1 - fade;
     } else {
