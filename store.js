@@ -2978,8 +2978,8 @@ var LEAF = {
   wood: [0xa97b50], colorRed: [0xe0484f], colorYellow: [0xffc247], colorPurple: [0x9a86ff], _defaultMat: [0xcfcac0]
 };
 
-// Life on the land: ducks and a canoe on the water, gulls over the lake and fireflies on summer nights. Each is one mesh or
-// one draw call, moved in place by lifeStep
+// Life on the land: ducks and a canoe on the water, gulls over the lake, fireflies on summer nights and the shadows of
+// clouds on the hills. Each is one mesh or one draw call, moved in place by lifeStep
 var lifeT = 0;
 var lifeM = new THREE.Matrix4();
 var lifeQ = new THREE.Quaternion();
@@ -2992,6 +2992,22 @@ var gulls = [];
 var gullMesh;
 var canoe = null;
 var flies = null;
+var cloudU = { t: { value: 0 }, sun: waterU.sun };
+// the ground takes slow cloud shadows; the flat ground round the store keeps only a trace of them
+var landMat = new THREE.MeshLambertMaterial({ vertexColors: true });
+landMat.onBeforeCompile = function (sh) {
+  sh.uniforms.ct = cloudU.t;
+  sh.uniforms.csun = cloudU.sun;
+  sh.vertexShader = 'varying vec2 cp;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\ncp = (modelMatrix * vec4(position, 1.0)).xz;');
+  sh.fragmentShader = 'varying vec2 cp;\nuniform float ct;\nuniform float csun;\n' + sh.fragmentShader.replace('#include <color_fragment>',
+    '#include <color_fragment>\nvec2 cq = cp * 0.03 + vec2(ct, ct * 0.4);\n' +
+    'float cn = sin(cq.x * 2.1) * sin(cq.y * 1.7 + 1.0) + 0.6 * sin(cq.x * 4.3 + 2.0) * sin(cq.y * 3.9) + 0.25 * sin(cq.x * 9.0 + cq.y * 7.0);\n' +
+    'vec2 cf = max(vec2(-48.0 - cp.x, -42.0 - cp.y), vec2(cp.x - 48.0, cp.y - 44.0));\n' +
+    'float cz = 0.15 + 0.85 * smoothstep(0.0, 14.0, max(cf.x, cf.y));\n' +
+    'diffuseColor.rgb *= 1.0 - 0.17 * smoothstep(0.2, 0.7, cn) * cz * csun;');
+};
+
+
 // the widest loop round a point that stays over deep enough water, so nothing sails up the bank
 function loopOn(x0, z0, rx, rz, m) {
   function wet(x, z) {
@@ -3097,6 +3113,7 @@ function buildLife(sc) {
 
 function lifeStep(dt, k) {
   lifeT += dt;
+  cloudU.t.value = dayT * 0.03;
   var t = lifeT;
   if (duckMesh) {
     for (var i = 0; i < ducks.length; i++) {
@@ -3283,7 +3300,7 @@ function buildLand() {
       g.setAttribute('position', new THREE.Float32BufferAttribute(fp, 3));
       g.setAttribute('normal', new THREE.Float32BufferAttribute(fn, 3));
       g.setAttribute('color', new THREE.Float32BufferAttribute(fc, 3));
-      var m = new THREE.Mesh(g, vcMat);
+      var m = new THREE.Mesh(g, landMat);
       var wx0 = X0 + i0 * LAND_STEP;
       var wz0 = Z0 + j0 * LAND_STEP;
       // only the ground the store's shadows reach takes them
