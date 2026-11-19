@@ -528,7 +528,7 @@ function modelList() {
   walk(SWAP);
   walk(FLOWERS);
   walk(OVERSTOCK.boxes);
-  walk(['food/plate-rectangle*0.55', 'skate/pallet', 'shop/character-employee@5,3>2,2', 'shop/freezers-standing@13,3>2,2',
+  walk(['food/plate-rectangle*0.55', 'skate/pallet', 'shop/character-employee@5,3>2,2', JAN, 'shop/freezers-standing@13,3>2,2',
     'shop/freezers-standing@13,3>2,1', PARCEL, STAFF]);
   ['shop/wall', 'shop/wall-window', 'shop/column', 'shop/floor', 'shop/floor%=d5d5d8', 'shop/cash-register', 'shop/character-employee', 'arcade/cash-register', 'pw/Checkout_Lane_30', 'pw/LaneLight_Pole_01',
     'pw/Basket_Stack_01', 'pw/SelfCheckout_Kiosk_01', 'pw/SelfCheckout_Attendant_01', 'pw/ServiceDesk_20', 'pw/CartCorral_Indoor_20', 'pw/ShoppingCart_Nested_3_01',
@@ -5000,7 +5000,7 @@ function crowdStep(dt) {
 
 // Now and then a janitor comes out of a stock door, walks to a spot where shoppers stand, sets down a wet floor sign and
 // mops for a few seconds before heading back. Nothing the sim knows about
-var JAN = 'shop/character-employee@5,3>2,2';
+var JAN = 'shop/character-employee@5,3>12,3';
 var jan = null;
 var janT = 40;
 var janM = new THREE.MeshBasicMaterial({ color: 0x9fd0ff, transparent: true, opacity: 0.35, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -2 });
@@ -5018,8 +5018,8 @@ function janitorUp() {
   mop.visible = false;
   f.obj.add(mop);
   var sign = new THREE.Mesh(mergeGeometries([
-    tinted(new THREE.BoxGeometry(0.2, 0.3, 0.012).translate(0, 0.15, 0).rotateX(-0.3).translate(0, 0, 0.07), 0xf5c518, 0, 0, 0, 1, 1, 1),
-    tinted(new THREE.BoxGeometry(0.2, 0.3, 0.012).translate(0, 0.15, 0).rotateX(0.3).translate(0, 0, -0.07), 0xf5c518, 0, 0, 0, 1, 1, 1),
+    tinted(new THREE.BoxGeometry(0.2, 0.3, 0.012).translate(0, 0.15, 0).rotateX(-0.3).translate(0, 0, 0.089), 0xf5c518, 0, 0, 0, 1, 1, 1),
+    tinted(new THREE.BoxGeometry(0.2, 0.3, 0.012).translate(0, 0.15, 0).rotateX(0.3).translate(0, 0, -0.089), 0xf5c518, 0, 0, 0, 1, 1, 1),
     tinted(new THREE.BoxGeometry(0.14, 0.06, 0.016).translate(0, 0.17, 0).rotateX(-0.3).translate(0, 0, 0.075), 0x2a2a30, 0, 0, 0, 1, 1, 1)
   ], false), vcMat);
   sign.visible = false;
@@ -5087,7 +5087,8 @@ function janitorStep(dt) {
     f.obj.position.set(door, 0, BACK + 0.6);
     f.obj.rotation.y = 0;
     f.obj.visible = true;
-    jan.face = sp.face;
+    // he mops with his back to the fixture, so the sign and the patch land in the aisle
+    jan.face = sp.face + Math.PI;
     janGo([{ x: door, z: BACK + 0.6 }].concat(r));
     jan.st = 1;
   } else if (jan.st === 1) {
@@ -5098,7 +5099,8 @@ function janitorStep(dt) {
     f.obj.rotation.y = jan.face;
     var sx = Math.sin(jan.face);
     var sz = Math.cos(jan.face);
-    jan.sign.position.set(o.x + sx * 0.7 + sz * 0.3, 0, o.z + sz * 0.7 - sx * 0.3);
+    var put = [[0.7, 0.3], [0.7, -0.3], [0.45, 0.4], [0.45, -0.4]].filter(function (q) { return free(o.x + sx * q[0] + sz * q[1], o.z + sz * q[0] - sx * q[1]); })[0] || [0.7, 0.3];
+    jan.sign.position.set(o.x + sx * put[0] + sz * put[1], 0, o.z + sz * put[0] - sx * put[1]);
     jan.sign.rotation.y = jan.face;
     jan.wet.position.set(o.x + sx * 0.4, 0.04, o.z + sz * 0.4);
     jan.sign.visible = jan.wet.visible = jan.mop.visible = true;
@@ -5427,6 +5429,7 @@ function crewStep(dt, now) {
   }
   shadows.count = n;
   shadows.instanceMatrix.needsUpdate = true;
+  if (jan && jan.f.obj.visible) PLAN.doors.forEach(function (d, di) { if (Math.hypot(jan.f.obj.position.x - d, jan.f.obj.position.z - BACK) < 1.1) near[di] = true; });
   near.forEach(function (v, di) { stockDoorStep(dt, di, v); });
 }
 
