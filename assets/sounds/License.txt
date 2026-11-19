@@ -1,6 +1,6 @@
 	
 
-	RPG Audio, Interface Sounds, UI Audio, Impact Sounds and Music Jingles
+	RPG Audio, Interface Sounds, UI Audio, Impact Sounds, Retro Sounds and Music Jingles
 
 	Created/distributed by Kenney (www.kenney.nl)
 
