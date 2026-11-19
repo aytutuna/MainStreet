@@ -437,6 +437,8 @@ var rushT = 0;
 // the rush's extra arrivals still owed, and how many of them the view has a figure for
 var xdue = { walk: 0, car: 0, taxi: 0 };
 var extraRoom = 1e9;
+// seconds left of the calm after a rush, when full lines and empty shelves are not blamed on the store
+var calmT = 0;
 var onPerk = null;
 // how full each department's shelves are, 0 to 1, and the stockers: the department each is taking a load to and
 // how far into the trip it is (the view walks them by that)
@@ -515,7 +517,7 @@ function take() {
     if (fill[id] > 0) {
       v += Math.min(sp, fill[id] * full);
       fill[id] = Math.max(0, fill[id] - sp / full);
-    } else outT = 20;
+    } else if (!rush && calmT <= 0) outT = 20;
   });
   return v;
 }
@@ -530,8 +532,11 @@ function pay(c, t) {
 }
 
 function lose(c) {
-  S.st.lost++;
-  lostT = 20;
+  // a rush's walk-outs are a passing spike: no warning, and they do not count
+  if (!rush && calmT <= 0) {
+    S.st.lost++;
+    lostT = 20;
+  }
   c.lost = true;
   gone(c);
   if (onShopper) onShopper('lost', c);
@@ -605,6 +610,7 @@ function tick(dt) {
   dt *= speed;
   if (S.x2 > 0) S.x2 = Math.max(0, S.x2 - dt);
   lostT -= dt;
+  calmT -= dt;
   var f = flow();
   for (var k in due) {
     due[k] += f[k] * dt;
@@ -656,6 +662,7 @@ function perkOff() {
   gift = null;
   rush = null;
   xdue.walk = xdue.car = xdue.taxi = 0;
+  calmT = 0;
   giftT = rnd(GIFT.gap);
   rushT = rnd(RUSH.gap);
   if (was && onPerk) onPerk('off');
@@ -679,6 +686,7 @@ function perkStep(dt) {
       var r = rush;
       rush = null;
       rushT = rnd(RUSH.gap);
+      calmT = 8;
       if (onPerk) onPerk('rushend', r);
     }
   } else if (!hold && (rushT -= dt) <= 0) {
