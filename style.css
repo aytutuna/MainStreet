@@ -458,6 +458,21 @@ small {
   white-space: nowrap;
 }
 
+.pop.small.hot {
+  font-size: 17px;
+  color: #ffb02e;
+}
+
+.pop.small.max {
+  font-size: 24px;
+  color: #ff6a3d;
+}
+
+.pop.small.dim {
+  font-size: 11px;
+  color: #e8d9a0;
+}
+
 .pop.big {
   font-size: 22px;
 }
@@ -1010,6 +1025,30 @@ small {
   0%, 60% {
     background: #ffd84a;
   }
+}
+
+#combo {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 20%;
+  z-index: 29;
+  text-align: center;
+  font-size: 30px;
+  font-weight: 800;
+  color: #ffd84a;
+  text-shadow: -2px -2px 0 var(--ink), 2px -2px 0 var(--ink), -2px 2px 0 var(--ink), 2px 2px 0 var(--ink), 0 4px 0 var(--ink);
+  pointer-events: none;
+  animation: pop 0.25s ease-out;
+}
+
+#flash {
+  position: absolute;
+  inset: 0;
+  z-index: 28;
+  pointer-events: none;
+  opacity: 0;
+  background: radial-gradient(ellipse at center, rgba(255, 236, 160, 0) 45%, rgba(255, 216, 74, 0.7) 100%);
 }
 
 #banner {

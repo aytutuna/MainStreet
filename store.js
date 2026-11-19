@@ -6018,10 +6018,18 @@ function draw(now) {
     renderer.shadowMap.needsUpdate = true;
     shadowDirty = false;
   }
+  // a short zoom-punch on a star or a new department
+  var pu = (now - punchAt) / 150;
+  if (pu < 1 || cam.zoom !== 1) {
+    cam.zoom = pu < 1 ? 1 + 0.04 * Math.sin(pu * Math.PI) : 1;
+    cam.updateProjectionMatrix();
+  }
   renderer.render(scene, cam);
   overlay(now);
   bars();
 }
+
+var punchAt = -1e9;
 
 function confetti() {
   var cols = ['#f0c040', '#e8553a', '#4f9a40', '#3f78b8', '#e85d9a'];
@@ -6745,6 +6753,7 @@ window.View = {
   giftTaken: giftTaken,
   giftLeaves: giftLeaves,
   giftOff: giftHide,
+  punch: function () { punchAt = performance.now(); },
   rush: rushStart,
   rushEnd: rushEnd,
   tillScreen: tillScreen,

@@ -631,20 +631,29 @@ function focusBiz(id) {
 
 function afterBuy(res) {
   var t = View.event(res, performance.now());
+  bumpCombo();
   var name = (BZ[res.id] || PL[res.id]).name;
   if (res.star) {
     sfx('mile');
+    View.punch();
+    pulse(0.9);
     banner('<b>' + name + ': ' + res.star + (res.star === 1 ? ' star' : ' stars') + ', sales here x' + STAR_MUL + '</b>' + (res.gems ? '<small>+' + res.gems + ' gems</small>' : ''),
       t + 0.3, res.star === STAR_AT.length);
     if (res.gems) flyGems(innerWidth / 2, innerHeight * 0.3, Math.min(6, res.gems));
   } else if (res.unlock) {
     sfx('unlock');
+    View.punch();
+    pulse(0.9);
     banner('<b>New: ' + name + '</b><small>' + upName(res.id, res.piece) + ', and every shopper buys here now</small>', t + 0.3, true);
   } else if (res.place) {
     var p = PL[res.id];
     sfx('mile');
+    pulse(0.6);
     banner('<b>' + name + ' level ' + S.pl[res.id] + '</b><small>' + p.next[res.piece] + '</small>', t + 0.3, S.pl[res.id] === p.cost.length);
-  } else sfx('buy');
+  } else {
+    sfx('buy', Math.pow(1.0595, Math.min(combo - 1, 8)));
+    pulse(0.3);
+  }
   buzz(res.star || res.unlock || res.place ? 'medium' : 'light');
   nudge();
 }
@@ -693,10 +702,45 @@ function claimGoalAt(i, el) {
   updateGoals();
 }
 
-// each shopper that pays shows its money over the till, when the till is on screen
+// each shopper that pays shows its money over the till, when the till is on screen. A sale well above the recent average,
+// as after a star or an upgrade, comes out bigger and hotter
+var saleAvg = 0;
+
 function onSale(ev, c, v, t) {
   var at = View.shopper(ev, c, t);
-  if (ev === 'paid' && at) popAt('+' + money(v), at.x, at.y, 'small');
+  if (ev !== 'paid') return;
+  var r = saleAvg ? v / saleAvg : 1;
+  saleAvg = saleAvg ? saleAvg + (v - saleAvg) * 0.05 : v;
+  if (at) popAt('+' + money(v), at.x, at.y, r >= 1.8 ? 'small max' : r >= 1.25 ? 'small hot' : r < 0.6 ? 'small dim' : 'small');
+}
+
+// two or more upgrades within two seconds of each other make a combo, and each one's sound goes up a semitone
+var combo = 0;
+var comboAt = 0;
+var comboTimer = 0;
+
+function bumpCombo() {
+  var now = performance.now();
+  combo = now - comboAt < 2000 ? combo + 1 : 1;
+  comboAt = now;
+  clearTimeout(comboTimer);
+  var el = $('combo');
+  if (combo < 2) {
+    el.hidden = true;
+    return;
+  }
+  el.textContent = 'x' + combo + ' combo!';
+  el.hidden = false;
+  el.style.animation = 'none';
+  void el.offsetWidth;
+  el.style.animation = '';
+  comboTimer = setTimeout(function () { el.hidden = true; }, 1600);
+}
+
+// a quick glow round the screen's edge
+function pulse(k) {
+  var d = $('flash');
+  d.animate([{ opacity: 0 }, { opacity: k, offset: 0.25 }, { opacity: 0 }], { duration: 320, easing: 'ease-out' });
 }
 
 function updateHud() {
@@ -1330,7 +1374,7 @@ function onPerkEvent(ev, o) {
     View.rush(o.kind);
     banner(o.kind === 'bus' ? '<b>Tour bus!</b><small>A crowd is coming in. Tap the checkouts to serve faster</small>' :
       '<b>Flash sale!</b><small>Shoppers are rushing in. Tap the checkouts to serve faster</small>', 0);
-    sfx('unlock');
+    sfx('done');
     buzz('medium');
   } else if (ev === 'rushend') {
     View.rushEnd();
