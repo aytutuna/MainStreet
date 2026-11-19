@@ -1362,27 +1362,6 @@ small {
   stroke-linejoin: round;
 }
 
-#turn {
-  position: absolute;
-  right: 10px;
-  top: 100%;
-  margin-top: 6px;
-  display: flex;
-  gap: 6px;
-}
-
-#turn button {
-  pointer-events: auto;
-  width: 44px;
-  height: 44px;
-  border: 0;
-  border-radius: 22px;
-  background: rgba(20, 20, 30, 0.7);
-  color: #fff;
-  font-size: 18px;
-  line-height: 1;
-}
-
 #loading {
   position: absolute;
   inset: 0;

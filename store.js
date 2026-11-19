@@ -85,7 +85,6 @@ var bestId = null;
 var VIEW_AZ = 0;
 var focus = { x: 0, z: 0, dist: 30, az: VIEW_AZ };
 var goal = null;
-var azGoal = null;
 var DMIN = 8;
 var DMAX = 80;
 var BOUNDS = [-30, 32, -42, 16];
@@ -694,14 +693,6 @@ function under(sx, sy, out) {
 }
 
 function stepCam(dt) {
-  if (azGoal !== null) {
-    focus.az += (azGoal - focus.az) * Math.min(1, dt * 8);
-    if (Math.abs(azGoal - focus.az) < 0.002) {
-      focus.az = azGoal;
-      azGoal = null;
-    }
-    place();
-  }
   if (!goal) return;
   goal.t += dt;
   var u = Math.min(1, goal.t / goal.d);
@@ -732,7 +723,6 @@ function bind() {
       drag = null;
     }
     cv.setPointerCapture(e.pointerId);
-    azGoal = null;
     ptr[e.pointerId] = { x: e.clientX, y: e.clientY };
     var ids = Object.keys(ptr);
     goal = null;
@@ -5552,20 +5542,6 @@ function anchor(id) {
   return [s.cx, 0.2, Math.max(s.a.vacant[3] - 0.2, s.a.sign[1] + 1.1)];
 }
 
-// the rotate buttons sit over the picture, so a tag keeps out from under them
-var btnRects = [];
-var btnAt = -1e9;
-function buttonRects(now) {
-  if (now - btnAt < 1000) return btnRects;
-  btnAt = now;
-  var o = tagsEl.getBoundingClientRect();
-  btnRects = ['turn-l', 'turn-r'].map(function (id) {
-    var r = document.getElementById(id).getBoundingClientRect();
-    return { x0: r.left - o.left - 4, x1: r.right - o.left + 4, y0: r.top - o.top - 4, y1: r.bottom - o.top + 4 };
-  });
-  return btnRects;
-}
-
 function tagText(id, st, mode) {
   if (st.alert) return st.name + '  ' + st.said;
   if (st.own) {
@@ -5600,7 +5576,7 @@ function overlay(now) {
     list.push({ id: id, t: t, st: st, x: sp.x, y: sp.y, want: want, ready: ready, below: selId === id,
       pri: selId === id ? 5 : st.alert ? 4 : ready ? 3 : st.own ? 2 : st.avail ? 1 : 0 });
   });
-  var taken = buttonRects(now).slice();
+  var taken = [];
   list.sort(function (p, q) { return q.pri - p.pri || q.y - p.y; });
   list.forEach(function (e) {
     var t = e.t;
@@ -5688,11 +5664,6 @@ function init(canvas, tap) {
   resize();
   window.addEventListener('resize', resize);
   bind();
-  [['turn-l', -1], ['turn-r', 1]].forEach(function (b) {
-    document.getElementById(b[0]).addEventListener('click', function () {
-      azGoal = Math.max(-TURN, Math.min(TURN, (azGoal === null ? Math.round(focus.az / TURN) * TURN : azGoal) + b[1] * TURN));
-    });
-  });
   var bar = document.getElementById('load-bar');
   lib = loadModels(modelList(), function (p) { if (bar) bar.style.width = Math.round(p * 100) + '%'; }, function () {
     setTimeout(function () {
@@ -5810,7 +5781,6 @@ function spot(id) {
 // the start view: the grocery entrance, the produce market and the east wing at the phone's portrait width
 function focusNow() {
   goal = null;
-  azGoal = null;
   focus.x = 10.5;
   focus.z = -4.5;
   focus.dist = fit(19);
