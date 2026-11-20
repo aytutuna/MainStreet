@@ -926,9 +926,9 @@ small {
 
 .its {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  padding: 8px 4px 4px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  padding: 6px 0 2px;
 }
 
 .it {
@@ -936,42 +936,35 @@ small {
   align-items: stretch;
   gap: 4px;
   min-width: 0;
-  padding: 6px;
+  padding: 4px;
   border: 2px solid var(--paper2);
   border-radius: 12px;
 }
 
 .it .pic {
-  position: relative;
-  height: 84px;
+  aspect-ratio: 1;
   border-radius: 8px;
   background: var(--paper2);
 }
 
 .it .ic {
   display: block;
+  box-sizing: border-box;
   width: 100%;
   height: 100%;
-}
-
-.it .cap {
-  position: absolute;
-  left: 3px;
-  right: 3px;
-  bottom: 3px;
-  padding: 1px 4px;
-  border-radius: 6px;
-  background: rgba(255, 250, 236, 0.85);
-  font-size: 10.5px;
-  font-weight: 700;
-  color: var(--muted);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  padding: 4px;
 }
 
 .it .l1 {
-  font-size: 14px;
+  font-size: 12.5px;
+  line-height: 1.15;
+}
+
+.it .l1 b {
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
 .segs {
@@ -994,7 +987,7 @@ small {
 
 .it .fx {
   color: var(--ink);
-  font-size: 11.5px;
+  font-size: 10.5px;
   font-weight: 700;
   line-height: 1.2;
 }
@@ -1002,6 +995,16 @@ small {
 .it .btns {
   width: auto;
   margin-top: auto;
+}
+
+.it .btns button {
+  min-height: 34px;
+  padding: 2px;
+}
+
+.it .btns button small {
+  font-size: 13px;
+  font-weight: 800;
 }
 
 .it.done {

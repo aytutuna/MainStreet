@@ -331,8 +331,8 @@ function room(id) {
 // what a level of each room of the east wing does, and what the room does in all
 var ROOMFX = {
   serv: function (n) { return '+' + perMin(inRate() / (1 + SERV * S.pl.serv) * SERV * (n || 1)) + ' shoppers/min'; },
-  rest: function (n) { return '+' + Math.round(REST * 100 * (n || 1)) + '% spent by every shopper'; },
-  lounge: function (n) { return '-' + Math.round((1 - Math.pow(LOUNGE, n || 1)) * 100) + '% till and stocking time'; },
+  rest: function (n) { return '+' + Math.round(REST * 100 * (n || 1)) + '% spent a shopper'; },
+  lounge: function (n) { return '-' + Math.round((1 - Math.pow(LOUNGE, n || 1)) * 100) + '% till and stock time'; },
   head: function (n) { return '+' + Math.round(HEAD * 100 * (n || 1)) + '% income, ' + (n || 1) + ' h more away'; }
 };
 
@@ -349,9 +349,9 @@ function effect(id, x, j) {
   // past the shoppers who come there is nothing more for tills or stockers to do
   var want = id === 'hall' ? inRate() : served();
   var up = Math.min(want, id === 'hall' ? now[1] : now[2]) - Math.min(want, id === 'hall' ? was[1] : was[2]);
-  if (id === 'hall' && up > 0) return '+' + perMin(up) + ' shoppers/min at the tills';
-  if (id === 'dock' && up > 0) return 'Restocks +' + perMin(up) + ' shoppers/min';
-  if (id === 'dock' && now[2] > was[2]) return 'Restocks ' + perMin(was[2]) + ' to ' + perMin(now[2]) + ' shoppers/min';
+  if (id === 'hall' && up > 0) return '+' + perMin(up) + ' shoppers/min';
+  if (id === 'dock' && up > 0) return '+' + perMin(up) + ' restocked/min';
+  if (id === 'dock' && now[2] > was[2]) return '+' + perMin(now[2] - was[2]) + ' restock/min';
   if (now[0] > was[0]) return '+' + perMin(now[0] - was[0]) + ' shoppers/min';
   var g = gains[id + ':' + j];
   if (g > 0.005) return '+' + money(g) + '/s';
@@ -360,7 +360,7 @@ function effect(id, x, j) {
 
 // what a department item's level changes for each shopper or stocker
 function stat(id, x) {
-  if (x.stat === 'sell') return '+' + money(perSell(id) * bmul()) + ' a shopper';
+  if (x.stat === 'sell') return '+' + money(perSell(id) * bmul()) + '/shopper';
   if (x.stat === 'draw') return '+' + (DRAW * 60).toFixed(DRAW * 60 < 1 ? 2 : 1) + ' shoppers/min';
   return '-' + Math.round((1 - STAFF) * 100) + '% stocking time';
 }
@@ -379,10 +379,10 @@ function makeRoom(id) {
   b.items.forEach(function (x, j) {
     var row = document.createElement('div');
     row.className = 'biz it';
-    row.innerHTML = '<div class="pic"><img class="ic" alt=""><span class="cap"></span></div><div class="l1"><b></b></div><div class="segs"></div>' +
+    row.innerHTML = '<div class="pic"><img class="ic" alt=""></div><div class="l1"><b></b></div><div class="segs"></div>' +
       '<div class="l3 fx"><span></span></div><div class="btns"><button type="button" class="up"></button></div>';
     var q = { el: row, k: {}, pic: row.querySelector('.ic'), n: row.querySelector('.segs'), fx: row.querySelector('.fx span'),
-      nx: row.querySelector('.cap'), up: row.querySelector('.up') };
+      up: row.querySelector('.up') };
     row.querySelector('b').textContent = x.name;
     for (var s = 0; s < x.at.length; s++) q.n.appendChild(document.createElement('i'));
     q.up.addEventListener('click', function () {
@@ -408,8 +408,8 @@ function deptHead(r) {
   var from = n ? STAR_AT[n - 1] : 0;
   set(k, 'lv', r.lv, 'innerHTML', 'Lv ' + e.l + '/' + UPS + ' ' + starRow(n));
   r.fill.style.width = (n >= STAR_AT.length ? 100 : (e.l - from) / (STAR_AT[n] - from) * 100) + '%';
-  set(k, 'bt', r.bt, 'textContent', n >= STAR_AT.length ? 'All stars: sales here x' + Math.pow(STAR_MUL, n) :
-    STAR_AT[n] - e.l + ' more for star ' + (n + 1) + ': sales here x' + STAR_MUL);
+  set(k, 'bt', r.bt, 'textContent', n >= STAR_AT.length ? 'Sales x' + Math.pow(STAR_MUL, n) :
+    STAR_AT[n] - e.l + ' more to ★' + (n + 1) + ' · sales x' + STAR_MUL);
 }
 
 // the header of a place's card; Checkouts and the Stockroom show how loaded they are
@@ -420,7 +420,8 @@ function placeHead(r) {
   var box = r.el.firstChild;
   set(k, 'lv', r.lv, 'textContent', 'Lv ' + S.pl[id] + '/' + p.cost.length);
   flag(k, 'nobar', box, 'nobar', id !== 'hall' && id !== 'dock');
-  var hint = loadBar(r, box, id) || (ROOMFX[id] && S.pl[id] ? 'Now: ' + ROOMFX[id](S.pl[id]) : '');
+  loadBar(r, box, id);
+  var hint = ROOMFX[id] && S.pl[id] ? 'Now: ' + ROOMFX[id](S.pl[id]) : '';
   set(k, 'hh', r.hint, 'hidden', !hint);
   set(k, 'ht', r.hint, 'textContent', hint);
 }
@@ -488,14 +489,13 @@ function upRoom(r) {
       for (var s = 0; s < q.n.children.length; s++) q.n.children[s].className = s < lvl ? 'on' : '';
     }
     set(qk, 'fx', q.fx, 'textContent', done ? '' : effect(id, x, j));
-    set(qk, 'nx', q.nx, 'textContent', done ? 'Complete' : 'Next: ' + name);
     if (set(qk, 'pc', q.pic, 'title', name)) q.pic.src = p ? placeIcon(id, piece + 1) : upIcon(id, piece);
     if (done || !c) {
-      set(qk, 'up', q.up, 'innerHTML', 'Done');
+      set(qk, 'up', q.up, 'innerHTML', '✓');
       set(qk, 'upd', q.up, 'disabled', true);
       flag(qk, 'lk', q.up, 'lk', false);
       flag(qk, 'poor', q.up, 'poor', false);
-    } else buyBtn(qk, q.up, 'Buy', c, false);
+    } else buyBtn(qk, q.up, '', c, false);
     flag(qk, 'uphl', q.up, 'hl', hl);
   });
 }
