@@ -200,6 +200,8 @@ var STARTER = { gems: 150, x2: 7200, rep: 10 };
 // for free, up to the same number
 var AD_CAP = { x2: 4, away: 3, warp: 2, gems: 3 };
 var AD_GEMS = 3;
+// a gem pack the store lists is credited if it is no older than this many seconds and not credited before
+var RECOVER = 3 * 86400;
 // an interstitial waits this long after the player's first play and after any other ad, in seconds
 var AD_NEW = 600;
 var AD_GAP = 600;

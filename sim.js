@@ -1327,8 +1327,8 @@ function validate(o) {
   s.x2 = num(o.x2, 0);
   s.ask = o.ask ? 1 : 0;
   var ip = o.iap || {};
-  s.iap = { noads: ip.noads ? 1 : 0, x2: ip.x2 ? 1 : 0, starter: ip.starter ? 1 : 0, offered: ip.offered ? 1 : 0,
-    tx: (Array.isArray(ip.tx) ? ip.tx : []).filter(function (t) { return typeof t === 'string'; }).slice(-30) };
+  s.iap = { noads: ip.noads ? 1 : 0, x2: ip.x2 ? 1 : 0, starter: ip.starter === 2 ? 2 : ip.starter ? 1 : 0, offered: ip.offered ? 1 : 0,
+    tx: (Array.isArray(ip.tx) ? ip.tx : []).filter(function (t) { return typeof t === 'string'; }).slice(-100) };
   var ad = o.ads || {};
   s.ads = { d: Math.floor(num(ad.d, -1)), n: {}, pt: num(ad.pt, 0), li: num(ad.li, 0) };
   for (var k in AD_CAP) s.ads.n[k] = Math.min(AD_CAP[k], Math.floor(num(ad.n && ad.n[k], 0)));

@@ -1,7 +1,8 @@
 // Purchases. The native app takes {cmd: 'products', ids}, {cmd: 'buy', id} and {cmd: 'restore'} on window.webkit.messageHandlers.store and
 // answers through window.nativeStore(ev), ev being one of
 //   {t: 'products', list: [{id, price}]}   the products the store knows, price already in the player's currency
-//   {t: 'owned', ids: [id], restore}       one-time products the player owns; answers 'products' and 'restore'
+//   {t: 'owned', ids, tx, restore}         one-time products the player owns, and tx: [{id, tx, at}] for the gem packs
+//                                          the store knows (at is ms since 1970); answers 'products' and 'restore'
 //   {t: 'bought', id, tx}                  a purchase went through; tx is the store's transaction id
 //   {t: 'failed', id, why}                 why is 'cancel' or 'error'
 //   {t: 'ad', kind, state}                 kind is 'reward' or 'inter'; state is 'ready' or 'none' (whether one can be
@@ -29,31 +30,48 @@ function product(id) {
   return null;
 }
 
-// a one-time product is flagged once; the starter pack's extras come with its first flag
-function own(id) {
+// a one-time product is flagged when the store says the player owns it. The starter pack's extras are only for a real
+// purchase, which makes the flag 2; a restore leaves it at 1
+function own(id, bought) {
   var p = product(id);
-  if (!p || !p.once || S.iap[id]) return;
-  S.iap[id] = 1;
-  if (id === 'starter') {
+  if (!p || !p.once) return false;
+  var paid = id === 'starter' && bought && S.iap.starter !== 2;
+  if (!paid && S.iap[id]) return false;
+  S.iap[id] = bought && id === 'starter' ? 2 : 1;
+  if (paid) {
     S.gems += STARTER.gems;
     S.x2 += STARTER.x2;
     S.rep += STARTER.rep;
   }
+  return true;
 }
 
 // a gem pack pays once per transaction id, even if the store reports it again
+function credit(p, tx) {
+  if (S.iap.tx.indexOf(tx) >= 0) return false;
+  S.iap.tx.push(tx);
+  if (S.iap.tx.length > 100) S.iap.tx.shift();
+  S.gems += p.gems;
+  return true;
+}
+
 function grant(id, tx) {
   var p = product(id);
   if (!p) return false;
-  if (p.once) own(id);
-  else {
-    if (S.iap.tx.indexOf(tx) >= 0) return false;
-    S.iap.tx.push(tx);
-    if (S.iap.tx.length > 30) S.iap.tx.shift();
-    S.gems += p.gems;
-  }
-  save();
-  return true;
+  var done = p.once ? own(id, true) : credit(p, tx);
+  if (done) save();
+  return done;
+}
+
+// gem packs the store lists that the page may not have credited, say because the app died after the charge. Only recent
+// ones count, so a reinstall does not pay old packs again
+function recover(list) {
+  var n = 0;
+  (list || []).forEach(function (t) {
+    var p = product(t.id.slice(PID.length));
+    if (p && p.gems && clock() - t.at < RECOVER * 1000 && credit(p, t.tx)) n += p.gems;
+  });
+  return n;
 }
 
 function priceOf(p) {
@@ -106,7 +124,9 @@ window.nativeStore = function (ev) {
     storeUp = !!(ev.list && ev.list.length);
   } else if (ev.t === 'owned') {
     var was = S.iap.noads + S.iap.x2 + S.iap.starter;
-    (ev.ids || []).forEach(function (id) { own(id.slice(PID.length)); });
+    (ev.ids || []).forEach(function (id) { own(id.slice(PID.length), false); });
+    var back = recover(ev.tx);
+    if (back) banner('<b>' + plural(back, 'gem') + ' added</b><small>From a purchase that was not credited.</small>', 0);
     if (ev.restore) banner('<b>' + (S.iap.noads + S.iap.x2 + S.iap.starter > was ? 'Purchases restored' : 'Nothing to restore') + '</b>', 0);
     save();
   } else if (ev.t === 'bought') {
