@@ -2314,6 +2314,7 @@ function loop(t) {
     bestAt = t;
     updateBest();
     updateGoals();
+    updateDeals();
     checkRegs();
     checkAch();
     autoDaily();

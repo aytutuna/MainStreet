@@ -198,14 +198,18 @@ RG.vip = { id: 'vip', name: 'VIP', ref: 'chars/character-male-b@9,2>15,2', hat: 
 // flag in S.iap; a gem pack pays its gems every time. The starter pack adds STARTER to a store's first move
 var PRODUCTS = [
   { id: 'starter', once: 1, ic: 'ui_gift', name: 'Starter pack', text: '150 gems, 2 hours of double income and 10 rep.' },
-  { id: 'noads', once: 1, ic: 'ui_star', name: 'No ads', text: 'No ads between stores. Ad rewards come without watching.' },
-  { id: 'x2', once: 1, ic: 'ui_bolt', name: 'Permanent x2', text: 'All income doubled for good, on top of the timed boost.' },
-  { id: 'gems1', gems: 80, ic: 'ui_gem', name: '80 gems' },
-  { id: 'gems2', gems: 500, ic: 'ui_gem', name: '500 gems' },
-  { id: 'gems3', gems: 1200, ic: 'ui_gem', name: '1,200 gems' },
-  { id: 'gems4', gems: 2800, ic: 'ui_gem', name: '2,800 gems' }
+  { id: 'noads', once: 1, ic: 'ui_star', name: 'No ads', line: 'No ads, ever. Rewards come free.', text: 'No ads between stores. Ad rewards come without watching.' },
+  { id: 'x2', once: 1, ic: 'ui_bolt', name: 'Permanent x2', line: 'Double income for good.', text: 'All income doubled for good, on top of the timed boost.' },
+  { id: 'gems1', gems: 80, usd: 0.99, ic: 'ui_gem', name: '80 gems' },
+  { id: 'gems2', gems: 500, usd: 4.99, ic: 'ui_gem', name: '500 gems' },
+  { id: 'gems3', gems: 1200, usd: 9.99, ic: 'ui_gem', name: '1,200 gems' },
+  { id: 'gems4', gems: 2800, usd: 19.99, ic: 'ui_gem', name: '2,800 gems' }
 ];
 var STARTER = { gems: 150, x2: 7200, rep: 10 };
+// usd is the pack's price tier, only for the bonus shown against the smallest pack. The starter pack is offered in a
+// window of hours that restarts when it runs out, and a deal is a pack with bonus extra gems for secs, rotating through packs
+var STARTER_HOURS = 24;
+var DEAL = { secs: 21600, bonus: 0.2, packs: ['gems2', 'gems3', 'gems1', 'gems2'] };
 
 // Ads the player chooses to watch: what each one gives and how many a day. Without ads (noads) the same rewards come
 // for free, up to the same number

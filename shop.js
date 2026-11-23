@@ -107,27 +107,87 @@ function priceOf(p) {
   return prices[PID + p.id];
 }
 
-function shopRow(p) {
+function shopBtn(p) {
   var done = p.once && S.iap[p.id];
   var price = priceOf(p);
-  var btn = done ? 'Owned' : price || '-';
   var off = done || !price || !!buying;
-  return '<div class="offer"><img src="assets/' + p.ic + '.png" alt=""><div><b>' + p.name + '</b>' + (p.text ? '<span>' + p.text + '</span>' : '') +
-    '</div><button type="button" class="btn' + (done ? ' alt' : '') + '" data-p="' + p.id + '"' + (off ? ' disabled' : '') + '>' + btn + '</button></div>';
+  return '<button type="button" class="btn' + (done ? ' alt' : '') + '" data-p="' + p.id + '"' + (off ? ' disabled' : '') + '>' + (done ? 'Owned' : price || '-') + '</button>';
+}
+
+function hms(v) {
+  v = Math.max(0, Math.floor(v));
+  var m = Math.floor(v / 60) % 60;
+  var s = v % 60;
+  return Math.floor(v / 3600) + ':' + (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+}
+
+// the deal on now: the pack it is for and how long is left. The slot comes from the clock, so it needs no saving
+function dealNow() {
+  var w = DEAL.secs * 1000;
+  var slot = Math.floor(clock() / w);
+  var id = DEAL.packs[slot % DEAL.packs.length];
+  if (!priceOf(product(id))) return null;
+  return { id: id, left: ((slot + 1) * w - clock()) / 1000, bonus: Math.round(product(id).gems * DEAL.bonus) };
+}
+
+// the starter pack's window starts when it is first shown and starts again when it runs out
+function starterLeft() {
+  var w = STARTER_HOURS * 3600000;
+  var el = clock() - S.ads.sd;
+  if (!S.ads.sd || el < 0 || el >= w) {
+    S.ads.sd = clock();
+    el = 0;
+  }
+  return (w - el) / 1000;
+}
+
+function pile(n) {
+  var rows = [[1], [1, 2], [2, 3], [3, 4, 3]][n];
+  return '<div class="pile">' + rows.map(function (c) {
+    return '<div>' + new Array(c + 1).join('<img src="assets/ui_gem.png" alt="">') + '</div>';
+  }).join('') + '</div>';
+}
+
+function heroCard(p) {
+  var chips = [['ui_gem', STARTER.gems, 'gems'], ['ui_bolt', STARTER.x2 / 3600 + ' h', 'double income'], ['ui_star', STARTER.rep, 'rep']];
+  return '<div class="hero" data-k="starter"><i class="rib">Best value</i><h3>' + p.name + '</h3><span>One time only</span><div class="gifts">' +
+    chips.map(function (c) { return '<div><img src="assets/' + c[0] + '.png" alt=""><b>' + c[1] + '</b><small>' + c[2] + '</small></div>'; }).join('') +
+    '</div>' + shopBtn(p) + '</div>';
+}
+
+function featCard(p) {
+  return '<div class="feat" data-k="' + p.id + '"><u><img src="assets/' + p.ic + '.png" alt=""></u><div><b>' + p.name + '</b><span>' + p.line + '</span></div>' + shopBtn(p) + '</div>';
+}
+
+function gemTile(p, i, base, deal) {
+  var bonus = Math.round((p.gems / p.usd / base - 1) * 100);
+  var tag = p.id === 'gems2' ? 'Most popular' : p.id === 'gems4' ? 'Best value' : '';
+  var on = deal && deal.id === p.id;
+  return '<div class="tile' + (on ? ' deal' : '') + '" data-k="' + p.id + '">' + (tag ? '<i class="rib">' + tag + '</i>' : '') +
+    (bonus > 0 ? '<em>+' + bonus + '%</em>' : '') + pile(i) + '<b>' + p.gems.toLocaleString('en-US') + ' gems</b>' +
+    (on ? '<small>+' + deal.bonus + ' bonus · <span id="sh-deal">' + hms(deal.left) + '</span></small>' : '') + shopBtn(p) + '</div>';
 }
 
 function paintShop() {
-  var list = PRODUCTS.filter(function (p) { return !(p.id === 'starter' && S.iap.starter); });
-  $('shop-list').innerHTML = list.map(shopRow).join('');
+  var starter = product('starter');
+  var gems = PRODUCTS.filter(function (p) { return p.gems; });
+  var base = gems[0].gems / gems[0].usd;
+  var deal = dealNow();
+  var html = S.iap.starter ? '' : heroCard(starter);
+  html += '<div class="feats">' + featCard(product('noads')) + featCard(product('x2')) + '</div>';
+  html += '<h3 class="sec">Gems</h3><div class="tiles">' + gems.map(function (p, i) { return gemTile(p, i, base, deal); }).join('') + '</div>';
+  $('shop-list').innerHTML = html;
   $('shop-txt').textContent = storeUp ? 'Gems are for boosts and time warps.' : 'The store is not available right now. Try again later.';
   $('shop-restore').disabled = !storeUp || !!buying;
   $('b-shop').hidden = !native();
 }
 
-function openShop() {
+function openShop(at) {
   if (!native()) return;
   paintShop();
   $('shop').hidden = false;
+  var el = typeof at === 'string' && $('shop-list').querySelector('[data-k="' + at + '"]');
+  if (el) el.scrollIntoView({ block: 'center' });
 }
 
 function buyProduct(id) {
@@ -182,7 +242,10 @@ function handle(ev) {
     save();
   } else if (ev.t === 'bought') {
     buying = '';
-    grant(ev.id.slice(PID.length), ev.tx, ev.at);
+    var bid = ev.id.slice(PID.length);
+    var deal = dealNow();
+    var had = S.gems;
+    if (grant(bid, ev.tx, ev.at) && deal && deal.id === bid && S.gems > had) S.gems += deal.bonus;
     sfx('done');
     buzz('success');
     banner('<b>Thank you</b><small>' + product(ev.id.slice(PID.length)).name + '</small>', 0, true);
@@ -196,8 +259,8 @@ function handle(ev) {
 }
 
 function wireShop() {
-  $('gems').addEventListener('click', openShop);
-  $('b-shop').addEventListener('click', openShop);
+  $('gems').addEventListener('click', function () { openShop(); });
+  $('b-shop').addEventListener('click', function () { openShop(); });
   $('shop-x').addEventListener('click', function () { $('shop').hidden = true; });
   $('shop-restore').addEventListener('click', function () {
     restoreWas = S.iap.noads + S.iap.x2 + S.iap.starter;
@@ -207,6 +270,20 @@ function wireShop() {
   $('shop-list').addEventListener('click', function (e) {
     var id = e.target.dataset && e.target.dataset.p;
     if (id) buyProduct(id);
+  });
+  $('deals').addEventListener('click', function (e) {
+    var b = e.target.closest('button');
+    var d = b && b.dataset.d;
+    if (d === 'start') openShop('starter');
+    else if (d === 'deal') openShop(dealNow().id);
+    else if (d === 'gems') watch('gems', function () { adGive('gems', b); });
+    else if (d === 'x2') {
+      if (canWatch('x2')) watch('x2', function () { adGive('x2', b); });
+      else {
+        paintBoost();
+        $('boost').hidden = false;
+      }
+    }
   });
   wireAds();
 }
@@ -293,8 +370,8 @@ function adLabel() {
   return S.iap.noads ? 'Free' : adOk.reward ? 'Watch' : 'No ad yet';
 }
 
-function adGive(k) {
-  var c = centerOf($('ads'));
+function adGive(k, from) {
+  var c = centerOf(from || $('ads'));
   if (k === 'x2') {
     S.x2 += X2_SECS;
     banner('<b>Double income</b><small>Active for ' + clock2(S.x2) + '</small>', 0);
@@ -327,6 +404,29 @@ function paintAds() {
   });
   set(shown, 'ads', $('ads'), 'innerHTML', html);
   $('ads').hidden = !native();
+}
+
+// side buttons on the main screen, at most three: the starter pack, the deal, free gems and double income, in that order
+function updateDeals() {
+  var on = native() && loaded && S.ads.pt >= AD_START;
+  var st = on && !S.iap.starter && priceOf(product('starter')) ? starterLeft() : -1;
+  var dl = on ? dealNow() : null;
+  var want = [st >= 0, !!dl, canWatch('gems'), S.x2 <= 0 && (canWatch('x2') || S.gems >= X2_COST)];
+  var n = 0;
+  ['start', 'deal', 'gems', 'x2'].forEach(function (k, i) {
+    var b = $('d-' + k);
+    var show = want[i] && n < 3;
+    if (show) n++;
+    set(shown, 'd' + k, b, 'hidden', !show);
+    if (!show) return;
+    if (k === 'start') set(shown, 'dt' + k, b.lastChild, 'textContent', hms(st));
+    else if (k === 'deal') {
+      set(shown, 'dt' + k, b.lastChild, 'textContent', hms(dl.left));
+      set(shown, 'db' + k, b.children[1], 'textContent', '+' + Math.round(DEAL.bonus * 100) + '%');
+    }
+  });
+  var t = $('sh-deal');
+  if (t && dl) t.textContent = hms(dl.left);
 }
 
 function paintAwayAd() {
