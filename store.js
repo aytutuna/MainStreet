@@ -3131,7 +3131,7 @@ function buildNature() {
     var b = tiles[key] = tiles[key] || new Batch();
     var k = (big ? 0.85 + rand() * 0.4 : 0.8 + rand() * 0.5);
     if (big) natureTrees.push([x, z, (lib.model(ref).box.x1 - lib.model(ref).box.x0) * k]);
-    b.model(ref, x, -lib.model(ref).box.y0 * k, z, rand() * 6.283, k);
+    b.model(ref, x, LAND.ground(x, z) - 0.05 - lib.model(ref).box.y0 * k, z, rand() * 6.283, k);
   }
   function clear(x, z) {
     return NATURE.clear.some(function (c) { return x > c[0] && x < c[1] && z > c[2] && z < c[3]; });
@@ -3221,8 +3221,9 @@ var landMat = new THREE.MeshLambertMaterial({ vertexColors: true });
 landMat.onBeforeCompile = function (sh) {
   sh.uniforms.ct = cloudU.t;
   sh.uniforms.csun = cloudU.sun;
-  sh.vertexShader = 'varying vec2 cp;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\ncp = (modelMatrix * vec4(position, 1.0)).xz;');
-  sh.fragmentShader = 'varying vec2 cp;\nuniform float ct;\nuniform float csun;\n' +
+  sh.vertexShader = 'varying vec2 cp;\nvarying float cy;\nvarying vec3 cn3;\n' + sh.vertexShader.replace('#include <begin_vertex>',
+    '#include <begin_vertex>\nvec4 cw = modelMatrix * vec4(position, 1.0);\ncp = cw.xz;\ncy = cw.y;\ncn3 = normalize(mat3(modelMatrix) * objectNormal);');
+  sh.fragmentShader = 'varying vec2 cp;\nvarying float cy;\nvarying vec3 cn3;\nuniform float ct;\nuniform float csun;\n' +
     'float gh(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }\n' +
     'float gv(vec2 p) { vec2 i = floor(p); vec2 f = fract(p); f = f * f * f * (f * (f * 6.0 - 15.0) + 10.0);\n' +
     '  return mix(mix(gh(i), gh(i + vec2(1.0, 0.0)), f.x), mix(gh(i + vec2(0.0, 1.0)), gh(i + vec2(1.0, 1.0)), f.x), f.y); }\n' +
@@ -3230,6 +3231,15 @@ landMat.onBeforeCompile = function (sh) {
     // grass grain: a broad wash and a finer mottle, each tilting the green a little warmer or cooler
     '#include <color_fragment>\nfloat gg = gv(cp * 0.22) * 0.6 + gv(mat2(0.8, 0.6, -0.6, 0.8) * cp * 0.9) * 0.4 - 0.5;\n' +
     'diffuseColor.rgb *= 1.0 + gg * 0.22;\ndiffuseColor.r += gg * 0.035;\n' +
+    // where the ground is too steep for grass it is bare rock in layers, warmer low down
+    'vec3 nn = normalize(cn3);\nfloat steep = 1.0 - smoothstep(0.4, 0.62, nn.y);\n' +
+    'float band = 0.8 + 0.12 * sin(cy * 2.6 + gv(cp * 0.3) * 5.0) + 0.08 * sin(cy * 7.0 + gv(cp * 0.8) * 3.0) + (gv(cp * 2.1 + cy * 1.3) - 0.5) * 0.14;\n' +
+    'vec3 rock = mix(vec3(0.66, 0.55, 0.44), vec3(0.62, 0.61, 0.58), smoothstep(0.0, 10.0, cy)) * band;\n' +
+    'diffuseColor.rgb = mix(diffuseColor.rgb, rock, steep * 0.92);\n' +
+    // the scene light comes from above, which leaves gentle hills looking flat from this camera; a low light from the
+    // north-west shades each slope by the way it faces, and flat ground keeps its colour
+    'float relief = dot(nn, normalize(vec3(-0.55, 0.45, -0.7))) - 0.45;\n' +
+    'diffuseColor.rgb *= 1.0 + clamp(relief, -0.45, 0.35) * 0.75;\n' +
     'vec2 cq = cp * 0.03 + vec2(ct, ct * 0.5);\n' +
     'float cn = sin(cq.x * 2.0) * sin(cq.y * 2.0 + 1.0) + 0.6 * sin(cq.x * 4.0 + 2.0) * sin(cq.y * 4.0) + 0.25 * sin(cq.x * 8.0 + cq.y * 6.0);\n' +
     'vec2 cf = max(vec2(-48.0 - cp.x, -42.0 - cp.y), vec2(cp.x - 48.0, cp.y - 44.0));\n' +

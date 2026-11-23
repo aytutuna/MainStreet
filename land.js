@@ -4,17 +4,20 @@ export var DOM = [-150, 150, -150, 64];
 // the camera never gets further out than this, so nothing grows past it
 var LAWNS = [[27.8, 47.5, -40, 8], [-47.5, -28, -40, 8]];
 var SEEN = [-72, 72, -84, 50];
-export var FLAT = [[-48, 48, -42, 44], [-80, 80, 2, 22]];
+// the store and its drives, the street, and the houses and gardens across it; the lawns beyond the drives may roll
+export var FLAT = [[-31, 31, -43, 10], [-50, 50, 2, 44], [-80, 80, 2, 22]];
 
 export var LAKES = [
   { x: -6, z: -57, a: 25, b: 9, lv: -1, s: 3 },
   { x: 44, z: -54, a: 9, b: 6, lv: -0.8, s: 8 }
 ];
 
-// control points run downhill; drop is the least the water falls per unit, floor where it stops
+// control points run downhill; drop is the least the water falls per unit, floor where it stops. A stream with into
+// runs down to that lake; cut gives it the sheer rock walls of a canyon
 var STREAMS = [
-  { pts: [[44, -112], [34, -94], [26, -78], [20, -66], [12, -58], [4, -56]], w0: 2.2, w1: 4.2, drop: 0.03, end: 0 },
-  { pts: [[-24, -58], [-36, -54], [-47, -51], [-56, -43], [-58, -28], [-57, -6], [-57, 12], [-57, 34], [-66, 54], [-84, 70]], w0: 4.2, w1: 4.8, drop: 0.004, end: -2.4 }
+  { pts: [[44, -112], [34, -94], [26, -78], [20, -66], [12, -58], [4, -56]], w0: 2.2, w1: 4.2, drop: 0.03, end: 0, into: 0 },
+  { pts: [[-24, -58], [-36, -54], [-47, -51], [-56, -43], [-58, -28], [-57, -6], [-57, 12], [-57, 34], [-66, 54], [-84, 70]], w0: 4.2, w1: 4.8, drop: 0.004, end: -2.4 },
+  { pts: [[92, -96], [80, -84], [70, -72], [62, -62], [55, -57], [49, -55]], w0: 1.6, w1: 2.6, drop: 0.05, end: 0, into: 1, cut: 1 }
 ];
 
 // the dirt tracks the street turns into where it leaves the flat ground, and the bridge over the stream on the west
@@ -62,7 +65,10 @@ export function away(x, z) {
   return d;
 }
 
-var PEAKS = [[-10, -72, 12, 14], [16, -70, 11, 12], [-34, -68, 11, 12], [40, -66, 10, 10], [-4, -86, 16, 20], [26, -82, 14, 16], [-32, -80, 14, 15], [50, -66, 16, 14], [-62, -70, 16, 14], [78, -20, 14, 10], [-80, -34, 14, 12], [-70, 80, 20, 8], [-30, -122, 30, 26], [30, -126, 30, 24]];
+var PEAKS = [[-10, -72, 12, 14], [16, -70, 11, 12], [-34, -68, 11, 12], [40, -66, 10, 10], [-4, -86, 16, 20], [26, -82, 14, 16], [-32, -80, 14, 15], [50, -66, 16, 14], [-62, -70, 16, 14], [78, -20, 14, 10], [-80, -34, 14, 12], [-70, 80, 20, 8], [-30, -122, 30, 26], [30, -126, 30, 24],
+  // the ridges either side of the store, and the high ground the east canyon cuts through
+  [-68, -22, 10, 13], [-72, 2, 11, 11], [-66, -44, 9, 12], [60, -22, 9, 12], [62, -2, 9, 10], [64, -40, 8, 12],
+  [66, -52, 9, 15], [58, -74, 9, 17], [78, -62, 10, 19], [84, -80, 11, 18]];
 
 function hills(x, z) {
   var d = away(x, z);
@@ -74,7 +80,7 @@ function hills(x, z) {
   }
   var m = 1 - Math.abs(noise(x / 34 + 20, z / 34 + 7) * 2 - 1);
   h += smooth(-84, -140, z) * (8 + m * m * 14) + smooth(70, 140, Math.abs(x)) * m * m * 10;
-  return smooth(0, 14, d) * h;
+  return smooth(0, 10, d) * h;
 }
 
 // splines through the control points, sampled about every 2.5 units, with the water level at each
@@ -95,11 +101,11 @@ function spline(c, step) {
   out.push(c[c.length - 1].slice());
   return out;
 }
-STREAMS.forEach(function (s, si) {
+STREAMS.forEach(function (s) {
   s.line = spline(s.pts);
   var n = s.line.length;
-  var lv = LAKES[0].lv;
-  var r = si === 0 ? 99 : lv;
+  var lv = LAKES[s.into || 0].lv;
+  var r = s.into !== undefined ? 99 : lv;
   var rem = 0;
   s.line.forEach(function (p, i) { if (i) rem += Math.hypot(p[0] - s.line[i - 1][0], p[1] - s.line[i - 1][1]); });
   s.line.forEach(function (p, i) {
@@ -107,31 +113,38 @@ STREAMS.forEach(function (s, si) {
     rem -= step;
     var h = hills(p[0], p[1]) - 1.2;
     r = Math.min(r - s.drop * step, h);
-    if (si === 0) r = Math.max(Math.min(r, lv + 0.06 * rem), lv);
+    if (s.into !== undefined) r = Math.max(Math.min(r, lv + 0.06 * rem), lv);
     else r = Math.max(r, s.end);
     p[2] = r;
     p[3] = s.w0 + (s.w1 - s.w0) * i / (n - 1);
   });
 });
 
-// nearest stream: distance to its middle, the width and the level there
-function stream(x, z) {
+// nearest point of one stream: distance to its middle, the width and the level there
+function streamAt(si, x, z) {
   var best = null;
   var bd = 1e9;
-  for (var si = 0; si < STREAMS.length; si++) {
-    var l = STREAMS[si].line;
-    for (var i = 0; i < l.length - 1; i++) {
-      var a = l[i];
-      var b = l[i + 1];
-      var dx = b[0] - a[0];
-      var dz = b[1] - a[1];
-      var t = clamp(((x - a[0]) * dx + (z - a[1]) * dz) / (dx * dx + dz * dz));
-      var d = Math.hypot(x - a[0] - dx * t, z - a[1] - dz * t);
-      if (d < bd) {
-        bd = d;
-        best = { d: d, lv: a[2] + (b[2] - a[2]) * t, w: a[3] + (b[3] - a[3]) * t };
-      }
+  var l = STREAMS[si].line;
+  for (var i = 0; i < l.length - 1; i++) {
+    var a = l[i];
+    var b = l[i + 1];
+    var dx = b[0] - a[0];
+    var dz = b[1] - a[1];
+    var t = clamp(((x - a[0]) * dx + (z - a[1]) * dz) / (dx * dx + dz * dz));
+    var d = Math.hypot(x - a[0] - dx * t, z - a[1] - dz * t);
+    if (d < bd) {
+      bd = d;
+      best = { d: d, lv: a[2] + (b[2] - a[2]) * t, w: a[3] + (b[3] - a[3]) * t, cut: STREAMS[si].cut };
     }
+  }
+  return best;
+}
+
+function stream(x, z) {
+  var best = null;
+  for (var si = 0; si < STREAMS.length; si++) {
+    var s = streamAt(si, x, z);
+    if (!best || s.d < best.d) best = s;
   }
   return best;
 }
@@ -148,11 +161,15 @@ export function ground(x, z) {
     var r = lakeR(k, x, z);
     if (r < 1.5) g = Math.min(g, k.lv - 2.4 + smooth(0.3, 1.25, r) * (Math.max(g, k.lv + 0.5) - k.lv + 2.4));
   }
-  var s = stream(x, z);
-  if (s && s.d < s.w + 14) {
+  // every stream carves its own valley, with no cut-off distance, so the sides rise until they meet the hills instead of
+  // stepping back up in a wall
+  for (var si = 0; si < STREAMS.length; si++) {
+    var s = streamAt(si, x, z);
     var u = s.d / s.w;
-    var p = s.d < s.w ? s.lv - 1.3 + 1.3 * u * u : s.lv + (s.d - s.w) * 0.5 + (s.d - s.w) * (s.d - s.w) * 0.04;
-    g = smin(g, p, 0.7);
+    var e = s.d - s.w;
+    // a canyon keeps a narrow bank either side of the water, then its walls go up almost sheer
+    var p = s.d < s.w ? s.lv - 1.3 + 1.3 * u * u : s.cut ? s.lv + 0.3 + Math.max(0, e - 2.5) * 3.2 : s.lv + e * 0.5 + e * e * 0.04;
+    g = smin(g, p, s.cut ? 0.4 : 0.7);
   }
   return g - 0.03;
 }
@@ -218,6 +235,7 @@ export var REFS = [[CANOE], CONIFER, BROAD, FALL, LONE, BUSH, CLIFF, STONE, FLOW
 // wood is and thin in the meadows; flowers and grass in patches; stones and reeds at the water
 // blocked says where something already stands on the lawns
 var LAMPS = [[-26.6, 0], [-26.6, -14]];
+function inYards(x, z) { return x > -48 && x < 48 && z > -42 && z < 44; }
 export function scenery(blocked) {
   var seed = 11;
   function rand() {
@@ -235,7 +253,8 @@ export function scenery(blocked) {
       var x = cx + rand() * CELL;
       var z = cz + rand() * CELL;
       var d = away(x, z);
-      if (d < 3 || shore(x, z) < 1.1 || onTrack(x, z, 2.5)) continue;
+      // the yards keep the woods plan.js gives them
+      if (d < 3 || inYards(x, z) || shore(x, z) < 1.1 || onTrack(x, z, 2.5)) continue;
       var h = ground(x, z);
       var sl = slope(x, z);
       var f = forest(x, z);
@@ -274,7 +293,7 @@ export function scenery(blocked) {
       px = -36 + rand() * 72;
       pz = -50 + rand() * 6;
     }
-    if (away(px, pz) < 2.5 || away(px, pz) > 36 || shore(px, pz) < 1.6 || forest(px, pz) > 0.3 || onTrack(px, pz, 2) || slope(px, pz) > 0.5) continue;
+    if (away(px, pz) < 2.5 || inYards(px, pz) || away(px, pz) > 36 || shore(px, pz) < 1.6 || forest(px, pz) > 0.3 || onTrack(px, pz, 2) || slope(px, pz) > 0.5) continue;
     if (meadow(px, pz) < 0.35 && rand() < 0.7) continue;
     var base = pick(FLOWER);
     var rad = 0.9 + rand() * 1.1;
