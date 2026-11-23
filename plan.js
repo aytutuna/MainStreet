@@ -1282,14 +1282,14 @@ export var NATURE = {
     // between the wing's hedge and the service road
     { r: [22.0, 22.35, -28, 2.2], tr: [], t: 0, b: 0, g: 20, f: 40, k: 0 },
     // beyond the service road and the west drive, then behind the yard
-    { r: [27.4, 40, -41, 9.4], tr: ['pine', 'oak', 'col', 'maple'], t: 9, b: 8, g: 0, f: 0, k: 0 },
-    { r: [40, 48, -41, 9.4], tr: ['col', 'lol', 'oak'], t: 7, b: 8, g: 0, f: 0, k: 0 },
-    { r: [-40, -27.3, -41, 9.4], tr: ['oak', 'pine', 'lol', 'maple'], t: 9, b: 8, g: 0, f: 0, k: 0 },
-    { r: [-48, -40, -41, 9.4], tr: ['col', 'lol', 'oak'], t: 7, b: 8, g: 0, f: 0, k: 0 },
+    { r: [27.4, 40, -41, 9.4], tr: ['pine', 'oak', 'col'], t: 20, b: 8, g: 0, f: 0, k: 0 },
+    { r: [40, 48, -41, 9.4], tr: ['col', 'lol', 'oak', 'pine'], t: 20, b: 8, g: 0, f: 0, k: 0 },
+    { r: [-40, -27.3, -41, 9.4], tr: ['oak', 'pine', 'lol'], t: 20, b: 8, g: 0, f: 0, k: 0 },
+    { r: [-48, -40, -41, 9.4], tr: ['col', 'lol', 'oak', 'pine'], t: 20, b: 8, g: 0, f: 0, k: 0 },
     // across the street: front yards, the gaps between the houses, and the gardens behind them
     { r: [-34, 34, 15.05, 15.85], tr: [], t: 0, b: 22, g: 20, f: 40, k: 0 },
     { r: [-48, 48, 19.8, 28], tr: ['oak', 'lol', 'col'], t: 4, b: 6, g: 8, f: 6, k: 1 },
-    { r: [-48, 48, 28, 40], tr: ['col', 'lol', 'pine', 'oak', 'maple'], t: 7, b: 6, g: 0, f: 0, k: 0 },
+    { r: [-48, 48, 28, 40], tr: ['col', 'lol', 'pine', 'oak', 'maple'], t: 16, b: 6, g: 0, f: 0, k: 0 },
     { r: [-48, -33, 14.8, 19.8], tr: ['oak', 'col'], t: 4, b: 6, g: 6, f: 4, k: 0 },
     { r: [33, 48, 14.8, 19.8], tr: ['oak', 'col'], t: 4, b: 6, g: 6, f: 4, k: 0 }
   ],

@@ -316,6 +316,7 @@ function loadModels(list, progress, done) {
     mats[key] = new THREE.MeshLambertMaterial(opt);
     mats[key].name = src.name;
     if (GROUND.test(file)) mats[key].userData.noShadow = true;
+    if (/^flora\/(st-|sn-stylised-tree|maple)/.test(file)) mats[key].userData.flora = true;
     return mats[key];
   }
   var missing = { parts: [], box: { x0: -0.3, x1: 0.3, z0: -0.3, z1: 0.3, y0: 0, h: 0.3 }, gltf: null };
@@ -889,6 +890,8 @@ function mesh(ref, x, z, rot, y) {
 var LOD_DIST = 40;
 var GOODS_CELL = 0.04;
 var FIX_CELL = 0.02;
+// trees are big enough that their far copies can be much coarser; bushes keep the fine grid
+var FLORA_CELL = 0.32;
 var lodFar = false;
 var noLow = false;
 var lowCache = new WeakMap();
@@ -988,7 +991,7 @@ function Batch() {
     mtx.compose(new THREE.Vector3(x, y, z), q, k ? new THREE.Vector3(k, k, k) : one);
     sets[key].list.push(geom.clone().applyMatrix4(mtx));
     if (goods) sets[key].rank.push(rank);
-    if (sets[key].low) sets[key].low.push(lowOf(geom, goods ? GOODS_CELL : FIX_CELL).clone().applyMatrix4(mtx));
+    if (sets[key].low) sets[key].low.push(lowOf(geom, goods ? GOODS_CELL : mat.userData.flora ? FLORA_CELL : FIX_CELL).clone().applyMatrix4(mtx));
   }
   this.sets = sets;
   // where each model stands and the way it faces, kept so an icon can be framed on and turned to the piece itself
@@ -3160,9 +3163,9 @@ function buildNature() {
   NATURE.zones.forEach(function (zn) {
     var trees = [];
     zn.tr.forEach(function (s) { trees = trees.concat(NATURE.tree[s]); });
-    // twice the trees offered, kept where the noise says grove, so they stand in clumps with clearings between
+    // twice the trees offered, most kept, so the woods close up with a few clearings in them
     scatter(zn.r, zn.t * 2, function (x, z) {
-      if (rand() < LAND.smooth(0.42, 0.6, LAND.noise(x / 9 + 3, z / 9 - 2))) put(pick(trees), x, z, true);
+      if (rand() < LAND.smooth(0.22, 0.42, LAND.noise(x / 9 + 3, z / 9 - 2))) put(pick(trees), x, z, true);
     });
     // where there are woods the bushes keep to them and their edges
     scatter(zn.r, zn.b, function (x, z) {

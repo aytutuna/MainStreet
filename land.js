@@ -202,7 +202,7 @@ export function onTrack(x, z, m) {
 TRACKS.forEach(function (t) { t.line = spline(t.pts, 1.2); });
 
 // the woods that stand close round the store, so the view from the yard always has some
-var GROVES = [[-34, -48, 11], [-18, -45, 6], [8, -45, 7], [24, -48, 11], [38, -55, 14], [-44, -64, 13], [48, -52, 13], [-14, -72, 14], [14, -74, 13], [66, -10, 11], [70, 20, 11], [-70, -8, 8], [-70, 28, 11], [-30, 60, 17], [30, 58, 17], [-8, 56, 11]];
+var GROVES = [[-34, -48, 11], [-18, -45, 6], [-26, -46, 7], [-4, -48, 6], [8, -45, 7], [24, -48, 11], [27, -45, 6], [38, -55, 14], [-44, -64, 13], [48, -52, 13], [-14, -72, 14], [14, -74, 13], [66, -10, 11], [70, 20, 11], [-70, -8, 8], [-70, 28, 11], [-30, 60, 17], [30, 58, 17], [-8, 56, 11]];
 
 // how wooded a place is, 0 to 1
 export function forest(x, z) {
@@ -214,7 +214,7 @@ export function forest(x, z) {
     var q = GROVES[i];
     g = Math.max(g, 1 - Math.hypot(x - q[0], z - q[1]) / (q[2] * (1 + (noise(x / 5 + i, z / 5) - 0.5) * 0.9)));
   }
-  return smooth(0.4, 0.56, f + smooth(-60, -120, z) * 0.18 + belt) + smooth(0, 0.3, g) * (1 - smooth(0.4, 0.56, f + belt));
+  return smooth(0.28, 0.44, f + smooth(-60, -120, z) * 0.18 + belt) + smooth(0, 0.3, g) * (1 - smooth(0.28, 0.44, f + belt));
 }
 export function meadow(x, z) {
   return smooth(0.5, 0.66, noise(x / 11 + 40, z / 11 + 2));
@@ -264,7 +264,7 @@ export function scenery(blocked) {
       var z = cz + rand() * CELL;
       var d = away(x, z);
       // the yards keep the woods plan.js gives them
-      if (d < 3 || inYards(x, z) || byCabin(x, z, 9) || nearRock(x, z, 5) || shore(x, z) < 1.1 || onTrack(x, z, 2.5)) continue;
+      if (d < 1.5 || inYards(x, z) || byCabin(x, z, 9) || nearRock(x, z, 5) || shore(x, z) < 1.1 || onTrack(x, z, 2.5)) continue;
       var h = ground(x, z);
       var sl = slope(x, z);
       var f = forest(x, z);
@@ -279,9 +279,9 @@ export function scenery(blocked) {
       var wood = smooth(0.3, 0.62, f);
       // far out, where only the zoomed-out view reaches, the woods take fewer and bigger trees
       var far = smooth(14, 40, d);
-      if (rand() < (wood * 0.95 + near * (1 - f)) * (1 - 0.6 * far)) {
+      if (rand() < (wood * 0.95 + near * (1 - f)) * (1 - 0.35 * far)) {
         var high = h > 8 || rand() < 0.2 + 0.4 * smooth(-60, -120, z);
-        var ref = high || (f > 0.6 && rand() < 0.3) ? pick(CONIFER) : rand() < 0.1 ? pick(FALL) : pick(BROAD);
+        var ref = high || (f > 0.6 && rand() < 0.3) ? pick(CONIFER) : rand() < 0.05 ? pick(FALL) : pick(BROAD);
         out.trees.push([ref, x, z, turn, k * (1 + h * 0.012) * (0.75 + 0.35 * wood) * (1 + 0.35 * far), 1]);
         for (var bn = rand() < 0.75 - 0.4 * far ? 1 + Math.floor(rand() * 2) : 0; bn > 0; bn--) out.low.push([pick(BUSH), x + (rand() - 0.5) * 3, z + (rand() - 0.5) * 3, turn, 0.9 + rand() * 0.8]);
       } else if (f > 0.15 && f < 0.45 && rand() < 0.55) {
@@ -344,6 +344,13 @@ export function scenery(blocked) {
       else if (bl < 0.8) for (var q2 = 3; q2 > 0; q2--) out.flowers.push([pick(FLOWER), lx + (rand() - 0.5) * 2.4, lz + (rand() - 0.5) * 2.4, rand() * 6.283, 1.2 + rand() * 0.6]);
     }
   });
+  // a tree line along the back of the lot, broken where the cabin's yard opens to it
+  for (var tx = -30; tx < 31; tx += 2.2 + rand() * 1.2) {
+    var tz = -41.8 - rand() * 2.2;
+    if (byCabin(tx, tz, 7.5) || nearRock(tx, tz, 4) || shore(tx, tz) < 0.5) continue;
+    if (rand() < 0.7) out.trees.push([rand() < 0.4 ? pick(CONIFER) : pick(BROAD), tx, tz, rand() * 6.283, 0.8 + rand() * 0.35, 1]);
+    else for (var tb = 2; tb > 0; tb--) out.low.push([pick(BUSH), tx + (rand() - 0.5) * 2, tz + (rand() - 0.5) * 2, rand() * 6.283, 0.9 + rand() * 0.6]);
+  }
   OUTCROPS.forEach(function (o) {
     for (var bi = 0; bi < o[2]; bi++) {
       var ba = rand() * 6.283;
