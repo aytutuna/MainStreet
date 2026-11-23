@@ -2396,6 +2396,11 @@ function doorSign(en) {
   root.add(b);
   m.userData.name = en.name;
   doorMats.push(m);
+  var cd = new THREE.Mesh(openBoard(), openSign.faces);
+  cd.scale.setScalar(0.75);
+  cd.position.set(en.x, 0.72, FRONT + 0.3);
+  cd.rotation.x = -0.5;
+  root.add(cd);
 }
 var doorMats = [];
 
@@ -2960,22 +2965,28 @@ function buildPylon() {
   g.position.set(21.2, 0, 8.8);
   root.add(g);
   pylon = { c: c, tex: tex, mat: mat, big: null, posts: posts, board: board };
-  var sc = document.createElement('canvas');
-  sc.width = 256;
-  sc.height = 96;
-  var st = new THREE.CanvasTexture(sc);
-  st.colorSpace = THREE.SRGBColorSpace;
-  var sm = new THREE.MeshLambertMaterial({ map: st, emissiveMap: st, emissive: 0x000000 });
-  var rim = flat(0x3a3d4a);
-  var sg = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.34, 0.06), [rim, rim, rim, rim, sm, rim]);
+  var sg = new THREE.Mesh(openBoard(), openSign.faces);
   sg.position.set(0, 1.12, 0.03);
   g.add(sg);
-  openSign = { c: sc, tex: st, mat: sm, on: null };
 }
 var pylon;
-var openSign;
+var openSign = null;
 
-// the OPEN / CLOSED board under the pylon sign
+// the OPEN / CLOSED board: one canvas, shared by the pylon and the doors
+function openBoard() {
+  if (!openSign) {
+    var sc = document.createElement('canvas');
+    sc.width = 256;
+    sc.height = 96;
+    var st = new THREE.CanvasTexture(sc);
+    st.colorSpace = THREE.SRGBColorSpace;
+    var sm = new THREE.MeshLambertMaterial({ map: st, emissiveMap: st, emissive: 0x000000 });
+    var rim = flat(0x3a3d4a);
+    openSign = { c: sc, tex: st, mat: sm, on: null, faces: [rim, rim, rim, rim, sm, rim] };
+  }
+  return new THREE.BoxGeometry(0.9, 0.34, 0.06);
+}
+
 function paintOpen(on) {
   if (openSign.on === on) return;
   openSign.on = on;
@@ -5824,7 +5835,7 @@ function frenzyStep(dt, now) {
   if (saleFlash.visible) {
     var w = Math.sin(now * 0.011);
     saleFlash.material.color.setHex(w > 0 ? 0xff2a1a : 0xffc01a);
-    saleFlash.material.opacity = 0.3 * saleK * (0.35 + 0.65 * Math.abs(w));
+    saleFlash.material.opacity = 0.22 * saleK * (0.35 + 0.65 * Math.abs(w));
   }
   saleBan.forEach(function (m) { m.scale.setScalar(1 + Math.sin(now * 0.014) * 0.07 + 0.06); });
   saleT -= dt;
@@ -5836,10 +5847,11 @@ function frenzyStep(dt, now) {
     if (e.s.visible) {
       var pop = u < 0.15 ? u / 0.15 * 1.25 : 1.25 - Math.min(0.25, (u - 0.15) * 1.5);
       var out = u > 0.85 ? (1 - u) / 0.15 : 1;
-      e.s.scale.set(1.7 * pop * out, 0.85 * pop * out, 1);
+      e.s.scale.set(2.2 * pop * out, 1.1 * pop * out, 1);
       e.s.position.set(e.x, 2.6 + Math.sin(now * 0.01 + i) * 0.08 + u * 0.4, e.z);
     } else if (mad && saleT <= 0) {
-      ids = ids || order.filter(has);
+      // the ones near what the player is looking at, so the signs are seen
+      ids = ids || order.filter(function (id) { return has(id) && Math.hypot(shops[id].cx - focus.x, shops[id].cz - focus.z) < focus.dist * 0.7; });
       if (!ids.length) continue;
       var sh = shops[ids[Math.floor(Math.random() * ids.length)]];
       e.x = sh.cx + (Math.random() - 0.5) * 2;
