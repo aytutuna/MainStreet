@@ -53,7 +53,13 @@ var BOX = 8;
 // each Staff level cuts the stockers' work in its department to this share
 var STAFF = 0.7;
 
+// a game day lasts CLOCK real seconds. The store shuts from SHUT[0] to SHUT[1] o'clock, two game hours that are two minutes
+// of play, and the clock starts at START_H
+var CLOCK = 1440;
+var SHUT = [23, 1];
+var START_H = 8;
 var speed = 1;
+var shutNow = null;
 var clock = function () { return Date.now(); };
 var onShopper = null;
 var onMission = null;
@@ -85,7 +91,7 @@ var S = fresh();
 function fresh() {
   var s = { v: 11, cash: START_CASH, gems: 0, rep: 0, pk: {}, store: 1, run: 0, all: 0, pend: 0, x2: 0, call: 0, b: {}, ms: {},
     st: { srv: 0, lost: 0, sr: 0, t: 0 }, goal: [0, 1, 2], gn: 3, gd: {}, day: { n: 0, d: -1 }, mi: { d: -1, m: [], b: 0 }, rg: { o: {}, days: 0, gifts: 0, combo: 0 }, lk: { on: 'classic', own: {} }, ac: { o: {}, m: {} },
-    ask: 0, iap: { noads: 0, x2: 0, starter: 0, tx: [] }, ads: { d: -1, n: {}, pt: 0, li: 0, sd: 0 }, ts: clock() };
+    ask: 0, clk: START_H * CLOCK / 24, iap: { noads: 0, x2: 0, starter: 0, tx: [] }, ads: { d: -1, n: {}, pt: 0, li: 0, sd: 0 }, ts: clock() };
   noPlaces(s);
   s.b.produce = atLevel('produce', 1);
   return s;
@@ -248,6 +254,28 @@ function opened() {
   var n = 0;
   BIZ.forEach(function (b) { if (has(b.id)) n++; });
   return n;
+}
+
+function hours() {
+  return S.clk * 24 / CLOCK;
+}
+
+// closed for the night unless the store stays open all night
+function shut() {
+  var h = hours();
+  return !pv('night') && (h >= SHUT[0] || h < SHUT[1]);
+}
+
+// the share of a day the store is open
+function openShare() {
+  return pv('night') ? 1 : 1 - ((SHUT[1] - SHUT[0] + 24) % 24) / 24;
+}
+
+function stamp() {
+  var m = Math.floor(S.clk * 1440 / CLOCK);
+  var h = Math.floor(m / 60);
+  var n = m % 60;
+  return ((h + 11) % 12 + 1) + ':' + (n < 10 ? '0' : '') + n + (h < 12 ? ' AM' : ' PM');
 }
 
 function flow() {
@@ -665,12 +693,20 @@ function tick(dt) {
   if (S.call > 0) S.call = Math.max(0, S.call - dt);
   lostT -= dt;
   calmT -= dt;
+  S.clk = (S.clk + dt) % CLOCK;
+  var off = shut();
+  if (shutNow !== null && off !== shutNow && onPerk) onPerk(off ? 'close' : 'open');
+  shutNow = off;
   if (!rush) {
     incRate += (inc / dt - incRate) * Math.min(1, dt / 30);
     inc = 0;
   }
   var f = flow();
   for (var k in due) {
+    if (off) {
+      due[k] = Math.min(due[k], 0.99);
+      continue;
+    }
     due[k] += f[k] * dt;
     while (due[k] >= 1) {
       due[k]--;
@@ -756,7 +792,7 @@ function perkStep(dt) {
       r.extra = Math.max(0, r.got - incRate * r.len);
       if (onPerk) onPerk('rushend', r);
     }
-  } else if (!hold && (rushT -= dt) <= 0) startRush();
+  } else if (!hold && !shut() && (rushT -= dt) <= 0) startRush();
 }
 
 function startRush() {
@@ -947,8 +983,11 @@ function tipReg(c) {
 function away(sec) {
   var s = Math.max(0, Math.min(sec, maxAway()));
   var xs = Math.min(s, S.x2);
-  var gain = baseRate() * (s + xs) * (S.iap.x2 ? 2 : 1) * (1 + HEAD * S.pl.head);
-  var n = Math.floor((served() + gardenServed()) * s);
+  // the night closing is not played out: the away rate just takes the open share of the day
+  var up = openShare();
+  var gain = baseRate() * (s + xs) * up * (S.iap.x2 ? 2 : 1) * (1 + HEAD * S.pl.head);
+  var n = Math.floor((served() + gardenServed()) * s * up);
+  S.clk = (S.clk + sec) % CLOCK;
   S.x2 = Math.max(0, S.x2 - s);
   S.call = Math.max(0, S.call - s);
   perkOff();
@@ -1436,6 +1475,7 @@ function validate(o) {
   s.x2 = num(o.x2, 0);
   s.call = Math.min(CALL.cool, num(o.call, 0));
   s.ask = o.ask ? 1 : 0;
+  s.clk = num(o.clk, s.clk) % CLOCK;
   var ip = o.iap || {};
   s.iap = { noads: ip.noads ? 1 : 0, x2: ip.x2 ? 1 : 0, starter: ip.starter === 2 ? 2 : ip.starter ? 1 : 0, offered: ip.offered ? 1 : 0,
     tx: (Array.isArray(ip.tx) ? ip.tx : []).filter(function (t) { return typeof t === 'string'; }).slice(-100),

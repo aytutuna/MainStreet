@@ -549,9 +549,8 @@ function modelList() {
   return Object.keys(seen);
 }
 
-// a day lasts eight minutes: five of daylight, a dusk, two of night and a dawn. Only the light changes, so the shadows
-// stay put and need no redraw
-var DAY = 480;
+// the sim's clock sets the light: dawn from 4:30 to 6:30, day, dusk from 6 to 8 PM and night. Only the light changes, so
+// the shadows stay put and need no redraw
 var hemi;
 var skyDay = new THREE.Color(0xa9d8ee);
 var skyNight = new THREE.Color(0x27335c);
@@ -561,29 +560,35 @@ var lampOn = new THREE.Color(0xffe2a0);
 var dayT = 60;
 
 function daylight() {
-  var t = dayT % DAY;
-  if (t < 300) return 1;
-  if (t < 340) return 1 - (t - 300) / 40;
-  if (t < 440) return 0;
-  return (t - 440) / 40;
+  var h = hours();
+  if (h >= 6.5 && h < 18) return 1;
+  if (h >= 18 && h < 20) return 1 - (h - 18) / 2;
+  if (h >= 4.5 && h < 6.5) return (h - 4.5) / 2;
+  return 0;
 }
+
+// 1 while the store is shut: the interior lights drop to what a night cleaner leaves on
+var closedK = 0;
 
 var wash;
 function dayStep(dt) {
   dayT += dt;
   var l = daylight();
   var k = l * l * (3 - 2 * l);
+  closedK += ((shut() ? 1 : 0) - closedK) * Math.min(1, dt * 1.5);
   sun.intensity = 0.35 + 1.65 * k;
-  hemi.intensity = 1.3 + 1.1 * k;
+  hemi.intensity = (1.3 + 1.1 * k) * (1 - 0.6 * closedK);
   hemi.color.copy(hemiNight).lerp(hemiDay, k);
   scene.background.copy(skyNight).lerp(skyDay, k);
   scene.fog.color.copy(scene.background);
   bulbMat.emissive.copy(lampOn).multiplyScalar(1 - k);
-  doorMats.forEach(function (m) { m.emissive.setScalar(0.3 + 0.7 * (1 - k)); });
+  doorMats.forEach(function (m) { m.emissive.setScalar((0.3 + 0.7 * (1 - k)) * (1 - 0.9 * closedK)); });
   poolMat.opacity = 0.5 * (1 - k);
   poolMat.visible = k < 0.98;
-  washMat.opacity = 0.2 * (1 - k);
+  washMat.opacity = 0.2 * (1 - k) * (1 - 0.8 * closedK);
   wash.visible = k < 0.98;
+  paintOpen(closedK < 0.5);
+  openSign.mat.emissive.setScalar(closedK > 0.5 ? 0 : 0.35 + 0.65 * (1 - k));
   waterU.t.value = (dayT * 0.9) % (10 * Math.PI);
   waterU.sun.value = k;
   lifeStep(dt, k);
@@ -2955,8 +2960,38 @@ function buildPylon() {
   g.position.set(21.2, 0, 8.8);
   root.add(g);
   pylon = { c: c, tex: tex, mat: mat, big: null, posts: posts, board: board };
+  var sc = document.createElement('canvas');
+  sc.width = 256;
+  sc.height = 96;
+  var st = new THREE.CanvasTexture(sc);
+  st.colorSpace = THREE.SRGBColorSpace;
+  var sm = new THREE.MeshLambertMaterial({ map: st, emissiveMap: st, emissive: 0x000000 });
+  var rim = flat(0x3a3d4a);
+  var sg = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.34, 0.06), [rim, rim, rim, rim, sm, rim]);
+  sg.position.set(0, 1.12, 0.03);
+  g.add(sg);
+  openSign = { c: sc, tex: st, mat: sm, on: null };
 }
 var pylon;
+var openSign;
+
+// the OPEN / CLOSED board under the pylon sign
+function paintOpen(on) {
+  if (openSign.on === on) return;
+  openSign.on = on;
+  var x = openSign.c.getContext('2d');
+  x.fillStyle = on ? '#1f9d55' : '#c62828';
+  x.fillRect(0, 0, 256, 96);
+  x.strokeStyle = '#fff';
+  x.lineWidth = 6;
+  x.strokeRect(6, 6, 244, 84);
+  x.fillStyle = '#fff';
+  x.textAlign = 'center';
+  x.textBaseline = 'middle';
+  x.font = font(56);
+  x.fillText(on ? 'OPEN' : 'CLOSED', 128, 52);
+  openSign.tex.needsUpdate = true;
+}
 
 function paintPylon() {
   var big = order.filter(has).length >= 8;
@@ -5394,14 +5429,15 @@ function janGo(pts) {
 function janitorStep(dt) {
   if (!ready) return;
   if (!jan) {
-    janT -= dt;
+    janT -= shut() ? dt * 5 : dt;
     if (janT > 0) return;
     janitorUp();
     jan.t = 0;
   }
   var f = jan.f;
   if (jan.st === 0) {
-    jan.t -= dt;
+    // the night cleaner works more
+    jan.t -= shut() ? dt * 5 : dt;
     if (jan.t > 0 || speed !== 1) return;
     var spots = [];
     order.forEach(function (id) {

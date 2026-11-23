@@ -1234,6 +1234,8 @@ function updateHud() {
   set(shown, 'cash', $('cash-n'), 'textContent', cash);
   flag(shown, 'cl', $('cash'), 'long', cash.length > 6);
   set(shown, 'rate', $('rate'), 'textContent', '+' + money(rate()) + '/s');
+  set(shown, 'clk', $('clk'), 'textContent', (shut() ? 'Closed · ' : '') + stamp());
+  flag(shown, 'clc', $('clk'), 'shut', shut());
   set(shown, 'gems', $('gem-n'), 'textContent', short(S.gems));
   set(shown, 'stars', $('star-n'), 'textContent', Math.min(rating(), gate()) + '/' + gate());
   set(shown, 'store', $('store-n'), 'textContent', 'Store ' + S.store);
@@ -1780,6 +1782,7 @@ function perkFx(id, l) {
     case 'pace': return v < 1 ? Math.round((1 - v) * 100) + '% quicker' : 'normal';
     case 'away': return MAX_AWAY / 3600 + S.pl.head + v + ' h';
     case 'rush': return RUSH.secs + v + ' s';
+    case 'night': return v ? 'open 24 hours' : 'closed 11 PM – 1 AM';
     case 'sales': return 'x' + v;
   }
   return v ? '+' + v + (v > 1 ? ' gems' : ' gem') : 'base';
@@ -2309,12 +2312,18 @@ function onPerkEvent(ev, o) {
   else if (ev === 'rush') {
     View.rush(o.kind);
     banner(o.kind === 'bus' ? '<b>Tour bus!</b><small>A crowd is coming in. Tap the checkouts to serve faster</small>' :
-      '<b>Flash sale!</b><small>Shoppers are rushing in. Tap the checkouts to serve faster</small>', 0);
+      '<b>Flash sale!</b><small>Sale signs are up and shoppers are running in. Tap the checkouts to serve faster</small>', 0);
     sfx(buf.rush ? 'rush' : 'done');
     buzz('medium');
   } else if (ev === 'rushend') {
     View.rushEnd();
     banner('<b>Rush over: +' + money(o.extra) + '</b>', 0.3);
+    sfx('done');
+  } else if (ev === 'close') {
+    banner('<b>Closing time</b><small>Open again at ' + SHUT[1] + ' AM. The stockers keep working</small>', 0);
+    sfx('done');
+  } else if (ev === 'open') {
+    banner('<b>Open!</b><small>Shoppers are coming in</small>', 0);
     sfx('done');
   } else {
     View.giftOff();

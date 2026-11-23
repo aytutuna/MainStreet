@@ -148,10 +148,11 @@ var PERKS = [
   { id: 'cash', name: 'Seed money', what: 'Start cash', cost: [6, 12, 22, 40, 70], val: [0, 100, 2e3, 4e4, 8e5, 1.6e7] },
   { id: 'cheap', name: 'Bulk deals', what: 'Upgrades cost', cost: [8, 14, 24, 40, 66, 100], val: [0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3] },
   { id: 'pace', name: 'Quick staff', what: 'Staff work', cost: [10, 18, 30, 50, 80], val: [1, 0.95, 0.9, 0.85, 0.8, 0.75] },
-  { id: 'away', name: 'Night shift', what: 'Away earnings last', cost: [6, 12, 24, 48], val: [0, 1, 2, 3, 4] },
+  { id: 'away', name: 'Long weekends', what: 'Away earnings last', cost: [6, 12, 24, 48], val: [0, 1, 2, 3, 4] },
   { id: 'rush', name: 'Rush hour', what: 'Rushes last', cost: [6, 12, 24], val: [0, 5, 10, 15] },
   { id: 'sales', name: 'Loyal shoppers', what: 'Sales', cost: [10, 20, 36, 60, 100], val: [1, 1.1, 1.2, 1.3, 1.45, 1.6] },
-  { id: 'gems', name: 'Mission pay', what: 'Each mission pays', cost: [10, 25, 60], val: [0, 1, 2, 3] }
+  { id: 'gems', name: 'Mission pay', what: 'Each mission pays', cost: [10, 25, 60], val: [0, 1, 2, 3] },
+  { id: 'night', name: 'Open all night', what: 'Store hours', cost: [30], val: [0, 1] }
 ];
 var PK = {};
 PERKS.forEach(function (p) { PK[p.id] = p; });

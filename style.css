@@ -475,6 +475,16 @@ small {
   height: 34px;
 }
 
+#clk {
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+#clk.shut {
+  background: #2d3a63;
+  color: #e6ecff;
+}
+
 #x2 {
   background: #ffe9a8;
   color: #7a4a10;
