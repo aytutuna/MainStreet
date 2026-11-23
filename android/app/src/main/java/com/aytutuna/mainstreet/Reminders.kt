@@ -16,7 +16,10 @@ object Reminders {
     private const val CHANNEL = "reminders"
     private const val PREFS = "reminders"
     private const val LIST = "list"
+    private const val BACKUP = Int.MIN_VALUE
+    private const val WINDOW = 15 * 60 * 1000L
 
+    @Synchronized
     fun set(context: Context, list: JSONArray) {
         cancelAlarms(context)
         val now = System.currentTimeMillis()
@@ -30,12 +33,14 @@ object Reminders {
         prefs(context).edit().putString(LIST, kept.toString()).apply()
     }
 
+    @Synchronized
     fun clear(context: Context) {
         cancelAlarms(context)
         prefs(context).edit().remove(LIST).apply()
         context.getSystemService(NotificationManager::class.java).cancelAll()
     }
 
+    @Synchronized
     fun restore(context: Context) {
         val now = System.currentTimeMillis()
         for (item in saved(context)) {
@@ -52,7 +57,7 @@ object Reminders {
             context, 0, Intent(context, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE
         )
         val note = Notification.Builder(context, CHANNEL)
-            .setSmallIcon(R.mipmap.ic_launcher)
+            .setSmallIcon(R.drawable.ic_notification)
             .setContentTitle(context.getString(R.string.notification_title))
             .setContentText(body)
             .setContentIntent(open)
@@ -61,29 +66,37 @@ object Reminders {
         nm.notify(id, note)
     }
 
+    // The window alarm lands near the requested time; Doze holds it back, so a later idle-safe alarm backs it up.
+    // Whichever fires first cancels the other.
     private fun arm(context: Context, item: JSONObject, at: Long) {
-        val id = item.getString("id")
-        val intent = Intent(context, ReminderReceiver::class.java)
-            .putExtra("id", id.hashCode())
-            .putExtra("body", item.getString("body"))
-        val pending = PendingIntent.getBroadcast(
-            context, id.hashCode(), intent, PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        val code = item.getString("id").hashCode()
+        val body = item.getString("body")
+        val am = context.getSystemService(AlarmManager::class.java)
+        am.setWindow(AlarmManager.RTC_WAKEUP, at, WINDOW, pending(context, code, code, body, PendingIntent.FLAG_UPDATE_CURRENT)!!)
+        am.setAndAllowWhileIdle(
+            AlarmManager.RTC_WAKEUP, at + WINDOW,
+            pending(context, code xor BACKUP, code, body, PendingIntent.FLAG_UPDATE_CURRENT)!!
         )
-        context.getSystemService(AlarmManager::class.java).setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, at, pending)
+    }
+
+    fun cancel(context: Context, code: Int) {
+        val am = context.getSystemService(AlarmManager::class.java)
+        for (c in intArrayOf(code, code xor BACKUP)) {
+            pending(context, c, code, null, PendingIntent.FLAG_NO_CREATE)?.let {
+                am.cancel(it)
+                it.cancel()
+            }
+        }
+    }
+
+    private fun pending(context: Context, request: Int, id: Int, body: String?, flag: Int): PendingIntent? {
+        val intent = Intent(context, ReminderReceiver::class.java).putExtra("id", id)
+        if (body != null) intent.putExtra("body", body)
+        return PendingIntent.getBroadcast(context, request, intent, PendingIntent.FLAG_IMMUTABLE or flag)
     }
 
     private fun cancelAlarms(context: Context) {
-        val am = context.getSystemService(AlarmManager::class.java)
-        for (item in saved(context)) {
-            val pending = PendingIntent.getBroadcast(
-                context, item.getString("id").hashCode(), Intent(context, ReminderReceiver::class.java),
-                PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_NO_CREATE
-            )
-            if (pending != null) {
-                am.cancel(pending)
-                pending.cancel()
-            }
-        }
+        for (item in saved(context)) cancel(context, item.getString("id").hashCode())
     }
 
     private fun saved(context: Context): List<JSONObject> {
@@ -96,12 +109,14 @@ object Reminders {
 
 class ReminderReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        Reminders.show(context, intent.getIntExtra("id", 0), intent.getStringExtra("body") ?: return)
+        val id = intent.getIntExtra("id", 0)
+        Reminders.cancel(context, id)
+        Reminders.show(context, id, intent.getStringExtra("body") ?: return)
     }
 }
 
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        Reminders.restore(context)
+        if (intent.action == Intent.ACTION_BOOT_COMPLETED) Reminders.restore(context)
     }
 }
