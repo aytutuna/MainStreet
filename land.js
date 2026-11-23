@@ -220,21 +220,22 @@ export function meadow(x, z) {
   return smooth(0.5, 0.66, noise(x / 11 + 40, z / 11 + 2));
 }
 
-// the same textured trees and plants as the yards, a size up out here
-var CONIFER = ['flora/st-pine-1*0.28', 'flora/st-pine-2*0.29', 'flora/st-pine-3*0.27', 'flora/st-pine-4*0.3'];
-var BROAD = ['flora/st-oak-1*0.17', 'flora/st-oak-2*0.175', 'flora/st-oak-3*0.18', 'flora/st-oak-4*0.165', 'flora/sn-stylised-tree-8*0.7', 'flora/sn-stylised-tree-9*0.75'];
-var FALL = ['flora/maple-4*1', 'flora/maple-4*1.15', 'flora/st-oak-1%Leaf=ffb24a*0.17', 'flora/st-columnar-2%Leaf=ffd25a*0.26'];
-var LONE = ['flora/st-oak-2*0.2', 'flora/st-oak-4*0.2', 'flora/st-columnar-1*0.28', 'flora/st-columnar-3*0.26'];
-var BUSH = ['flora/sn-stylised-bush-1*0.24', 'flora/sn-stylised-bush-2*0.24', 'flora/sn-stylised-bush-3*0.22', 'flora/sn-stylised-bush-1*0.3', 'flora/bush-flowers%Bush_Leaves=b8cc98*0.75'];
-var CLIFF = ['flora/sn-rock-1*0.28', 'flora/sn-rock-2*0.45', 'flora/sn-rock-3*0.3'];
-var STONE = ['flora/sn-rock-1*0.12', 'flora/sn-rock-2*0.2', 'flora/sn-rock-3*0.13', 'flora/sn-stone-collection-4*1.2', 'flora/sn-stone-collection-5*1.2'];
+// the same toon trees and plants as the yards, a size up out here
+var CONIFER = ['flora/kk-tree-4-a%forest=9cc79a*0.7', 'flora/kk-tree-4-b%forest=9cc79a*0.56', 'flora/kk-tree-4-a*0.62'];
+var BROAD = ['flora/kk-tree-1-a*0.87', 'flora/kk-tree-1-b*0.74', 'flora/kk-tree-3-a*1.05', 'flora/kk-tree-3-b*0.84',
+  'flora/kk-tree-1-a%forest=b9d8a2*0.87', 'flora/kk-tree-1-b%forest=b9d8a2*0.74', 'flora/kk-tree-3-a%forest=b9d8a2*1.05'];
+var FALL = ['flora/kk-tree-1-a%forest=ffb48a*0.87', 'flora/kk-tree-3-b%forest=ffc47a*0.84'];
+var LONE = ['flora/kk-tree-3-b*1', 'flora/kk-tree-1-b*0.9', 'flora/kk-tree-3-a*1.2'];
+var BUSH = ['flora/kk-bush-1-b*1.4', 'flora/kk-bush-3-a*1.4', 'flora/kk-bush-3-b*0.9', 'flora/kk-bush-3-c*0.6', 'flora/kk-bush-4-e*0.55', 'flora/bush-flowers%Bush_Leaves=b8cc98*0.75'];
+var CLIFF = ['flora/kk-rock-3-a*1.6', 'flora/kk-rock-3-e*1.3', 'flora/kk-rock-1-e*1.3'];
+var STONE = ['flora/kk-rock-1-a*0.9', 'flora/kk-rock-1-e*0.6', 'flora/kk-rock-3-a*0.7'];
 var FLOWER = ['flora/flower-2-clump*0.8', 'flora/flower-3-clump*0.8', 'flora/flower-4-clump*0.8', 'flora/flower-5-clump*0.8'];
 var GRASS = ['flora/fern-1*0.22', 'flora/fern-1*0.18'];
 var CANOE = 'nature/canoe*2.2';
 var REED = ['nature/plant_flatTall*2.2'];
 var PAD = ['nature/lily_large*3', 'nature/lily_small*3'];
 // big boulders in a few heaps where the camera looks: lake shores, the hills beside the store, the canyon's mouth
-var BOULDER = ['flora/boulder-1', 'flora/boulder-2', 'flora/boulder-3'];
+var BOULDER = ['flora/kk-rock-3-e*1.4', 'flora/kk-rock-1-e*1.5', 'flora/kk-rock-3-a*1.6'];
 export var OUTCROPS = [[-36, -46, 3], [20, -50, 3], [40, -22, 4], [39, 3, 2], [-40, -26, 4], [-41, -5, 2], [52, -61, 3], [-16, -67, 3], [27, -63, 2]];
 export function nearRock(x, z, m) { return OUTCROPS.some(function (o) { return Math.hypot(x - o[0], z - o[1]) < m; }); }
 export var REFS = [BOULDER, [CANOE], CONIFER, BROAD, FALL, LONE, BUSH, CLIFF, STONE, FLOWER, GRASS, REED, PAD];

@@ -1257,17 +1257,17 @@ function oil(y) {
 // kind to scatter per 100 square units (trees from the species named in tr). Spots in clear are left bare
 export var NATURE = {
   tree: {
-    oak: ['flora/st-oak-1*0.12', 'flora/st-oak-2*0.125', 'flora/st-oak-3*0.13', 'flora/st-oak-4*0.115'],
-    col: ['flora/st-columnar-1*0.2', 'flora/st-columnar-2*0.18', 'flora/st-columnar-3*0.18', 'flora/st-columnar-4*0.185'],
-    pine: ['flora/st-pine-1*0.2', 'flora/st-pine-2*0.2', 'flora/st-pine-3*0.2', 'flora/st-pine-4*0.2'],
-    lol: ['flora/sn-stylised-tree-8*0.5', 'flora/sn-stylised-tree-9*0.55'],
-    maple: ['flora/maple-4*0.72']
+    oak: ['flora/kk-tree-1-a*0.62', 'flora/kk-tree-1-b*0.53', 'flora/kk-tree-3-a*0.75', 'flora/kk-tree-3-b*0.6'],
+    col: ['flora/kk-tree-1-a*0.62', 'flora/kk-tree-4-a*0.5', 'flora/kk-tree-1-b%forest=b9d8a2*0.5'],
+    pine: ['flora/kk-tree-4-a%forest=9cc79a*0.5', 'flora/kk-tree-4-b%forest=9cc79a*0.4'],
+    lol: ['flora/kk-tree-1-b%forest=b9d8a2*0.6', 'flora/kk-tree-3-b*0.66'],
+    maple: ['flora/kk-tree-1-b%forest=ffb48a*0.53']
   },
-  bush: ['flora/sn-stylised-bush-1*0.15', 'flora/sn-stylised-bush-2*0.15', 'flora/sn-stylised-bush-3*0.14', 'flora/sn-stylised-bush-1*0.12', 'flora/bush-flowers%Bush_Leaves=b8cc98*0.48'],
+  bush: ['flora/kk-bush-1-b*1', 'flora/kk-bush-3-a*1', 'flora/kk-bush-3-b*0.62', 'flora/kk-bush-4-e*0.4', 'flora/bush-flowers%Bush_Leaves=b8cc98*0.48'],
   grass: ['flora/fern-1*0.15', 'flora/fern-1*0.12'],
   flower: ['flora/flower-2-clump*0.7', 'flora/flower-3-clump*0.7', 'flora/flower-4-clump*0.7', 'flora/flower-5-clump*0.7'],
   fern: ['flora/fern-1*0.15'],
-  rock: ['flora/sn-rock-1*0.07', 'flora/sn-rock-2*0.12', 'flora/sn-rock-3*0.075', 'flora/sn-stone-collection-4*0.6', 'flora/sn-stone-collection-5*0.6'],
+  rock: ['flora/kk-rock-1-a*0.5', 'flora/kk-rock-1-e*0.35', 'flora/kk-rock-3-a*0.4'],
   zones: [
     // the lawns at the front corners, either side of the lot's drives
     { r: [19.2, 22.7, 4.3, 9.4], tr: ['col', 'oak'], t: 3, b: 11, g: 12, f: 8, k: 1.5 },
