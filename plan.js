@@ -146,7 +146,7 @@ AREAS.produce = {
   ], [SIGN, counter('Produce desk', 12.5, -9.8, 's', 12.5, -10.25),
     up('Fruit island', pw('ProduceTable_15', 12.3, -6.0, 'b', { stock: 'Apples' })),
     lights([[12.2, -4.0], [12.2, -7.4]]), HELP,
-    up('Showcase', { sign: 'gold' }, pw('ProduceTable_15', 13.1, -0.55, 's', { stock: 'Apples' }))])
+    up('Prize apple table', { sign: 'gold' }, pw('ProduceTable_15', 13.1, -0.55, 's', { stock: 'Apples' }))])
 };
 
 // a tiered promo table with goods of another kit on its three tiers: front row, middle row, back, left to right
@@ -194,7 +194,7 @@ AREAS.bakery = {
   ], [SIGN, counter('Bakery desk', 10.9, -13.8, 'b', 10.4, -13.8),
     up('Cake display', pw('BakeryCase_SelfServe_10', 12.2, -14.1, 's', { stock: 1 })),
     lights([[11.8, -11.6], [11.8, -13.2]]), HELP,
-    up('Showcase', { sign: 'gold' }, { m: 'food/cake-birthday*1.3', x: 14.51, z: -10.85, r: 0, k: 1, y: 0.7, flat: 1 })])
+    up('Birthday cake', { sign: 'gold' }, { m: 'food/cake-birthday*1.3', x: 14.51, z: -10.85, r: 0, k: 1, y: 0.7, flat: 1 })])
 };
 
 // shelf faces taken from a pool of goods: unit i shows four neighbours of it
@@ -308,7 +308,7 @@ AREAS.pets = {
     [SIGN, counter('Pet desk', 6.7, -14.5, 'b', 6.25, -14.5),
       up('Adoption corner', pw('Table_Promo_Tiered_01', 6.65, -13.6, 'b', { stock: 1, on: tops([['Bag_PetFood_01', -0.15, 0.56], ['Bag_PetFood_01', 0.15, 0.56]]) }), on('pets/animal-dog*3', 6.2, -13.6, 0, 1, 1.2), on('pw/Bowl_01*3', 6.6, -13.6, 0.48)),
       lights([[3, -15], [5.2, -15]]), HELP,
-      up('Showcase', { sign: 'gold' }, ['tank', 4.95, -18.0, 's', FISH], ['tank', 5.95, -18.0, 's', FISH])])
+      up('Fish tanks', { sign: 'gold' }, ['tank', 4.95, -18.0, 's', FISH], ['tank', 5.95, -18.0, 's', FISH])])
 };
 
 // the power wall: coolers along the back wall, open freezers and wells as islands in front of them
@@ -355,7 +355,7 @@ AREAS.dairy = {
     mat('Dairy mat', 1.4, 2.9, -21.0, -19.9, 0xd7e6f6),
     up('Spare baskets', pw('Basket_Stack_01', 0.3, -20.95, 'b', { spots: 0 }))
   ], [SIGN, counter('Dairy desk', 7.1, -20.7, 'k', 7.55, -20.7), dairyIsland('Cheese display', 7.4, [CHEESE, PUD, 'pw/Carton_JuiceBox_3Pack_01', PUD], 1.6), lights([[2.5, -20.6], [5.5, -20.6]]), HELP,
-    up('Showcase', { sign: 'gold' }, pw('IceCream_Chest_01', 0.45, -19.7, 's', { on: [[CHEESE, -0.1, 0, 0.5, 0.3], [CHEESE, 0.1, 0, 1.4, 0.3], ['pw/Yogurt_4Pack_01', 0, 0.05, 0, 0.35, 1.6]] }))])
+    up('Cheese and yogurt chest', { sign: 'gold' }, pw('IceCream_Chest_01', 0.45, -19.7, 's', { on: [[CHEESE, -0.1, 0, 0.5, 0.3], [CHEESE, 0.1, 0, 1.4, 0.3], ['pw/Yogurt_4Pack_01', 0, 0.05, 0, 0.35, 1.6]] }))])
 };
 
 function freezer(name, kind, x) {
@@ -389,7 +389,7 @@ AREAS.frozen = {
     up('Cup chest', pw('IceCream_Chest_01', -2.1, -20.9, 's', { on: [['food/ice-cream-cup*0.4', -0.12, 0, 0, 0.43], ['food/ice-cream-cup*0.4', 0.02, 0, 1, 0.43], ['food/ice-cream-cup*0.4', 0.14, 0, 2, 0.43]] })),
     mat('Cold floor mat', -6.6, -2.2, -20.95, -20.0, 0xc7dcf0)
   ], [SIGN, counter('Frozen desk', -1.55, -21.5, 'k', -1.32, -21.5), up('Ice cream island', pw('IslandFreezer_End_10', -6.65, -19.7, 's', { stock: 1 })), lights([[-6, -20.6], [-3, -20.6]]), HELP,
-    up('Showcase', { sign: 'gold' }, pw('IslandFreezer_End_10', -1.65, -19.7, 'b', { stock: 1 }))])
+    up('Freezer island end', { sign: 'gold' }, pw('IslandFreezer_End_10', -1.65, -19.7, 'b', { stock: 1 }))])
 };
 
 function deli(name, z) {
@@ -427,7 +427,7 @@ AREAS.meat = {
     up('Basket stack', pw('Basket_Stack_01', 9.82, -19.6, 'b', { spots: 0 })),
     up('Ice bags', pw('IceBag_01', 14.6, -16.7, 'k', { n: 2, spots: 0 }))
   ], [SIGN, counter('Meat desk', 13.45, -19.6, 's', 13.45, -20.05), up('Meat island', pw('SelfServe_Meat_20', 11.55, -19.6, 's', { stock: 1 })), lights([[11.8, -20.6], [13.5, -16.5]]), HELP,
-    up('Showcase', { sign: 'gold' }, pw('DrinkCooler_Upright_01', 9.95, -20.5, 's', { stock: 1 }))])
+    up('Drinks cooler', { sign: 'gold' }, pw('DrinkCooler_Upright_01', 9.95, -20.5, 's', { stock: 1 }))])
 };
 
 // general merchandise, west
