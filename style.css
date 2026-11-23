@@ -1129,6 +1129,35 @@ small {
   color: var(--muted);
 }
 
+.box .need {
+  color: var(--red);
+  font-weight: 700;
+  font-size: 13px;
+}
+
+.box .need:empty {
+  display: none;
+}
+
+#away-amt {
+  font-size: 38px;
+  font-weight: 800;
+  color: var(--gold);
+  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.35);
+}
+
+#away-x2 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+#away-x2 img {
+  width: 18px;
+  height: 18px;
+}
+
 .box .small {
   font-size: 13px;
 }

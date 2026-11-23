@@ -1016,9 +1016,37 @@ function showAway(a) {
     if (a.real > maxAway()) txt += ' It only earns for ' + maxAway() / 3600 + ' h while you are away.';
   }
   $('away-txt').innerHTML = txt;
-  $('away-ok').textContent = 'Collect ' + money(S.pend);
+  $('away-x2').innerHTML = 'Double it <img src="assets/ui_gem.png" alt="">' + AWAY_X2;
+  $('away-x2').disabled = S.gems < AWAY_X2;
+  $('away-need').textContent = gemsLeft(AWAY_X2);
   $('away').hidden = false;
+  var c = centerOf($('away-amt'));
+  countAway(S.pend);
+  flyCoins(c.x, c.y, 12);
+  sfx('coin');
   return true;
+}
+
+function countAway(v) {
+  var t0 = performance.now();
+  (function step(now) {
+    var f = Math.min(1, (now - t0) / 1200);
+    $('away-amt').textContent = money(v * (1 - Math.pow(1 - f, 3)));
+    if (f < 1 && !$('away').hidden) requestAnimationFrame(step);
+  })(t0);
+}
+
+function takeAway(dbl, from) {
+  var c = centerOf($(from));
+  var v = claimAway(dbl);
+  if (!v) return;
+  $('away').hidden = true;
+  popAt('+' + money(v), c.x, c.y, 'big');
+  flyCoins(c.x, c.y, dbl ? 16 : 10);
+  sfx('mile');
+  if (dbl) buzz('success');
+  askNotify();
+  nudge();
 }
 
 function dayText(d) {
@@ -1319,18 +1347,8 @@ function wire() {
     finishGoals();
     updateGoals();
   });
-  $('away-ok').addEventListener('click', function () {
-    var c = centerOf($('away-ok'));
-    var v = claimAway();
-    $('away').hidden = true;
-    if (v > 0) {
-      popAt('+' + money(v), c.x, c.y, 'big');
-      flyCoins(c.x, c.y, 10);
-      sfx('mile');
-    }
-    askNotify();
-    nudge();
-  });
+  $('away-ok').addEventListener('click', function () { takeAway(false, 'away-ok'); });
+  $('away-x2').addEventListener('click', function () { takeAway(true, 'away-x2'); });
   document.addEventListener('pointerup', wake);
   window.addEventListener('resize', fitInsets);
   var hiddenAt = 0;

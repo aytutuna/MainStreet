@@ -9,6 +9,7 @@ var GATE0 = 42;
 var GATE_STEP = 6;
 var HALL_BOOST = 0.1;
 var X2_COST = 20;
+var AWAY_X2 = 5;
 var X2_SECS = 1800;
 var WARP_COST = 50;
 var WARP_SECS = 3600;
@@ -765,8 +766,13 @@ function reminders() {
   return out;
 }
 
-function claimAway() {
+function claimAway(dbl) {
+  if (dbl && S.gems < AWAY_X2) return 0;
   var v = S.pend;
+  if (dbl) {
+    S.gems -= AWAY_X2;
+    v *= 2;
+  }
   S.pend = 0;
   earn(v);
   return v;
