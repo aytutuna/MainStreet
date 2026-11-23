@@ -559,7 +559,7 @@ function modelList() {
 var hemi;
 var skyDay = new THREE.Color(0xa9d8ee);
 var skyNight = new THREE.Color(0x27335c);
-var hemiDay = new THREE.Color(0xffffff);
+var hemiDay = new THREE.Color(0xeef3ff);
 var hemiNight = new THREE.Color(0x8fa0d8);
 var lampOn = new THREE.Color(0xffe2a0);
 var dayT = 60;
@@ -581,8 +581,9 @@ function dayStep(dt) {
   var l = daylight();
   var k = l * l * (3 - 2 * l);
   closedK += ((shut() ? 1 : 0) - closedK) * Math.min(1, dt * 1.5);
-  sun.intensity = 0.35 + 1.65 * k;
-  hemi.intensity = (1.3 + 1.1 * k) * (1 - 0.6 * closedK);
+  // by day a strong warm sun over a softer, slightly cool fill, so shapes and shadows read
+  sun.intensity = 0.35 + 2.75 * k;
+  hemi.intensity = (1.3 + 0.3 * k) * (1 - 0.6 * closedK);
   hemi.color.copy(hemiNight).lerp(hemiDay, k);
   scene.background.copy(skyNight).lerp(skyDay, k);
   scene.fog.color.copy(scene.background);
@@ -617,7 +618,7 @@ function sceneUp() {
   wash.position.set((WING_X - EDGE) / 2, 0.08, (FRONT + SB) / 2);
   wash.renderOrder = 2;
   scene.add(wash);
-  sun = new THREE.DirectionalLight(0xfff3dc, 2.0);
+  sun = new THREE.DirectionalLight(0xffeccb, 2.0);
   sun.position.set(-12, 30, 10);
   sun.target.position.set(0, 0, -6);
   sun.castShadow = true;
@@ -4389,12 +4390,13 @@ function sync(animate, now) {
 // the sun's shadows cover the store from the street to the stockroom
 function fitShadow() {
   sun.target.position.set(0, 0, -9);
-  sun.position.set(-12, 30, 7);
+  // low enough in the west for the shadows to show the shape of things
+  sun.position.set(-19, 23, 9);
   var sc = sun.shadow.camera;
-  sc.left = -25;
-  sc.right = 25;
-  sc.top = 26;
-  sc.bottom = -26;
+  sc.left = -28;
+  sc.right = 28;
+  sc.top = 29;
+  sc.bottom = -29;
   sc.far = 100;
   sc.updateProjectionMatrix();
   shadowDirty = true;
