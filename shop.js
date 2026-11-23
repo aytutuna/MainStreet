@@ -284,7 +284,7 @@ function adGive(k) {
     S.x2 += X2_SECS;
     banner('<b>Double income</b><small>Active for ' + clock2(S.x2) + '</small>', 0);
   } else if (k === 'rush') {
-    callRush(true);
+    if (callRush(true)) $('boost').hidden = true;
   } else if (k === 'warp') {
     var v = warp(true);
     popAt('+' + money(v), c.x, c.y, 'big');

@@ -4772,7 +4772,6 @@ function idlePerson() {
 var regs = {};
 var regList = [];
 var REG_R = 28;
-var vipMat = new THREE.MeshLambertMaterial({ vertexColors: true, color: 0xffe08a, emissive: 0x5a4200 });
 var hats = {};
 var HAT = {
   cap: function (c) {
@@ -4806,7 +4805,10 @@ function regPerson(id) {
     p = person(r.vip ? REGS.length : REGS.indexOf(r), r.ref);
     p.reg = id;
     if (r.vip) {
-      p.f.obj.traverse(function (o) { if (o.isMesh) o.material = vipMat; });
+      // gilds only the body, keeping its texture; the bag and basket they carry stay as they are
+      p.f.obj.traverse(function (o) {
+        if (o.isSkinnedMesh) o.material = new THREE.MeshLambertMaterial({ map: o.material.map, color: 0xffe08a, emissive: 0x5a4200 });
+      });
       var halo = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 1.4).rotateX(-Math.PI / 2), sparkMat);
       halo.position.y = 0.06;
       halo.renderOrder = 2;

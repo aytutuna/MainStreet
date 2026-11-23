@@ -859,7 +859,7 @@ function updateHud() {
   if (S.x2 > 0) set(shown, 'x2t', x, 'textContent', 'x2  ' + clock2(S.x2));
   var cl = $('call');
   set(shown, 'ch', cl, 'hidden', !!rush || !started());
-  set(shown, 'ct', cl, 'textContent', S.call > 0 ? 'Rush in ' + clock2(S.call) : 'Call a rush');
+  set(shown, 'ct', cl, 'textContent', S.call > 0 ? 'Call in ' + clock2(S.call) : 'Call a rush');
   flag(shown, 'cr', cl, 'ready', S.call <= 0);
   var r = $('rush');
   set(shown, 'rh', r, 'hidden', !rush);
@@ -1727,7 +1727,7 @@ function collectGift() {
   sfx('gift');
   if (r.jack) {
     sfx('gems');
-    banner('<b>Jackpot!</b><small>' + (r.x2 ? 'Income x2 for ' + r.x2 + ' s' : '+' + money(r.cash)) + '</small>', 0, true);
+    banner('<b>Jackpot!</b><small>' + (r.x2 ? 'Income x2 for ' + r.x2 / 60 + ' min' : '+' + money(r.cash)) + '</small>', 0, true);
   }
   buzz('success');
   nudge();
