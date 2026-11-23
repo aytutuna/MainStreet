@@ -68,6 +68,7 @@ var humG = null;
 // the button that closes each panel a tap outside or a swipe can dismiss; the away box is left out since it pays out
 var CLOSE = { pack: 'pack-x', shop: 'shop-x', daily: 'daily-x', sell: 'sell-x', regs: 'regs-x', boost: 'boost-x', radio: 'radio-x',
   sound: 'sound-x', stats: 'stats-x', menu: 'm-ok', ach: 'ach-x', look: 'look-x' };
+var dragging = false;
 var IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
 
 function $(id) {
@@ -541,6 +542,7 @@ function clock2(v) {
 }
 
 function fitInsets() {
+  if (dragging) return;
   var top = $('top').getBoundingClientRect().bottom + 6;
   var bot = innerHeight - (sheetOpen ? $('sheet').getBoundingClientRect().top : $('bottom').getBoundingClientRect().top) + 6;
   if (cardId && !sheetOpen) bot += 25;
@@ -1254,9 +1256,9 @@ function updateHud() {
 
 // the three meters live in the Stats sheet; the main screen only warns when one is red
 var METERS = [
-  { id: 'st-in', h: 'm-in', warn: 'Few shoppers', go: function () { openDraw(); } },
-  { id: 'st-tills', h: 'm-tills', warn: 'Slow checkouts', go: function () { tapMeter('hall', capacity); } },
-  { id: 'st-shelf', h: 'm-shelf', warn: 'Low shelves', go: function () { tapMeter('dock', stockCap); } }
+  { id: 'st-in', h: 'w-in', warn: 'Few shoppers', go: function () { openDraw(); } },
+  { id: 'st-tills', h: 'w-tills', warn: 'Slow checkouts', go: function () { tapMeter('hall', capacity); } },
+  { id: 'st-shelf', h: 'w-shelf', warn: 'Low shelves', go: function () { tapMeter('dock', stockCap); } }
 ];
 
 // a row shows its rate a minute, why it is where it is, and a button for the fix
@@ -2381,15 +2383,23 @@ function dragEnd(d, dy, ms) {
   setTimeout(function () {
     el.style.transition = '';
     el.style.transform = '';
+    dragging = false;
     if (go) d.done();
+    fitInsets();
   }, 190);
 }
 
 function wireClose() {
-  // a tap on the dark backdrop, outside the box
+  // a tap on the dark backdrop, outside the box; a box that just opened ignores the tap that may be meant for the game
+  var shownAt = {};
+  [].forEach.call(document.querySelectorAll('.veil'), function (v) {
+    new MutationObserver(function () {
+      if (!v.hidden) shownAt[v.id] = Date.now();
+    }).observe(v, { attributes: true, attributeFilter: ['hidden'] });
+  });
   document.addEventListener('click', function (e) {
     var v = e.target;
-    if (v.classList && v.classList.contains('veil') && CLOSE[v.id]) closeVeil(v);
+    if (v.classList && v.classList.contains('veil') && CLOSE[v.id] && Date.now() - (shownAt[v.id] || 0) > 400) closeVeil(v);
   });
   var d = null;
   var edge = null;
@@ -2398,23 +2408,26 @@ function wireClose() {
     d = null;
     edge = null;
     if (e.touches.length !== 1) return;
-    if (IOS && t.clientX <= 24) edge = { x: t.clientX, y: t.clientY };
+    // a swipe that starts on the 3D view pans the camera
+    if (IOS && t.clientX <= 24 && !e.target.closest('#view, #tags')) edge = { x: t.clientX, y: t.clientY };
     var p = panelOf(e.target);
     if (p && !scrolled(e.target, p.el)) d = { el: p.el, done: p.done, x: t.clientX, y: t.clientY, at: Date.now(), on: false, dy: 0 };
   }, { passive: true });
   document.addEventListener('touchmove', function (e) {
+    if (!edge) return;
     var t = e.touches[0];
-    if (edge) {
-      var ex = t.clientX - edge.x;
-      if (Math.abs(t.clientY - edge.y) > ex) edge = null;
-      else if (ex > 70) {
-        edge = null;
-        d = null;
-        if (closeTop()) sfx('close');
-        return;
-      }
+    var ex = t.clientX - edge.x;
+    if (Math.abs(t.clientY - edge.y) > ex) edge = null;
+    else if (ex > 70) {
+      edge = null;
+      d = null;
+      closeTop();
     }
+  }, { passive: true });
+  // not passive, so the page does not scroll under a drag; only the panels listen
+  var move = function (e) {
     if (!d) return;
+    var t = e.touches[0];
     var dx = t.clientX - d.x;
     var dy = t.clientY - d.y;
     if (!d.on) {
@@ -2424,11 +2437,14 @@ function wireClose() {
       }
       if (dy <= 8) return;
       d.on = true;
+      dragging = true;
     }
     d.dy = dy;
     if (e.cancelable) e.preventDefault();
     dragPanel(d, dy - 8);
-  }, { passive: false });
+  };
+  ['sheet', 'card'].forEach(function (id) { $(id).addEventListener('touchmove', move, { passive: false }); });
+  [].forEach.call(document.querySelectorAll('.veil'), function (v) { v.addEventListener('touchmove', move, { passive: false }); });
   var drop = function () {
     edge = null;
     if (d && d.on) dragEnd(d, d.dy - 8, Math.max(1, Date.now() - d.at));

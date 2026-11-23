@@ -303,7 +303,7 @@ small {
   }
 }
 
-#warn {
+#side #warn {
   height: 30px;
   padding: 0 11px;
   font-size: 13px;
