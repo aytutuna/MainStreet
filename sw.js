@@ -1,4 +1,4 @@
-var CACHE = 'mainstreet-27d5e1b4';
+var CACHE = 'mainstreet-c0312d64';
 var FILES = [
   './',
   'data.js',

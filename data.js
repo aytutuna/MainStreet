@@ -179,6 +179,6 @@ var REGS = [
   { id: 'felix', name: 'Felix', line: 'Walks every aisle and buys one thing.', feat: 'Have 20 stars in one store', n: 20,
     ref: 'chars/character-male-c@11,2>3,2', hat: 'top', hc: 0x7a3f9a }
 ];
-var REGC = { sales: 0.01, set: 0.05, odds: 0.04, tip: [10, 30], cool: 240 };
+var REGC = { sales: 0.01, set: 0.05, odds: 0.02, tip: [3, 8], cool: 600 };
 var RG = {};
 REGS.forEach(function (r) { RG[r.id] = r; });

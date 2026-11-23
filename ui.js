@@ -783,7 +783,7 @@ function moveParty(rep) {
   rain(28);
   banner('<b>Store ' + S.store + ' is open!</b><small>Income x' + storeMul(S.store) + '</small>', 0.2, true);
   banner('<b>+' + rep + ' reputation</b><small>Spend it on perks</small>', 0.1);
-  setTimeout(function () { if (!veilUp()) openSell(); }, 4500);
+  setTimeout(function () { if (!veilUp() && !sheetOpen && !cardId && !document.hidden) openSell(); }, 4500);
 }
 
 function claimGoalAt(i, el) {
