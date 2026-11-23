@@ -102,6 +102,18 @@ function sfx(name, rate, vol) {
   });
 }
 
+function tell(msg) {
+  var h = window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.notify;
+  if (h) h.postMessage(msg);
+}
+
+// the system asks once, the first time the player has something to be told about
+function askNotify() {
+  if (S.ask) return;
+  S.ask = 1;
+  tell({ cmd: 'ask' });
+}
+
 function buzz(kind) {
   if (!vib) return;
   kind = kind || 'light';
@@ -644,6 +656,7 @@ function afterBuy(res) {
     banner('<b>' + name + ': ' + res.star + (res.star === 1 ? ' star' : ' stars') + ', sales here x' + Math.pow(STAR_MUL, res.star) + '</b>' + (res.gems ? '<small>+' + res.gems + ' gems</small>' : ''),
       t + 0.3, res.star === STAR_AT.length);
     if (res.gems) flyGems(innerWidth / 2, innerHeight * 0.3, Math.min(6, res.gems));
+    setTimeout(askNotify, 2500);
   } else if (res.unlock) {
     sfx('unlock');
     View.punch();
@@ -1315,6 +1328,7 @@ function wire() {
       flyCoins(c.x, c.y, 10);
       sfx('mile');
     }
+    askNotify();
     nudge();
   });
   document.addEventListener('pointerup', wake);
@@ -1323,6 +1337,7 @@ function wire() {
   document.addEventListener('visibilitychange', function () {
     if (document.hidden) {
       save();
+      tell({ cmd: 'set', list: reminders() });
       hiddenAt = Date.now();
       return;
     }

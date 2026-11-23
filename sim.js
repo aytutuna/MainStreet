@@ -79,7 +79,7 @@ var S = fresh();
 
 function fresh() {
   var s = { v: 11, cash: START_CASH, gems: 0, store: 1, run: 0, all: 0, pend: 0, x2: 0, b: {}, ms: {},
-    st: { srv: 0, lost: 0 }, goal: [0, 1, 2], gn: 3, gd: {}, day: { n: 0, d: -1 }, ts: clock() };
+    st: { srv: 0, lost: 0 }, goal: [0, 1, 2], gn: 3, gd: {}, day: { n: 0, d: -1 }, ask: 0, ts: clock() };
   noPlaces(s);
   s.b.produce = atLevel('produce', 1);
   return s;
@@ -754,6 +754,17 @@ function away(sec) {
   return { secs: s, real: sec, gain: gain, n: n };
 }
 
+// what to tell the player while the app is closed: when the store fills up and when the next daily reward unlocks
+function reminders() {
+  var now = clock();
+  var out = [{ id: 'full', at: now + maxAway() * 1000, body: 'Your store is full. Come and collect what it earned.' }];
+  if (!daily().can) {
+    var d = new Date(now);
+    out.push({ id: 'daily', at: new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1, 10).getTime(), body: 'Your daily reward is ready.' });
+  }
+  return out;
+}
+
 function claimAway() {
   var v = S.pend;
   S.pend = 0;
@@ -1020,6 +1031,7 @@ function validate(o) {
   s.all = Math.max(s.run, num(o.all, 0));
   s.pend = num(o.pend, 0);
   s.x2 = num(o.x2, 0);
+  s.ask = o.ask ? 1 : 0;
   var pl = o.pl && typeof o.pl === 'object' ? o.pl : {};
   PLACES.forEach(function (p) {
     var l = Math.min(p.cost.length, Math.floor(num(pl[p.id], 0)));
