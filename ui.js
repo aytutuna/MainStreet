@@ -1594,16 +1594,39 @@ function collectGift() {
   nudge();
 }
 
-// a tap on a till in a rush serves its front shopper a little sooner
+// a tap on a till in a rush serves its front shopper a little sooner. Taps less than a second apart build a combo that
+// shows over the till, sounds a little higher with each tap and adds to the head start
+var rc = 0;
+var rcAt = 0;
+var rcTimer = 0;
+
 function tapTill(i) {
-  if (!rushTap(i)) return;
+  var now = performance.now();
+  var n = now - rcAt < 1000 ? rc + 1 : 1;
+  if (!rushTap(i, n)) return;
+  rc = n;
+  rcAt = now;
   var at = View.tillScreen(i);
-  if (at) {
-    ring(at.x, at.y);
-    popAt('Faster!', at.x, at.y - 24, 'small');
+  var el = $('rcombo');
+  clearTimeout(rcTimer);
+  if (at) ring(at.x, at.y);
+  if (n < 2) {
+    el.hidden = true;
+    if (at) popAt('Faster!', at.x, at.y - 24, 'small');
+  } else if (at) {
+    el.textContent = 'x' + n;
+    el.style.left = at.x + 'px';
+    el.style.top = at.y - 44 + 'px';
+    el.style.fontSize = Math.min(40, 20 + n * 2) + 'px';
+    el.hidden = false;
+    el.style.animation = 'none';
+    void el.offsetWidth;
+    el.style.animation = '';
+    rcTimer = setTimeout(function () { el.hidden = true; }, 1000);
   }
-  sfx('tap', 1.5);
-  buzz();
+  if (at && n % 5 === 0) flyCoins(at.x, at.y, 3);
+  sfx('tap', 1.5 * Math.pow(1.0595, Math.min(n - 1, 12)));
+  buzz(n % 5 === 0 ? 'medium' : 'light');
 }
 
 function onPerkEvent(ev, o) {

@@ -754,12 +754,12 @@ function takeGift() {
   return r;
 }
 
-// a tap on till i during a rush gives the shopper being served a head start
-function rushTap(i) {
+// a tap on till i during a rush gives the shopper being served a head start, a little longer for the nth tap of a combo
+function rushTap(i, n) {
   var t = tills[i];
   if (!rush || !t || !t.q.length || (t.q[0].v && !t.q[0].here)) return false;
   var was = t.t;
-  t.t = Math.min(t.t + RUSH.tap, svc(t.k) + (t.q[0].v ? 0 : GAP[t.k]) - 0.05);
+  t.t = Math.min(t.t + RUSH.tap * (1 + RUSH.combo * Math.min(n - 1, RUSH.top)), svc(t.k) + (t.q[0].v ? 0 : GAP[t.k]) - 0.05);
   if (t.t > was) mis('rush', 1);
   return true;
 }

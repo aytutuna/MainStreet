@@ -1045,6 +1045,17 @@ small {
   animation: pop 0.25s ease-out;
 }
 
+#rcombo {
+  position: absolute;
+  z-index: 29;
+  font-weight: 800;
+  color: #ffd84a;
+  text-shadow: -2px -2px 0 var(--ink), 2px -2px 0 var(--ink), -2px 2px 0 var(--ink), 2px 2px 0 var(--ink);
+  pointer-events: none;
+  translate: -50% 0;
+  animation: pop 0.2s ease-out;
+}
+
 #flash {
   position: absolute;
   inset: 0;

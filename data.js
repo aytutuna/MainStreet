@@ -129,8 +129,9 @@ var TILLS = [{ k: 'lane', lv: 0 }, { k: 'lane', lv: 1 }, { k: 'self', lv: 3 }, {
 // income, or now and then gems or a minute of x2. They add up to roughly a tenth more income for a player who taps all
 var GIFT = { gap: [30, 60], life: [10, 15], cash: [3, 9], gems: 0.04, gemN: [1, 2], x2: 0.02, x2Secs: 60 };
 // Rush events: one every gap seconds of play, shoppers coming mul times as fast for secs, and each tap on a till gives
-// its front shopper tap seconds of service
-var RUSH = { gap: [240, 360], secs: 30, mul: 2, tap: 0.9 };
+// its front shopper tap seconds of service. Taps in a row, each within a second of the one before, make a combo that
+// adds combo of a tap for every tap after the first, up to top of them
+var RUSH = { gap: [240, 360], secs: 30, mul: 2, tap: 0.9, combo: 0.05, top: 10 };
 
 // Perks bought with reputation, which each store move pays and which a move keeps. cost is what each level takes in
 // reputation and val what the perk is worth at level 0 and then at each level bought: cash, away hours and rush seconds
