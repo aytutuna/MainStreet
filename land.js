@@ -202,12 +202,12 @@ export function meadow(x, z) {
 // the same textured trees and plants as the yards, a size up out here
 var CONIFER = ['flora/st-pine-1*0.28', 'flora/st-pine-2*0.29', 'flora/st-pine-3*0.27', 'flora/st-pine-4*0.3'];
 var BROAD = ['flora/st-oak-1*0.17', 'flora/st-oak-2*0.175', 'flora/st-oak-3*0.18', 'flora/st-oak-4*0.165', 'flora/sn-stylised-tree-8*0.7', 'flora/sn-stylised-tree-9*0.75'];
-var FALL = ['flora/st-oak-1%Leaf=ffb24a*0.17', 'flora/st-oak-3%Leaf=ff8a4a*0.18', 'flora/st-columnar-2%Leaf=ffd25a*0.26'];
+var FALL = ['flora/maple-4*1', 'flora/maple-4*1.15', 'flora/st-oak-1%Leaf=ffb24a*0.17', 'flora/st-columnar-2%Leaf=ffd25a*0.26'];
 var LONE = ['flora/st-oak-2*0.2', 'flora/st-oak-4*0.2', 'flora/st-columnar-1*0.28', 'flora/st-columnar-3*0.26'];
-var BUSH = ['flora/sn-stylised-bush-1*0.24', 'flora/sn-stylised-bush-2*0.24', 'flora/sn-stylised-bush-3*0.22', 'flora/sn-stylised-bush-1*0.3'];
+var BUSH = ['flora/sn-stylised-bush-1*0.24', 'flora/sn-stylised-bush-2*0.24', 'flora/sn-stylised-bush-3*0.22', 'flora/sn-stylised-bush-1*0.3', 'flora/bush-flowers%Bush_Leaves=b8cc98*0.75'];
 var CLIFF = ['flora/sn-rock-1*0.28', 'flora/sn-rock-2*0.45', 'flora/sn-rock-3*0.3'];
 var STONE = ['flora/sn-rock-1*0.12', 'flora/sn-rock-2*0.2', 'flora/sn-rock-3*0.13', 'flora/sn-stone-collection-4*1.2', 'flora/sn-stone-collection-5*1.2'];
-var FLOWER = ['flora/flower-3-single*0.24', 'flora/flower-3-single%Flowers=ffd84a*0.24', 'flora/flower-3-single%Flowers=c9a2ff*0.24'];
+var FLOWER = ['flora/flower-2-clump*0.8', 'flora/flower-3-clump*0.8', 'flora/flower-4-clump*0.8', 'flora/flower-5-clump*0.8'];
 var GRASS = ['flora/fern-1*0.22', 'flora/fern-1*0.18'];
 var CANOE = 'nature/canoe*2.2';
 var REED = ['nature/plant_flatTall*2.2'];
@@ -252,7 +252,7 @@ export function scenery(blocked) {
       var far = smooth(14, 40, d);
       if (rand() < (wood * 0.95 + near * (1 - f)) * (1 - 0.6 * far)) {
         var high = h > 8 || rand() < 0.2 + 0.4 * smooth(-60, -120, z);
-        var ref = high || (f > 0.6 && rand() < 0.3) ? pick(CONIFER) : rand() < 0.07 ? pick(FALL) : pick(BROAD);
+        var ref = high || (f > 0.6 && rand() < 0.3) ? pick(CONIFER) : rand() < 0.1 ? pick(FALL) : pick(BROAD);
         out.trees.push([ref, x, z, turn, k * (1 + h * 0.012) * (0.75 + 0.35 * wood) * (1 + 0.35 * far), 1]);
         for (var bn = rand() < 0.75 - 0.4 * far ? 1 + Math.floor(rand() * 2) : 0; bn > 0; bn--) out.low.push([pick(BUSH), x + (rand() - 0.5) * 3, z + (rand() - 0.5) * 3, turn, 0.9 + rand() * 0.8]);
       } else if (f > 0.15 && f < 0.45 && rand() < 0.55) {
@@ -266,7 +266,7 @@ export function scenery(blocked) {
   }
   // patches of flowers in the meadows near the lot, one colour mostly, a few of another. Tight and dense, so a patch
   // still reads from the far view
-  for (var n = 0; n < 6000 && out.flowers.length < 120; n++) {
+  for (var n = 0; n < 6000 && out.flowers.length < 150; n++) {
     var px = SEEN[0] + rand() * (SEEN[1] - SEEN[0]);
     var pz = SEEN[2] + rand() * (SEEN[3] - SEEN[2]);
     // half of them in the strip of meadow right behind the lot, the only ground the top bars leave in view when zoomed out
@@ -278,7 +278,7 @@ export function scenery(blocked) {
     if (meadow(px, pz) < 0.35 && rand() < 0.7) continue;
     var base = pick(FLOWER);
     var rad = 0.9 + rand() * 1.1;
-    for (var q = 10 + Math.floor(rand() * 6); q > 0; q--) {
+    for (var q = 4 + Math.floor(rand() * 3); q > 0; q--) {
       var a = rand() * 6.283;
       var r = Math.sqrt(rand()) * rad;
       var fx = px + Math.cos(a) * r;
@@ -312,7 +312,7 @@ export function scenery(blocked) {
       var bl = rand();
       if (blocked(lx, lz) || LAMPS.some(function (q) { return Math.hypot(lx - q[0], lz - q[1]) < 3.5; })) continue;
       if (bl < 0.5) for (var m = 3; m > 0; m--) out.low.push([pick(BUSH), lx + (rand() - 0.5) * 3, lz + (rand() - 0.5) * 3, rand() * 6.283, 1 + rand() * 0.7]);
-      else if (bl < 0.8) for (var q2 = 6; q2 > 0; q2--) out.flowers.push([pick(FLOWER), lx + (rand() - 0.5) * 2.4, lz + (rand() - 0.5) * 2.4, rand() * 6.283, 1.2 + rand() * 0.6]);
+      else if (bl < 0.8) for (var q2 = 3; q2 > 0; q2--) out.flowers.push([pick(FLOWER), lx + (rand() - 0.5) * 2.4, lz + (rand() - 0.5) * 2.4, rand() * 6.283, 1.2 + rand() * 0.6]);
     }
   });
   // one canoe pulled up on the sand; the one out on the lake drifts, and the view moves it

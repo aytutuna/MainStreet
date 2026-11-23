@@ -1260,11 +1260,12 @@ export var NATURE = {
     oak: ['flora/st-oak-1*0.12', 'flora/st-oak-2*0.125', 'flora/st-oak-3*0.13', 'flora/st-oak-4*0.115'],
     col: ['flora/st-columnar-1*0.2', 'flora/st-columnar-2*0.18', 'flora/st-columnar-3*0.18', 'flora/st-columnar-4*0.185'],
     pine: ['flora/st-pine-1*0.2', 'flora/st-pine-2*0.2', 'flora/st-pine-3*0.2', 'flora/st-pine-4*0.2'],
-    lol: ['flora/sn-stylised-tree-8*0.5', 'flora/sn-stylised-tree-9*0.55']
+    lol: ['flora/sn-stylised-tree-8*0.5', 'flora/sn-stylised-tree-9*0.55'],
+    maple: ['flora/maple-4*0.72']
   },
-  bush: ['flora/sn-stylised-bush-1*0.15', 'flora/sn-stylised-bush-2*0.15', 'flora/sn-stylised-bush-3*0.14', 'flora/sn-stylised-bush-1*0.12'],
+  bush: ['flora/sn-stylised-bush-1*0.15', 'flora/sn-stylised-bush-2*0.15', 'flora/sn-stylised-bush-3*0.14', 'flora/sn-stylised-bush-1*0.12', 'flora/bush-flowers%Bush_Leaves=b8cc98*0.48'],
   grass: ['flora/fern-1*0.15', 'flora/fern-1*0.12'],
-  flower: ['flora/flower-3-single*0.17', 'flora/flower-4-single*0.15'],
+  flower: ['flora/flower-2-clump*0.7', 'flora/flower-3-clump*0.7', 'flora/flower-4-clump*0.7', 'flora/flower-5-clump*0.7'],
   fern: ['flora/fern-1*0.15'],
   rock: ['flora/sn-rock-1*0.07', 'flora/sn-rock-2*0.12', 'flora/sn-rock-3*0.075', 'flora/sn-stone-collection-4*0.6', 'flora/sn-stone-collection-5*0.6'],
   zones: [
@@ -1281,14 +1282,14 @@ export var NATURE = {
     // between the wing's hedge and the service road
     { r: [22.0, 22.35, -28, 2.2], tr: [], t: 0, b: 0, g: 20, f: 40, k: 0 },
     // beyond the service road and the west drive, then behind the yard
-    { r: [27.4, 40, -41, 9.4], tr: ['pine', 'oak', 'col'], t: 9, b: 8, g: 0, f: 0, k: 0 },
+    { r: [27.4, 40, -41, 9.4], tr: ['pine', 'oak', 'col', 'maple'], t: 9, b: 8, g: 0, f: 0, k: 0 },
     { r: [40, 48, -41, 9.4], tr: ['col', 'lol', 'oak'], t: 7, b: 8, g: 0, f: 0, k: 0 },
-    { r: [-40, -27.3, -41, 9.4], tr: ['oak', 'pine', 'lol'], t: 9, b: 8, g: 0, f: 0, k: 0 },
+    { r: [-40, -27.3, -41, 9.4], tr: ['oak', 'pine', 'lol', 'maple'], t: 9, b: 8, g: 0, f: 0, k: 0 },
     { r: [-48, -40, -41, 9.4], tr: ['col', 'lol', 'oak'], t: 7, b: 8, g: 0, f: 0, k: 0 },
     // across the street: front yards, the gaps between the houses, and the gardens behind them
     { r: [-34, 34, 15.05, 15.85], tr: [], t: 0, b: 22, g: 20, f: 40, k: 0 },
     { r: [-48, 48, 19.8, 28], tr: ['oak', 'lol', 'col'], t: 4, b: 6, g: 8, f: 6, k: 1 },
-    { r: [-48, 48, 28, 40], tr: ['col', 'lol', 'pine', 'oak'], t: 7, b: 6, g: 0, f: 0, k: 0 },
+    { r: [-48, 48, 28, 40], tr: ['col', 'lol', 'pine', 'oak', 'maple'], t: 7, b: 6, g: 0, f: 0, k: 0 },
     { r: [-48, -33, 14.8, 19.8], tr: ['oak', 'col'], t: 4, b: 6, g: 6, f: 4, k: 0 },
     { r: [33, 48, 14.8, 19.8], tr: ['oak', 'col'], t: 4, b: 6, g: 6, f: 4, k: 0 }
   ],

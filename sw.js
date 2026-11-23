@@ -1,4 +1,4 @@
-var CACHE = 'mainstreet-a1b727f3';
+var CACHE = 'mainstreet-d6ef59e1';
 var FILES = [
   './',
   'data.js',
@@ -70,9 +70,13 @@ var FILES = [
   'assets/models/chars/character-male-e.glb',
   'assets/models/chars/character-male-f.glb',
   'assets/models/flora/License.txt',
+  'assets/models/flora/bush-flowers.glb',
   'assets/models/flora/fern-1.glb',
-  'assets/models/flora/flower-3-single.glb',
-  'assets/models/flora/flower-4-single.glb',
+  'assets/models/flora/flower-2-clump.glb',
+  'assets/models/flora/flower-3-clump.glb',
+  'assets/models/flora/flower-4-clump.glb',
+  'assets/models/flora/flower-5-clump.glb',
+  'assets/models/flora/maple-4.glb',
   'assets/models/flora/sn-rock-1.glb',
   'assets/models/flora/sn-rock-2.glb',
   'assets/models/flora/sn-rock-3.glb',
