@@ -1,22 +1,26 @@
-	
+tap.wav
 
-	RPG Audio, Interface Sounds, UI Audio, Impact Sounds, Retro Sounds and Music Jingles
-
-	Created/distributed by Kenney (www.kenney.nl)
-
-			------------------------------
-
-	License: (Creative Commons Zero, CC0)
+	Interface Sounds by Kenney (www.kenney.nl)
+	License: Creative Commons Zero, CC0
 	http://creativecommons.org/publicdomain/zero/1.0/
 
-	This content is free to use in personal, educational and commercial projects.
+All other sounds
 
-	Support us by crediting Kenney or www.kenney.nl (this is not mandatory)
+	Recordings from the Sonniss #GameAudioGDC bundles (https://sonniss.com/gameaudiogdc),
+	used under the GameAudioGDC bundle licence (https://sonniss.com/gdc-bundle-license/).
+	They may be used in this game, but not taken out of it and passed on as sound effects.
 
-			------------------------------
-
-	Donate:   http://support.kenney.nl
-	Patreon:  http://patreon.com/kenney/
-
-	Follow on Twitter for updates:
-	http://twitter.com/KenneyNL
+	buy.wav     Membrans - Pops Sound Pack 01
+	unlock.wav  G4F SFX - SFX05 Casual Games
+	rush.wav    G4F SFX - SFX05 Casual Games
+	mile.wav    The Chris Alan - Gliss Bliss
+	done.wav    Gamemaster Audio - Fun Casual Sounds
+	till.wav    SoundBits - Antiques
+	stock.wav   3maze - Box Abuse
+	gift.wav    Mechanical Wave - Toys
+	coins.wav   Shapeforms - The Mint, Coins and Money
+	gems.wav    Airborne Sound - Interface Accents
+	card.wav    Soundrangers - Whooshes and Transitions
+	close.wav   SmartSoundFX - User Interaction
+	broke.wav   Kpow Sounds - UI Soundpacks
+	amb.wav     Creative Audio Pool - Urban Berlin Vol. 2 (Europa Center, calm shopping mall)
