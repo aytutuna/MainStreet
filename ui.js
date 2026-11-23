@@ -773,6 +773,7 @@ function updateHud() {
   set(shown, 'gems', $('gem-n'), 'textContent', short(S.gems));
   set(shown, 'stars', $('star-n'), 'textContent', Math.min(rating(), gate()) + '/' + gate());
   set(shown, 'store', $('store-n'), 'textContent', 'Store ' + S.store);
+  if (!$('away').hidden) awayBtn();
   var x = $('x2');
   set(shown, 'x2h', x, 'hidden', !(S.x2 > 0));
   if (S.x2 > 0) set(shown, 'x2t', x, 'textContent', 'x2  ' + clock2(S.x2));
@@ -1016,15 +1017,21 @@ function showAway(a) {
     if (a.real > maxAway()) txt += ' It only earns for ' + maxAway() / 3600 + ' h while you are away.';
   }
   $('away-txt').innerHTML = txt;
-  $('away-x2').innerHTML = 'Double it <img src="assets/ui_gem.png" alt="">' + AWAY_X2;
-  $('away-x2').disabled = S.gems < AWAY_X2;
-  $('away-need').textContent = gemsLeft(AWAY_X2);
   $('away').hidden = false;
+  awayBtn();
   var c = centerOf($('away-amt'));
   countAway(S.pend);
   flyCoins(c.x, c.y, 12);
   sfx('coin');
   return true;
+}
+
+// gems can change while the box is open, from the daily reward on top of it
+function awayBtn() {
+  var c = awayCost();
+  set(shown, 'awc', $('away-x2'), 'innerHTML', 'Double it <img src="assets/ui_gem.png" alt="">' + c);
+  set(shown, 'awd', $('away-x2'), 'disabled', S.gems < c);
+  set(shown, 'awn', $('away-need'), 'textContent', gemsLeft(c));
 }
 
 function countAway(v) {

@@ -766,11 +766,18 @@ function reminders() {
   return out;
 }
 
+// AWAY_X2 gems for each hour of income it doubles, so a long absence costs more than a short one
+function awayCost() {
+  return Math.max(AWAY_X2, Math.ceil(S.pend / Math.max(baseRate() * 3600, 1)) * AWAY_X2);
+}
+
 function claimAway(dbl) {
-  if (dbl && S.gems < AWAY_X2) return 0;
+  if (!(S.pend > 0)) return 0;
+  var c = awayCost();
+  if (dbl && S.gems < c) return 0;
   var v = S.pend;
   if (dbl) {
-    S.gems -= AWAY_X2;
+    S.gems -= c;
     v *= 2;
   }
   S.pend = 0;

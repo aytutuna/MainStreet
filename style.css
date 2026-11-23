@@ -1129,13 +1129,13 @@ small {
   color: var(--muted);
 }
 
-.box .need {
+#away .need {
   color: var(--red);
   font-weight: 700;
   font-size: 13px;
 }
 
-.box .need:empty {
+#away .need:empty {
   display: none;
 }
 
