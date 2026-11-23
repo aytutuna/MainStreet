@@ -835,7 +835,7 @@ function goTo(g, id, j) {
   return g;
 }
 function gLv(id, n, gems, x2) {
-  return goTo(gl(n === 1 ? 'Open the ' + BZ[id].name : BZ[id].name + ' to level ' + n, gems, n, function () { return lv(id); }, x2), id);
+  return goTo(gl(n === 1 ? 'Open ' + BZ[id].name : BZ[id].name + ' to level ' + n, gems, n, function () { return lv(id); }, x2), id);
 }
 function gEarn(n, gems, x2) {
   return gl('Earn $' + short(n) + ' in total', gems, n, function () { return S.all; }, x2);

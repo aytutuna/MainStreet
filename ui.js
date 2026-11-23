@@ -351,7 +351,7 @@ function effect(id, x, j) {
   var up = Math.min(want, id === 'hall' ? now[1] : now[2]) - Math.min(want, id === 'hall' ? was[1] : was[2]);
   if (id === 'hall' && up > 0) return '+' + perMin(up) + ' shoppers/min';
   if (id === 'dock' && up > 0) return '+' + perMin(up) + ' restocked/min';
-  if (id === 'dock' && now[2] > was[2]) return '+' + perMin(now[2] - was[2]) + ' restock/min';
+  if (id === 'dock' && now[2] > was[2]) return '+' + perMin(now[2] - was[2]) + ' restocked/min';
   if (now[0] > was[0]) return '+' + perMin(now[0] - was[0]) + ' shoppers/min';
   var g = gains[id + ':' + j];
   if (g > 0.005) return '+' + money(g) + '/s';
@@ -412,7 +412,7 @@ function deptHead(r) {
   set(k, 'lv', r.lv, 'innerHTML', 'Lv ' + e.l + '/' + UPS + ' ' + starRow(n));
   r.fill.style.width = (n >= STAR_AT.length ? 100 : (e.l - from) / (STAR_AT[n] - from) * 100) + '%';
   set(k, 'bt', r.bt, 'textContent', n >= STAR_AT.length ? 'Sales x' + Math.pow(STAR_MUL, n) :
-    STAR_AT[n] - e.l + ' more to ★' + (n + 1) + ' · sales x' + STAR_MUL);
+    STAR_AT[n] - e.l + ' more to ★' + (n + 1) + ' · sales x' + Math.pow(STAR_MUL, n + 1));
 }
 
 // the header of a place's card; Checkouts and the Stockroom show how loaded they are
@@ -549,7 +549,7 @@ function upRow(r) {
   if (!e) {
     var u = cost(id, 1);
     set(k, 'lv', r.lv, 'textContent', '');
-    set(k, 'ms', r.ms, 'textContent', avail(id) ? upName(id, 0) + ': every shopper buys here' : far(id) ? 'Opens later' : 'Open ' + BIZ[BZ[id].i - 1].name + ' first');
+    set(k, 'ms', r.ms, 'textContent', avail(id) ? upName(id, 0) + ': in every basket' : far(id) ? 'Opens later' : 'Open ' + BIZ[BZ[id].i - 1].name + ' first');
     if (set(k, 'nxk', r.nx, 'title', avail(id) ? upName(id, 0) : '')) {
       if (avail(id)) r.nx.src = upIcon(id, 0);
       else r.nx.removeAttribute('src');
@@ -562,7 +562,7 @@ function upRow(r) {
   var from = n ? STAR_AT[n - 1] : 0;
   set(k, 'lv', r.lv, 'innerHTML', 'Lv ' + e.l + '/' + UPS + ' ' + starRow(n));
   set(k, 'ms', r.ms, 'textContent', n >= STAR_AT.length ? 'All three stars: sales here x' + Math.pow(STAR_MUL, n) :
-    'Star ' + (n + 1) + ' at level ' + STAR_AT[n] + ': sales here x' + STAR_MUL);
+    'Star ' + (n + 1) + ' at level ' + STAR_AT[n] + ': sales here x' + Math.pow(STAR_MUL, n + 1));
   if (set(k, 'nxk', r.nx, 'title', '')) r.nx.removeAttribute('src');
   set(k, 'up', r.up, 'innerHTML', 'Items');
   set(k, 'upd', r.up, 'disabled', false);
@@ -641,14 +641,14 @@ function afterBuy(res) {
     sfx('mile');
     View.punch();
     pulse(0.9);
-    banner('<b>' + name + ': ' + res.star + (res.star === 1 ? ' star' : ' stars') + ', sales here x' + STAR_MUL + '</b>' + (res.gems ? '<small>+' + res.gems + ' gems</small>' : ''),
+    banner('<b>' + name + ': ' + res.star + (res.star === 1 ? ' star' : ' stars') + ', sales here x' + Math.pow(STAR_MUL, res.star) + '</b>' + (res.gems ? '<small>+' + res.gems + ' gems</small>' : ''),
       t + 0.3, res.star === STAR_AT.length);
     if (res.gems) flyGems(innerWidth / 2, innerHeight * 0.3, Math.min(6, res.gems));
   } else if (res.unlock) {
     sfx('unlock');
     View.punch();
     pulse(0.9);
-    banner('<b>New: ' + name + '</b><small>' + upName(res.id, res.piece) + ', and every shopper buys here now</small>', t + 0.3, true);
+    banner('<b>New: ' + name + '</b><small>' + upName(res.id, res.piece) + ', now in every basket</small>', t + 0.3, true);
   } else if (res.place) {
     var p = PL[res.id];
     sfx('mile');
@@ -788,8 +788,8 @@ function meter(id, v, k, val, word) {
 
 var METER_HINT = {
   'm-in': ['Few shoppers', 'Tap Shoppers to bring more in'],
-  'm-tills': ['The checkouts are the limit', 'Tap Checkouts to open more tills'],
-  'm-shelf': ['The shelves are the limit', 'Tap Shelves to hire stockers']
+  'm-tills': ['The checkouts are the limit', 'Tap Checkouts to serve them faster'],
+  'm-shelf': ['The shelves are the limit', 'Tap Shelves to restock faster']
 };
 
 // the first time a meter runs low, once ever, and not over a box or before the first purchase
