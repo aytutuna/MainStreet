@@ -85,7 +85,7 @@ var S = fresh();
 function fresh() {
   var s = { v: 11, cash: START_CASH, gems: 0, rep: 0, pk: {}, store: 1, run: 0, all: 0, pend: 0, x2: 0, b: {}, ms: {},
     st: { srv: 0, lost: 0 }, goal: [0, 1, 2], gn: 3, gd: {}, day: { n: 0, d: -1 }, mi: { d: -1, m: [], b: 0 }, rg: { o: {}, days: 0, gifts: 0, combo: 0 },
-    ask: 0, iap: { tx: [] }, ads: { d: -1, n: {}, pt: 0, li: 0 }, ts: clock() };
+    ask: 0, iap: { noads: 0, x2: 0, starter: 0, tx: [] }, ads: { d: -1, n: {}, pt: 0, li: 0 }, ts: clock() };
   noPlaces(s);
   s.b.produce = atLevel('produce', 1);
   return s;
@@ -1460,6 +1460,9 @@ function importCode(code) {
   try {
     var o = validate(JSON.parse(atob(code.trim())));
     if (!o) return false;
+    // purchases belong to the store account, not to the code
+    o.iap = S.iap;
+    o.ads = S.ads;
     S = o;
     S.ts = clock();
     clearShoppers();
@@ -1471,7 +1474,11 @@ function importCode(code) {
 }
 
 function reset() {
+  var iap = S.iap;
+  var ads = S.ads;
   S = fresh();
+  S.iap = iap;
+  S.ads = ads;
   clearShoppers();
   try {
     localStorage.removeItem(KEY);

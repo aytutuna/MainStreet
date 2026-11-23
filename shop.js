@@ -1,13 +1,17 @@
-// Purchases. The native app takes {cmd: 'products', ids}, {cmd: 'buy', id} and {cmd: 'restore'} on window.webkit.messageHandlers.store and
-// answers through window.nativeStore(ev), ev being one of
+// Purchases and ads. The native app takes {cmd: 'products', ids}, {cmd: 'buy', id}, {cmd: 'restore'}, {cmd: 'adStart'},
+// {cmd: 'adReady'}, {cmd: 'ad', kind} and {cmd: 'privacy'} on window.webkit.messageHandlers.store and answers through
+// window.nativeStore(ev), ev being one of
 //   {t: 'products', list: [{id, price}]}   the products the store knows, price already in the player's currency
 //   {t: 'owned', ids, tx, restore}         one-time products the player owns, and tx: [{id, tx, at}] for the gem packs
 //                                          the store knows (at is ms since 1970); answers 'products' and 'restore'
-//   {t: 'bought', id, tx}                  a purchase went through; tx is the store's transaction id
+//   {t: 'bought', id, tx, at}              a purchase went through; tx is the store's transaction id, at its time
 //   {t: 'failed', id, why}                 why is 'cancel' or 'error'
 //   {t: 'ad', kind, state}                 kind is 'reward' or 'inter'; state is 'ready' or 'none' (whether one can be
 //                                          shown now), 'open', 'rewarded' (the player earned it), 'closed' or 'failed'
-// It also takes {cmd: 'adReady'}, answered with a 'ready' or 'none' for each kind, and {cmd: 'ad', kind} to show one.
+//   {t: 'privacy', required}               whether the consent SDK wants a "Privacy choices" item in the menu
+// 'adStart' runs the consent step and starts the ads SDK (not sent when the player has No ads), 'adReady' is answered
+// with a 'ready' or 'none' for each kind, 'ad' shows one and 'privacy' opens the consent SDK's options form.
+// Events that come before the saved game is loaded wait in a queue and are replayed by shopStart().
 // Ids are the full store ids. In a plain browser there is no store handler and nothing here shows.
 var PID = 'com.aytutuna.mainstreet.';
 var prices = {};
@@ -16,6 +20,9 @@ var buying = '';
 var adOk = { reward: false, inter: false };
 var watching = null;
 var awaySecs = 0;
+var restoreWas = 0;
+var queued = [];
+var loaded = false;
 
 function native() {
   return !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.store);
@@ -30,15 +37,15 @@ function product(id) {
   return null;
 }
 
-// a one-time product is flagged when the store says the player owns it. The starter pack's extras are only for a real
+// a one-time product is flagged when the store says the player owns it. The starter pack's extras are only for a new
 // purchase, which makes the flag 2; a restore leaves it at 1
-function own(id, bought) {
+function own(id, fresh) {
   var p = product(id);
   if (!p || !p.once) return false;
-  var paid = id === 'starter' && bought && S.iap.starter !== 2;
-  if (!paid && S.iap[id]) return false;
-  S.iap[id] = bought && id === 'starter' ? 2 : 1;
-  if (paid) {
+  var extras = id === 'starter' && fresh && S.iap.starter !== 2;
+  if (!extras && S.iap[id]) return false;
+  S.iap[id] = extras ? 2 : 1;
+  if (extras) {
     S.gems += STARTER.gems;
     S.x2 += STARTER.x2;
     S.rep += STARTER.rep;
@@ -46,19 +53,31 @@ function own(id, bought) {
   return true;
 }
 
-// a gem pack pays once per transaction id, even if the store reports it again
-function credit(p, tx) {
-  if (S.iap.tx.indexOf(tx) >= 0) return false;
+function seen(tx) {
+  return S.iap.tx.indexOf(tx) >= 0;
+}
+
+function note(tx) {
   S.iap.tx.push(tx);
   if (S.iap.tx.length > 100) S.iap.tx.shift();
+}
+
+// a gem pack pays once per transaction id, even if the store reports it again
+function credit(p, tx) {
+  if (seen(tx)) return false;
+  note(tx);
   S.gems += p.gems;
   return true;
 }
 
-function grant(id, tx) {
+// a purchase is new when its transaction is unseen and just happened; the App Store answers a second buy of a
+// one-time product with the old transaction
+function grant(id, tx, at) {
   var p = product(id);
   if (!p) return false;
-  var done = p.once ? own(id, true) : credit(p, tx);
+  var fresh = !seen(tx) && Math.abs(clock() - at) < 300000;
+  var done = p.once ? own(id, fresh) : credit(p, tx);
+  if (done && p.once && fresh) note(tx);
   if (done) save();
   return done;
 }
@@ -69,7 +88,8 @@ function recover(list) {
   var n = 0;
   (list || []).forEach(function (t) {
     var p = product(t.id.slice(PID.length));
-    if (p && p.gems && clock() - t.at < RECOVER * 1000 && credit(p, t.tx)) n += p.gems;
+    // the pack being bought right now is credited by its own answer
+    if (p && p.gems && t.id !== PID + buying && clock() - t.at < RECOVER * 1000 && credit(p, t.tx)) n += p.gems;
   });
   return n;
 }
@@ -108,9 +128,14 @@ function buyProduct(id) {
   post({ cmd: 'buy', id: PID + id });
 }
 
+// called once the saved game is loaded: the queue is replayed, then the store and the ads are asked for
 function shopStart() {
   if (!native()) return;
+  loaded = true;
+  var ads = !S.iap.noads;
+  queued.splice(0).forEach(handle);
   post({ cmd: 'products', ids: PRODUCTS.map(function (p) { return PID + p.id; }) });
+  if (ads) post({ cmd: 'adStart' });
   post({ cmd: 'adReady' });
   $('b-shop').hidden = false;
   // play time counts only while the game is in front
@@ -118,36 +143,44 @@ function shopStart() {
 }
 
 window.nativeStore = function (ev) {
+  if (loaded) handle(ev);
+  else queued.push(ev);
+};
+
+function handle(ev) {
   if (ev.t === 'products') {
     prices = {};
     (ev.list || []).forEach(function (p) { prices[p.id] = p.price; });
     storeUp = !!(ev.list && ev.list.length);
   } else if (ev.t === 'owned') {
-    var was = S.iap.noads + S.iap.x2 + S.iap.starter;
     (ev.ids || []).forEach(function (id) { own(id.slice(PID.length), false); });
     var back = recover(ev.tx);
     if (back) banner('<b>' + plural(back, 'gem') + ' added</b><small>From a purchase that was not credited.</small>', 0);
-    if (ev.restore) banner('<b>' + (S.iap.noads + S.iap.x2 + S.iap.starter > was ? 'Purchases restored' : 'Nothing to restore') + '</b>', 0);
+    if (ev.restore) banner('<b>' + (S.iap.noads + S.iap.x2 + S.iap.starter > restoreWas ? 'Purchases restored' : 'Nothing to restore') + '</b>', 0);
     save();
   } else if (ev.t === 'bought') {
     buying = '';
-    if (grant(ev.id.slice(PID.length), ev.tx)) {
-      sfx('done');
-      buzz('success');
-      banner('<b>Thank you</b><small>' + product(ev.id.slice(PID.length)).name + '</small>', 0, true);
-    }
+    grant(ev.id.slice(PID.length), ev.tx, ev.at);
+    sfx('done');
+    buzz('success');
+    banner('<b>Thank you</b><small>' + product(ev.id.slice(PID.length)).name + '</small>', 0, true);
   } else if (ev.t === 'failed') {
     buying = '';
-    if (ev.why !== 'cancel') banner('<b>Purchase not completed</b><small>You were not charged.</small>', 0);
-  } else if (ev.t === 'ad') adEvent(ev);
+    if (ev.why !== 'cancel') banner('<b>Purchase not completed.</b>', 0);
+  } else if (ev.t === 'privacy') $('m-priv').hidden = !ev.required;
+  else if (ev.t === 'ad') adEvent(ev);
   if (!$('shop').hidden) paintShop();
-};
+}
 
 function wireShop() {
   $('gems').addEventListener('click', openShop);
   $('b-shop').addEventListener('click', openShop);
   $('shop-x').addEventListener('click', function () { $('shop').hidden = true; });
-  $('shop-restore').addEventListener('click', function () { post({ cmd: 'restore' }); });
+  $('shop-restore').addEventListener('click', function () {
+    restoreWas = S.iap.noads + S.iap.x2 + S.iap.starter;
+    post({ cmd: 'restore' });
+  });
+  $('m-priv').addEventListener('click', function () { post({ cmd: 'privacy' }); });
   $('shop-list').addEventListener('click', function (e) {
     var id = e.target.dataset && e.target.dataset.p;
     if (id) buyProduct(id);
@@ -158,7 +191,8 @@ function wireShop() {
 // ads the player picks, a few a day for each reward
 function adUsed() {
   var d = dayNum(clock());
-  if (S.ads.d !== d) {
+  // like the daily reward, a clock set back does not give the day's ads again
+  if (d > S.ads.d) {
     S.ads.d = d;
     S.ads.n = {};
   }
@@ -198,8 +232,14 @@ function adEvent(ev) {
     save();
   } else if (ev.state === 'closed' || ev.state === 'failed') {
     if (ac && snd) ac.resume();
-    if (watching && ev.kind === 'reward') banner('<b>No reward</b><small>The ad was not finished.</small>', 0);
-    watching = null;
+    if (!watching || ev.kind !== 'reward') return;
+    // the reward can arrive a moment after the ad closes
+    var w = watching;
+    setTimeout(function () {
+      if (watching !== w) return;
+      watching = null;
+      banner('<b>No reward</b><small>' + (ev.state === 'failed' ? 'No ad was available.' : 'The ad was not finished.') + '</small>', 0);
+    }, ev.state === 'failed' ? 0 : 1500);
   }
 }
 
