@@ -207,3 +207,62 @@ var AD_START = 180;
 // an interstitial waits this long after the player's first play and after any other ad, in seconds
 var AD_NEW = 600;
 var AD_GAP = 600;
+
+// How a store can look: a multiplying tint for the floors, the walls and the columns, the colours of the sign over the
+// doors and of the pylon by the street. A look opens at store `store` or with the achievement `ach`, and then costs
+// `gems` once if it has a price. They change nothing but looks
+var LOOKS = [
+  { id: 'classic', name: 'Classic', text: 'Red and gold, as it was', floor: null, wall: null, trim: null,
+    sign: { bg: ['#363d54', '#1b1f2c'], edge: '#f2c230', text: '#ffe27a', shade: '#a8700c' },
+    pylon: { panel: ['#fffaf0', '#f2e4c0'], band: '#d63a2f', text: '#2a2f40', star: '#ffd23a', post: 0x50566a, edge: 0x3a3d4a } },
+  { id: 'fresh', name: 'Fresh Market', text: 'Light greens, a grocer\'s sign', store: 2, floor: 0xd8f5d0, wall: 0xdff5d6, trim: 0x8fcf80,
+    sign: { bg: ['#34853f', '#1d5226'], edge: '#fff3b0', text: '#ffffff', shade: '#14401c' },
+    pylon: { panel: ['#f4fff0', '#d8efc8'], band: '#3f9e47', text: '#1f5a28', star: '#ffd23a', post: 0x3f7a45, edge: 0x2c5a32 } },
+  { id: 'rustic', name: 'Rustic', text: 'Warm timber and brick', store: 3, floor: 0xf0c890, wall: 0xe8b48a, trim: 0x8a5a30,
+    sign: { bg: ['#6a4426', '#45290f'], edge: '#d9a45a', text: '#fbe6bf', shade: '#2b1708' },
+    pylon: { panel: ['#f3dcb4', '#d9b684'], band: '#8a4b22', text: '#4a2a12', star: '#e8b04a', post: 0x6a4426, edge: 0x45290f } },
+  { id: 'seaside', name: 'Seaside', text: 'Sea blues and white', store: 5, gems: 60, floor: 0xbfe6f6, wall: 0xcfeafa, trim: 0x4fa6c8,
+    sign: { bg: ['#2077aa', '#134868'], edge: '#ffffff', text: '#e8fbff', shade: '#0b2c45' },
+    pylon: { panel: ['#f4fcff', '#cce9f4'], band: '#1f8fc0', text: '#15486a', star: '#ffe27a', post: 0x4a7a96, edge: 0x2c5a76 } },
+  { id: 'neon', name: 'Night Neon', text: 'Dark floors, glowing signs', ach: 'dep2', gems: 120, floor: 0x8c7cc4, wall: 0x7468b0, trim: 0xff3df0,
+    sign: { bg: ['#1c1038', '#05020f'], edge: '#ff3df0', text: '#5cf5ff', shade: '#a010a0' },
+    pylon: { panel: ['#1c1038', '#0a0618'], band: '#c01fb4', text: '#5cf5ff', star: '#fff03a', post: 0x2a2050, edge: 0x120a24 } },
+  { id: 'gold', name: 'Golden Deluxe', text: 'Cream and gold, black signs', ach: 'all2', gems: 300, floor: 0xf6e6b4, wall: 0xf2dea4, trim: 0xd9a21f,
+    sign: { bg: ['#3b3320', '#181208'], edge: '#f2c230', text: '#fff1b0', shade: '#7a5200' },
+    pylon: { panel: ['#fff6d6', '#f0d88a'], band: '#2a2418', text: '#5a3d00', star: '#ffd23a', post: 0xb08a2a, edge: 0x3b3320 } }
+];
+var LK = {};
+LOOKS.forEach(function (l) { LK[l.id] = l; });
+
+// Achievements, up to three tiers (t) of each kind. k is what is counted (see ACHV in sim.js) and n what it counts to.
+// A tier pays its gems once; gold also adds its `sales` to sales for good, and all of them together add at most ACH_CAP
+var ACHS = [
+  { id: 'srv1', t: 0, k: 'srv', n: 1e3, name: 'Busy Aisles', text: 'Serve 1,000 shoppers' },
+  { id: 'srv2', t: 1, k: 'srv', n: 1e5, name: 'Local Favorite', text: 'Serve 100,000 shoppers' },
+  { id: 'srv3', t: 2, k: 'srv', n: 1e7, name: 'Household Name', text: 'Serve 10 million shoppers' },
+  { id: 'all1', t: 0, k: 'all', n: 1e7, name: 'First Fortune', text: 'Earn $10M in total' },
+  { id: 'all2', t: 1, k: 'all', n: 1e12, name: 'Trillion Club', text: 'Earn $1T in total' },
+  { id: 'all3', t: 2, k: 'all', n: 1e18, name: 'Money Machine', text: 'Earn $1Qi in total' },
+  { id: 'st1', t: 0, k: 'store', n: 5, name: 'Moving Up', text: 'Reach store 5' },
+  { id: 'st2', t: 1, k: 'store', n: 10, name: 'Chain Store', text: 'Reach store 10' },
+  { id: 'st3', t: 2, k: 'store', n: 20, name: 'Retail Empire', text: 'Reach store 20' },
+  { id: 'dep1', t: 0, k: 'dep', n: 6, name: 'Growing Store', text: 'Open 6 departments' },
+  { id: 'dep2', t: 1, k: 'dep', n: 12, name: 'Big Box', text: 'Open 12 departments' },
+  { id: 'dep3', t: 2, k: 'dep', n: 18, name: 'One Stop Shop', text: 'Open all 18 departments' },
+  { id: 'star1', t: 0, k: 'star', n: 3, name: 'Full Marks', text: 'Earn all 3 stars in a department' },
+  { id: 'rate1', t: 1, k: 'rate', n: 36, name: 'Five Star Aisles', text: 'Have 36 stars in one store' },
+  { id: 'rate2', t: 2, k: 'rate', n: 54, name: 'Perfect Store', text: 'Have every star in one store' },
+  { id: 'reg1', t: 0, k: 'reg', n: 6, name: 'Friendly Faces', text: 'Meet 6 regulars' },
+  { id: 'reg2', t: 2, k: 'reg', n: 12, name: 'Everybody Knows You', text: 'Meet all the regulars' },
+  { id: 'rush1', t: 1, k: 'rush', n: 20, name: 'Rush Hour Hero', text: 'Finish a rush combo of 20' },
+  { id: 'rush2', t: 2, k: 'rush', n: 40, name: 'Lightning Hands', text: 'Finish a rush combo of 40' },
+  { id: 'gift1', t: 0, k: 'gift', n: 25, name: 'Gift Spotter', text: 'Tap 25 gifts' },
+  { id: 'gift2', t: 2, k: 'gift', n: 250, name: 'Santa\'s Helper', text: 'Tap 250 gifts' },
+  { id: 'day1', t: 1, k: 'day', n: 14, name: 'Regular Hours', text: 'Claim 14 daily rewards' },
+  { id: 'day2', t: 2, k: 'day', n: 30, name: 'Never Closed', text: 'Claim 30 daily rewards' },
+  { id: 'pk1', t: 0, k: 'pk', n: 20, name: 'Well Connected', text: 'Buy 20 perk levels' },
+  { id: 'pk2', t: 1, k: 'pkmax', n: 1, name: 'Top Perk', text: 'Max out a perk' },
+  { id: 'pk3', t: 2, k: 'pkmax', n: 4, name: 'Master Manager', text: 'Max out 4 perks' }
+];
+var ACH_TIER = [{ name: 'Bronze', gems: 5 }, { name: 'Silver', gems: 15 }, { name: 'Gold', gems: 40, sales: 0.01 }];
+var ACH_CAP = 0.1;

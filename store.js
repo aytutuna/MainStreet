@@ -106,6 +106,9 @@ var puffs = [];
 var shops = {};
 var order = [];
 var outer = [];
+var lookG = { floor: [], wall: [], trim: [] };
+var lookM = {};
+var curLook = null;
 var places = {};
 var people = [];
 var cars = [];
@@ -2266,7 +2269,9 @@ function buildAreas() {
   floors(fl, 'shop/floor', -EDGE, EDGE, BACK, FRONT);
   floors(fl, 'shop/floor%=d5d5d8', -EDGE, EDGE, SB, BACK);
   floors(fl, 'shop/floor%=d5d5d8', EDGE, WING_X + 0.2, SB, FRONT);
-  root.add(fl.group());
+  var fg = fl.group();
+  lookG.floor.push(fg);
+  root.add(fg);
 }
 
 // once nothing in an area is moving, its pieces are drawn as one merged batch, a few draw calls for the lot
@@ -2334,17 +2339,18 @@ function laneSign(n) {
 // alone makes them glow at night
 function paintDoor(g, name, glow) {
   var W = 768, H = 164;
+  var sg = LK[S.lk.on].sign;
   g.fillStyle = glow ? '#000' : '#262b3b';
   g.fillRect(0, 0, W, H);
   rr(g, 12, 12, W - 24, H - 24, 34);
   if (!glow) {
     var gr = g.createLinearGradient(0, 0, 0, H);
-    gr.addColorStop(0, '#363d54');
-    gr.addColorStop(1, '#1b1f2c');
+    gr.addColorStop(0, sg.bg[0]);
+    gr.addColorStop(1, sg.bg[1]);
     g.fillStyle = gr;
     g.fill();
   }
-  g.strokeStyle = '#f2c230';
+  g.strokeStyle = sg.edge;
   g.lineWidth = 7;
   g.stroke();
   g.textAlign = 'center';
@@ -2353,10 +2359,10 @@ function paintDoor(g, name, glow) {
   g.lineWidth = 6;
   g.lineJoin = 'round';
   if (!glow) {
-    g.strokeStyle = '#a8700c';
+    g.strokeStyle = sg.shade;
     g.strokeText(name, W / 2, H / 2 + 5);
   }
-  g.fillStyle = '#ffe27a';
+  g.fillStyle = sg.text;
   g.fillText(name, W / 2, H / 2 + 5);
   [60, W - 60].forEach(function (sx) {
     star(g, sx, H / 2, 24);
@@ -2383,6 +2389,7 @@ function doorSign(en) {
   b.rotation.x = -0.5;
   b.castShadow = true;
   root.add(b);
+  m.userData.name = en.name;
   doorMats.push(m);
 }
 var doorMats = [];
@@ -2434,7 +2441,9 @@ function buildShell() {
   PLAN.entrances.forEach(function (en) { cols.push([en.x - en.w / 2, FRONT], [en.x + en.w / 2, FRONT]); });
   PLAN.docks.forEach(function (d) { cols.push([d - 1, SB], [d + 1, SB]); });
   cols.forEach(function (c) { cb.add('shop/column', c[0], c[1], 0); });
-  root.add(cb.group());
+  var cg = cb.group();
+  lookG.trim.push(cg);
+  root.add(cg);
   var west = new Batch();
   var east = new Batch();
   var back = new Batch();
@@ -2458,10 +2467,13 @@ function buildShell() {
   var fg = glassWall.group();
   fg.scale.y = 0.55;
   var weg = wingE.group();
-  root.add(wg, eg, weg, north.group(), fg);
+  var ng = north.group();
+  lookG.wall.push(wg, eg, weg, ng);
+  root.add(wg, eg, weg, ng, fg);
   outer.push({ g: wg, n: [-1, 0] }, { g: eg, n: [1, 0], both: 1 }, { g: weg, n: [1, 0] });
   // the wall between the sales floor and the stockroom stays low, so the camera sees into the stockroom
   var bg = back.group();
+  lookG.wall.push(bg);
   bg.scale.y = 0.12;
   root.add(bg);
   var bay = new Batch();
@@ -2922,11 +2934,13 @@ function buildWing() {
 // a pylon sign by the street with the store's name; "Market" until most of the store is open
 function buildPylon() {
   var g = new THREE.Group();
+  var posts = [];
   [-1, 1].forEach(function (sd) {
     var post = new THREE.Mesh(new THREE.BoxGeometry(0.16, 2.4, 0.16), flat(0x50566a));
     post.position.set(sd * 0.9, 1.2, -0.16);
     post.castShadow = true;
     g.add(post);
+    posts.push(post);
   });
   var c = document.createElement('canvas');
   c.width = 512;
@@ -2940,28 +2954,29 @@ function buildPylon() {
   g.add(board);
   g.position.set(21.2, 0, 8.8);
   root.add(g);
-  pylon = { c: c, tex: tex, mat: mat, big: null };
+  pylon = { c: c, tex: tex, mat: mat, big: null, posts: posts, board: board };
 }
 var pylon;
 
 function paintPylon() {
   var big = order.filter(has).length >= 8;
-  var key = (big ? 'b' : 's') + S.store;
+  var key = (big ? 'b' : 's') + S.store + S.lk.on;
   if (pylon.big === key) return;
   pylon.big = key;
+  var pl = LK[S.lk.on].pylon;
   var x = pylon.c.getContext('2d');
   var n = S.store > 1;
   x.fillStyle = '#2a2e3f';
   x.fillRect(0, 0, 512, 256);
   rr(x, 12, 12, 488, 232, 38);
   var gr = x.createLinearGradient(0, 0, 0, 256);
-  gr.addColorStop(0, '#fffaf0');
-  gr.addColorStop(1, '#f2e4c0');
+  gr.addColorStop(0, pl.panel[0]);
+  gr.addColorStop(1, pl.panel[1]);
   x.fillStyle = gr;
   x.fill();
   x.save();
   x.clip();
-  x.fillStyle = '#d63a2f';
+  x.fillStyle = pl.band;
   x.fillRect(0, 186, 512, 70);
   x.fillStyle = 'rgba(255,255,255,0.35)';
   x.fillRect(0, 186, 512, 3);
@@ -2970,13 +2985,13 @@ function paintPylon() {
   x.lineWidth = 12;
   x.stroke();
   x.restore();
-  x.fillStyle = '#ffd23a';
+  x.fillStyle = pl.star;
   x.strokeStyle = '#8a6410';
   x.lineWidth = 5;
   star(x, 84, 98, 50);
   x.fill();
   x.stroke();
-  x.fillStyle = '#2a2f40';
+  x.fillStyle = pl.text;
   x.textAlign = 'center';
   x.textBaseline = 'middle';
   var tx = n ? 262 : 300;
@@ -2989,7 +3004,7 @@ function paintPylon() {
   if (n) {
     x.beginPath();
     x.arc(434, 100, 54, 0, Math.PI * 2);
-    x.fillStyle = '#d63a2f';
+    x.fillStyle = pl.band;
     x.fill();
     x.lineWidth = 7;
     x.strokeStyle = '#fff';
@@ -4161,7 +4176,47 @@ function syncArea(s, animate, now) {
   shadowDirty = true;
 }
 
+// a store look recolours the meshes it covers with copies of their materials multiplied by the look's tint, so it
+// costs a few more materials and no new draw calls, and the plain ones come back with Classic
+function dyed(m, hex) {
+  var k = m.uuid + hex;
+  if (!lookM[k]) {
+    lookM[k] = m.clone();
+    lookM[k].color.multiply(new THREE.Color(hex));
+  }
+  return lookM[k];
+}
+
+function tintGroup(g, hex) {
+  g.traverse(function (o) {
+    if (!o.isMesh) return;
+    if (!o.userData.m0) o.userData.m0 = o.material;
+    o.material = hex === null ? o.userData.m0 : dyed(o.userData.m0, hex);
+  });
+}
+
+function applyLook() {
+  if (curLook === S.lk.on) return;
+  curLook = S.lk.on;
+  var l = LK[curLook];
+  order.forEach(function (id) { tintGroup(shops[id].floorG, l.floor); });
+  lookG.floor.forEach(function (g) { tintGroup(g, l.floor); });
+  lookG.wall.forEach(function (g) { tintGroup(g, l.wall); });
+  lookG.trim.forEach(function (g) { tintGroup(g, l.trim); });
+  doorMats.forEach(function (m) {
+    paintDoor(m.map.image.getContext('2d'), m.userData.name, false);
+    paintDoor(m.emissiveMap.image.getContext('2d'), m.userData.name, true);
+    m.map.needsUpdate = true;
+    m.emissiveMap.needsUpdate = true;
+  });
+  pylon.posts.forEach(function (p) { p.material = flat(l.pylon.post); });
+  pylon.board.material = pylon.board.material.map(function (m, i) { return i === 4 ? m : flat(l.pylon.edge); });
+  paintPylon();
+  shadowDirty = true;
+}
+
 function sync(animate, now) {
+  applyLook();
   order.forEach(function (id) { syncArea(shops[id], animate, now); });
   PLACES.forEach(function (p) { syncPlace(p.id, animate, now); });
   ['lot', 'taxi', 'garden'].concat(WING_IDS).forEach(function (id) { places[id].pick.visible = has(PL[id].after); });
@@ -7044,6 +7099,7 @@ window.View = {
   ready: function () { return ready; },
   event: event,
   refresh: refresh,
+  look: applyLook,
   confetti: confetti,
   burst: burst,
   populate: function () { sync(true, performance.now()); },

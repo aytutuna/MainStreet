@@ -84,7 +84,7 @@ var S = fresh();
 
 function fresh() {
   var s = { v: 11, cash: START_CASH, gems: 0, rep: 0, pk: {}, store: 1, run: 0, all: 0, pend: 0, x2: 0, b: {}, ms: {},
-    st: { srv: 0, lost: 0 }, goal: [0, 1, 2], gn: 3, gd: {}, day: { n: 0, d: -1 }, mi: { d: -1, m: [], b: 0 }, rg: { o: {}, days: 0, gifts: 0, combo: 0 },
+    st: { srv: 0, lost: 0 }, goal: [0, 1, 2], gn: 3, gd: {}, day: { n: 0, d: -1 }, mi: { d: -1, m: [], b: 0 }, rg: { o: {}, days: 0, gifts: 0, combo: 0 }, lk: { on: 'classic', own: {} }, ac: { o: {}, m: {} },
     ask: 0, iap: { noads: 0, x2: 0, starter: 0, tx: [] }, ads: { d: -1, n: {}, pt: 0, li: 0 }, ts: clock() };
   noPlaces(s);
   s.b.produce = atLevel('produce', 1);
@@ -195,7 +195,7 @@ function drawLv() {
 }
 
 function gmul() {
-  return Math.pow(STORE_MUL, S.store - 1) * (1 + HALL_BOOST * S.pl.hall) * (1 + REST * S.pl.rest) * pv('sales') * regMul();
+  return Math.pow(STORE_MUL, S.store - 1) * (1 + HALL_BOOST * S.pl.hall) * (1 + REST * S.pl.rest) * pv('sales') * regMul() * achMul();
 }
 
 // the regulars owned, each adding a little to sales and the whole set a little more
@@ -816,6 +816,67 @@ function feats() {
   return got;
 }
 
+// what each achievement counts. A store's departments and stars start again with a move, so the best so far is kept
+var ACHM = { dep: 18, rate: 54, star: 3 };
+var ACHV = {
+  srv: function () { return S.st.srv; },
+  all: function () { return S.all; },
+  store: function () { return S.store; },
+  dep: function () { return opened(); },
+  rate: function () { return rating(); },
+  star: function () { return REGV.bruno(); },
+  reg: regOwned,
+  rush: function () { return S.rg.combo; },
+  gift: function () { return S.rg.gifts; },
+  day: function () { return S.rg.days; },
+  pk: REGV.nina,
+  pkmax: function () { return PERKS.filter(function (p) { return S.pk[p.id] >= p.cost.length; }).length; }
+};
+
+function achVal(a) {
+  var v = ACHV[a.k]();
+  return a.k in ACHM ? Math.max(S.ac.m[a.k] || 0, v) : v;
+}
+
+// sales the gold achievements add, never more than ACH_CAP
+function achMul() {
+  var v = 0;
+  ACHS.forEach(function (a) { if (S.ac.o[a.id]) v += ACH_TIER[a.t].sales || 0; });
+  return 1 + Math.min(ACH_CAP, v);
+}
+
+// the achievements reached since the last look, now earned and paid
+function achieve() {
+  var got = [];
+  for (var k in ACHM) S.ac.m[k] = Math.min(ACHM[k], achVal({ k: k }));
+  ACHS.forEach(function (a) {
+    if (S.ac.o[a.id] || achVal(a) < a.n) return;
+    S.ac.o[a.id] = 1;
+    S.gems += ACH_TIER[a.t].gems;
+    got.push(a);
+  });
+  return got;
+}
+
+// a look can be used once its store or achievement is reached and, if it has a price, bought
+function lookState(id) {
+  var l = LK[id];
+  if (S.lk.on === id) return 'on';
+  if (l.store ? S.store < l.store : l.ach && !S.ac.o[l.ach]) return 'lock';
+  return !l.gems || S.lk.own[id] ? 'use' : 'buy';
+}
+
+function setLook(id) {
+  var st = lookState(id);
+  if (st === 'buy') {
+    if (S.gems < LK[id].gems) return false;
+    S.gems -= LK[id].gems;
+    S.lk.own[id] = 1;
+  } else if (st !== 'use') return false;
+  S.lk.on = id;
+  return true;
+}
+
 var rgNext = {};
 
 // a regular who is not on a cooldown, or null; one that is picked stays away for the cooldown
@@ -1393,6 +1454,14 @@ function validate(o) {
     s.rg.days = Math.floor(num(o.rg.days, 0));
     s.rg.gifts = Math.floor(num(o.rg.gifts, 0));
     s.rg.combo = Math.floor(num(o.rg.combo, 0));
+  }
+  if (o.lk && typeof o.lk === 'object') {
+    LOOKS.forEach(function (l) { if (o.lk.own && o.lk.own[l.id]) s.lk.own[l.id] = 1; });
+    if (LK.hasOwnProperty(o.lk.on)) s.lk.on = o.lk.on;
+  }
+  if (o.ac && typeof o.ac === 'object') {
+    ACHS.forEach(function (a) { if (o.ac.o && o.ac.o[a.id]) s.ac.o[a.id] = 1; });
+    for (var m in ACHM) s.ac.m[m] = Math.min(ACHM[m], Math.floor(num(o.ac.m && o.ac.m[m], 0)));
   }
   var mi = o.mi;
   if (mi && isFinite(mi.d) && Array.isArray(mi.m) && mi.m.length === 3) {

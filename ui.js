@@ -1348,6 +1348,48 @@ function paintRegs() {
   }).join('');
 }
 
+// an achievement reached arrives with a card banner; a first look at an old save gets one summary
+function checkAch() {
+  var got = achieve();
+  if (!got.length) return;
+  var gems = 0;
+  got.forEach(function (a) { gems += ACH_TIER[a.t].gems; });
+  var a = got[0];
+  sfx('card');
+  buzz('success');
+  banner(got.length === 1 ? '<b>' + a.name + '</b><small>' + ACH_TIER[a.t].name + ' badge, +' + plural(gems, 'gem') + (ACH_TIER[a.t].sales ? ', sales +' + ACH_TIER[a.t].sales * 100 + '%' : '') + '</small>' :
+    '<b>' + got.length + ' achievements</b><small>+' + plural(gems, 'gem') + ' · see the menu</small>', 0, got.some(function (g) { return g.t === 2; }));
+  if (!$('ach').hidden) paintAch();
+  save();
+}
+
+function paintAch() {
+  var n = 0;
+  ACHS.forEach(function (a) { if (S.ac.o[a.id]) n++; });
+  $('ach-txt').textContent = n + ' of ' + ACHS.length + ' earned. Gold ones add sales for good, now +' + Math.round((achMul() - 1) * 100) + '% and at most ' + Math.round(ACH_CAP * 100) + '%.';
+  $('ach-list').innerHTML = ACHS.map(function (a) {
+    var done = S.ac.o[a.id];
+    var t = ACH_TIER[a.t];
+    var v = Math.min(a.n, achVal(a));
+    return '<div class="offer ach t' + a.t + (done ? '' : ' lock') + '"><u class="badge"><img src="assets/ui_star.png" alt=""></u><div><b>' + a.name + ' <i>' + t.name + '</i></b>' +
+      '<span>' + a.text + '</span><em class="bar"><u style="width:' + v / a.n * 100 + '%"></u></em>' +
+      '<span>' + (done ? 'Earned' : a.n <= 100 ? Math.floor(v) + ' of ' + a.n : Math.floor(v / a.n * 100) + '%') + ' · ' + plural(t.gems, 'gem') + (t.sales ? ', sales +' + t.sales * 100 + '%' : '') + '</span></div></div>';
+  }).join('');
+}
+
+function paintLook() {
+  $('look-txt').textContent = 'You have ' + plural(S.gems, 'gem') + '. A look only changes how the store is painted, and every new store keeps it.';
+  $('look-list').innerHTML = LOOKS.map(function (l) {
+    var st = lookState(l.id);
+    var need = l.store ? 'Reach store ' + l.store : l.ach ? 'Earn ' + ACHS.filter(function (a) { return a.id === l.ach; })[0].name : '';
+    var btn = st === 'on' ? '<button type="button" class="btn" disabled>In use</button>' :
+      st === 'lock' ? '<button type="button" class="btn" disabled>Locked</button>' :
+      '<button type="button" class="btn" data-l="' + l.id + '"' + (st === 'buy' && S.gems < l.gems ? ' disabled' : '') + '>' + (st === 'buy' ? '<img src="assets/ui_gem.png" alt="">' + l.gems : 'Use') + '</button>';
+    return '<div class="offer look' + (st === 'lock' ? ' lock' : '') + '"><u class="sw" style="background:linear-gradient(135deg,' + l.sign.bg[0] + ' 50%,' + l.sign.edge + ' 50%)"></u><div><b>' + l.name + '</b><span>' + l.text + '</span>' +
+      (st === 'lock' ? '<span class="need">' + need + '</span>' : '') + '</div>' + btn + '</div>';
+  }).join('');
+}
+
 function setSound() {
   $('m-snd').textContent = 'Sound: ' + (snd ? 'on' : 'off');
   $('m-buzz').textContent = 'Vibration: ' + (vib ? 'on' : 'off');
@@ -1395,6 +1437,32 @@ function wire() {
     $('regs').hidden = false;
   });
   $('regs-x').addEventListener('click', function () { $('regs').hidden = true; });
+  $('ach-x').addEventListener('click', function () { $('ach').hidden = true; });
+  $('look-x').addEventListener('click', function () { $('look').hidden = true; });
+  $('look-list').addEventListener('click', function (e) {
+    var b = e.target.closest('button');
+    var id = b && b.dataset.l;
+    if (!id || !setLook(id)) return;
+    View.look();
+    sfx('done');
+    buzz('success');
+    paintLook();
+    save();
+  });
+  $('sell-look').addEventListener('click', function () {
+    paintLook();
+    $('look').hidden = false;
+  });
+  $('m-look').addEventListener('click', function () {
+    $('menu').hidden = true;
+    paintLook();
+    $('look').hidden = false;
+  });
+  $('m-ach').addEventListener('click', function () {
+    $('menu').hidden = true;
+    paintAch();
+    $('ach').hidden = false;
+  });
   $('b-x2').addEventListener('click', function () {
     if (!buyX2()) return;
     sfx('done');
@@ -1727,6 +1795,7 @@ function loop(t) {
     updateBest();
     updateGoals();
     checkRegs();
+    checkAch();
     autoDaily();
     updateMeters();
     updateHint();
