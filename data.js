@@ -129,9 +129,9 @@ var TILLS = [{ k: 'lane', lv: 0 }, { k: 'lane', lv: 1 }, { k: 'self', lv: 3 }, {
 // income, or now and then gems or a minute of x2. They add up to roughly a tenth more income for a player who taps all
 var GIFT = { gap: [30, 60], life: [10, 15], cash: [3, 9], gems: 0.04, gemN: [1, 2], x2: 0.02, x2Secs: 60 };
 // Now and then a gift is a jackpot, worth jack of the gifts: cash seconds of income, or x2 for jx2 seconds one time in jmix
-GIFT.jack = 0.04;
-GIFT.jcash = [30, 45];
-GIFT.jx2 = 45;
+GIFT.jack = 0.01;
+GIFT.jcash = [90, 180];
+GIFT.jx2 = 300;
 GIFT.jmix = 0.25;
 // Rush events: one every gap seconds of play, shoppers coming mul times as fast for secs, and each tap on a till gives
 // its front shopper tap seconds of service. Taps in a row, each within a second of the one before, make a combo that
