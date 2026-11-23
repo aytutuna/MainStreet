@@ -862,7 +862,7 @@ small {
   opacity: 0.5;
 }
 
-.btns button.poor:disabled {
+.btns button.poor {
   opacity: 0.85;
   background: #a89878;
   border-color: #7a6a4c;

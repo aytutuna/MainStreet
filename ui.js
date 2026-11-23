@@ -10,7 +10,11 @@ var SND = {
   gift: ['triangle', 0.07, 0.2, [784, 988, 1175, 1568]],
   stock: ['sine', 0.06, 0.1, [196]]
 };
-var VOL = { till: 0.3, stock: 0.4, tap: 0.5, buy: 0.6, done: 0.6, unlock: 0.6, mile: 0.6 };
+var VOL = { till: 0.3, stock: 0.4, tap: 0.5, buy: 0.6, done: 0.6, unlock: 0.6, mile: 0.6, gift: 0.6, coins: 0.35, gems: 0.35,
+  card: 0.4, close: 0.4, broke: 0.4, rush: 0.55, amb: 0.5 };
+// sounds heard over and over get a slightly different pitch each time
+var VARY = { till: 1, stock: 1, tap: 1, coins: 1, gems: 1 };
+var hum = null;
 var BUZZ_KEY = 'mainstreet.buzz';
 var buf = {};
 var out = null;
@@ -57,6 +61,7 @@ function wake() {
     Object.keys(VOL).forEach(loadSound);
   }
   if (ac && ac.state !== 'running') ac.resume();
+  ambience();
 }
 
 function loadSound(name) {
@@ -65,7 +70,10 @@ function loadSound(name) {
   req.responseType = 'arraybuffer';
   req.onload = function () {
     if (req.status !== 200) return;
-    ac.decodeAudioData(req.response, function (b) { buf[name] = b; }, function () {});
+    ac.decodeAudioData(req.response, function (b) {
+      buf[name] = b;
+      if (name === 'amb') ambience();
+    }, function () {});
   };
   req.send();
 }
@@ -73,6 +81,7 @@ function loadSound(name) {
 // rate shifts the pitch, vol scales the loudness
 function sfx(name, rate, vol) {
   if (!ac || !snd || document.hidden || ac.state !== 'running') return;
+  if (VARY[name]) rate = (rate || 1) * (0.95 + Math.random() * 0.1);
   if (buf[name]) {
     var s = ac.createBufferSource();
     var v = ac.createGain();
@@ -86,6 +95,7 @@ function sfx(name, rate, vol) {
   }
   var t = ac.currentTime;
   var c = SND[name];
+  if (!c) return;
   c[3].forEach(function (f, i) {
     var at = t + i * c[1];
     var o = ac.createOscillator();
@@ -112,6 +122,25 @@ function askNotify() {
   if (S.ask) return;
   S.ask = 1;
   tell({ cmd: 'ask' });
+}
+
+// the shopping mall murmur, looped under everything while sound is on
+function ambience() {
+  if (!ac || !buf.amb) return;
+  if (!snd) {
+    if (hum) hum.stop();
+    hum = null;
+    return;
+  }
+  if (hum) return;
+  hum = ac.createBufferSource();
+  var v = ac.createGain();
+  v.gain.value = VOL.amb;
+  hum.buffer = buf.amb;
+  hum.loop = true;
+  hum.connect(v);
+  v.connect(out);
+  hum.start();
 }
 
 function buzz(kind) {
@@ -189,6 +218,7 @@ function flyIcons(src, x, y, n, targetId) {
       { transform: 'translate(' + (tx - x + 10) + 'px, ' + (ty - y + 10) + 'px) scale(0.6)', opacity: 0.4 }],
     { duration: 650 + i * 40, delay: i * 45, easing: 'cubic-bezier(.4,0,.7,.7)', fill: 'backwards' });
     a.onfinish = function (e) { e.target.effect.target.remove(); };
+    land(targetId === 'gems' ? 'gems' : 'coins', i);
   }
   setTimeout(function () { bumpEl(targetId === 'gems' ? 'gem-n' : 'cash-n'); }, 560);
 }
@@ -203,6 +233,11 @@ function ring(x, y) {
   var a = d.animate([{ transform: 'translate(-50%, -50%) scale(0.2)', opacity: 0.9 }, { transform: 'translate(-50%, -50%) scale(2.6)', opacity: 0 }],
     { duration: 520, easing: 'ease-out' });
   a.onfinish = function () { d.remove(); };
+}
+
+// each flying icon ticks as it reaches the counter, a little higher each time
+function land(name, i) {
+  setTimeout(function () { sfx(name, 1 + i * 0.04); }, 650 + i * 85);
 }
 
 function flyCoins(x, y, n) {
@@ -297,7 +332,8 @@ function far(id) {
 function buyBtn(k, b, label, c, locked) {
   var poor = !locked && S.cash < c;
   set(k, 'up', b, 'innerHTML', locked ? 'Locked' : label + '<small>' + money(c) + '</small>');
-  set(k, 'upd', b, 'disabled', locked || poor);
+  // too dear stays tappable, so the tap can say there is not enough cash yet
+  set(k, 'upd', b, 'disabled', locked);
   flag(k, 'lk', b, 'lk', locked);
   flag(k, 'poor', b, 'poor', poor);
 }
@@ -599,7 +635,8 @@ function buildList() {
 }
 
 function openSheet(id) {
-  closeCard();
+  closeCard(true);
+  if (!sheetOpen) sfx('card');
   sheetOpen = true;
   $('app').classList.add('sheet-open');
   $('sheet').hidden = false;
@@ -609,7 +646,9 @@ function openSheet(id) {
   fitInsets();
 }
 
-function closeSheet() {
+// quiet when another panel takes its place or the store reloads
+function closeSheet(quiet) {
+  if (sheetOpen && quiet !== true) sfx('close');
   sheetOpen = false;
   $('app').classList.remove('sheet-open');
   $('sheet').hidden = true;
@@ -617,7 +656,8 @@ function closeSheet() {
 }
 
 function showCard(id) {
-  closeSheet();
+  closeSheet(true);
+  if ($('card').hidden) sfx('card');
   var fresh = cardId !== id;
   cardId = id;
   if (fresh) cardSel = -1;
@@ -631,7 +671,8 @@ function showCard(id) {
   View.select(id, fresh);
 }
 
-function closeCard() {
+function closeCard(quiet) {
+  if (!$('card').hidden && quiet !== true) sfx('close');
   cardId = null;
   if (cardRow) cardRow.el.remove();
   cardRow = null;
@@ -691,7 +732,13 @@ function upgrade(id, j) {
   var gain = PL[id] ? effect(id, x, j) : stat(id, x);
   if (PL[id]) res = buyPlace(id, j);
   else res = buy(id, j);
-  if (!res) return;
+  // only a button that is short of cash can be tapped and still not buy
+  if (!res) {
+    sfx('broke');
+    bumpEl('cash-n');
+    buzz('light');
+    return;
+  }
   afterBuy(res);
   var at = View.pieceScreen(res.id, res.piece);
   if (!at) return;
@@ -1221,8 +1268,8 @@ function flash(id, text, old) {
 
 function afterLoad() {
   saleAvg = 0;
-  closeCard();
-  closeSheet();
+  closeCard(true);
+  closeSheet(true);
   View.refresh();
   View.focusNow();
   updateBest();
@@ -1232,11 +1279,9 @@ function afterLoad() {
 function wire() {
   $('card-x').addEventListener('click', closeCard);
   $('t-biz').addEventListener('click', function () {
-    sfx('tap');
     openSheet();
   });
   $('sheet-x').addEventListener('click', function () {
-    sfx('tap');
     closeSheet();
   });
   $('t-boost').addEventListener('click', function () {
@@ -1321,6 +1366,7 @@ function wire() {
       localStorage.setItem(SND_KEY, snd ? '1' : '0');
     } catch (e) {}
     wake();
+    ambience();
     setSound();
   });
   $('m-buzz').addEventListener('click', function () {
@@ -1427,11 +1473,13 @@ function wire() {
   var hiddenAt = 0;
   document.addEventListener('visibilitychange', function () {
     if (document.hidden) {
+      if (ac) ac.suspend();
       save();
       tell({ cmd: 'set', list: reminders() });
       hiddenAt = Date.now();
       return;
     }
+    if (ac && snd) ac.resume();
     if (!hiddenAt) return;
     var sec = (Date.now() - hiddenAt) / 1000;
     hiddenAt = 0;
@@ -1491,7 +1539,7 @@ function onPerkEvent(ev, o) {
     View.rush(o.kind);
     banner(o.kind === 'bus' ? '<b>Tour bus!</b><small>A crowd is coming in. Tap the checkouts to serve faster</small>' :
       '<b>Flash sale!</b><small>Shoppers are rushing in. Tap the checkouts to serve faster</small>', 0);
-    sfx('done');
+    sfx(buf.rush ? 'rush' : 'done');
     buzz('medium');
   } else if (ev === 'rushend') {
     View.rushEnd();

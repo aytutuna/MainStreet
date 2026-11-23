@@ -1,4 +1,4 @@
-var CACHE = 'mainstreet-c3a71e5d';
+var CACHE = 'mainstreet-74db43a5';
 var FILES = [
   './',
   'data.js',
@@ -632,9 +632,17 @@ var FILES = [
   'assets/shop/service-desk.png',
   'assets/shop/toilet.png',
   'assets/sounds/License.txt',
+  'assets/sounds/amb.wav',
+  'assets/sounds/broke.wav',
   'assets/sounds/buy.wav',
+  'assets/sounds/card.wav',
+  'assets/sounds/close.wav',
+  'assets/sounds/coins.wav',
   'assets/sounds/done.wav',
+  'assets/sounds/gems.wav',
+  'assets/sounds/gift.wav',
   'assets/sounds/mile.wav',
+  'assets/sounds/rush.wav',
   'assets/sounds/stock.wav',
   'assets/sounds/tap.wav',
   'assets/sounds/till.wav',
