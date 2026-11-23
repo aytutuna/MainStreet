@@ -42,6 +42,8 @@ targets:
         buildPhase: resources
       - path: ../land.js
         buildPhase: resources
+      - path: ../shop.js
+        buildPhase: resources
       - path: ../ui.js
         buildPhase: resources
       - path: ../vendor

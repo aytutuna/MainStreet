@@ -182,3 +182,24 @@ var REGS = [
 var REGC = { sales: 0.01, set: 0.05, odds: 0.02, tip: [3, 8], cool: 600 };
 var RG = {};
 REGS.forEach(function (r) { RG[r.id] = r; });
+
+// Things sold in the shop, under the ids com.aytutuna.mainstreet.<id> in both stores. A one-time product is kept as a
+// flag in S.iap; a gem pack pays its gems every time. The starter pack adds STARTER to a store's first move
+var PRODUCTS = [
+  { id: 'starter', once: 1, ic: 'ui_gift', name: 'Starter pack', text: '150 gems, 2 hours of double income and 10 rep.' },
+  { id: 'noads', once: 1, ic: 'ui_star', name: 'No ads', text: 'No ads between stores. Ad rewards come without watching.' },
+  { id: 'x2', once: 1, ic: 'ui_bolt', name: 'Permanent x2', text: 'All income doubled for good, on top of the timed boost.' },
+  { id: 'gems1', gems: 80, ic: 'ui_gem', name: '80 gems' },
+  { id: 'gems2', gems: 500, ic: 'ui_gem', name: '500 gems' },
+  { id: 'gems3', gems: 1200, ic: 'ui_gem', name: '1,200 gems' },
+  { id: 'gems4', gems: 2800, ic: 'ui_gem', name: '2,800 gems' }
+];
+var STARTER = { gems: 150, x2: 7200, rep: 10 };
+
+// Ads the player chooses to watch: what each one gives and how many a day. Without ads (noads) the same rewards come
+// for free, up to the same number
+var AD_CAP = { x2: 4, away: 3, warp: 2, gems: 3 };
+var AD_GEMS = 3;
+// an interstitial waits this long after the player's first play and after any other ad, in seconds
+var AD_NEW = 600;
+var AD_GAP = 600;

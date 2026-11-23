@@ -73,7 +73,7 @@ androidComponents {
         val copy = tasks.register<CopyGame>("copyGame${variant.name.replaceFirstChar { it.uppercase() }}") {
             val game = rootProject.layout.projectDirectory.dir("..")
             files.from(game.asFileTree.matching {
-                include("index.html", "style.css", "data.js", "sim.js", "store.js", "plan.js", "land.js", "ui.js")
+                include("index.html", "style.css", "data.js", "sim.js", "store.js", "plan.js", "land.js", "shop.js", "ui.js")
                 include("vendor/**", "assets/**")
             })
         }

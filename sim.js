@@ -85,7 +85,7 @@ var S = fresh();
 function fresh() {
   var s = { v: 11, cash: START_CASH, gems: 0, rep: 0, pk: {}, store: 1, run: 0, all: 0, pend: 0, x2: 0, b: {}, ms: {},
     st: { srv: 0, lost: 0 }, goal: [0, 1, 2], gn: 3, gd: {}, day: { n: 0, d: -1 }, mi: { d: -1, m: [], b: 0 }, rg: { o: {}, days: 0, gifts: 0, combo: 0 },
-    ask: 0, ts: clock() };
+    ask: 0, iap: { tx: [] }, ads: { d: -1, n: {}, pt: 0, li: 0 }, ts: clock() };
   noPlaces(s);
   s.b.produce = atLevel('produce', 1);
   return s;
@@ -211,7 +211,7 @@ function regMul() {
 }
 
 function bmul() {
-  return (S.x2 > 0 ? 2 : 1) * (1 + HEAD * S.pl.head);
+  return (S.x2 > 0 ? 2 : 1) * (S.iap.x2 ? 2 : 1) * (1 + HEAD * S.pl.head);
 }
 
 function maxAway() {
@@ -841,7 +841,7 @@ function tipReg(c) {
 function away(sec) {
   var s = Math.max(0, Math.min(sec, maxAway()));
   var xs = Math.min(s, S.x2);
-  var gain = baseRate() * (s + xs) * (1 + HEAD * S.pl.head);
+  var gain = baseRate() * (s + xs) * (S.iap.x2 ? 2 : 1) * (1 + HEAD * S.pl.head);
   var n = Math.floor((served() + gardenServed()) * s);
   S.x2 = Math.max(0, S.x2 - s);
   perkOff();
@@ -866,13 +866,14 @@ function awayCost() {
   return Math.max(AWAY_X2, Math.ceil(S.pend / Math.max(baseRate() * 3600, 1)) * AWAY_X2);
 }
 
-function claimAway(dbl) {
+// free: the doubling was paid for by an ad
+function claimAway(dbl, free) {
   if (!(S.pend > 0)) return 0;
   var c = awayCost();
-  if (dbl && S.gems < c) return 0;
+  if (dbl && !free && S.gems < c) return 0;
   var v = S.pend;
   if (dbl) {
-    S.gems -= c;
+    if (!free) S.gems -= c;
     v *= 2;
   }
   S.pend = 0;
@@ -1281,9 +1282,9 @@ function buyX2() {
   return true;
 }
 
-function warp() {
-  if (S.gems < WARP_COST) return 0;
-  S.gems -= WARP_COST;
+function warp(free) {
+  if (!free && S.gems < WARP_COST) return 0;
+  if (!free) S.gems -= WARP_COST;
   var v = Math.min(rate() * WARP_SECS, Math.max(S.run, 100));
   earn(v);
   return v;
@@ -1325,6 +1326,12 @@ function validate(o) {
   s.pend = num(o.pend, 0);
   s.x2 = num(o.x2, 0);
   s.ask = o.ask ? 1 : 0;
+  var ip = o.iap || {};
+  s.iap = { noads: ip.noads ? 1 : 0, x2: ip.x2 ? 1 : 0, starter: ip.starter ? 1 : 0, offered: ip.offered ? 1 : 0,
+    tx: (Array.isArray(ip.tx) ? ip.tx : []).filter(function (t) { return typeof t === 'string'; }).slice(-30) };
+  var ad = o.ads || {};
+  s.ads = { d: Math.floor(num(ad.d, -1)), n: {}, pt: num(ad.pt, 0), li: num(ad.li, 0) };
+  for (var k in AD_CAP) s.ads.n[k] = Math.min(AD_CAP[k], Math.floor(num(ad.n && ad.n[k], 0)));
   var pl = o.pl && typeof o.pl === 'object' ? o.pl : {};
   PLACES.forEach(function (p) {
     var l = Math.min(p.cost.length, Math.floor(num(pl[p.id], 0)));

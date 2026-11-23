@@ -6,6 +6,7 @@ var FILES = [
   'land.js',
   'manifest.webmanifest',
   'plan.js',
+  'shop.js',
   'sim.js',
   'store.js',
   'style.css',

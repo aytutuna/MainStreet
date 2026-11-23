@@ -1742,6 +1742,8 @@ function start() {
   buildGoals();
   paintSpeed();
   wire();
+  wireShop();
+  shopStart();
   setFree(free);
   paintFree();
   $('stars').addEventListener('click', openSell);

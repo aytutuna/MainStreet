@@ -89,6 +89,7 @@
       <div class="offer"><img src="assets/ui_bolt.png" alt=""><div><b>Double income</b><span id="x2-txt"></span><span class="need" id="x2-need"></span></div><button type="button" id="b-x2" class="btn"></button></div>
       <div class="offer"><img src="assets/ui_warp.png" alt=""><div><b>Time warp</b><span id="warp-txt"></span><span class="need" id="warp-need"></span></div><button type="button" id="b-warp" class="btn"></button></div>
       <div class="offer"><img src="assets/ui_star.png" alt=""><div><b>Regulars</b><span id="reg-txt"></span></div><button type="button" id="b-reg" class="btn">Meet</button></div>
+      <button type="button" id="b-shop" class="btn alt" hidden>Shop</button>
       <p class="small">Gems come from goals, stars, gifts and the daily reward.</p>
       <button type="button" id="boost-x" class="btn alt">Close</button>
     </div>
@@ -99,6 +100,15 @@
       <p id="regs-txt"></p>
       <div id="reg-list"></div>
       <button type="button" id="regs-x" class="btn alt">Close</button>
+      </div>
+    </div>
+  <div id="shop" class="veil" hidden>
+    <div class="box">
+      <h2>Shop</h2>
+      <p id="shop-txt"></p>
+      <div id="shop-list"></div>
+      <button type="button" id="shop-restore" class="btn alt">Restore purchases</button>
+      <button type="button" id="shop-x" class="btn">Close</button>
     </div>
   </div>
   <div id="sell" class="veil" hidden>
@@ -136,6 +146,7 @@
 </div>
 <script src="data.js"></script>
 <script src="sim.js"></script>
+<script src="shop.js"></script>
 <script type="module" src="store.js"></script>
 <script src="ui.js" defer></script>
 </body>
