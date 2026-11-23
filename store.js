@@ -543,6 +543,7 @@ function modelList() {
     'nature/tree_fat', 'nature/tree_pineRoundC', 'food/bag', 'food/bag-flat', 'nature/flower_redA', 'nature/flower_yellowA', 'nature/flower_purpleA',
     'forest/fence', 'furn/plantSmall2*1.6', 'sub/building-type-a', 'sub/building-type-c', 'sub/building-type-e', 'sub/building-type-h',
     'sub/building-type-k'].forEach(function (r) { seen[r] = 1; });
+  CABIN_REFS.forEach(function (r) { seen[r] = 1; });
   FOLK.forEach(function (r) { seen[r] = 1; });
   REGS.forEach(function (r) { seen[r.ref] = 1; });
   CARS.forEach(function (r) { seen[r] = 1; });
@@ -3106,6 +3107,7 @@ function buildOutside() {
   root.add(b.group());
   buildNature();
   buildLand();
+  buildCabin();
   buildLot();
   buildTaxi();
   buildDock();
@@ -3130,6 +3132,7 @@ function buildNature() {
     var key = Math.floor(x / TILE) + ',' + Math.floor(z / TILE);
     var b = tiles[key] = tiles[key] || new Batch();
     var k = (big ? 0.85 + rand() * 0.4 : 0.8 + rand() * 0.5);
+    if (big && LAND.nearRock(x, z, 5)) return;
     if (big) natureTrees.push([x, z, (lib.model(ref).box.x1 - lib.model(ref).box.x0) * k]);
     b.model(ref, x, LAND.ground(x, z) - 0.05 - lib.model(ref).box.y0 * k, z, rand() * 6.283, k);
   }
@@ -3298,7 +3301,7 @@ function gullGeo() {
 
 function buildLife(sc) {
   var wy = function (x, z) { return LAND.waterAt(x, z) + 0.03; };
-  [[43, -54.3, 3, 2, 2, 0.12], [8, -56, 6, 3, 4, 0.08]].forEach(function (l) {
+  [[43, -54.3, 3, 2, 2, 0.12], [-8, -57, 6, 3, 4, 0.08]].forEach(function (l) {
     var lp = loopOn(l[0], l[1], l[2], l[3], 1);
     for (var i = 0; i < l[4]; i++) ducks.push({ x: lp.x, z: lp.z, rx: lp.rx, rz: lp.rz, a: i * 0.5 + (l[5] > 0 ? 0 : 2), w: l[5] * (1 + i * 0.05), y: wy(l[0], l[1]) });
   });
@@ -3443,6 +3446,49 @@ function treeShade(list) {
   var m = new THREE.Mesh(g, shadeMat);
   m.renderOrder = 1;
   root.add(m);
+}
+
+// The lake house on its pad behind the back lot: a log cabin from the kit's pieces, three cells wide and two deep, its
+// door toward the lot and the camera, a dock from the bank out into the lake and a canoe tied to it
+var CABIN_REFS = ['cabin-corner', 'cabin-wall', 'cabin-window-b', 'cabin-window-large', 'cabin-overhang-doorway', 'cabin-door-rotate',
+  'cabin-roof', 'cabin-roof-chimney', 'cabin-wall-roof'].map(function (n) { return 'holiday/' + n; })
+  .concat(['pirate/structure-platform-dock', 'nature/canoe*2.2']);
+function buildCabin() {
+  var c = LAND.CABIN;
+  var k = 1.5;
+  var W = 3;
+  var D = 2;
+  var x0 = c.x - (W - 1) / 2 * k;
+  var z0 = c.z - (D - 1) / 2 * k;
+  var b = new Batch();
+  var H = Math.PI / 2;
+  function put(n, i, j, rot, up) { b.model('holiday/' + n, x0 + i * k, c.h - 0.03 + (up || 0) * k, z0 + j * k, rot, k); }
+  for (var i = 0; i < W; i++) {
+    put(i === 1 ? 'cabin-overhang-doorway' : 'cabin-window-b', i, D - 1, 0);
+    put(i === 1 ? 'cabin-window-large' : 'cabin-wall', i, 0, Math.PI);
+    // the roof falls to the front and the back from a ridge along the middle
+    put(i === 2 ? 'cabin-roof-chimney' : 'cabin-roof', i, D - 1, -H, 1);
+    put('cabin-roof', i, 0, H, 1);
+  }
+  put('cabin-door-rotate', 1, D - 1, 0);
+  for (var j = 0; j < D; j++) {
+    put(j ? 'cabin-window-b' : 'cabin-wall', 0, j, -H);
+    put('cabin-wall', W - 1, j, H);
+  }
+  // the gable ends: half triangles rising toward the ridge, the back halves set from the next cell out
+  put('cabin-wall-roof', 0, 1, -H, 1);
+  put('cabin-wall-roof', -1, 0, H, 1);
+  put('cabin-wall-roof', W - 1, 0, H, 1);
+  put('cabin-wall-roof', W, 1, -H, 1);
+  put('cabin-corner', 0, D - 1, 0);
+  put('cabin-corner', W - 1, D - 1, H);
+  put('cabin-corner', W - 1, 0, Math.PI);
+  put('cabin-corner', 0, 0, -H);
+  [-1, 1].forEach(function (sd) { b.model('flora/bush-flowers%Bush_Leaves=b8cc98*0.48', c.x + sd * 2.9, c.h - 0.05, c.z + D / 2 * k + 0.7, sd, 1); });
+  // the river comes into the lake here, its water a little above the lake's
+  [-51.4, -53.9].forEach(function (dz) { b.model('pirate/structure-platform-dock', c.x - 2.5, LAND.waterAt(c.x - 2.5, -53.9) - 0.5, dz, 0, 1); });
+  root.add(b.group());
+  root.add(mesh('nature/canoe*2.2', c.x - 0.6, -54.2, 0.15, LAND.waterAt(c.x - 0.6, -54.2) + 0.03));
 }
 
 function buildLand() {
@@ -3689,7 +3735,7 @@ function buildLand() {
 
   ['trees', 'low', 'rocks', 'flowers'].forEach(function (kind) {
     sc[kind].forEach(function (s) {
-      var r = kind === 'trees' ? 0.4 : kind === 'rocks' ? 0.8 : 0.2;
+      var r = kind === 'trees' ? 0.4 : kind === 'rocks' ? 0.8 * Math.max(1, s[4]) : 0.2;
       var gy = Math.min(LAND.ground(s[1], s[2]), LAND.ground(s[1] + r, s[2]), LAND.ground(s[1] - r, s[2]), LAND.ground(s[1], s[2] + r), LAND.ground(s[1], s[2] - r));
       stand(s[0], s[1], gy - (kind === 'trees' ? 0.08 : kind === 'rocks' ? 0.1 * s[4] : 0), s[2], s[3], s[4]);
     });

@@ -26,6 +26,8 @@ export var TRACKS = [
   { pts: [[-76, 12], [-90, 14], [-102, 20], [-110, 30], [-114, 42]], w: 2.6 }
 ];
 export var BRIDGE = { x: -57, z: 12 };
+// the lake house: a level pad on the south shore behind the back lot, the door to the lot and its dock out into the lake
+export var CABIN = { x: 11, z: -46, h: 0.9, r: 4.5 };
 
 function clamp(v) { return v < 0 ? 0 : v > 1 ? 1 : v; }
 export function smooth(a, b, x) {
@@ -171,6 +173,8 @@ export function ground(x, z) {
     var p = s.d < s.w ? s.lv - 1.3 + 1.3 * u * u : s.cut ? s.lv + 0.3 + Math.max(0, e - 2.5) * 3.2 : s.lv + e * 0.5 + e * e * 0.04;
     g = smin(g, p, s.cut ? 0.4 : 0.7);
   }
+  var pad = smooth(CABIN.r + 4, CABIN.r, Math.hypot(x - CABIN.x, (z - CABIN.z) * 1.3));
+  g += (CABIN.h - g) * pad;
   return g - 0.03;
 }
 
@@ -229,13 +233,19 @@ var GRASS = ['flora/fern-1*0.22', 'flora/fern-1*0.18'];
 var CANOE = 'nature/canoe*2.2';
 var REED = ['nature/plant_flatTall*2.2'];
 var PAD = ['nature/lily_large*3', 'nature/lily_small*3'];
-export var REFS = [[CANOE], CONIFER, BROAD, FALL, LONE, BUSH, CLIFF, STONE, FLOWER, GRASS, REED, PAD];
+// big boulders in a few heaps where the camera looks: lake shores, the hills beside the store, the canyon's mouth
+var BOULDER = ['flora/boulder-1', 'flora/boulder-2', 'flora/boulder-3'];
+export var OUTCROPS = [[-36, -46, 3], [20, -50, 3], [40, -22, 4], [39, 3, 2], [-40, -26, 4], [-41, -5, 2], [52, -61, 3], [-16, -67, 3], [27, -63, 2]];
+export function nearRock(x, z, m) { return OUTCROPS.some(function (o) { return Math.hypot(x - o[0], z - o[1]) < m; }); }
+export var REFS = [BOULDER, [CANOE], CONIFER, BROAD, FALL, LONE, BUSH, CLIFF, STONE, FLOWER, GRASS, REED, PAD];
 
 // Everything that grows or lies about, as [ref, x, z, turn, size, water]. Trees come on a jittered grid, thick where the
 // wood is and thin in the meadows; flowers and grass in patches; stones and reeds at the water
 // blocked says where something already stands on the lawns
 var LAMPS = [[-26.6, 0], [-26.6, -14]];
 function inYards(x, z) { return x > -48 && x < 48 && z > -42 && z < 44; }
+// the cabin's yard and the water round its dock stay clear
+function byCabin(x, z, m) { return Math.hypot(x - CABIN.x, z - CABIN.z) < m || Math.hypot(x - CABIN.x + 2, z + 53) < m - 3; }
 export function scenery(blocked) {
   var seed = 11;
   function rand() {
@@ -254,7 +264,7 @@ export function scenery(blocked) {
       var z = cz + rand() * CELL;
       var d = away(x, z);
       // the yards keep the woods plan.js gives them
-      if (d < 3 || inYards(x, z) || shore(x, z) < 1.1 || onTrack(x, z, 2.5)) continue;
+      if (d < 3 || inYards(x, z) || byCabin(x, z, 9) || nearRock(x, z, 5) || shore(x, z) < 1.1 || onTrack(x, z, 2.5)) continue;
       var h = ground(x, z);
       var sl = slope(x, z);
       var f = forest(x, z);
@@ -293,7 +303,7 @@ export function scenery(blocked) {
       px = -36 + rand() * 72;
       pz = -50 + rand() * 6;
     }
-    if (away(px, pz) < 2.5 || inYards(px, pz) || away(px, pz) > 36 || shore(px, pz) < 1.6 || forest(px, pz) > 0.3 || onTrack(px, pz, 2) || slope(px, pz) > 0.5) continue;
+    if (away(px, pz) < 2.5 || inYards(px, pz) || byCabin(px, pz, 8) || away(px, pz) > 36 || shore(px, pz) < 1.6 || forest(px, pz) > 0.3 || onTrack(px, pz, 2) || slope(px, pz) > 0.5) continue;
     if (meadow(px, pz) < 0.35 && rand() < 0.7) continue;
     var base = pick(FLOWER);
     var rad = 0.9 + rand() * 1.1;
@@ -311,7 +321,7 @@ export function scenery(blocked) {
     var wx = SEEN[0] + rand() * (SEEN[1] - SEEN[0]);
     var wz = SEEN[2] + rand() * (SEEN[3] - SEEN[2]);
     var s = shore(wx, wz);
-    if (s > 3.5 || away(wx, wz) < 5 || onTrack(wx, wz, 2)) continue;
+    if (s > 3.5 || away(wx, wz) < 5 || byCabin(wx, wz, 7) || onTrack(wx, wz, 2)) continue;
     var lv = waterAt(wx, wz);
     if (s > 0.1 && s < 0.9 && rand() < 0.09) out.rocks.push([pick(STONE), wx, wz, rand() * 6.283, 0.8 + rand() * 1.1]);
     else if (s < 0.1 && s > -0.45 && rand() < 0.012) out.water.push([pick(STONE), wx, wz, rand() * 6.283, 0.8 + rand() * 1.1, lv]);
@@ -332,6 +342,16 @@ export function scenery(blocked) {
       if (blocked(lx, lz) || LAMPS.some(function (q) { return Math.hypot(lx - q[0], lz - q[1]) < 3.5; })) continue;
       if (bl < 0.5) for (var m = 3; m > 0; m--) out.low.push([pick(BUSH), lx + (rand() - 0.5) * 3, lz + (rand() - 0.5) * 3, rand() * 6.283, 1 + rand() * 0.7]);
       else if (bl < 0.8) for (var q2 = 3; q2 > 0; q2--) out.flowers.push([pick(FLOWER), lx + (rand() - 0.5) * 2.4, lz + (rand() - 0.5) * 2.4, rand() * 6.283, 1.2 + rand() * 0.6]);
+    }
+  });
+  OUTCROPS.forEach(function (o) {
+    for (var bi = 0; bi < o[2]; bi++) {
+      var ba = rand() * 6.283;
+      var br = bi ? 1.6 + rand() * 1.6 : 0;
+      var bx = o[0] + Math.cos(ba) * br;
+      var bz = o[1] + Math.sin(ba) * br;
+      if (shore(bx, bz) < 0.4) continue;
+      out.rocks.push([pick(BOULDER), bx, bz, rand() * 6.283, bi ? 0.8 + rand() * 0.7 : 1.7 + rand() * 0.5]);
     }
   });
   // one canoe pulled up on the sand; the one out on the lake drifts, and the view moves it
