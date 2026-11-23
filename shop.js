@@ -414,7 +414,7 @@ function paintAds() {
   var html = '<p class="small">Free, and a few a day:</p>';
   rows.forEach(function (r) {
     var left = adLeft(r[0]);
-    var off = !canWatch(r[0]) || (r[0] === 'warp' && weak) || (r[0] === 'rush' && (rush || S.call <= 0));
+    var off = !canWatch(r[0]) || (r[0] === 'warp' && weak) || (r[0] === 'rush' && (rush || shut() || S.call <= 0));
     html += '<div class="offer"><img src="assets/' + r[1] + '.png" alt=""><div><b>' + r[2] + '</b><span>' + r[3] + ' · ' +
       (left > 0 ? left + ' left today' : 'back tomorrow') + '</span></div><button type="button" class="btn" data-a="' + r[0] + '"' +
       (off ? ' disabled' : '') + '>' + adLabel() + '</button></div>';

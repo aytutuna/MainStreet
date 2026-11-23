@@ -57,7 +57,7 @@ var STAFF = 0.7;
 // of play, and the clock starts at START_H
 var CLOCK = 1440;
 var SHUT = [23, 1];
-var START_H = 8;
+var START_H = 6;
 var speed = 1;
 var shutNow = null;
 var clock = function () { return Date.now(); };
@@ -276,6 +276,14 @@ function stamp() {
   var h = Math.floor(m / 60);
   var n = m % 60;
   return ((h + 11) % 12 + 1) + ':' + (n < 10 ? '0' : '') + n + (h < 12 ? ' AM' : ' PM');
+}
+
+// the first purchase is what the opening prompt waits for
+function started() {
+  var n = 0;
+  BIZ.forEach(function (b) { n += lv(b.id); });
+  PLACES.forEach(function (p) { n += S.pl[p.id]; });
+  return n > 1 || S.store > 1 || S.day.n > 0;
 }
 
 function flow() {
@@ -689,18 +697,22 @@ function stockStep(dt) {
 
 function tick(dt) {
   dt *= speed;
-  if (S.x2 > 0) S.x2 = Math.max(0, S.x2 - dt);
+  // the clock waits for the first purchase, so the opening never meets a closing
+  if (started()) S.clk = (S.clk + dt) % CLOCK;
+  var off = shut();
+  if (S.x2 > 0 && !off) S.x2 = Math.max(0, S.x2 - dt);
   if (S.call > 0) S.call = Math.max(0, S.call - dt);
   lostT -= dt;
   calmT -= dt;
-  S.clk = (S.clk + dt) % CLOCK;
-  var off = shut();
-  if (shutNow !== null && off !== shutNow && onPerk) onPerk(off ? 'close' : 'open');
-  shutNow = off;
-  if (!rush) {
-    incRate += (inc / dt - incRate) * Math.min(1, dt / 30);
-    inc = 0;
+  if (shutNow !== null && off !== shutNow) {
+    // a rush has nobody to bring in once the doors shut
+    if (off && rush) rush.left = 0;
+    if (onPerk) onPerk(off ? 'close' : 'open');
   }
+  shutNow = off;
+  // the steady rate a rush is measured against is the last one from while open
+  if (!rush && !off) incRate += (inc / dt - incRate) * Math.min(1, dt / 30);
+  if (!rush) inc = 0;
   var f = flow();
   for (var k in due) {
     if (off) {
@@ -803,14 +815,14 @@ function startRush() {
 
 // the manager's button: a free rush once the cooldown is over, or any time for the gems or the ad that paid for it
 function callRush(paid) {
-  if (rush || (S.call > 0 && !paid)) return false;
+  if (rush || shut() || (S.call > 0 && !paid)) return false;
   S.call = CALL.cool;
   startRush();
   return true;
 }
 
 function callRushGems() {
-  if (rush || S.gems < CALL.gems) return false;
+  if (rush || shut() || S.gems < CALL.gems) return false;
   S.gems -= CALL.gems;
   return callRush(true);
 }
@@ -988,6 +1000,7 @@ function away(sec) {
   var gain = baseRate() * (s + xs) * up * (S.iap.x2 ? 2 : 1) * (1 + HEAD * S.pl.head);
   var n = Math.floor((served() + gardenServed()) * s * up);
   S.clk = (S.clk + sec) % CLOCK;
+  shutNow = shut();
   S.x2 = Math.max(0, S.x2 - s);
   S.call = Math.max(0, S.call - s);
   perkOff();

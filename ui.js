@@ -722,14 +722,6 @@ function buyBtn(k, b, label, c, locked) {
   flag(k, 'poor', b, 'poor', poor);
 }
 
-// the first purchase is what the opening prompt waits for
-function started() {
-  var n = 0;
-  BIZ.forEach(function (b) { n += lv(b.id); });
-  PLACES.forEach(function (p) { n += S.pl[p.id]; });
-  return n > 1 || S.store > 1 || S.day.n > 0;
-}
-
 function makeRow(id) {
   var b = BZ[id] || PL[id];
   var el = document.createElement('div');
@@ -1233,7 +1225,7 @@ function updateHud() {
   var cash = free ? 'Unlimited' : money(S.cash);
   set(shown, 'cash', $('cash-n'), 'textContent', cash);
   flag(shown, 'cl', $('cash'), 'long', cash.length > 6);
-  set(shown, 'rate', $('rate'), 'textContent', '+' + money(rate()) + '/s');
+  set(shown, 'rate', $('rate'), 'textContent', shut() ? 'Closed' : '+' + money(rate()) + '/s');
   set(shown, 'clk', $('clk'), 'textContent', (shut() ? 'Closed · ' : '') + stamp());
   flag(shown, 'clc', $('clk'), 'shut', shut());
   set(shown, 'gems', $('gem-n'), 'textContent', short(S.gems));
@@ -1245,8 +1237,9 @@ function updateHud() {
   if (S.x2 > 0) set(shown, 'x2t', x, 'textContent', 'x2  ' + clock2(S.x2));
   var cl = $('call');
   set(shown, 'ch', cl, 'hidden', !!rush || !started());
-  set(shown, 'ct', cl, 'textContent', S.call > 0 ? 'Call in ' + clock2(S.call) : 'Call a rush');
-  flag(shown, 'cr', cl, 'ready', S.call <= 0);
+  set(shown, 'ct', cl, 'textContent', shut() ? 'Closed' : S.call > 0 ? 'Call in ' + clock2(S.call) : 'Call a rush');
+  flag(shown, 'cr', cl, 'ready', S.call <= 0 && !shut());
+  set(shown, 'cd', cl, 'disabled', shut());
   var r = $('rush');
   set(shown, 'rh', r, 'hidden', !rush);
   if (rush) {
@@ -1757,9 +1750,9 @@ function paintBoost() {
   $('b-warp').innerHTML = '<img src="assets/ui_gem.png" alt="">' + WARP_COST;
   $('b-warp').disabled = S.gems < WARP_COST || weak;
   $('call-txt').textContent = S.call > 0 ? 'Ready in ' + clock2(S.call) + ', or call one now.' : 'Brings a rush now. Then ' + CALL.cool / 60 + ' min to wait.';
-  $('call-need').textContent = rush ? 'A rush is on.' : S.call > 0 ? gemsLeft(CALL.gems) : '';
+  $('call-need').textContent = rush ? 'A rush is on.' : shut() ? 'The store is closed.' : S.call > 0 ? gemsLeft(CALL.gems) : '';
   $('b-call').innerHTML = S.call > 0 ? '<img src="assets/ui_gem.png" alt="">' + CALL.gems : 'Call';
-  $('b-call').disabled = !!rush || (S.call > 0 && S.gems < CALL.gems);
+  $('b-call').disabled = !!rush || shut() || (S.call > 0 && S.gems < CALL.gems);
   $('reg-txt').textContent = regOwned() + ' of ' + REGS.length + ' met, sales +' + Math.round((regMul() - 1) * 100) + '%';
   paintAds();
 }
@@ -1793,7 +1786,8 @@ var PERK_IC = {
   cash: '<circle cx="12" cy="12" r="9" fill="#f0c040"/><circle cx="12" cy="12" r="5.5" fill="none" stroke-width="1.4"/><path d="M12 9v6" stroke-width="1.6"/>',
   cheap: '<path d="M3 12V4h8l10 10-8 8z" fill="#4f9a40"/><circle cx="7.5" cy="8.5" r="1.6" fill="#fff"/>',
   pace: '<circle cx="12" cy="13.5" r="8" fill="#fff"/><path d="M12 13.5V8.5M10 3h4M12 3v2.5M12 13.5l3.5 2" fill="none"/>',
-  away: '<path d="M18 15.5A8.5 8.5 0 0 1 9 3a8.5 8.5 0 1 0 9 12.5z" fill="#f0c040"/><path d="M17 4v4M15 6h4" fill="none" stroke-width="1.6"/>',
+  away: '<rect x="4" y="5" width="16" height="15" rx="2" fill="#fff"/><path d="M4 10h16M8 3v4M16 3v4" fill="none"/>',
+  night: '<circle cx="12" cy="12" r="9" fill="#2d3a63"/><path d="M12 6.5V12l3.5 2.5" fill="none" stroke="#fff"/>',
   rush: '<path d="M13.5 2 5 13.5h6L9.5 22 19 9.5h-6z" fill="#f0c040"/>',
   sales: '<path d="M12 20.5S3.5 15.5 3.5 9.5a4.5 4.5 0 0 1 8.5-2 4.5 4.5 0 0 1 8.5 2c0 6-8.5 11-8.5 11z" fill="#e0647a"/>',
   gems: '<path d="M6 3h12l4 6-10 12L2 9z" fill="#5fc4ee"/><path d="M2 9h20M9 3l-2 6 5 12 5-12-2-6" fill="none" stroke-width="1.2"/>',
