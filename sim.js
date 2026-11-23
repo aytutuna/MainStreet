@@ -84,7 +84,7 @@ var S = fresh();
 
 function fresh() {
   var s = { v: 11, cash: START_CASH, gems: 0, rep: 0, pk: {}, store: 1, run: 0, all: 0, pend: 0, x2: 0, call: 0, b: {}, ms: {},
-    st: { srv: 0, lost: 0 }, goal: [0, 1, 2], gn: 3, gd: {}, day: { n: 0, d: -1 }, mi: { d: -1, m: [], b: 0 }, rg: { o: {}, days: 0, gifts: 0, combo: 0 }, lk: { on: 'classic', own: {} }, ac: { o: {}, m: {} },
+    st: { srv: 0, lost: 0, sr: 0, t: 0 }, goal: [0, 1, 2], gn: 3, gd: {}, day: { n: 0, d: -1 }, mi: { d: -1, m: [], b: 0 }, rg: { o: {}, days: 0, gifts: 0, combo: 0 }, lk: { on: 'classic', own: {} }, ac: { o: {}, m: {} },
     ask: 0, iap: { noads: 0, x2: 0, starter: 0, tx: [] }, ads: { d: -1, n: {}, pt: 0, li: 0 }, ts: clock() };
   noPlaces(s);
   s.b.produce = atLevel('produce', 1);
@@ -577,6 +577,7 @@ function pay(c, t) {
   if (rush) rush.got += v;
   else inc += v;
   S.st.srv++;
+  S.st.sr++;
   mis('serve', 1);
   mis('earn', v);
   gone(c);
@@ -953,6 +954,7 @@ function away(sec) {
   perkOff();
   S.pend += gain;
   S.st.srv += n;
+  S.st.sr += n;
   return { secs: s, real: sec, gain: gain, n: n };
 }
 
@@ -1195,6 +1197,7 @@ function move() {
   S.store++;
   S.cash = START_CASH + pv('cash');
   S.run = 0;
+  S.st.sr = 0;
   S.ms = {};
   noPlaces(S);
   S.b = startBiz();
@@ -1473,6 +1476,8 @@ function validate(o) {
   if (o.st) {
     s.st.srv = Math.floor(num(o.st.srv, 0));
     s.st.lost = Math.floor(num(o.st.lost, 0));
+    s.st.sr = Math.min(s.st.srv, Math.floor(num(o.st.sr, 0)));
+    s.st.t = num(o.st.t, 0);
   }
   // before the move a store sale was counted in st.sales
   s.store = Math.min(1000, Math.max(1, Math.floor(num(o.store, 0)) || 1 + Math.floor(num(o.st && o.st.sales, 0))));
