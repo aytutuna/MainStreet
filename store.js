@@ -3235,8 +3235,15 @@ landMat.onBeforeCompile = function (sh) {
   sh.uniforms.ct = cloudU.t;
   sh.uniforms.csun = cloudU.sun;
   sh.vertexShader = 'varying vec2 cp;\n' + sh.vertexShader.replace('#include <begin_vertex>', '#include <begin_vertex>\ncp = (modelMatrix * vec4(position, 1.0)).xz;');
-  sh.fragmentShader = 'varying vec2 cp;\nuniform float ct;\nuniform float csun;\n' + sh.fragmentShader.replace('#include <color_fragment>',
-    '#include <color_fragment>\nvec2 cq = cp * 0.03 + vec2(ct, ct * 0.5);\n' +
+  sh.fragmentShader = 'varying vec2 cp;\nuniform float ct;\nuniform float csun;\n' +
+    'float gh(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }\n' +
+    'float gv(vec2 p) { vec2 i = floor(p); vec2 f = fract(p); f = f * f * f * (f * (f * 6.0 - 15.0) + 10.0);\n' +
+    '  return mix(mix(gh(i), gh(i + vec2(1.0, 0.0)), f.x), mix(gh(i + vec2(0.0, 1.0)), gh(i + vec2(1.0, 1.0)), f.x), f.y); }\n' +
+    sh.fragmentShader.replace('#include <color_fragment>',
+    // grass grain: a broad wash and a finer mottle, each tilting the green a little warmer or cooler
+    '#include <color_fragment>\nfloat gg = gv(cp * 0.22) * 0.6 + gv(mat2(0.8, 0.6, -0.6, 0.8) * cp * 0.9) * 0.4 - 0.5;\n' +
+    'diffuseColor.rgb *= 1.0 + gg * 0.22;\ndiffuseColor.r += gg * 0.035;\n' +
+    'vec2 cq = cp * 0.03 + vec2(ct, ct * 0.5);\n' +
     'float cn = sin(cq.x * 2.0) * sin(cq.y * 2.0 + 1.0) + 0.6 * sin(cq.x * 4.0 + 2.0) * sin(cq.y * 4.0) + 0.25 * sin(cq.x * 8.0 + cq.y * 6.0);\n' +
     'vec2 cf = max(vec2(-48.0 - cp.x, -42.0 - cp.y), vec2(cp.x - 48.0, cp.y - 44.0));\n' +
     'float cz = 0.15 + 0.85 * smoothstep(0.0, 14.0, max(cf.x, cf.y));\n' +
@@ -3439,7 +3446,7 @@ function buildLand() {
     var z = Z0 + j * LAND_STEP;
     var h = hh[j * W + i];
     var d = LAND.away(x, z);
-    var n = LAND.noise(x / 6 + 5, z / 6) - 0.5;
+    var n = LAND.noise(x / 14 + 5, z / 14) - 0.5;
     c.copy(cMeadow[0]).lerp(cMeadow[1], LAND.noise(x / 13, z / 13 + 8));
     var fo = LAND.forest(x, z);
     c.lerp(cDry, LAND.smooth(0.55, 0.75, LAND.noise(x / 17 + 30, z / 17)) * 0.55 * (1 - fo));
@@ -3447,7 +3454,7 @@ function buildLand() {
     c.lerp(c2.copy(cWood[0]).lerp(cWood[1], LAND.noise(x / 9, z / 9)), fo * 0.8);
     c.lerp(cHigh, LAND.smooth(5, 16, h) * 0.5);
     c.lerp(cRock, LAND.smooth(0.7, 0.9, 1 - ny) * 0.55 + LAND.smooth(14, 26, h) * 0.35);
-    c.multiplyScalar(1 + n * 0.12);
+    c.multiplyScalar(1 + n * 0.05);
     var w = wl[j * W + i];
     if (w > NONE) {
       var up = h - w;
@@ -3467,6 +3474,7 @@ function buildLand() {
       var j1 = Math.min(nz, j0 + span);
       var cw = i1 - i0 + 1;
       var pos = [];
+      var nrm = [];
       var col = [];
       var idx = [];
       var wp = [];
@@ -3477,8 +3485,10 @@ function buildLand() {
         for (var gi = i0; gi <= i1; gi++) {
           var nxv = hAt(gi - 1, gj) - hAt(gi + 1, gj);
           var nzv = hAt(gi, gj - 1) - hAt(gi, gj + 1);
+          var nl = Math.hypot(nxv, 2 * LAND_STEP, nzv);
           pos.push(X0 + gi * LAND_STEP, hh[gj * W + gi], Z0 + gj * LAND_STEP);
-          tint(gi, gj, 2 * LAND_STEP / Math.hypot(nxv, 2 * LAND_STEP, nzv));
+          nrm.push(nxv / nl, 2 * LAND_STEP / nl, nzv / nl);
+          tint(gi, gj, 2 * LAND_STEP / nl);
           col.push(c.r, c.g, c.b);
         }
       }
@@ -3519,34 +3529,12 @@ function buildLand() {
           });
         }
       }
-      // every face has its own normal, so the hills read as low-poly facets
-      var fp = [];
-      var fc = [];
-      var fn = [];
-      for (var ti = 0; ti < idx.length; ti += 3) {
-        var ia = idx[ti] * 3;
-        var ib = idx[ti + 1] * 3;
-        var ic = idx[ti + 2] * 3;
-        var ux = pos[ib] - pos[ia];
-        var uy = pos[ib + 1] - pos[ia + 1];
-        var uz = pos[ib + 2] - pos[ia + 2];
-        var vx = pos[ic] - pos[ia];
-        var vy = pos[ic + 1] - pos[ia + 1];
-        var vz = pos[ic + 2] - pos[ia + 2];
-        var fx = uy * vz - uz * vy;
-        var fy = uz * vx - ux * vz;
-        var fz = ux * vy - uy * vx;
-        var fl = Math.hypot(fx, fy, fz) * (fy < 0 ? -1 : 1);
-        [ia, ib, ic].forEach(function (o) {
-          fp.push(pos[o], pos[o + 1], pos[o + 2]);
-          fc.push(col[o], col[o + 1], col[o + 2]);
-          fn.push(fx / fl, fy / fl, fz / fl);
-        });
-      }
+      // normals from the height field, so the hills roll instead of breaking into facets
       var g = new THREE.BufferGeometry();
-      g.setAttribute('position', new THREE.Float32BufferAttribute(fp, 3));
-      g.setAttribute('normal', new THREE.Float32BufferAttribute(fn, 3));
-      g.setAttribute('color', new THREE.Float32BufferAttribute(fc, 3));
+      g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+      g.setAttribute('normal', new THREE.Float32BufferAttribute(nrm, 3));
+      g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+      g.setIndex(idx);
       var m = new THREE.Mesh(g, landMat);
       var wx0 = X0 + i0 * LAND_STEP;
       var wz0 = Z0 + j0 * LAND_STEP;
