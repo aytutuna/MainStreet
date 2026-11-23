@@ -1,3 +1,4 @@
+import AVFoundation
 import UIKit
 import UserNotifications
 import WebKit
@@ -92,7 +93,12 @@ final class GameViewController: UIViewController, WKNavigationDelegate, WKUIDele
 
     // The web view is the root view so it covers the notch and home indicator and env(safe-area-inset-*) is real.
     override func loadView() {
+        // Game sounds mix with the player's music and follow the silent switch.
+        try? AVAudioSession.sharedInstance().setCategory(.ambient, options: [.mixWithOthers])
+        try? AVAudioSession.sharedInstance().setActive(true)
         let config = WKWebViewConfiguration()
+        config.allowsInlineMediaPlayback = true
+        config.mediaTypesRequiringUserActionForPlayback = []
         config.userContentController.add(BuzzHandler(), name: "buzz")
         config.userContentController.add(NotifyHandler(), name: "notify")
         config.userContentController.add(store, name: "store")

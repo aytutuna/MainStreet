@@ -1586,7 +1586,10 @@ function wire() {
   });
   $('away-ok').addEventListener('click', function () { takeAway(false, 'away-ok'); });
   $('away-x2').addEventListener('click', function () { takeAway(true, 'away-x2'); });
+  // WebKit only lets audio start from some events, so listen to all of them
   document.addEventListener('pointerup', wake);
+  document.addEventListener('touchend', wake);
+  document.addEventListener('click', wake);
   window.addEventListener('resize', fitInsets);
   var hiddenAt = 0;
   document.addEventListener('visibilitychange', function () {
