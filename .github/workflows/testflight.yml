@@ -15,7 +15,7 @@ concurrency:
 
 jobs:
   upload:
-    runs-on: macos-26
+    runs-on: xcode-27
     timeout-minutes: 60
     env:
       APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
@@ -34,8 +34,8 @@ jobs:
             exit 1
           fi
       - uses: actions/checkout@v7
-      - name: Select Xcode 26.6
-        run: sudo xcode-select -s /Applications/Xcode_26.6.app
+      - name: Select Xcode 27.2
+        run: sudo xcode-select -s /Applications/Xcode_27.2.app
       # Pinned release, checked against its SHA-256.
       - name: Install XcodeGen
         env:
