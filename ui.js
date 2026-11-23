@@ -988,7 +988,10 @@ function updateGoals() {
     c.bar.style.width = (g.v / g.n * 100) + '%';
     set(c.k, 'g', c.tag, 'textContent', g.done ? 'Claim +' + g.gems : '+' + g.gems);
   });
-  if (!$('daily').hidden && missSig !== missionSig()) paintMissions();
+  if (!$('daily').hidden) {
+    if (missSig !== missionSig()) paintMissions();
+    else missBars();
+  }
   var cd = daily().can || missionDue();
   set(shown, 'dd', $('daily-dot'), 'hidden', !cd);
   set(shown, 'sd', $('sell-dot'), 'hidden', !canMove());
@@ -1069,7 +1072,22 @@ var missSig = '';
 
 // what the open sheet shows, so it is only painted again when that changes
 function missionSig() {
-  return missions().map(function (m) { return Math.floor(m.p / m.n * 100) + ':' + m.c; }).join() + S.mi.b + S.mi.d;
+  return missions().map(function (m) { return (m.p >= m.n) + ':' + m.c; }).join() + S.mi.b + S.mi.d;
+}
+
+function missLine(m) {
+  var v = m.k === 'earn' ? short(Math.floor(m.p)) + '/' + short(m.n) : Math.floor(m.p) + '/' + m.n;
+  return missionText(m) + (m.k === 'open' || m.k === 'star' ? '' : ' (' + v + ')');
+}
+
+// progress moves in place; rebuilding the rows every pass could eat a tap on a claim button
+function missBars() {
+  var rs = $('miss').children;
+  missions().forEach(function (m, i) {
+    if (!rs[i]) return;
+    rs[i].firstChild.textContent = missLine(m);
+    rs[i].querySelector('u').style.width = m.p / m.n * 100 + '%';
+  });
 }
 
 // the day's missions with a claim for each finished one, and the bonus for all three
@@ -1105,8 +1123,7 @@ function paintMissions() {
   }
   missions().forEach(function (m, i) {
     var done = m.p >= m.n;
-    var v = m.k === 'earn' ? short(Math.floor(m.p)) + '/' + short(m.n) : Math.floor(m.p) + '/' + m.n;
-    row(missionText(m) + (m.k === 'open' || m.k === 'star' ? '' : ' (' + v + ')'), m.p / m.n, m.c ? 'Done' : '+' + m.g, done && !m.c, function () { return claimMission(i); });
+    row(missLine(m), m.p / m.n, m.c ? 'Done' : '+' + m.g, done && !m.c, function () { return claimMission(i); });
   });
   var all = missions().every(function (m) { return m.c; });
   row('All three: ' + MISS_BONUS.gems + ' gems, x2 ' + MISS_BONUS.x2 + ' min', all ? 1 : missions().filter(function (m) { return m.c; }).length / 3, S.mi.b ? 'Done' : 'Bonus', bonusReady(), claimBonus);
