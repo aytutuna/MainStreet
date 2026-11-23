@@ -5,8 +5,8 @@ var START_CASH = 5;
 // each store is worth this much more income than the one before; the move needs GATE0 department stars in store 1
 // and GATE_STEP more in each one after, up to every star in the store
 var STORE_MUL = 1.45;
-var GATE0 = 42;
-var GATE_STEP = 6;
+var GATE0 = 16;
+var GATE_STEP = 3;
 var HALL_BOOST = 0.1;
 var X2_COST = 20;
 var AWAY_X2 = 5;
@@ -967,7 +967,7 @@ function gate() {
 }
 
 function canMove() {
-  return BIZ.every(function (b) { return has(b.id); }) && rating() >= gate();
+  return rating() >= gate();
 }
 
 // reputation a move pays: a point for each star and each open department, and one for each digit earned in the store
