@@ -1785,27 +1785,72 @@ function perkFx(id, l) {
   return v ? '+' + v + (v > 1 ? ' gems' : ' gem') : 'base';
 }
 
+var PERK_IC = {
+  open: '<path d="M4 10v10h16V10" fill="#f0c040"/><path d="M2.5 10 5 4h14l2.5 6z" fill="#c4432f"/><path d="M9 20v-6h6v6" fill="#fff"/>',
+  cash: '<circle cx="12" cy="12" r="9" fill="#f0c040"/><circle cx="12" cy="12" r="5.5" fill="none" stroke-width="1.4"/><path d="M12 9v6" stroke-width="1.6"/>',
+  cheap: '<path d="M3 12V4h8l10 10-8 8z" fill="#4f9a40"/><circle cx="7.5" cy="8.5" r="1.6" fill="#fff"/>',
+  pace: '<circle cx="12" cy="13.5" r="8" fill="#fff"/><path d="M12 13.5V8.5M10 3h4M12 3v2.5M12 13.5l3.5 2" fill="none"/>',
+  away: '<path d="M18 15.5A8.5 8.5 0 0 1 9 3a8.5 8.5 0 1 0 9 12.5z" fill="#f0c040"/><path d="M17 4v4M15 6h4" fill="none" stroke-width="1.6"/>',
+  rush: '<path d="M13.5 2 5 13.5h6L9.5 22 19 9.5h-6z" fill="#f0c040"/>',
+  sales: '<path d="M12 20.5S3.5 15.5 3.5 9.5a4.5 4.5 0 0 1 8.5-2 4.5 4.5 0 0 1 8.5 2c0 6-8.5 11-8.5 11z" fill="#e0647a"/>',
+  gems: '<path d="M6 3h12l4 6-10 12L2 9z" fill="#5fc4ee"/><path d="M2 9h20M9 3l-2 6 5 12 5-12-2-6" fill="none" stroke-width="1.2"/>',
+  medal: '<path d="M7 2l3 7M17 2l-3 7" fill="none" stroke="#c4432f" stroke-width="3.2"/><circle cx="12" cy="15" r="6.5" fill="#f0c040"/><path d="M12 11.5l1.1 2.3 2.5.3-1.8 1.7.5 2.5-2.3-1.2-2.3 1.2.5-2.5-1.8-1.7 2.5-.3z" fill="#fff" stroke-width="0.8"/>'
+};
+
+function icon(id, cls) {
+  return '<svg class="' + (cls || 'pk') + '" viewBox="0 0 24 24" fill="none" stroke="#3b2a1e" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round" aria-hidden="true">' + PERK_IC[id] + '</svg>';
+}
+
 function paintPerks() {
   $('perks').innerHTML = PERKS.map(function (p) {
     var l = S.pk[p.id] || 0;
     var c = perkCost(p.id);
-    return '<div class="offer"><div><b>' + p.name + ' <i>' + l + '/' + p.cost.length + '</i></b><span>' + p.what + ': ' + perkFx(p.id, l) +
-      (c ? ' → ' + perkFx(p.id, l + 1) : ' (max)') + '</span></div>' +
-      (c ? '<button type="button" class="btn" data-p="' + p.id + '"' + (c > S.rep ? ' disabled' : '') + '>' + c + ' rep</button>' : '') + '</div>';
+    var pips = '';
+    for (var i = 0; i < p.cost.length; i++) pips += '<u' + (i < l ? ' class="on"' : '') + '></u>';
+    return '<div class="perk"><div class="ph">' + icon(p.id) + '<div><b>' + p.name + '</b><div class="pips">' + pips + '</div></div></div><span>' + p.what + ': ' +
+      perkFx(p.id, l) + (c ? ' → ' + perkFx(p.id, l + 1) : ' (max)') + '</span>' +
+      (c ? '<button type="button" class="btn" data-p="' + p.id + '"' + (c > S.rep ? ' disabled' : '') + '>' + c + ' rep</button>' : '<em>Maxed</em>') + '</div>';
   }).join('');
 }
 
-function openSell() {
+// the sign, the star ring and what the move pays; painted again when a perk takes reputation
+function paintSell() {
   var r = rating();
   var g = gate();
-  var open = opened();
   var ok = canMove();
-  $('sell-txt').innerHTML = 'Open: <b>' + open + ' of ' + BIZ.length + '</b> departments · stars <b>' + Math.min(r, g) + ' of ' + g + '</b>' +
-    (r > g ? ' (+' + (r - g) + ' extra)' : '') + '. ' + (ok ? 'Ready to move.' : 'Reach ' + g + ' stars to move.') +
-    ' Store ' + (S.store + 1) + ' earns <b>x' + storeMul(S.store + 1) + '</b> income, up from x' + storeMul(S.store) + '.';
-  $('sell-rep').innerHTML = 'You have <b>' + S.rep + ' rep</b>. Moving now pays <b>+' + repGain() + '</b>: one for each star and each open department, and more the more this store earned.';
+  var got = Math.min(r, g);
+  var circ = 2 * Math.PI * 36;
+  var stars = '';
+  [[34, 28], [262, 22], [22, 66], [276, 62]].forEach(function (q) {
+    stars += '<polygon transform="translate(' + q[0] + ' ' + q[1] + ')" points="0,-7 2,-2.4 6.7,-2.2 3.2,1 4.1,5.7 0,3.2 -4.1,5.7 -3.2,1 -6.7,-2.2 -2,-2.4" fill="#f0c040"/>';
+  });
+  $('sell-art').innerHTML = '<svg viewBox="0 0 300 110" aria-hidden="true"><defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8fd4ff"/>' +
+    '<stop offset="1" stop-color="#f6ecd2"/></linearGradient></defs><rect width="300" height="110" fill="url(#sky)"/><rect y="94" width="300" height="16" fill="#4f9a40"/>' + stars +
+    '<rect x="96" y="60" width="9" height="40" fill="#6a5640"/><rect x="195" y="60" width="9" height="40" fill="#6a5640"/>' +
+    '<rect x="64" y="12" width="172" height="64" rx="10" fill="#c4432f" stroke="#3b2a1e" stroke-width="3"/><rect x="71" y="19" width="158" height="50" rx="6" fill="none" stroke="#fff" stroke-width="2"/>' +
+    '<text x="150" y="37" text-anchor="middle" fill="#fff" font-size="12" font-weight="800" letter-spacing="3">STORE</text>' +
+    '<text x="150" y="64" text-anchor="middle" fill="#fff" font-size="29" font-weight="800">' + (S.store + 1) + '</text></svg>';
+  $('sell-txt').innerHTML = '<div class="ring"><svg viewBox="0 0 88 88" aria-hidden="true"><circle cx="44" cy="44" r="36" fill="none" stroke="#ead9ae" stroke-width="9"/>' +
+    '<circle cx="44" cy="44" r="36" fill="none" stroke="' + (ok ? '#4f9a40' : '#f0c040') + '" stroke-width="9" stroke-linecap="round" stroke-dasharray="' + (circ * got / g).toFixed(1) + ' ' + circ.toFixed(1) +
+    '" transform="rotate(-90 44 44)"/></svg><div><b>' + got + '/' + g + '</b><span>stars</span></div></div><div class="srows">' +
+    '<span>Open <b>' + opened() + ' of ' + BIZ.length + '</b> departments</span><span>Income <b>x' + storeMul(S.store) + ' → x' + storeMul(S.store + 1) + '</b></span>' +
+    '<span class="' + (ok ? 'go' : '') + '">' + (ok ? 'Ready to move.' : 'Reach ' + g + ' stars to move.') + (r > g ? ' +' + (r - g) + ' extra' : '') + '</span></div>';
+  $('sell-rep').innerHTML = icon('medal', 'big') + '<div><b>+' + repGain() + '</b><span>rep for moving now</span></div><small>You have <i>' + S.rep + ' rep</i>. One for each star and each open department, more for a bigger store.</small>';
+  $('sell-ok').classList.toggle('ready', ok);
+}
+
+function openSell() {
+  var ok = canMove();
+  paintSell();
   paintPerks();
-  $('sell-keep').textContent = 'You keep your ' + plural(S.gems, 'gem') + ', reputation, perks, regulars, goals and boosts. Everything else starts again: cash, departments and every place, from the Checkouts to the Head Office. Department stars pay gems again.';
+  var keep = [['ui_gem', plural(S.gems, 'gem')], ['ui_star', 'Reputation and perks'], ['ui_goal', 'Goals and regulars'], ['ui_bolt', 'Boosts']];
+  var lose = [['coin', 'Cash'], ['@open', 'Departments'], ['@cheap', 'Every place, Checkouts to Head Office'], ['ui_star', 'Stars (they pay gems again)']];
+  var list = function (a) {
+    return a.map(function (x) {
+      return '<li>' + (x[0][0] === '@' ? icon(x[0].slice(1), 'mini') : '<img src="assets/' + x[0] + '.png" alt="">') + x[1] + '</li>';
+    }).join('');
+  };
+  $('sell-keep').innerHTML = '<div class="keep"><h4>You keep</h4><ul>' + list(keep) + '</ul></div><div class="lose"><h4>Starts again</h4><ul>' + list(lose) + '</ul></div>';
   $('sell-ok').textContent = ok ? 'Move to store ' + (S.store + 1) : 'See departments';
   $('sell-ok').classList.toggle('alt', !ok);
   $('sell').hidden = false;
@@ -2013,7 +2058,7 @@ function wire() {
     sfx('done');
     buzz('success');
     paintPerks();
-    $('sell-rep').firstElementChild.textContent = S.rep + ' rep';
+    paintSell();
     nudge();
   });
   $('sell-ok').addEventListener('click', function () {

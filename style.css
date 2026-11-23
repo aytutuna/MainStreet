@@ -2286,3 +2286,270 @@ small {
   margin: 0 -2px;
   image-rendering: pixelated;
 }
+
+#sell .box > * {
+  flex: none;
+}
+
+#sell .box {
+  gap: 10px;
+}
+
+#sell-art {
+  border: 2px solid var(--ink);
+  border-radius: 14px;
+  overflow: hidden;
+  line-height: 0;
+}
+
+#sell-art svg {
+  width: 100%;
+  height: auto;
+}
+
+#sell-txt,
+#sell-rep {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  text-align: left;
+}
+
+#sell-txt .ring {
+  position: relative;
+  flex: none;
+  width: 84px;
+  height: 84px;
+}
+
+#sell-txt .ring div {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.05;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+#sell-txt .ring b {
+  font-size: 20px;
+  color: var(--ink);
+}
+
+.srows {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.srows b {
+  color: var(--ink);
+}
+
+.srows .go {
+  color: var(--green2);
+  font-weight: 800;
+}
+
+#sell-rep {
+  flex-wrap: wrap;
+  border: 2px solid var(--ink);
+  border-radius: 14px;
+  background: #ffe9a8;
+  padding: 8px 12px;
+}
+
+#sell-rep svg.big {
+  width: 44px;
+  height: 44px;
+}
+
+#sell-rep > div {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+#sell-rep > div b {
+  font-size: 32px;
+  color: #7a4a10;
+}
+
+#sell-rep > div span {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+#sell-rep small {
+  flex-basis: 100%;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+#sell-rep small i {
+  font-style: normal;
+  font-weight: 800;
+  color: var(--ink);
+}
+
+#sell-keep {
+  display: flex;
+  gap: 8px;
+  text-align: left;
+}
+
+#sell-keep > div {
+  flex: 1;
+  border: 2px solid var(--ink);
+  border-radius: 14px;
+  padding: 8px;
+}
+
+.keep {
+  background: #e0f0c8;
+}
+
+.lose {
+  background: #f6dcd2;
+}
+
+#sell-keep h4 {
+  font-size: 13px;
+  margin: 0 0 4px;
+}
+
+#sell-keep ul {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 12px;
+  line-height: 1.15;
+}
+
+#sell-keep li {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+#sell-keep li img,
+#sell-keep li svg {
+  flex: none;
+  width: 18px;
+  height: 18px;
+  image-rendering: pixelated;
+}
+
+#sell-ok.ready {
+  font-size: 20px;
+  padding: 14px;
+  animation: ready 1.6s ease-in-out infinite;
+}
+
+@keyframes ready {
+  0%,
+  100% {
+    box-shadow: 0 3px 0 var(--green2), 0 0 0 0 rgba(120, 220, 90, 0);
+  }
+  50% {
+    box-shadow: 0 3px 0 var(--green2), 0 0 16px 5px rgba(120, 220, 90, 0.85);
+  }
+}
+
+#perks {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.perk {
+  border: 2px solid var(--ink);
+  border-radius: 14px;
+  padding: 8px;
+  background: var(--paper2);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  text-align: left;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.perk > span {
+  flex: 1;
+  line-height: 1.2;
+}
+
+.perk .ph {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.perk .ph > div {
+  min-width: 0;
+}
+
+.perk b {
+  display: block;
+  color: var(--ink);
+  font-size: 13px;
+  line-height: 1.1;
+}
+
+svg.pk {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  padding: 4px;
+  border: 2px solid var(--ink);
+  border-radius: 10px;
+  background: var(--paper);
+}
+
+.pips {
+  display: flex;
+  gap: 3px;
+  margin-top: 4px;
+}
+
+.pips u {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  border: 1.5px solid var(--ink);
+  background: var(--paper);
+}
+
+.pips u.on {
+  background: var(--gold);
+}
+
+.perk .btn {
+  min-height: 36px;
+  padding: 4px 8px;
+  font-size: 14px;
+}
+
+.perk em {
+  font-style: normal;
+  font-weight: 800;
+  text-align: center;
+  color: var(--green2);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #deals button,
+  .hero::after,
+  #sell-ok.ready {
+    animation: none;
+  }
+}
