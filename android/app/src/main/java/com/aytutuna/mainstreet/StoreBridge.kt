@@ -7,6 +7,7 @@ import com.revenuecat.purchases.PurchasesConfiguration
 import com.revenuecat.purchases.PurchasesError
 import com.revenuecat.purchases.interfaces.GetStoreProductsCallback
 import com.revenuecat.purchases.interfaces.PurchaseCallback
+import com.revenuecat.purchases.interfaces.UpdatedCustomerInfoListener
 import com.revenuecat.purchases.interfaces.ReceiveCustomerInfoCallback
 import com.revenuecat.purchases.models.StoreProduct
 import com.revenuecat.purchases.models.StoreTransaction
@@ -21,6 +22,8 @@ class StoreBridge(private val activity: MainActivity) {
         if (!Purchases.isConfigured) {
             Purchases.configure(PurchasesConfiguration.Builder(activity.applicationContext, BuildConfig.RC_KEY).build())
         }
+        // a purchase finished while the page was gone shows up here; the page credits it if it has not yet
+        Purchases.sharedInstance.updatedCustomerInfoListener = UpdatedCustomerInfoListener { send(it, false) }
     }
 
     fun products(ids: JSONArray?) {
@@ -49,7 +52,9 @@ class StoreBridge(private val activity: MainActivity) {
         }
         Purchases.sharedInstance.purchase(PurchaseParams.Builder(activity, product).build(), object : PurchaseCallback {
             override fun onCompleted(storeTransaction: StoreTransaction, customerInfo: CustomerInfo) {
-                val tx = storeTransaction.orderId ?: storeTransaction.purchaseToken
+                // the id the store list uses for it, so the page counts the purchase once
+                val tx = customerInfo.nonSubscriptionTransactions.filter { it.productIdentifier == id }
+                    .maxByOrNull { it.purchaseDate }?.transactionIdentifier ?: storeTransaction.orderId ?: storeTransaction.purchaseToken
                 activity.emit(JSONObject().put("t", "bought").put("id", id).put("tx", tx))
             }
 
@@ -65,17 +70,23 @@ class StoreBridge(private val activity: MainActivity) {
 
     private fun ask(restored: Boolean) {
         val done = object : ReceiveCustomerInfoCallback {
-            override fun onReceived(customerInfo: CustomerInfo) {
-                val ids = JSONArray()
-                customerInfo.allPurchasedProductIds.forEach { ids.put(it) }
-                activity.emit(JSONObject().put("t", "owned").put("ids", ids).put("restore", restored))
-            }
+            override fun onReceived(customerInfo: CustomerInfo) = send(customerInfo, restored)
 
             override fun onError(error: PurchasesError) {
                 if (restored) activity.emit(JSONObject().put("t", "owned").put("ids", JSONArray()).put("restore", true))
             }
         }
         if (restored) Purchases.sharedInstance.restorePurchases(done) else Purchases.sharedInstance.getCustomerInfo(done)
+    }
+
+    private fun send(info: CustomerInfo, restored: Boolean) {
+        val ids = JSONArray()
+        info.allPurchasedProductIds.forEach { ids.put(it) }
+        val tx = JSONArray()
+        info.nonSubscriptionTransactions.forEach {
+            tx.put(JSONObject().put("id", it.productIdentifier).put("tx", it.transactionIdentifier).put("at", it.purchaseDate.time))
+        }
+        activity.emit(JSONObject().put("t", "owned").put("ids", ids).put("tx", tx).put("restore", restored))
     }
 
     private fun failed(id: String, why: String) {
