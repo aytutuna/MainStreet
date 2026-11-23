@@ -1041,7 +1041,7 @@ function updateGoals() {
   }
   var cd = daily().can || missionDue();
   set(shown, 'dd', $('daily-dot'), 'hidden', !cd);
-  set(shown, 'sd', $('sell-dot'), 'hidden', !canMove());
+  set(shown, 'sd', $('sell-dot'), 'hidden', !canMove() && !perkDue());
 }
 
 function updateOpen() {
@@ -1234,15 +1234,46 @@ function storeMul(n) {
   return Math.round(Math.pow(STORE_MUL, n - 1) * 100) / 100;
 }
 
+function perkDue() {
+  return PERKS.some(function (p) { return perkCost(p.id) && perkCost(p.id) <= S.rep; });
+}
+
+// what a perk is worth at level l, in words
+function perkFx(id, l) {
+  var v = PK[id].val[l];
+  switch (id) {
+    case 'open': return v[1] ? 'Produce ' + v[0] + ', Bakery ' + v[1] : 'Produce ' + v[0];
+    case 'cash': return money(START_CASH + v);
+    case 'cheap': return v ? Math.round(v * 100) + '% off' : 'full price';
+    case 'pace': return v < 1 ? Math.round((1 - v) * 100) + '% quicker' : 'normal';
+    case 'away': return MAX_AWAY / 3600 + v + ' h';
+    case 'rush': return RUSH.secs + v + ' s';
+    case 'sales': return 'x' + v;
+  }
+  return v ? '+' + v + (v > 1 ? ' gems' : ' gem') : 'base';
+}
+
+function paintPerks() {
+  $('perks').innerHTML = PERKS.map(function (p) {
+    var l = S.pk[p.id] || 0;
+    var c = perkCost(p.id);
+    return '<div class="offer"><div><b>' + p.name + ' <i>' + l + '/' + p.cost.length + '</i></b><span>' + p.what + ': ' + perkFx(p.id, l) +
+      (c ? ' → ' + perkFx(p.id, l + 1) : ' (max)') + '</span></div>' +
+      (c ? '<button type="button" class="btn" data-p="' + p.id + '"' + (c > S.rep ? ' disabled' : '') + '>' + c + ' rep</button>' : '') + '</div>';
+  }).join('');
+}
+
 function openSell() {
   var r = rating();
   var g = gate();
   var open = opened();
   var ok = canMove();
-  $('sell-txt').innerHTML = 'Open: <b>' + open + ' of ' + BIZ.length + '</b> departments \u00b7 stars <b>' + Math.min(r, g) + ' of ' + g + '</b>' +
-    (r > g ? ' (+' + (r - g) + ' extra)' : '') + '. ' + (ok ? 'Ready to move.' : 'Open every department and reach ' + g + ' stars to move.') +
+  $('sell-txt').innerHTML = 'Open: <b>' + open + ' of ' + BIZ.length + '</b> departments · stars <b>' + Math.min(r, g) + ' of ' + g + '</b>' +
+    (r > g ? ' (+' + (r - g) + ' extra)' : '') + '. ' + (ok ? 'Ready to move.' : 'Reach ' + g + ' stars to move.') +
     ' Store ' + (S.store + 1) + ' earns <b>x' + storeMul(S.store + 1) + '</b> income, up from x' + storeMul(S.store) + '.';
-  $('sell-keep').textContent = 'You keep your ' + plural(S.gems, 'gem') + ', goals and boosts. Everything else starts again: cash, departments and every place, from the Checkouts to the Head Office. Department stars pay gems again.';
+  $('sell-rep').innerHTML = 'You have <b>' + S.rep + ' rep</b>. Moving now pays <b>+' + repGain() + '</b>: one for each star, each open department and each digit of what this store earned.';
+  paintPerks();
+  $('sell-keep').textContent = 'You keep your ' + plural(S.gems, 'gem') + ', reputation, perks, goals and boosts. Everything else starts again: cash, departments and every place, from the Checkouts to the Head Office. Department stars pay gems again.';
   $('sell-ok').textContent = ok ? 'Move to store ' + (S.store + 1) : 'See departments';
   $('sell-ok').classList.toggle('alt', !ok);
   $('sell').hidden = false;
@@ -1326,6 +1357,14 @@ function wire() {
     $('sell').hidden = true;
     $('sell-ok').dataset.armed = '';
   });
+  $('perks').addEventListener('click', function (e) {
+    var id = e.target.dataset && e.target.dataset.p;
+    if (!id || !buyPerk(id)) return;
+    sfx('done');
+    buzz('success');
+    paintPerks();
+    $('sell-rep').firstElementChild.textContent = S.rep + ' rep';
+  });
   $('sell-ok').addEventListener('click', function () {
     var b = $('sell-ok');
     if (!canMove()) {
@@ -1343,14 +1382,16 @@ function wire() {
       return;
     }
     b.dataset.armed = '';
+    var rep = repGain();
     var moved = move();
     $('sell').hidden = true;
     if (!moved) return;
     afterLoad();
     sfx('mile');
     buzz('success');
-    banner('<b>Welcome to store ' + S.store + '</b><small>Income x' + storeMul(S.store) + '</small>', 0.2, true);
+    banner('<b>Welcome to store ' + S.store + '</b><small>Income x' + storeMul(S.store) + ' · +' + rep + ' rep</small>', 0.2, true);
     nudge();
+    openSell();
   });
   $('gear').addEventListener('click', function () {
     setSound();

@@ -1333,12 +1333,25 @@ small {
   line-height: 1.2;
 }
 
+#perks {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.offer i {
+  font-style: normal;
+  font-weight: 400;
+  color: var(--muted);
+}
+
 .offer .need {
   color: var(--red);
   font-weight: 700;
 }
 
 .offer .btn {
+  white-space: nowrap;
   min-height: 44px;
   padding: 8px 10px;
   font-size: 15px;
