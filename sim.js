@@ -845,7 +845,7 @@ function achMul() {
   return 1 + Math.min(ACH_CAP, v);
 }
 
-// the achievements reached since the last look, now earned and paid
+// the achievements reached since the last check, now earned and paid
 function achieve() {
   var got = [];
   for (var k in ACHM) S.ac.m[k] = Math.min(ACHM[k], achVal({ k: k }));
@@ -1457,7 +1457,7 @@ function validate(o) {
   }
   if (o.lk && typeof o.lk === 'object') {
     LOOKS.forEach(function (l) { if (o.lk.own && o.lk.own[l.id]) s.lk.own[l.id] = 1; });
-    if (LK.hasOwnProperty(o.lk.on)) s.lk.on = o.lk.on;
+    if (typeof o.lk.on === 'string' && LK.hasOwnProperty(o.lk.on)) s.lk.on = o.lk.on;
   }
   if (o.ac && typeof o.ac === 'object') {
     ACHS.forEach(function (a) { if (o.ac.o && o.ac.o[a.id]) s.ac.o[a.id] = 1; });

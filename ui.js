@@ -1360,6 +1360,7 @@ function checkAch() {
   banner(got.length === 1 ? '<b>' + a.name + '</b><small>' + ACH_TIER[a.t].name + ' badge, +' + plural(gems, 'gem') + (ACH_TIER[a.t].sales ? ', sales +' + ACH_TIER[a.t].sales * 100 + '%' : '') + '</small>' :
     '<b>' + got.length + ' achievements</b><small>+' + plural(gems, 'gem') + ' · see the menu</small>', 0, got.some(function (g) { return g.t === 2; }));
   if (!$('ach').hidden) paintAch();
+  if (!$('look').hidden) paintLook();
   save();
 }
 
