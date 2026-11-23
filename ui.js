@@ -49,6 +49,7 @@ var cur = null;
 var nxt = null;
 var order = [];
 var skips = 0;
+var probeT = 0;
 var streamOn = false;
 var stUrl = 0;
 var stEl = null;
@@ -229,6 +230,10 @@ function mixEl() {
   a.addEventListener('error', function () {
     if (a === cur && ++skips < MIX.length) mixNext();
   });
+  // the web view pauses its media when another app takes the audio focus
+  a.addEventListener('pause', function () {
+    if (!a.hold && !a.ended && native()) post({ cmd: 'radio', check: true });
+  });
   return a;
 }
 
@@ -289,8 +294,14 @@ function radioSync() {
   var mix = on && radio.sel === 'mix';
   if (mix && ac) {
     if (!cur) mixNext();
-    else if (cur.paused) go(cur);
-  } else if (cur && !cur.paused) cur.pause();
+    else if (cur.paused) {
+      cur.hold = false;
+      go(cur);
+    }
+  } else if (cur && !cur.paused) {
+    cur.hold = true;
+    cur.pause();
+  }
   var st = on && !mix;
   if (st && !streamOn) {
     streamOn = true;
@@ -306,10 +317,27 @@ function radioSync() {
   }
 }
 
+// Android cannot say when another app stops, only whether music is playing, and the game's own audio counts. So while
+// another app plays, the audio context rests for a moment now and then to ask again
+function watchOther() {
+  if (!otherOn || probeT || !/Android/.test(navigator.userAgent)) return;
+  probeT = setTimeout(function () {
+    probeT = 0;
+    if (!otherOn || !ac) return;
+    ac.suspend().then(function () {
+      setTimeout(function () {
+        post({ cmd: 'radio', check: true });
+        setTimeout(function () { if (snd && !adOpen && !document.hidden) ac.resume(); }, 200);
+      }, 400);
+    });
+  }, 3000);
+}
+
 function radioEvent(ev) {
   if (ev.t === 'other') {
     otherOn = !!ev.on;
     radioSync();
+    watchOther();
   } else if (streamOn && ev.url === station(radio.sel).urls[stUrl]) {
     if (ev.state === 'error') return streamFail();
     stState = ev.state;

@@ -1,5 +1,6 @@
 // Purchases and ads. The native app takes {cmd: 'products', ids}, {cmd: 'buy', id}, {cmd: 'restore'}, {cmd: 'adStart'},
-// {cmd: 'adReady'}, {cmd: 'ad', kind} and {cmd: 'privacy'} on window.webkit.messageHandlers.store and answers through
+// {cmd: 'adReady'}, {cmd: 'ad', kind}, {cmd: 'privacy'} and {cmd: 'radio', ...} on window.webkit.messageHandlers.store and
+// answers through
 // window.nativeStore(ev), ev being one of
 //   {t: 'products', list: [{id, price}]}   the products the store knows, price already in the player's currency
 //   {t: 'owned', ids, tx, restore}         one-time products the player owns, and tx: [{id, tx, at}] for the gem packs
@@ -9,8 +10,16 @@
 //   {t: 'ad', kind, state}                 kind is 'reward' or 'inter'; state is 'ready' or 'none' (whether one can be
 //                                          shown now), 'open', 'rewarded' (the player earned it), 'closed' or 'failed'
 //   {t: 'privacy', required}               whether the consent SDK wants a "Privacy choices" item in the menu
+//   {t: 'radio', state, url, title?}       the stream being played: state is 'buffering', 'playing' or 'error', url the one
+//                                          the page asked for, title what the station says is on (ICY metadata)
+//   {t: 'other', on}                       whether another app is playing music (answers 'radio' check, and comes by itself
+//                                          when the game comes to the front or the music changes); the page keeps its
+//                                          radio and the store murmur quiet while it is
 // 'adStart' runs the consent step and starts the ads SDK (not sent when the player has No ads), 'adReady' is answered
 // with a 'ready' or 'none' for each kind, 'ad' shows one and 'privacy' opens the consent SDK's options form.
+// 'radio' is {url, vol} to play a live stream (vol 0 to 1, replacing any other), {vol} to change the volume, {stop: true}
+// to end it and {check: true} to ask for an 'other' answer.
+// The page tries the next url after an 'error'. The apps stop streams on their own when the game leaves the front.
 // Events that come before the saved game is loaded wait in a queue and are replayed by shopStart().
 // Ids are the full store ids. In a plain browser there is no store handler and nothing here shows.
 var PID = 'com.aytutuna.mainstreet.';
@@ -135,6 +144,7 @@ function shopStart() {
   if (!native()) return;
   loaded = true;
   queued.splice(0).forEach(handle);
+  post({ cmd: 'radio', check: true });
   post({ cmd: 'products', ids: PRODUCTS.map(function (p) { return PID + p.id; }) });
   if (S.ads.pt >= AD_START) adBegin();
   $('b-shop').hidden = false;
