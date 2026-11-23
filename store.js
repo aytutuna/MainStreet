@@ -267,7 +267,7 @@ function joinParts(parts) {
 // the old kit's teal bushes give way to the greener ones of the scenery
 var SWAP = { 'nature/plant_bush': 'flora/sn-stylised-bush*0.17', 'nature/plant_bushLarge': 'flora/sn-stylised-bush*0.26', 'nature/tree_small': 'flora/sn-stylised-tree-8*0.2' };
 // scenery that is too small to be worth a shadow
-var GROUND = /^flora\/(sn-grass|sn-stylised-grass|flower|fern|sn-stone)/;
+var GROUND = /^flora\/(flower|fern|sn-stone)/;
 // pw/Gondola_Island_10.goods is the goods of Gondola_Island_10_Stocked; pw/ProduceTable_15.goods-Apples those of ProduceTable_15_Apples
 var GOODS = /^goods(-(\w+))?$/;
 
