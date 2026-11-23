@@ -112,7 +112,7 @@ var PLACES = [
   { id: 'lounge', name: 'Break Room', ic: 'shop/coffee-maker', after: 'toys', cost: geo(5e8, 5.5, 10),
     next: ['A fridge, pantry and counters', 'Worktops, a kettle and wall cupboards', 'Coffee, microwave and toaster', 'A table with four chairs', 'Pizza boxes on the table', 'A staff member on break',
       'A second table', 'Lockers and a bench', 'A second staff member', 'A sofa corner, notice board and clock'],
-    it: ['Kitchenette', 'Dining', 'Extras', 'Staff'], of: '0001131212' },
+    it: ['Kitchenette', 'Dining', 'Extras', 'Staff'], of: '0001131232' },
   { id: 'head', name: 'Head Office', ic: 'shop/office-desk', after: 'tech', cost: geo(1e9, 6, 10),
     next: ['A manager desk and chairs', 'A computer', 'The manager', 'Filing cabinets', 'A safe and archive shelves', 'A meeting table with chairs', 'A whiteboard and a coffee station',
       'Six more desks and a clerk', 'Archive shelving and a printer table', 'A rug, plants and a water cooler'],

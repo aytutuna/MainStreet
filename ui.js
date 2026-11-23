@@ -361,7 +361,10 @@ function effect(id, x, j) {
 // what a department item's level changes for each shopper or stocker
 function stat(id, x) {
   if (x.stat === 'sell') return '+' + money(perSell(id) * bmul()) + '/shopper';
-  if (x.stat === 'draw') return '+' + (DRAW * 60).toFixed(DRAW * 60 < 1 ? 2 : 1) + ' shoppers/min';
+  if (x.stat === 'draw') {
+    var n = DRAW * 60 * (1 + SERV * S.pl.serv);
+    return '+' + n.toFixed(n < 1 ? 2 : 1) + ' shoppers/min';
+  }
   return '-' + Math.round((1 - STAFF) * 100) + '% stocking time';
 }
 
@@ -834,9 +837,10 @@ function updateMeters() {
 function drawPlace() {
   var pick = null;
   var best = 0;
+  var sm = 1 + SERV * S.pl.serv;
   var sc = placeCost('serv');
   if (sc && firstLeft('serv') >= 0) {
-    best = inRate() / (1 + SERV * S.pl.serv) * SERV / sc;
+    best = inRate() / sm * SERV / sc;
     pick = 'serv';
   }
   [['lot', PER_LOT], ['taxi', PER_TAXI]].forEach(function (p) {
@@ -850,7 +854,7 @@ function drawPlace() {
     if (!has(z.id) || DRAW * sm / cost(z.id, 1) <= best) return;
     var left = z.items.some(function (x, j) { return x.stat === 'draw' && nextPiece(z.id, j) >= 0; });
     if (!left) return;
-    best = DRAW / cost(z.id, 1);
+    best = DRAW * sm / cost(z.id, 1);
     pick = z.id;
   });
   return pick || (S.pl.lot < PL.lot.cost.length ? 'lot' : 'taxi');
@@ -1077,7 +1081,7 @@ function openSell() {
   $('sell-txt').innerHTML = 'Open: <b>' + open + ' of ' + BIZ.length + '</b> departments \u00b7 stars <b>' + Math.min(r, g) + ' of ' + g + '</b>' +
     (r > g ? ' (+' + (r - g) + ' extra)' : '') + '. ' + (ok ? 'Ready to move.' : 'Open every department and reach ' + g + ' stars to move.') +
     ' Store ' + (S.store + 1) + ' earns <b>x' + storeMul(S.store + 1) + '</b> income, up from x' + storeMul(S.store) + '.';
-  $('sell-keep').textContent = 'You keep your ' + plural(S.gems, 'gem') + ', goals and boosts. Everything else starts again: cash, departments, and the Parking, Checkouts, Taxi Stand and Garden Center. Department stars pay gems again.';
+  $('sell-keep').textContent = 'You keep your ' + plural(S.gems, 'gem') + ', goals and boosts. Everything else starts again: cash, departments and every place, from the Checkouts to the Head Office. Department stars pay gems again.';
   $('sell-ok').textContent = ok ? 'Move to store ' + (S.store + 1) : 'See departments';
   $('sell-ok').classList.toggle('alt', !ok);
   $('sell').hidden = false;
