@@ -2,13 +2,15 @@ import RevenueCat
 import UIKit
 import WebKit
 
-// The page sends {cmd: "products", ids}, {cmd: "buy", id}, {cmd: "restore"}, {cmd: "adReady"} and {cmd: "ad", kind} to the
-// "store" handler and gets its answers through window.nativeStore(event); shop.js lists the events. Purchases go through
-// RevenueCat, ads through AdsBridge. The web view is held weakly, since it holds this handler.
+// The page sends {cmd: "products", ids}, {cmd: "buy", id}, {cmd: "restore"}, {cmd: "adReady"}, {cmd: "ad", kind} and
+// {cmd: "radio", ...} to the "store" handler and gets its answers through window.nativeStore(event); shop.js lists the
+// events. Purchases go through RevenueCat, ads through AdsBridge, radio streams through RadioBridge. The web view is held
+// weakly, since it holds this handler.
 final class StoreBridge: NSObject, WKScriptMessageHandler, PurchasesDelegate {
     weak var web: WKWebView?
     private var found: [String: StoreProduct] = [:]
     private lazy var ads = AdsBridge(presenter: presenter, emit: { [weak self] in self?.emit($0) })
+    private lazy var radio = RadioBridge(emit: { [weak self] in self?.emit($0) })
     private let presenter: () -> UIViewController?
 
     init(presenter: @escaping () -> UIViewController?) {
@@ -42,6 +44,8 @@ final class StoreBridge: NSObject, WKScriptMessageHandler, PurchasesDelegate {
             ads.options()
         case "ad":
             ads.show(msg["kind"] as? String ?? "")
+        case "radio":
+            radio.command(msg)
         default:
             break
         }

@@ -55,11 +55,12 @@ private final class NotifyHandler: NSObject, WKScriptMessageHandler {
 }
 
 // Serves the bundle under app://game/ so module scripts and .glb files load with real MIME types (file:// is unreliable for them).
+// Media elements ask for byte ranges, so those are answered too.
 private final class BundleHandler: NSObject, WKURLSchemeHandler {
     private static let types = [
         "html": "text/html", "js": "text/javascript", "css": "text/css", "json": "application/json",
         "webmanifest": "application/manifest+json", "png": "image/png", "glb": "model/gltf-binary",
-        "gltf": "model/gltf+json", "bin": "application/octet-stream", "wav": "audio/wav",
+        "gltf": "model/gltf+json", "bin": "application/octet-stream", "wav": "audio/wav", "m4a": "audio/mp4",
     ]
 
     func webView(_ webView: WKWebView, start urlSchemeTask: WKURLSchemeTask) {
@@ -70,10 +71,22 @@ private final class BundleHandler: NSObject, WKURLSchemeHandler {
         var path = url.path
         if path.isEmpty || path == "/" { path = "/index.html" }
         let file = Bundle.main.bundleURL.appendingPathComponent(String(path.dropFirst()))
-        let data = path.contains("..") ? nil : try? Data(contentsOf: file)
+        var data = path.contains("..") ? nil : try? Data(contentsOf: file)
         let type = BundleHandler.types[file.pathExtension.lowercased()] ?? "application/octet-stream"
-        let headers = ["Content-Type": type, "Content-Length": String(data?.count ?? 0)]
-        let response = HTTPURLResponse(url: url, statusCode: data == nil ? 404 : 200, httpVersion: "HTTP/1.1", headerFields: headers)!
+        var headers = ["Content-Type": type, "Accept-Ranges": "bytes"]
+        var status = data == nil ? 404 : 200
+        if let all = data, let ask = urlSchemeTask.request.value(forHTTPHeaderField: "Range"), ask.hasPrefix("bytes=") {
+            let ends = ask.dropFirst(6).split(separator: "-", omittingEmptySubsequences: false)
+            let from = Int(ends[0]) ?? 0
+            let to = min(Int(ends.count > 1 ? ends[1] : "") ?? all.count - 1, all.count - 1)
+            if from <= to {
+                data = all.subdata(in: from..<to + 1)
+                headers["Content-Range"] = "bytes \(from)-\(to)/\(all.count)"
+                status = 206
+            }
+        }
+        headers["Content-Length"] = String(data?.count ?? 0)
+        let response = HTTPURLResponse(url: url, statusCode: status, httpVersion: "HTTP/1.1", headerFields: headers)!
         urlSchemeTask.didReceive(response)
         if let data = data { urlSchemeTask.didReceive(data) }
         urlSchemeTask.didFinish()
