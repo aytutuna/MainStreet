@@ -828,7 +828,7 @@ function updateHud() {
   set(shown, 'rh', r, 'hidden', !rush);
   if (rush) {
     set(shown, 'rt', r.firstChild, 'textContent', rush.kind === 'bus' ? 'Tour bus' : 'Flash sale');
-    set(shown, 'rw', r.querySelector('u').style, 'width', Math.round(rush.left / RUSH.secs * 100) + '%');
+    set(shown, 'rw', r.querySelector('u').style, 'width', Math.round(rush.left / rush.len * 100) + '%');
   }
 }
 
@@ -1246,7 +1246,7 @@ function perkFx(id, l) {
     case 'cash': return money(START_CASH + v);
     case 'cheap': return v ? Math.round(v * 100) + '% off' : 'full price';
     case 'pace': return v < 1 ? Math.round((1 - v) * 100) + '% quicker' : 'normal';
-    case 'away': return MAX_AWAY / 3600 + v + ' h';
+    case 'away': return MAX_AWAY / 3600 + S.pl.head + v + ' h';
     case 'rush': return RUSH.secs + v + ' s';
     case 'sales': return 'x' + v;
   }
@@ -1271,7 +1271,7 @@ function openSell() {
   $('sell-txt').innerHTML = 'Open: <b>' + open + ' of ' + BIZ.length + '</b> departments · stars <b>' + Math.min(r, g) + ' of ' + g + '</b>' +
     (r > g ? ' (+' + (r - g) + ' extra)' : '') + '. ' + (ok ? 'Ready to move.' : 'Reach ' + g + ' stars to move.') +
     ' Store ' + (S.store + 1) + ' earns <b>x' + storeMul(S.store + 1) + '</b> income, up from x' + storeMul(S.store) + '.';
-  $('sell-rep').innerHTML = 'You have <b>' + S.rep + ' rep</b>. Moving now pays <b>+' + repGain() + '</b>: one for each star, each open department and each digit of what this store earned.';
+  $('sell-rep').innerHTML = 'You have <b>' + S.rep + ' rep</b>. Moving now pays <b>+' + repGain() + '</b>: one for each star and each open department, and more the more this store earned.';
   paintPerks();
   $('sell-keep').textContent = 'You keep your ' + plural(S.gems, 'gem') + ', reputation, perks, goals and boosts. Everything else starts again: cash, departments and every place, from the Checkouts to the Head Office. Department stars pay gems again.';
   $('sell-ok').textContent = ok ? 'Move to store ' + (S.store + 1) : 'See departments';
@@ -1364,6 +1364,7 @@ function wire() {
     buzz('success');
     paintPerks();
     $('sell-rep').firstElementChild.textContent = S.rep + ' rep';
+    nudge();
   });
   $('sell-ok').addEventListener('click', function () {
     var b = $('sell-ok');

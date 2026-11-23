@@ -723,11 +723,12 @@ function perkStep(dt) {
       rushT = rnd(RUSH.gap);
       calmT = 8;
       // what the rush added to the steady income
-      r.extra = Math.max(0, r.got - incRate * rushSecs());
+      r.extra = Math.max(0, r.got - incRate * r.len);
       if (onPerk) onPerk('rushend', r);
     }
   } else if (!hold && (rushT -= dt) <= 0) {
     rush = { kind: Math.random() < 0.5 ? 'bus' : 'sale', left: rushSecs(), got: 0 };
+    rush.len = rush.left;
     if (onPerk) onPerk('rush', rush);
   }
 }
