@@ -4,11 +4,17 @@
 //   {t: 'owned', ids: [id], restore}       one-time products the player owns; answers 'products' and 'restore'
 //   {t: 'bought', id, tx}                  a purchase went through; tx is the store's transaction id
 //   {t: 'failed', id, why}                 why is 'cancel' or 'error'
+//   {t: 'ad', kind, state}                 kind is 'reward' or 'inter'; state is 'ready' or 'none' (whether one can be
+//                                          shown now), 'open', 'rewarded' (the player earned it), 'closed' or 'failed'
+// It also takes {cmd: 'adReady'}, answered with a 'ready' or 'none' for each kind, and {cmd: 'ad', kind} to show one.
 // Ids are the full store ids. In a plain browser there is no store handler and nothing here shows.
 var PID = 'com.aytutuna.mainstreet.';
 var prices = {};
 var storeUp = false;
 var buying = '';
+var adOk = { reward: false, inter: false };
+var watching = null;
+var awaySecs = 0;
 
 function native() {
   return !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.store);
@@ -87,7 +93,10 @@ function buyProduct(id) {
 function shopStart() {
   if (!native()) return;
   post({ cmd: 'products' });
+  post({ cmd: 'adReady' });
   $('b-shop').hidden = false;
+  // play time counts only while the game is in front
+  setInterval(function () { if (!document.hidden) S.ads.pt++; }, 1000);
 }
 
 window.nativeStore = function (ev) {
@@ -110,7 +119,7 @@ window.nativeStore = function (ev) {
   } else if (ev.t === 'failed') {
     buying = '';
     if (ev.why !== 'cancel') banner('<b>Purchase not completed</b><small>You were not charged.</small>', 0);
-  }
+  } else if (ev.t === 'ad') adEvent(ev);
   if (!$('shop').hidden) paintShop();
 };
 
@@ -123,4 +132,139 @@ function wireShop() {
     var id = e.target.dataset && e.target.dataset.p;
     if (id) buyProduct(id);
   });
+  wireAds();
+}
+
+// ads the player picks, a few a day for each reward
+function adUsed() {
+  var d = dayNum(clock());
+  if (S.ads.d !== d) {
+    S.ads.d = d;
+    S.ads.n = {};
+  }
+  return S.ads.n;
+}
+
+function adLeft(k) {
+  return AD_CAP[k] - (adUsed()[k] || 0);
+}
+
+function canWatch(k) {
+  return native() && adLeft(k) > 0 && (S.iap.noads || adOk.reward);
+}
+
+// with No ads the reward comes straight away
+function watch(k, give) {
+  if (!canWatch(k) || watching) return;
+  if (S.iap.noads) {
+    adUsed()[k] = (adUsed()[k] || 0) + 1;
+    give();
+    return;
+  }
+  watching = { k: k, give: give };
+  post({ cmd: 'ad', kind: 'reward' });
+}
+
+function adEvent(ev) {
+  if (ev.state === 'ready' || ev.state === 'none') adOk[ev.kind] = ev.state === 'ready';
+  else if (ev.state === 'open') {
+    S.ads.li = clock();
+    if (ac) ac.suspend();
+  } else if (ev.state === 'rewarded' && watching) {
+    var w = watching;
+    watching = null;
+    adUsed()[w.k] = (adUsed()[w.k] || 0) + 1;
+    w.give();
+    save();
+  } else if (ev.state === 'closed' || ev.state === 'failed') {
+    if (ac && snd) ac.resume();
+    if (watching && ev.kind === 'reward') banner('<b>No reward</b><small>The ad was not finished.</small>', 0);
+    watching = null;
+  }
+}
+
+// an interstitial only at a natural break, never in a new player's first minutes and not twice close together
+function interBreak() {
+  if (!native() || S.iap.noads || !adOk.inter || watching) return;
+  if (S.ads.pt < AD_NEW || clock() - S.ads.li < AD_GAP * 1000) return;
+  S.ads.li = clock();
+  post({ cmd: 'ad', kind: 'inter' });
+}
+
+// right after a store move, and after collecting what a long absence earned
+function shopMoved() {
+  setTimeout(interBreak, 1500);
+}
+
+function shopAwayDone() {
+  var long = awaySecs >= 3600;
+  awaySecs = 0;
+  if (long) setTimeout(interBreak, 800);
+}
+
+function adLabel() {
+  return S.iap.noads ? 'Free' : adOk.reward ? 'Watch' : 'No ad yet';
+}
+
+function adGive(k) {
+  var c = centerOf($('ads'));
+  if (k === 'x2') {
+    S.x2 += X2_SECS;
+    banner('<b>Double income</b><small>Active for ' + clock2(S.x2) + '</small>', 0);
+  } else if (k === 'warp') {
+    var v = warp(true);
+    popAt('+' + money(v), c.x, c.y, 'big');
+    flyCoins(c.x, c.y, 8);
+  } else {
+    S.gems += AD_GEMS;
+    flyGems(c.x, c.y, AD_GEMS);
+  }
+  sfx('done');
+  buzz('success');
+  nudge();
+}
+
+function paintAds() {
+  var weak = Math.min(rate() * WARP_SECS, Math.max(S.run, 100)) < rate() * 600;
+  var rows = [['x2', 'ui_bolt', 'Double income', '30 min of x2'], ['warp', 'ui_warp', 'Time warp', 'An hour of income'],
+    ['gems', 'ui_gem', 'Free gems', AD_GEMS + ' gems']];
+  var html = '<p class="small">Free, and a few a day:</p>';
+  rows.forEach(function (r) {
+    var left = adLeft(r[0]);
+    var off = !canWatch(r[0]) || (r[0] === 'warp' && weak);
+    html += '<div class="offer"><img src="assets/' + r[1] + '.png" alt=""><div><b>' + r[2] + '</b><span>' + r[3] + ' · ' +
+      (left > 0 ? left + ' left today' : 'back tomorrow') + '</span></div><button type="button" class="btn" data-a="' + r[0] + '"' +
+      (off ? ' disabled' : '') + '>' + adLabel() + '</button></div>';
+  });
+  set(shown, 'ads', $('ads'), 'innerHTML', html);
+  $('ads').hidden = !native();
+}
+
+function paintAwayAd() {
+  var on = S.pend > 0 && canWatch('away');
+  set(shown, 'awa', $('away-ad'), 'hidden', !on);
+  set(shown, 'awat', $('away-ad'), 'textContent', S.iap.noads ? 'Double it, free' : adOk.reward ? 'Double it: watch an ad' : 'Ad loading');
+  set(shown, 'awad', $('away-ad'), 'disabled', !S.iap.noads && !adOk.reward);
+}
+
+// the starter pack is offered once, after the first store move
+function offerStarter() {
+  if (!native() || S.iap.starter || S.iap.offered || S.store < 2 || !priceOf(product('starter'))) return;
+  S.iap.offered = 1;
+  $('pack-txt').textContent = 'One time only: ' + product('starter').text;
+  $('pack-buy').textContent = 'Get it for ' + priceOf(product('starter'));
+  $('pack').hidden = false;
+}
+
+function wireAds() {
+  $('ads').addEventListener('click', function (e) {
+    var k = e.target.dataset && e.target.dataset.a;
+    if (k) watch(k, function () { adGive(k); });
+  });
+  $('away-ad').addEventListener('click', function () { watch('away', function () { takeAway(true, 'away-ad', true); }); });
+  $('pack-buy').addEventListener('click', function () {
+    $('pack').hidden = true;
+    buyProduct('starter');
+  });
+  $('pack-x').addEventListener('click', function () { $('pack').hidden = true; });
 }

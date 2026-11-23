@@ -68,6 +68,7 @@
       <div id="away-amt"></div>
       <button type="button" id="away-ok" class="btn">Collect</button>
       <button type="button" id="away-x2" class="btn alt"></button>
+      <button type="button" id="away-ad" class="btn alt" hidden></button>
       <p class="need" id="away-need"></p>
     </div>
   </div>
@@ -89,6 +90,7 @@
       <div class="offer"><img src="assets/ui_bolt.png" alt=""><div><b>Double income</b><span id="x2-txt"></span><span class="need" id="x2-need"></span></div><button type="button" id="b-x2" class="btn"></button></div>
       <div class="offer"><img src="assets/ui_warp.png" alt=""><div><b>Time warp</b><span id="warp-txt"></span><span class="need" id="warp-need"></span></div><button type="button" id="b-warp" class="btn"></button></div>
       <div class="offer"><img src="assets/ui_star.png" alt=""><div><b>Regulars</b><span id="reg-txt"></span></div><button type="button" id="b-reg" class="btn">Meet</button></div>
+      <div id="ads" hidden></div>
       <button type="button" id="b-shop" class="btn alt" hidden>Shop</button>
       <p class="small">Gems come from goals, stars, gifts and the daily reward.</p>
       <button type="button" id="boost-x" class="btn alt">Close</button>
@@ -109,6 +111,15 @@
       <div id="shop-list"></div>
       <button type="button" id="shop-restore" class="btn alt">Restore purchases</button>
       <button type="button" id="shop-x" class="btn">Close</button>
+    </div>
+  </div>
+  <div id="pack" class="veil" hidden>
+    <div class="box">
+      <h2>Starter pack</h2>
+      <p id="pack-txt"></p>
+      <button type="button" id="pack-buy" class="btn"></button>
+      <button type="button" id="pack-x" class="btn alt">Not now</button>
+      <p class="small">It stays in the shop.</p>
     </div>
   </div>
   <div id="sell" class="veil" hidden>

@@ -1101,6 +1101,7 @@ function showAway(a) {
     if (a.real > maxAway()) txt += ' It only earns for ' + maxAway() / 3600 + ' h while you are away.';
   }
   $('away-txt').innerHTML = txt;
+  awaySecs = a ? a.real : 0;
   $('away').hidden = false;
   awayBtn();
   var c = centerOf($('away-amt'));
@@ -1116,6 +1117,7 @@ function awayBtn() {
   set(shown, 'awc', $('away-x2'), 'innerHTML', 'Double it <img src="assets/ui_gem.png" alt="">' + c);
   set(shown, 'awd', $('away-x2'), 'disabled', S.gems < c);
   set(shown, 'awn', $('away-need'), 'textContent', gemsLeft(c));
+  paintAwayAd();
 }
 
 function countAway(v) {
@@ -1127,9 +1129,9 @@ function countAway(v) {
   })(t0);
 }
 
-function takeAway(dbl, from) {
+function takeAway(dbl, from, free) {
   var c = centerOf($(from));
-  var v = claimAway(dbl);
+  var v = claimAway(dbl, free);
   if (!v) return;
   $('away').hidden = true;
   popAt('+' + money(v), c.x, c.y, 'big');
@@ -1138,6 +1140,7 @@ function takeAway(dbl, from) {
   if (dbl) buzz('success');
   askNotify();
   nudge();
+  shopAwayDone();
 }
 
 function dayText(d) {
@@ -1262,6 +1265,7 @@ function paintBoost() {
   $('b-warp').innerHTML = '<img src="assets/ui_gem.png" alt="">' + WARP_COST;
   $('b-warp').disabled = S.gems < WARP_COST || weak;
   $('reg-txt').textContent = regOwned() + ' of ' + REGS.length + ' met, sales +' + Math.round((regMul() - 1) * 100) + '%';
+  paintAds();
 }
 
 function storeMul(n) {
@@ -1427,6 +1431,7 @@ function wire() {
   $('sell-x').addEventListener('click', function () {
     $('sell').hidden = true;
     $('sell-ok').dataset.armed = '';
+    offerStarter();
   });
   $('perks').addEventListener('click', function (e) {
     var id = e.target.dataset && e.target.dataset.p;
@@ -1463,6 +1468,7 @@ function wire() {
     buzz('success');
     moveParty(rep);
     nudge();
+    shopMoved();
   });
   $('gear').addEventListener('click', function () {
     setSound();
