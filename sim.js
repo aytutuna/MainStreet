@@ -5,8 +5,10 @@ var START_CASH = 5;
 // each store is worth this much more income than the one before; the move needs GATE0 department stars in store 1
 // and GATE_STEP more in each one after, up to every star in the store
 var STORE_MUL = 1.45;
+// and from store 3 on everything costs this much more than in the one before, so income does not outrun the prices
+var STORE_COST = 1.35;
 var GATE0 = 16;
-var GATE_STEP = 3;
+var GATE_STEP = 2;
 var HALL_BOOST = 0.1;
 var X2_COST = 20;
 var AWAY_X2 = 5;
@@ -338,10 +340,14 @@ function rate() {
   return baseRate() * bmul();
 }
 
+function storeCost() {
+  return Math.pow(STORE_COST, Math.max(0, S.store - 2));
+}
+
 function cost(id, n) {
   if (lv(id) + n > UPS) return Infinity;
   var b = BZ[id];
-  return b.c0 * Math.pow(b.g, lv(id)) * (Math.pow(b.g, n) - 1) / (b.g - 1) * (1 - pv('cheap'))
+  return b.c0 * Math.pow(b.g, lv(id)) * (Math.pow(b.g, n) - 1) / (b.g - 1) * (1 - pv('cheap')) * storeCost();
 }
 
 // unlimited money for testing: spending is free, and the real balance waits in FREE so saves never hold the top-up
@@ -410,7 +416,7 @@ function buy(id, j) {
 function placeCost(id) {
   var p = PL[id];
   var l = S.pl[id];
-  return l < p.cost.length && has(p.after) ? p.cost[l] * (1 - pv('cheap')) : 0;
+  return l < p.cost.length && has(p.after) ? p.cost[l] * (1 - pv('cheap')) * storeCost() : 0;
 }
 
 // the piece of a place's next list that item j adds next, or -1 when it has them all
