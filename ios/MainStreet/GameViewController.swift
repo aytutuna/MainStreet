@@ -1,4 +1,5 @@
 import UIKit
+import UserNotifications
 import WebKit
 
 // Not the view controller, so the web view's content controller holds nothing that leads back to it.
@@ -11,6 +12,43 @@ private final class BuzzHandler: NSObject, WKScriptMessageHandler {
             UINotificationFeedbackGenerator().notificationOccurred(.success)
         default:
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        }
+    }
+}
+
+// The game sends {cmd: "ask"} or {cmd: "set", list: [{id, at (ms since 1970), body}]}. Coming to the foreground drops
+// every reminder, pending or delivered.
+private final class NotifyHandler: NSObject, WKScriptMessageHandler {
+    private let center = UNUserNotificationCenter.current()
+
+    override init() {
+        super.init()
+        NotificationCenter.default.addObserver(self, selector: #selector(clear), name: UIApplication.didBecomeActiveNotification, object: nil)
+    }
+
+    @objc private func clear() {
+        center.removeAllPendingNotificationRequests()
+        center.removeAllDeliveredNotifications()
+    }
+
+    func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
+        guard let msg = message.body as? [String: Any] else { return }
+        switch msg["cmd"] as? String {
+        case "ask":
+            center.requestAuthorization(options: [.alert, .sound]) { _, _ in }
+        case "set":
+            center.removeAllPendingNotificationRequests()
+            for item in msg["list"] as? [[String: Any]] ?? [] {
+                guard let id = item["id"] as? String, let text = item["body"] as? String, let at = item["at"] as? Double else { continue }
+                let content = UNMutableNotificationContent()
+                content.title = "Main Street"
+                content.body = text
+                content.sound = .default
+                let wait = max(1, at / 1000 - Date().timeIntervalSince1970)
+                center.add(UNNotificationRequest(identifier: id, content: content, trigger: UNTimeIntervalNotificationTrigger(timeInterval: wait, repeats: false)))
+            }
+        default:
+            break
         }
     }
 }
@@ -55,6 +93,7 @@ final class GameViewController: UIViewController, WKNavigationDelegate, WKUIDele
     override func loadView() {
         let config = WKWebViewConfiguration()
         config.userContentController.add(BuzzHandler(), name: "buzz")
+        config.userContentController.add(NotifyHandler(), name: "notify")
         config.setURLSchemeHandler(BundleHandler(), forURLScheme: "app")
         let web = WKWebView(frame: .zero, configuration: config)
         web.isOpaque = true
