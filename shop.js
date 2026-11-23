@@ -283,6 +283,8 @@ function adGive(k) {
   if (k === 'x2') {
     S.x2 += X2_SECS;
     banner('<b>Double income</b><small>Active for ' + clock2(S.x2) + '</small>', 0);
+  } else if (k === 'rush') {
+    callRush(true);
   } else if (k === 'warp') {
     var v = warp(true);
     popAt('+' + money(v), c.x, c.y, 'big');
@@ -299,11 +301,11 @@ function adGive(k) {
 function paintAds() {
   var weak = Math.min(rate() * WARP_SECS, Math.max(S.run, 100)) < rate() * 600;
   var rows = [['x2', 'ui_bolt', 'Double income', '30 min of x2'], ['warp', 'ui_warp', 'Time warp', 'An hour of income'],
-    ['gems', 'ui_gem', 'Free gems', AD_GEMS + ' gems']];
+    ['gems', 'ui_gem', 'Free gems', AD_GEMS + ' gems'], ['rush', 'ui_bolt', 'Call a rush', 'Skips the wait']];
   var html = '<p class="small">Free, and a few a day:</p>';
   rows.forEach(function (r) {
     var left = adLeft(r[0]);
-    var off = !canWatch(r[0]) || (r[0] === 'warp' && weak);
+    var off = !canWatch(r[0]) || (r[0] === 'warp' && weak) || (r[0] === 'rush' && (rush || S.call <= 0));
     html += '<div class="offer"><img src="assets/' + r[1] + '.png" alt=""><div><b>' + r[2] + '</b><span>' + r[3] + ' · ' +
       (left > 0 ? left + ' left today' : 'back tomorrow') + '</span></div><button type="button" class="btn" data-a="' + r[0] + '"' +
       (off ? ' disabled' : '') + '>' + adLabel() + '</button></div>';

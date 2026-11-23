@@ -420,6 +420,19 @@ small {
   gap: 8px;
 }
 
+#call {
+  background: #ffd7cf;
+  color: #7a2a1c;
+  opacity: 0.8;
+}
+
+#call.ready {
+  opacity: 1;
+  background: #ffc928;
+  color: var(--ink);
+  animation: glow 0.9s ease-in-out infinite alternate;
+}
+
 #rush i {
   width: 70px;
   height: 8px;

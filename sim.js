@@ -83,7 +83,7 @@ PLACES.forEach(function (p) {
 var S = fresh();
 
 function fresh() {
-  var s = { v: 11, cash: START_CASH, gems: 0, rep: 0, pk: {}, store: 1, run: 0, all: 0, pend: 0, x2: 0, b: {}, ms: {},
+  var s = { v: 11, cash: START_CASH, gems: 0, rep: 0, pk: {}, store: 1, run: 0, all: 0, pend: 0, x2: 0, call: 0, b: {}, ms: {},
     st: { srv: 0, lost: 0 }, goal: [0, 1, 2], gn: 3, gd: {}, day: { n: 0, d: -1 }, mi: { d: -1, m: [], b: 0 }, rg: { o: {}, days: 0, gifts: 0, combo: 0 }, lk: { on: 'classic', own: {} }, ac: { o: {}, m: {} },
     ask: 0, iap: { noads: 0, x2: 0, starter: 0, tx: [] }, ads: { d: -1, n: {}, pt: 0, li: 0 }, ts: clock() };
   noPlaces(s);
@@ -661,6 +661,7 @@ function stockStep(dt) {
 function tick(dt) {
   dt *= speed;
   if (S.x2 > 0) S.x2 = Math.max(0, S.x2 - dt);
+  if (S.call > 0) S.call = Math.max(0, S.call - dt);
   lostT -= dt;
   calmT -= dt;
   if (!rush) {
@@ -754,11 +755,27 @@ function perkStep(dt) {
       r.extra = Math.max(0, r.got - incRate * r.len);
       if (onPerk) onPerk('rushend', r);
     }
-  } else if (!hold && (rushT -= dt) <= 0) {
-    rush = { kind: Math.random() < 0.5 ? 'bus' : 'sale', left: rushSecs(), got: 0 };
-    rush.len = rush.left;
-    if (onPerk) onPerk('rush', rush);
-  }
+  } else if (!hold && (rushT -= dt) <= 0) startRush();
+}
+
+function startRush() {
+  rush = { kind: Math.random() < 0.5 ? 'bus' : 'sale', left: rushSecs(), got: 0 };
+  rush.len = rush.left;
+  if (onPerk) onPerk('rush', rush);
+}
+
+// the manager's button: a free rush once the cooldown is over, or any time for the gems or the ad that paid for it
+function callRush(paid) {
+  if (rush || (S.call > 0 && !paid)) return false;
+  S.call = CALL.cool;
+  startRush();
+  return true;
+}
+
+function callRushGems() {
+  if (rush || S.gems < CALL.gems) return false;
+  S.gems -= CALL.gems;
+  return callRush(true);
 }
 
 // the player taps the gift: what it pays, or null when it has gone
@@ -932,6 +949,7 @@ function away(sec) {
   var gain = baseRate() * (s + xs) * (S.iap.x2 ? 2 : 1) * (1 + HEAD * S.pl.head);
   var n = Math.floor((served() + gardenServed()) * s);
   S.x2 = Math.max(0, S.x2 - s);
+  S.call = Math.max(0, S.call - s);
   perkOff();
   S.pend += gain;
   S.st.srv += n;
@@ -1413,6 +1431,7 @@ function validate(o) {
   s.all = Math.max(s.run, num(o.all, 0));
   s.pend = num(o.pend, 0);
   s.x2 = num(o.x2, 0);
+  s.call = Math.min(CALL.cool, num(o.call, 0));
   s.ask = o.ask ? 1 : 0;
   var ip = o.iap || {};
   s.iap = { noads: ip.noads ? 1 : 0, x2: ip.x2 ? 1 : 0, starter: ip.starter === 2 ? 2 : ip.starter ? 1 : 0, offered: ip.offered ? 1 : 0,

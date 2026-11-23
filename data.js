@@ -137,6 +137,8 @@ GIFT.jmix = 0.25;
 // its front shopper tap seconds of service. Taps in a row, each within a second of the one before, make a combo that
 // adds combo of a tap for every tap after the first, up to top of them
 var RUSH = { gap: [240, 360], secs: 30, mul: 2, tap: 0.9, combo: 0.05, top: 10 };
+// the manager's call for a rush: cool seconds between calls, or gems to call one now
+var CALL = { cool: 1200, gems: 5 };
 
 // Perks bought with reputation, which each store move pays and which a move keeps. cost is what each level takes in
 // reputation and val what the perk is worth at level 0 and then at each level bought: cash, away hours and rush seconds
@@ -207,7 +209,7 @@ var STARTER = { gems: 150, x2: 7200, rep: 10 };
 
 // Ads the player chooses to watch: what each one gives and how many a day. Without ads (noads) the same rewards come
 // for free, up to the same number
-var AD_CAP = { x2: 4, away: 3, warp: 2, gems: 3 };
+var AD_CAP = { x2: 4, away: 3, warp: 2, gems: 3, rush: 2 };
 var AD_GEMS = 3;
 // a gem pack the store lists is credited if it is no older than this many seconds and not credited before
 var RECOVER = 3 * 86400;

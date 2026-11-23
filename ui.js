@@ -857,6 +857,10 @@ function updateHud() {
   var x = $('x2');
   set(shown, 'x2h', x, 'hidden', !(S.x2 > 0));
   if (S.x2 > 0) set(shown, 'x2t', x, 'textContent', 'x2  ' + clock2(S.x2));
+  var cl = $('call');
+  set(shown, 'ch', cl, 'hidden', !!rush || !started());
+  set(shown, 'ct', cl, 'textContent', S.call > 0 ? 'Rush in ' + clock2(S.call) : 'Call a rush');
+  flag(shown, 'cr', cl, 'ready', S.call <= 0);
   var r = $('rush');
   set(shown, 'rh', r, 'hidden', !rush);
   if (rush) {
@@ -1264,6 +1268,10 @@ function paintBoost() {
   $('warp-need').textContent = gemsLeft(WARP_COST) || (weak ? 'Worth less than 10 minutes of income. Better later.' : '');
   $('b-warp').innerHTML = '<img src="assets/ui_gem.png" alt="">' + WARP_COST;
   $('b-warp').disabled = S.gems < WARP_COST || weak;
+  $('call-txt').textContent = S.call > 0 ? 'Ready in ' + clock2(S.call) + ', or call one now.' : 'Brings a rush now. Then ' + CALL.cool / 60 + ' min to wait.';
+  $('call-need').textContent = rush ? 'A rush is on.' : S.call > 0 ? gemsLeft(CALL.gems) : '';
+  $('b-call').innerHTML = S.call > 0 ? '<img src="assets/ui_gem.png" alt="">' + CALL.gems : 'Call';
+  $('b-call').disabled = !!rush || (S.call > 0 && S.gems < CALL.gems);
   $('reg-txt').textContent = regOwned() + ' of ' + REGS.length + ' met, sales +' + Math.round((regMul() - 1) * 100) + '%';
   paintAds();
 }
@@ -1478,6 +1486,17 @@ function wire() {
     flyCoins(c.x, c.y, 8);
     sfx('mile');
     nudge();
+  });
+  $('b-call').addEventListener('click', function () {
+    if (!(S.call > 0 ? callRushGems() : callRush())) return;
+    $('boost').hidden = true;
+    nudge();
+  });
+  $('call').addEventListener('click', function () {
+    if (S.call > 0) {
+      paintBoost();
+      $('boost').hidden = false;
+    } else callRush();
   });
   $('t-daily').addEventListener('click', openDaily);
   $('daily-x').addEventListener('click', function () { $('daily').hidden = true; });
