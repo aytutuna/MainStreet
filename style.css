@@ -2035,7 +2035,8 @@ small {
   }
 }
 
-#app.sheet-open #deals {
+#app.sheet-open #deals,
+#app.card-open #deals {
   display: none;
 }
 
@@ -2315,14 +2316,14 @@ small {
   text-align: left;
 }
 
-#sell-txt .ring {
+#sell-txt .sring {
   position: relative;
   flex: none;
   width: 84px;
   height: 84px;
 }
 
-#sell-txt .ring div {
+#sell-txt .sring div {
   position: absolute;
   inset: 0;
   display: flex;
@@ -2334,7 +2335,7 @@ small {
   color: var(--muted);
 }
 
-#sell-txt .ring b {
+#sell-txt .sring b {
   font-size: 20px;
   color: var(--ink);
 }

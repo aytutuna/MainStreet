@@ -1438,7 +1438,8 @@ function validate(o) {
   s.ask = o.ask ? 1 : 0;
   var ip = o.iap || {};
   s.iap = { noads: ip.noads ? 1 : 0, x2: ip.x2 ? 1 : 0, starter: ip.starter === 2 ? 2 : ip.starter ? 1 : 0, offered: ip.offered ? 1 : 0,
-    tx: (Array.isArray(ip.tx) ? ip.tx : []).filter(function (t) { return typeof t === 'string'; }).slice(-100) };
+    tx: (Array.isArray(ip.tx) ? ip.tx : []).filter(function (t) { return typeof t === 'string'; }).slice(-100),
+    deal: ip.deal && typeof ip.deal.id === 'string' && num(ip.deal.bonus, 0) > 0 ? { id: ip.deal.id, bonus: Math.floor(num(ip.deal.bonus, 0)), until: num(ip.deal.until, 0) } : null };
   var ad = o.ads || {};
   s.ads = { d: Math.floor(num(ad.d, -1)), n: {}, pt: num(ad.pt, 0), li: num(ad.li, 0), sd: num(ad.sd, 0) };
   for (var k in AD_CAP) s.ads.n[k] = Math.min(AD_CAP[k], Math.floor(num(ad.n && ad.n[k], 0)));

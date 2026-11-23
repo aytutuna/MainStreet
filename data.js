@@ -207,9 +207,10 @@ var PRODUCTS = [
 ];
 var STARTER = { gems: 150, x2: 7200, rep: 10 };
 // usd is the pack's price tier, only for the bonus shown against the smallest pack. The starter pack is offered in a
-// window of hours that restarts when it runs out, and a deal is a pack with bonus extra gems for secs, rotating through packs
+// window of hours that starts when its button is first shown and never comes back. The deal of the day is one of these
+// packs, a day each in turn, with bonus extra gems; no pack follows itself, also where the list starts again
 var STARTER_HOURS = 24;
-var DEAL = { secs: 21600, bonus: 0.2, packs: ['gems2', 'gems3', 'gems1', 'gems2'] };
+var DEAL = { bonus: 0.2, packs: ['gems2', 'gems3', 'gems1', 'gems4'] };
 
 // Ads the player chooses to watch: what each one gives and how many a day. Without ads (noads) the same rewards come
 // for free, up to the same number

@@ -98,9 +98,19 @@ function recover(list) {
   (list || []).forEach(function (t) {
     var p = product(t.id.slice(PID.length));
     // the pack being bought right now is credited by its own answer
-    if (p && p.gems && t.id !== PID + buying && clock() - t.at < RECOVER * 1000 && credit(p, t.tx)) n += p.gems;
+    if (p && p.gems && t.id !== PID + buying && clock() - t.at < RECOVER * 1000 && credit(p, t.tx)) n += p.gems + dealBonus(p.id, t.at);
   });
   return n;
+}
+
+// the bonus of the deal the player tapped, paid once to the purchase it was tapped for
+function dealBonus(id, at) {
+  var d = S.iap.deal;
+  if (!d || d.id !== id || at > d.until) return 0;
+  S.iap.deal = null;
+  S.gems += d.bonus;
+  save();
+  return d.bonus;
 }
 
 function priceOf(p) {
@@ -121,24 +131,23 @@ function hms(v) {
   return Math.floor(v / 3600) + ':' + (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
 }
 
-// the deal on now: the pack it is for and how long is left. The slot comes from the clock, so it needs no saving
+// the deal of the day: a pack and the bonus gems it pays. The day comes from the clock, so it needs no saving
 function dealNow() {
-  var w = DEAL.secs * 1000;
-  var slot = Math.floor(clock() / w);
-  var id = DEAL.packs[slot % DEAL.packs.length];
+  var id = DEAL.packs[dayNum(clock()) % DEAL.packs.length];
   if (!priceOf(product(id))) return null;
-  return { id: id, left: ((slot + 1) * w - clock()) / 1000, bonus: Math.round(product(id).gems * DEAL.bonus) };
+  return { id: id, bonus: Math.round(product(id).gems * DEAL.bonus) };
 }
 
-// the starter pack's window starts when it is first shown and starts again when it runs out
-function starterLeft() {
+// the starter pack's one window starts when its button is first shown; after it the answer is -1 for good. Without
+// begin, a window not started yet counts as open
+function starterLeft(begin) {
   var w = STARTER_HOURS * 3600000;
-  var el = clock() - S.ads.sd;
-  if (!S.ads.sd || el < 0 || el >= w) {
+  if (!S.ads.sd) {
+    if (!begin) return w / 1000;
     S.ads.sd = clock();
-    el = 0;
   }
-  return (w - el) / 1000;
+  var el = clock() - S.ads.sd;
+  return el >= w ? -1 : (w - Math.max(el, 0)) / 1000;
 }
 
 function pile(n) {
@@ -150,7 +159,7 @@ function pile(n) {
 
 function heroCard(p) {
   var chips = [['ui_gem', STARTER.gems, 'gems'], ['ui_bolt', STARTER.x2 / 3600 + ' h', 'double income'], ['ui_star', STARTER.rep, 'rep']];
-  return '<div class="hero" data-k="starter"><i class="rib">Best value</i><h3>' + p.name + '</h3><span>One time only</span><div class="gifts">' +
+  return '<div class="hero" data-k="starter"><i class="rib">Starter deal</i><h3>' + p.name + '</h3><span>Buy once</span><div class="gifts">' +
     chips.map(function (c) { return '<div><img src="assets/' + c[0] + '.png" alt=""><b>' + c[1] + '</b><small>' + c[2] + '</small></div>'; }).join('') +
     '</div>' + shopBtn(p) + '</div>';
 }
@@ -160,12 +169,13 @@ function featCard(p) {
 }
 
 function gemTile(p, i, base, deal) {
-  var bonus = Math.round((p.gems / p.usd / base - 1) * 100);
-  var tag = p.id === 'gems2' ? 'Most popular' : p.id === 'gems4' ? 'Best value' : '';
   var on = deal && deal.id === p.id;
+  var more = Math.round((p.gems / p.usd / base - 1) * 100);
+  var tag = p.id === 'gems2' ? 'Most popular' : p.id === 'gems4' ? 'Best value' : '';
+  var badge = on ? '+' + Math.round(DEAL.bonus * 100) + '% bonus' : more > 0 ? '+' + more + '% gems' : '';
   return '<div class="tile' + (on ? ' deal' : '') + '" data-k="' + p.id + '">' + (tag ? '<i class="rib">' + tag + '</i>' : '') +
-    (bonus > 0 ? '<em>+' + bonus + '%</em>' : '') + pile(i) + '<b>' + p.gems.toLocaleString('en-US') + ' gems</b>' +
-    (on ? '<small>+' + deal.bonus + ' bonus · <span id="sh-deal">' + hms(deal.left) + '</span></small>' : '') + shopBtn(p) + '</div>';
+    (badge ? '<em>' + badge + '</em>' : '') + pile(i) + '<b>' + p.gems.toLocaleString('en-US') + ' gems</b>' +
+    (on ? '<small>Deal of the day: +' + deal.bonus + ' gems</small>' : '') + shopBtn(p) + '</div>';
 }
 
 function paintShop() {
@@ -186,13 +196,18 @@ function openShop(at) {
   if (!native()) return;
   paintShop();
   $('shop').hidden = false;
+  var box = $('shop').firstElementChild;
+  box.scrollTop = 0;
   var el = typeof at === 'string' && $('shop-list').querySelector('[data-k="' + at + '"]');
-  if (el) el.scrollIntoView({ block: 'center' });
+  if (el) box.scrollTop = el.getBoundingClientRect().top - box.getBoundingClientRect().top - (box.clientHeight - el.offsetHeight) / 2;
 }
 
 function buyProduct(id) {
   if (buying || !prices[PID + id]) return;
   buying = id;
+  var d = dealNow();
+  // the deal is fixed when the player taps, so a day change during the purchase does not lose it
+  S.iap.deal = d && d.id === id ? { id: id, bonus: d.bonus, until: clock() + 3600000 } : null;
   paintShop();
   post({ cmd: 'buy', id: PID + id });
 }
@@ -243,14 +258,13 @@ function handle(ev) {
   } else if (ev.t === 'bought') {
     buying = '';
     var bid = ev.id.slice(PID.length);
-    var deal = dealNow();
-    var had = S.gems;
-    if (grant(bid, ev.tx, ev.at) && deal && deal.id === bid && S.gems > had) S.gems += deal.bonus;
+    var extra = grant(bid, ev.tx, ev.at) && product(bid).gems ? dealBonus(bid, ev.at) : 0;
     sfx('done');
     buzz('success');
-    banner('<b>Thank you</b><small>' + product(ev.id.slice(PID.length)).name + '</small>', 0, true);
+    banner('<b>Thank you</b><small>' + product(bid).name + (extra ? ' · +' + extra + ' bonus gems' : '') + '</small>', 0, true);
   } else if (ev.t === 'failed') {
     buying = '';
+    S.iap.deal = null;
     if (ev.why !== 'cancel') banner('<b>Purchase not completed.</b>', 0);
   } else if (ev.t === 'privacy') $('m-priv').hidden = !ev.required;
   else if (ev.t === 'ad') adEvent(ev);
@@ -275,7 +289,10 @@ function wireShop() {
     var b = e.target.closest('button');
     var d = b && b.dataset.d;
     if (d === 'start') openShop('starter');
-    else if (d === 'deal') openShop(dealNow().id);
+    else if (d === 'deal') {
+      var dl = dealNow();
+      if (dl) openShop(dl.id);
+    }
     else if (d === 'gems') watch('gems', function () { adGive('gems', b); });
     else if (d === 'x2') {
       if (canWatch('x2')) watch('x2', function () { adGive('x2', b); });
@@ -409,24 +426,22 @@ function paintAds() {
 // side buttons on the main screen, at most three: the starter pack, the deal, free gems and double income, in that order
 function updateDeals() {
   var on = native() && loaded && S.ads.pt >= AD_START;
-  var st = on && !S.iap.starter && priceOf(product('starter')) ? starterLeft() : -1;
   var dl = on ? dealNow() : null;
-  var want = [st >= 0, !!dl, canWatch('gems'), S.x2 <= 0 && (canWatch('x2') || S.gems >= X2_COST)];
+  var want = [on && !S.iap.starter && !!priceOf(product('starter')) && starterLeft(false) >= 0, !!dl, canWatch('gems'),
+    S.x2 <= 0 && (canWatch('x2') || S.gems >= X2_COST)];
+  var cap = innerHeight < 700 ? 2 : 3;
   var n = 0;
   ['start', 'deal', 'gems', 'x2'].forEach(function (k, i) {
     var b = $('d-' + k);
-    var show = want[i] && n < 3;
+    var show = want[i] && n < cap;
     if (show) n++;
     set(shown, 'd' + k, b, 'hidden', !show);
     if (!show) return;
-    if (k === 'start') set(shown, 'dt' + k, b.lastChild, 'textContent', hms(st));
-    else if (k === 'deal') {
-      set(shown, 'dt' + k, b.lastChild, 'textContent', hms(dl.left));
-      set(shown, 'db' + k, b.children[1], 'textContent', '+' + Math.round(DEAL.bonus * 100) + '%');
-    }
+    if (k === 'start') {
+      var left = starterLeft(true);
+      set(shown, 'dt' + k, b.lastChild, 'textContent', left < 0 ? '' : hms(left));
+    } else if (k === 'deal') set(shown, 'db' + k, b.children[1], 'textContent', '+' + Math.round(DEAL.bonus * 100) + '%');
   });
-  var t = $('sh-deal');
-  if (t && dl) t.textContent = hms(dl.left);
 }
 
 function paintAwayAd() {

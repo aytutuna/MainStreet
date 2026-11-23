@@ -1830,7 +1830,7 @@ function paintSell() {
     '<rect x="64" y="12" width="172" height="64" rx="10" fill="#c4432f" stroke="#3b2a1e" stroke-width="3"/><rect x="71" y="19" width="158" height="50" rx="6" fill="none" stroke="#fff" stroke-width="2"/>' +
     '<text x="150" y="37" text-anchor="middle" fill="#fff" font-size="12" font-weight="800" letter-spacing="3">STORE</text>' +
     '<text x="150" y="64" text-anchor="middle" fill="#fff" font-size="29" font-weight="800">' + (S.store + 1) + '</text></svg>';
-  $('sell-txt').innerHTML = '<div class="ring"><svg viewBox="0 0 88 88" aria-hidden="true"><circle cx="44" cy="44" r="36" fill="none" stroke="#ead9ae" stroke-width="9"/>' +
+  $('sell-txt').innerHTML = '<div class="sring"><svg viewBox="0 0 88 88" aria-hidden="true"><circle cx="44" cy="44" r="36" fill="none" stroke="#ead9ae" stroke-width="9"/>' +
     '<circle cx="44" cy="44" r="36" fill="none" stroke="' + (ok ? '#4f9a40' : '#f0c040') + '" stroke-width="9" stroke-linecap="round" stroke-dasharray="' + (circ * got / g).toFixed(1) + ' ' + circ.toFixed(1) +
     '" transform="rotate(-90 44 44)"/></svg><div><b>' + got + '/' + g + '</b><span>stars</span></div></div><div class="srows">' +
     '<span>Open <b>' + opened() + ' of ' + BIZ.length + '</b> departments</span><span>Income <b>x' + storeMul(S.store) + ' → x' + storeMul(S.store + 1) + '</b></span>' +
