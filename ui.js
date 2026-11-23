@@ -1696,16 +1696,20 @@ function collectGift() {
   var at = View.giftTaken() || { x: innerWidth / 2, y: innerHeight / 2 };
   ring(at.x, at.y);
   if (r.x2) {
-    popAt('x2 for ' + r.x2 / 60 + ' min', at.x, at.y - 20, 'big');
+    popAt('x2 for ' + (r.x2 < 60 ? r.x2 + ' s' : r.x2 / 60 + ' min'), at.x, at.y - 20, 'big');
     bumpEl('x2');
   } else if (r.gems) {
     popAt('+' + plural(r.gems, 'gem'), at.x, at.y - 20, 'big gem');
     flyGems(at.x, at.y, r.gems);
   } else {
     popAt('+' + money(r.cash), at.x, at.y - 20, 'big');
-    flyCoins(at.x, at.y, 8);
+    flyCoins(at.x, at.y, r.jack ? 16 : 8);
   }
   sfx('gift');
+  if (r.jack) {
+    sfx('gems');
+    banner('<b>Jackpot!</b><small>' + (r.x2 ? 'Income x2 for ' + r.x2 + ' s' : '+' + money(r.cash)) + '</small>', 0, true);
+  }
   buzz('success');
   nudge();
 }
@@ -1746,7 +1750,7 @@ function tapTill(i) {
 }
 
 function onPerkEvent(ev, o) {
-  if (ev === 'gift') View.gift(o.kind);
+  if (ev === 'gift') View.gift(o.kind, o.jack);
   else if (ev === 'giftgone') View.giftLeaves();
   else if (ev === 'rush') {
     View.rush(o.kind);

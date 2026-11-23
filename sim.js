@@ -727,7 +727,7 @@ function perkStep(dt) {
       if (onPerk) onPerk('giftgone');
     }
   } else if (!hold && (giftT -= dt) <= 0) {
-    gift = { kind: ['cart', 'wallet', 'vip'][Math.floor(Math.random() * 3)], left: rnd(GIFT.life) };
+    gift = { kind: ['cart', 'wallet', 'vip'][Math.floor(Math.random() * 3)], left: rnd(GIFT.life), jack: Math.random() < GIFT.jack };
     if (onPerk) onPerk('gift', gift);
   }
   if (rush) {
@@ -751,9 +751,17 @@ function perkStep(dt) {
 // the player taps the gift: what it pays, or null when it has gone
 function takeGift() {
   if (!gift) return null;
-  var r = { kind: gift.kind, cash: 0, gems: 0, x2: 0 };
+  var r = { kind: gift.kind, cash: 0, gems: 0, x2: 0, jack: gift.jack };
   var p = Math.random();
-  if (p < GIFT.x2) {
+  if (gift.jack) {
+    if (p < GIFT.jmix) {
+      r.x2 = GIFT.jx2;
+      S.x2 += r.x2;
+    } else {
+      r.cash = Math.max(1, rate() * rnd(GIFT.jcash));
+      earn(r.cash);
+    }
+  } else if (p < GIFT.x2) {
     r.x2 = GIFT.x2Secs;
     S.x2 += r.x2;
   } else if (p < GIFT.x2 + GIFT.gems) {

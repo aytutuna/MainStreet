@@ -5503,10 +5503,10 @@ function giftUp() {
     o.visible = false;
     root.add(o);
   });
-  gv = { cart: cart, wallet: wallet, vip: vip, glow: glow, on: false, obj: null, path: null, i: 0, kind: '', out: 0, x: 0, z: 0 };
+  gv = { cart: cart, wallet: wallet, vip: vip, glow: glow, on: false, obj: null, path: null, i: 0, kind: '', jack: false, k: 1, out: 0, x: 0, z: 0 };
 }
 
-function giftStart(kind) {
+function giftStart(kind, jack) {
   if (!ready) return;
   if (!gv) giftUp();
   var spots = [];
@@ -5517,6 +5517,9 @@ function giftStart(kind) {
   spots.sort(function (a, b) { return Math.hypot(a[0] - focus.x, a[1] - focus.z) - Math.hypot(b[0] - focus.x, b[1] - focus.z); });
   var a = spots[Math.floor(Math.random() * Math.min(6, spots.length))];
   gv.kind = kind;
+  gv.jack = !!jack;
+  gv.k = GIFT_K[kind] * (jack ? 1.5 : 1);
+  markEl.classList.toggle('jack', gv.jack);
   gv.cart.visible = gv.wallet.visible = gv.vip.obj.visible = false;
   gv.obj = kind === 'cart' ? gv.cart : kind === 'wallet' ? gv.wallet : gv.vip.obj;
   gv.path = null;
@@ -5532,7 +5535,7 @@ function giftStart(kind) {
   }
   gv.obj.position.set(a[0], 0, a[1]);
   gv.obj.rotation.y = Math.random() * 6.28;
-  gv.obj.scale.setScalar(GIFT_K[kind]);
+  gv.obj.scale.setScalar(gv.k);
   gv.obj.visible = gv.glow.visible = true;
   if (kind === 'vip') act(gv.vip, 'walk', 0);
   gv.on = true;
@@ -5555,7 +5558,7 @@ function giftStep(dt, now) {
   if (gv.out) {
     var u = (now - gv.out) / 350;
     if (u >= 1) return giftHide();
-    o.scale.setScalar(GIFT_K[gv.kind] * (1 - u));
+    o.scale.setScalar(gv.k * (1 - u));
   }
   if (gv.path) {
     var q = gv.path[gv.i];
@@ -5585,7 +5588,7 @@ function giftStep(dt, now) {
   gv.glow.position.x = o.position.x;
   gv.glow.position.z = o.position.z;
   sparkMat.opacity = 0.55 + 0.3 * Math.sin(now / 170);
-  gv.glow.scale.setScalar((gv.kind === 'vip' ? 1.5 : 1.1) * (1 + 0.12 * Math.sin(now / 230)));
+  gv.glow.scale.setScalar((gv.kind === 'vip' ? 1.5 : 1.1) * (gv.jack ? 1.7 : 1) * (1 + 0.12 * Math.sin(now / 230)));
   gv.x = o.position.x;
   gv.z = o.position.z;
   toScreen(o.position.x, 1.5, o.position.z, sp);
