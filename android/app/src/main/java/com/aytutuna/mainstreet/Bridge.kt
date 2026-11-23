@@ -1,5 +1,6 @@
 package com.aytutuna.mainstreet
 
+import android.os.Build
 import android.view.HapticFeedbackConstants
 import android.webkit.JavascriptInterface
 import org.json.JSONObject
@@ -10,7 +11,7 @@ class Bridge(private val activity: MainActivity) {
     fun buzz(kind: String) {
         val effect = when (kind) {
             "medium" -> HapticFeedbackConstants.CONTEXT_CLICK
-            "success" -> HapticFeedbackConstants.CONFIRM
+            "success" -> if (Build.VERSION.SDK_INT >= 30) HapticFeedbackConstants.CONFIRM else HapticFeedbackConstants.LONG_PRESS
             else -> HapticFeedbackConstants.KEYBOARD_TAP
         }
         activity.runOnUiThread { activity.webView.performHapticFeedback(effect) }
@@ -32,10 +33,11 @@ class Bridge(private val activity: MainActivity) {
         val SHIM = """
             (function () {
               var b = window.$NAME;
-              function handler(send) {
-                return { postMessage: function (m) { send(typeof m === 'string' ? m : JSON.stringify(m)); } };
-              }
-              window.webkit = { messageHandlers: { buzz: handler(b.buzz), notify: handler(b.notify) } };
+              function text(m) { return typeof m === 'string' ? m : JSON.stringify(m); }
+              window.webkit = { messageHandlers: {
+                buzz: { postMessage: function (m) { b.buzz(text(m)); } },
+                notify: { postMessage: function (m) { b.notify(text(m)); } }
+              } };
               Object.defineProperty(Navigator.prototype, 'vibrate', { value: undefined });
             })();
         """.trimIndent()
