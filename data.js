@@ -148,3 +148,37 @@ var PERKS = [
 ];
 var PK = {};
 PERKS.forEach(function (p) { PK[p.id] = p; });
+
+// Regulars: a shopper who starts coming to the store once a feat is done. n is what the feat counts to (see REGV in
+// sim.js), ref the shopper model with its colours moved round the atlas and hat the hat it wears. Each one owned
+// adds sales of the store, the whole set a little more, and one of them now and then walks in among the shoppers and
+// tips when tapped, then stays away for cool seconds
+var REGS = [
+  { id: 'mabel', name: 'Mabel', line: 'Retired teacher. Grades the produce out loud.', feat: 'Earn a star in any department', n: 1,
+    ref: 'chars/character-female-e@1,3>9,3', hat: 'sun', hc: 0xe8d28a },
+  { id: 'gus', name: 'Gus', line: 'Delivery driver, always in a hurry.', feat: 'Serve 1,000 shoppers', n: 1000,
+    ref: 'chars/character-male-d@1,3>3,2', hat: 'cap', hc: 0xd0443a },
+  { id: 'ollie', name: 'Ollie', line: 'Never pays without a coupon.', feat: 'Tap 10 gifts', n: 10,
+    ref: 'chars/character-male-a@3,2>9,2', hat: 'beanie', hc: 0x3f78b8 },
+  { id: 'priya', name: 'Priya', line: 'Knows which till is the fastest.', feat: 'Finish a rush combo of 10', n: 10,
+    ref: 'chars/character-female-b@5,2>3,2', hat: 'cap', hc: 0x4f9a40 },
+  { id: 'hana', name: 'Hana', line: 'Shops for the whole block.', feat: 'Earn $1M in total', n: 1e6,
+    ref: 'chars/character-female-c@9,3>1,3', hat: 'none', hc: 0 },
+  { id: 'theo', name: 'Theo', line: 'Builds gadgets in his garage.', feat: 'Open Electronics', n: 1,
+    ref: 'chars/character-male-e@5,2>11,2', hat: 'beanie', hc: 0xe8553a },
+  { id: 'walt', name: 'Walt', line: 'Here every morning for the paper.', feat: 'Claim 7 daily rewards', n: 7,
+    ref: 'chars/character-male-b@9,2>15,2', hat: 'top', hc: 0x2a2a30 },
+  { id: 'rosa', name: 'Rosa', line: 'Has moved three times and still shops here.', feat: 'Reach store 3', n: 3,
+    ref: 'chars/character-female-a@11,2>9,2', hat: 'none', hc: 0 },
+  { id: 'nina', name: 'Nina', line: 'Asks for the manager, then for a deal.', feat: 'Buy 10 perk levels', n: 10,
+    ref: 'chars/character-female-d@3,3>7,3', hat: 'sun', hc: 0xf2c230 },
+  { id: 'ivy', name: 'Ivy', line: 'Grows tomatoes and judges yours.', feat: 'Build the Garden Center', n: 1,
+    ref: 'chars/character-female-f@5,2>3,2', hat: 'sun', hc: 0x68bd5c },
+  { id: 'bruno', name: 'Bruno', line: 'Tells long stories at the meat counter.', feat: 'Earn all three stars in one department', n: 3,
+    ref: 'chars/character-male-f@11,3>5,3', hat: 'cap', hc: 0x3f78b8 },
+  { id: 'felix', name: 'Felix', line: 'Walks every aisle and buys one thing.', feat: 'Have 20 stars in one store', n: 20,
+    ref: 'chars/character-male-c@11,2>3,2', hat: 'top', hc: 0x7a3f9a }
+];
+var REGC = { sales: 0.01, set: 0.05, odds: 0.04, tip: [10, 30], cool: 240 };
+var RG = {};
+REGS.forEach(function (r) { RG[r.id] = r; });

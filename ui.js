@@ -1261,6 +1261,7 @@ function paintBoost() {
   $('warp-need').textContent = gemsLeft(WARP_COST) || (weak ? 'Worth less than 10 minutes of income. Better later.' : '');
   $('b-warp').innerHTML = '<img src="assets/ui_gem.png" alt="">' + WARP_COST;
   $('b-warp').disabled = S.gems < WARP_COST || weak;
+  $('reg-txt').textContent = regOwned() + ' of ' + REGS.length + ' met, sales +' + Math.round((regMul() - 1) * 100) + '%';
 }
 
 function storeMul(n) {
@@ -1306,10 +1307,41 @@ function openSell() {
     ' Store ' + (S.store + 1) + ' earns <b>x' + storeMul(S.store + 1) + '</b> income, up from x' + storeMul(S.store) + '.';
   $('sell-rep').innerHTML = 'You have <b>' + S.rep + ' rep</b>. Moving now pays <b>+' + repGain() + '</b>: one for each star and each open department, and more the more this store earned.';
   paintPerks();
-  $('sell-keep').textContent = 'You keep your ' + plural(S.gems, 'gem') + ', reputation, perks, goals and boosts. Everything else starts again: cash, departments and every place, from the Checkouts to the Head Office. Department stars pay gems again.';
+  $('sell-keep').textContent = 'You keep your ' + plural(S.gems, 'gem') + ', reputation, perks, regulars, goals and boosts. Everything else starts again: cash, departments and every place, from the Checkouts to the Head Office. Department stars pay gems again.';
   $('sell-ok').textContent = ok ? 'Move to store ' + (S.store + 1) : 'See departments';
   $('sell-ok').classList.toggle('alt', !ok);
   $('sell').hidden = false;
+}
+
+// a regular whose feat got done arrives with a card banner; the whole set gets one more
+function checkRegs() {
+  var got = feats();
+  if (!got.length) return;
+  var all = regOwned() === REGS.length;
+  sfx('card');
+  buzz('success');
+  banner(got.length === 1 ? '<b>New regular: ' + got[0].name + '</b><small>Sales +' + Math.round(REGC.sales * 100) + '% · see Boosts</small>' :
+    '<b>' + got.length + ' new regulars</b><small>' + got.slice(0, 2).map(function (r) { return r.name; }).join(', ') + (got.length > 2 ? ' and ' + (got.length - 2) + ' more' : '') + '</small>', 0);
+  if (all) banner('<b>Every regular is here!</b><small>Sales +' + Math.round(REGC.set * 100) + '% more</small>', 0, true);
+  if (!$('regs').hidden) paintRegs();
+  save();
+}
+
+// how far a feat has got: a count for a small goal, else a share
+function regProg(r) {
+  var v = Math.min(r.n, REGV[r.id]());
+  return r.n === 1 ? '' : r.n <= 20 ? ' (' + Math.floor(v) + '/' + r.n + ')' : ' (' + Math.floor(v / r.n * 100) + '%)';
+}
+
+// the regulars met, with a portrait and the feat for each one still to come
+function paintRegs() {
+  var n = regOwned();
+  $('regs-txt').textContent = n + ' of ' + REGS.length + ' met, sales +' + Math.round((regMul() - 1) * 100) + '%. Each adds ' + Math.round(REGC.sales * 100) + '%, the whole set ' + Math.round(REGC.set * 100) + '% more. Once met they come in now and then: tap one for a tip.';
+  $('reg-list').innerHTML = REGS.map(function (r, i) {
+    var met = S.rg.o[r.id];
+    return '<div class="offer reg' + (met ? '' : ' lock') + '"><img src="' + View.regIcon(i) + '" alt=""><div><b>' + (met ? r.name : '???') + '</b>' +
+      '<span>' + (met ? r.line : r.feat + regProg(r)) + '</span></div></div>';
+  }).join('');
 }
 
 function setSound() {
@@ -1353,6 +1385,12 @@ function wire() {
     $('boost').hidden = false;
   });
   $('boost-x').addEventListener('click', function () { $('boost').hidden = true; });
+  $('b-reg').addEventListener('click', function () {
+    sfx('card');
+    paintRegs();
+    $('regs').hidden = false;
+  });
+  $('regs-x').addEventListener('click', function () { $('regs').hidden = true; });
   $('b-x2').addEventListener('click', function () {
     if (!buyX2()) return;
     sfx('done');
@@ -1648,9 +1686,23 @@ function onPerkEvent(ev, o) {
   }
 }
 
+// a tapped regular tips a few seconds of income
+function tapReg(h) {
+  var v = tipReg(h.c);
+  if (!v) return;
+  ring(h.x, h.y);
+  popAt(RG[h.c.reg].name, h.x, h.y - 46, 'small');
+  popAt('+' + money(v), h.x, h.y - 20, 'big');
+  flyCoins(h.x, h.y, 5);
+  sfx('gift', 1.25, 0.7);
+  buzz('medium');
+  nudge();
+}
+
 function onTap(h) {
   wake();
   if (h.kind === 'gift') collectGift();
+  else if (h.kind === 'reg') tapReg(h);
   else if (h.kind === 'till') tapTill(h.i);
   else if (h.kind === 'biz') showCard(h.id);
   else closeCard();
@@ -1665,6 +1717,7 @@ function loop(t) {
     bestAt = t;
     updateBest();
     updateGoals();
+    checkRegs();
     autoDaily();
     updateMeters();
     updateHint();

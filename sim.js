@@ -84,7 +84,8 @@ var S = fresh();
 
 function fresh() {
   var s = { v: 11, cash: START_CASH, gems: 0, rep: 0, pk: {}, store: 1, run: 0, all: 0, pend: 0, x2: 0, b: {}, ms: {},
-    st: { srv: 0, lost: 0 }, goal: [0, 1, 2], gn: 3, gd: {}, day: { n: 0, d: -1 }, mi: { d: -1, m: [], b: 0 }, ask: 0, ts: clock() };
+    st: { srv: 0, lost: 0 }, goal: [0, 1, 2], gn: 3, gd: {}, day: { n: 0, d: -1 }, mi: { d: -1, m: [], b: 0 }, rg: { o: {}, days: 0, gifts: 0, combo: 0 },
+    ask: 0, ts: clock() };
   noPlaces(s);
   s.b.produce = atLevel('produce', 1);
   return s;
@@ -194,7 +195,19 @@ function drawLv() {
 }
 
 function gmul() {
-  return Math.pow(STORE_MUL, S.store - 1) * (1 + HALL_BOOST * S.pl.hall) * (1 + REST * S.pl.rest) * pv('sales');
+  return Math.pow(STORE_MUL, S.store - 1) * (1 + HALL_BOOST * S.pl.hall) * (1 + REST * S.pl.rest) * pv('sales') * regMul();
+}
+
+// the regulars owned, each adding a little to sales and the whole set a little more
+function regOwned() {
+  var n = 0;
+  for (var i = 0; i < REGS.length; i++) if (S.rg.o[REGS[i].id]) n++;
+  return n;
+}
+
+function regMul() {
+  var n = regOwned();
+  return 1 + REGC.sales * n + (n === REGS.length ? REGC.set : 0);
 }
 
 function bmul() {
@@ -488,7 +501,9 @@ function tillOpen(t) {
 
 function come(by) {
   var c = { id: ++sid, by: by, garden: by === 'garden', t: by === 'garden' ? SHOP_T / 2 : SHOP_T, age: 0, v: false, here: false, front: false, wait: 0,
-    at: null, done: false };
+    at: null, done: false, reg: null, tipped: false };
+  // now and then the shopper is one of the regulars
+  if (by !== 'garden' && speed === 1 && Math.random() < REGC.odds) c.reg = pickReg();
   shoppers.push(c);
   if (onShopper) onShopper('in', c);
 }
@@ -750,6 +765,7 @@ function takeGift() {
   }
   gift = null;
   giftT = rnd(GIFT.gap);
+  S.rg.gifts++;
   mis('gift', 1);
   return r;
 }
@@ -761,7 +777,64 @@ function rushTap(i, n) {
   var was = t.t;
   t.t = Math.min(t.t + RUSH.tap * (1 + RUSH.combo * Math.min(n - 1, RUSH.top)), svc(t.k) + (t.q[0].v ? 0 : GAP[t.k]) - 0.05);
   if (t.t > was) mis('rush', 1);
+  S.rg.combo = Math.max(S.rg.combo, n);
   return true;
+}
+
+// what each regular's feat has counted so far; the regular is owned for good once it reaches REGS' n
+var REGV = {
+  mabel: function () { return rating(); },
+  gus: function () { return S.st.srv; },
+  ollie: function () { return S.rg.gifts; },
+  priya: function () { return S.rg.combo; },
+  hana: function () { return S.all; },
+  theo: function () { return has('tech') ? 1 : 0; },
+  walt: function () { return S.rg.days; },
+  rosa: function () { return S.store; },
+  nina: function () {
+    var n = 0;
+    for (var k in S.pk) n += S.pk[k];
+    return n;
+  },
+  ivy: function () { return S.pl.garden > 0 ? 1 : 0; },
+  bruno: function () {
+    var n = 0;
+    BIZ.forEach(function (b) { n = Math.max(n, deptStars(b.id)); });
+    return n;
+  },
+  felix: function () { return rating(); }
+};
+
+// the regulars whose feats got done since the last look, now owned
+function feats() {
+  var got = [];
+  REGS.forEach(function (r) {
+    if (S.rg.o[r.id] || REGV[r.id]() < r.n) return;
+    S.rg.o[r.id] = 1;
+    got.push(r);
+  });
+  return got;
+}
+
+var rgNext = {};
+
+// a regular who is not on a cooldown, or null; one that is picked stays away for the cooldown
+function pickReg() {
+  var now = clock();
+  var free = REGS.filter(function (r) { return S.rg.o[r.id] && (rgNext[r.id] || 0) <= now; });
+  if (!free.length) return null;
+  var r = free[Math.floor(Math.random() * free.length)];
+  rgNext[r.id] = now + REGC.cool * 1000;
+  return r.id;
+}
+
+// the player taps a regular among the shoppers: a tip worth a few seconds of income, once a visit
+function tipReg(c) {
+  if (!c.reg || c.tipped) return 0;
+  c.tipped = true;
+  var v = Math.max(1, rate() * rnd(REGC.tip));
+  earn(v);
+  return v;
 }
 
 // time away: the store runs at its steady rate; the pay is held until claimAway
@@ -1056,6 +1129,7 @@ function claimDaily() {
   S.x2 += r.x2 * 60;
   if (r.cash) earn(r.cash);
   S.day = { n: info.idx + 1, d: dayNum(clock()) };
+  S.rg.days++;
   r.idx = info.idx;
   return r;
 }
@@ -1305,6 +1379,14 @@ function validate(o) {
   while (s.goal.length < 3 && s.gn < GOALS.length) s.goal.push(s.gn++);
   if (o.gd) for (var k in o.gd) if (s.goal.indexOf(+k) >= 0) s.gd[k] = 1;
   if (o.day && isFinite(o.day.n) && isFinite(o.day.d)) s.day = { n: Math.floor(o.day.n), d: Math.floor(o.day.d) };
+  // a save from before the regulars starts the daily count from the streak it has
+  s.rg.days = s.day.n;
+  if (o.rg && typeof o.rg === 'object') {
+    REGS.forEach(function (r) { if (o.rg.o && o.rg.o[r.id]) s.rg.o[r.id] = 1; });
+    s.rg.days = Math.floor(num(o.rg.days, 0));
+    s.rg.gifts = Math.floor(num(o.rg.gifts, 0));
+    s.rg.combo = Math.floor(num(o.rg.combo, 0));
+  }
   var mi = o.mi;
   if (mi && isFinite(mi.d) && Array.isArray(mi.m) && mi.m.length === 3) {
     var ms = mi.m.map(function (m) {

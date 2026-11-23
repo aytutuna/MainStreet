@@ -1350,6 +1350,32 @@ small {
   gap: 8px;
 }
 
+#reg-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.offer.reg {
+  flex: none;
+}
+
+.offer.reg img {
+  width: 52px;
+  height: 52px;
+  image-rendering: auto;
+}
+
+.offer.reg.lock img {
+  filter: brightness(0) opacity(0.3);
+}
+
+.offer.reg.lock b {
+  color: var(--muted);
+}
+
 .offer i {
   font-style: normal;
   font-weight: 400;
@@ -1484,6 +1510,17 @@ small {
 
 .tag.dot.alert {
   background: #d8452f;
+}
+
+.say.reg {
+  background: #fff3c4;
+  border-color: var(--ink);
+  font-size: 12px;
+}
+
+.say.reg.tip {
+  border-color: #e0a010;
+  box-shadow: 0 0 0 3px rgba(255, 216, 74, 0.6);
 }
 
 .say {

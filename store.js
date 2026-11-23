@@ -539,6 +539,7 @@ function modelList() {
     'forest/fence', 'furn/plantSmall2*1.6', 'sub/building-type-a', 'sub/building-type-c', 'sub/building-type-e', 'sub/building-type-h',
     'sub/building-type-k'].forEach(function (r) { seen[r] = 1; });
   FOLK.forEach(function (r) { seen[r] = 1; });
+  REGS.forEach(function (r) { seen[r.ref] = 1; });
   CARS.forEach(function (r) { seen[r] = 1; });
   // a swapped model is never drawn, so its file is not fetched
   Object.keys(SWAP).forEach(function (r) { delete seen[r]; });
@@ -828,6 +829,13 @@ function bind() {
 function hit(sx, sy) {
   var g = giftScreen();
   if (g && Math.hypot(g.x - sx, g.y - sy) < GIFT_R) return { kind: 'gift' };
+  for (var k = 0; k < regList.length; k++) {
+    var rp = regList[k];
+    var rc = rp.cust;
+    if (!rc || rc.reg !== rp.reg || rc.tipped || !rp.f.obj.visible) continue;
+    toScreen(rp.f.obj.position.x, 0.5, rp.f.obj.position.z, sp);
+    if (sp.z < 1 && Math.hypot(sp.x - sx, sp.y - sy) < REG_R) return { kind: 'reg', c: rc, x: sp.x, y: sp.y };
+  }
   ndc.set(sx / cw * 2 - 1, -(sy / ch * 2 - 1));
   ray.setFromCamera(ndc, cam);
   var h = ray.intersectObjects(picks.filter(function (p) { return p.visible; }), false);
@@ -4673,8 +4681,8 @@ function carried(f, ref, y) {
   return m;
 }
 
-function person(i) {
-  var f = figure(FOLK[i % FOLK.length], 'walk');
+function person(i, ref) {
+  var f = figure(ref || FOLK[i % FOLK.length], 'walk');
   var bag = carried(f, 'food/bag', 0.03);
   var basket = carried(f, 'shop/shopping-basket*0.62', 0.07);
   var plant = carried(f, 'furn/plantSmall2*1.6', 0.12);
@@ -4696,11 +4704,83 @@ function spare() {
 }
 
 function idlePerson() {
-  for (var i = 0; i < people.length; i++) if (!busy(people[i])) return people[i];
-  if (people.length >= 64) return null;
+  for (var i = 0; i < people.length; i++) if (!busy(people[i]) && !people[i].reg) return people[i];
+  if (people.length >= 64 + regList.length) return null;
   var p = person(people.length * 7 + 3);
   people.push(p);
   return p;
+}
+
+// The regulars the sim lets in are figures of their own, made the first time one comes and kept: the shopper model of
+// their look and a hat, with a name tag that follows them while the sim has them as a shopper. They are in `people`
+// like any figure, but the idle pool never hands them out
+var regs = {};
+var regList = [];
+var REG_R = 28;
+var hats = {};
+var HAT = {
+  cap: function (c) {
+    return mergeGeometries([tinted(new THREE.SphereGeometry(0.25, 10, 6, 0, 6.283, 0, 1.571), c, 0, 0.55, -0.04, 1, 0.9, 1),
+      tinted(new THREE.BoxGeometry(0.3, 0.015, 0.16), c, 0, 0.6, 0.22, 1, 1, 1)], false);
+  },
+  top: function (c) {
+    return mergeGeometries([tinted(new THREE.CylinderGeometry(0.15, 0.15, 0.2, 10), c, 0, 0.84, -0.04, 1, 1, 1),
+      tinted(new THREE.CylinderGeometry(0.27, 0.27, 0.02, 12), c, 0, 0.74, -0.04, 1, 1, 1)], false);
+  },
+  beanie: function (c) {
+    return mergeGeometries([tinted(new THREE.SphereGeometry(0.26, 10, 6, 0, 6.283, 0, 1.571), c, 0, 0.53, -0.04, 1, 1, 1),
+      tinted(new THREE.SphereGeometry(0.05, 6, 4), c, 0, 0.8, -0.04, 1, 1, 1)], false);
+  },
+  sun: function (c) {
+    return mergeGeometries([tinted(new THREE.CylinderGeometry(0.42, 0.42, 0.015, 14), c, 0, 0.66, -0.04, 1, 1, 1),
+      tinted(new THREE.SphereGeometry(0.22, 10, 6, 0, 6.283, 0, 1.571), c, 0, 0.6, -0.04, 1, 1, 1)], false);
+  }
+};
+
+function hatOf(r) {
+  if (!HAT[r.hat]) return null;
+  if (!hats[r.id]) hats[r.id] = HAT[r.hat](r.hc);
+  return new THREE.Mesh(hats[r.id], vcMat);
+}
+
+function regPerson(id) {
+  var p = regs[id];
+  if (!p) {
+    var r = RG[id];
+    p = person(REGS.indexOf(r), r.ref);
+    p.reg = id;
+    var h = hatOf(r);
+    if (h) p.f.obj.add(h);
+    p.tag = document.createElement('div');
+    p.tag.className = 'say reg';
+    p.tag.textContent = r.name;
+    p.tag.hidden = true;
+    tagsEl.appendChild(p.tag);
+    people.push(p);
+    regs[id] = p;
+    regList.push(p);
+  }
+  return busy(p) ? null : p;
+}
+
+// the name tags ride over the regulars who are in; the one of a regular with a tip waiting glows
+function regsStep() {
+  for (var i = 0; i < regList.length; i++) {
+    var p = regList[i];
+    var c = p.cust;
+    var on = !!c && c.reg === p.reg && p.f.obj.visible;
+    if (on) {
+      toScreen(p.f.obj.position.x, 0.95, p.f.obj.position.z, sp);
+      on = sp.z < 1;
+    }
+    if (p.tag.hidden === on) p.tag.hidden = !on;
+    if (!on) continue;
+    p.tag.style.transform = 'translate(' + Math.round(sp.x) + 'px,' + Math.round(sp.y) + 'px) translate(-50%,-100%)';
+    if (p.tip !== !c.tipped) {
+      p.tip = !c.tipped;
+      p.tag.classList.toggle('tip', p.tip);
+    }
+  }
 }
 
 function spotsOf(pc) {
@@ -5009,7 +5089,7 @@ function saysStep(now) {
 
 function spawnFrom(kind, c, n, cu) {
   // with every figure in use the shopper does not come in: nobody unseen stands in a line
-  var p = pickShop() && idlePerson();
+  var p = pickShop() && (cu.reg && regPerson(cu.reg) || idlePerson());
   if (!p) {
     if (kind === 'car') leaveBay(c);
     gone(cu);
@@ -6140,6 +6220,7 @@ function draw(now) {
   popsStep(now);
   openingsStep(now);
   saysStep(now);
+  regsStep();
   order.forEach(function (id) {
     var s = shops[id];
     if (!s.open) return;
@@ -6202,7 +6283,7 @@ var cf = null;
 var CONF_COL = [0xf2c230, 0xffffff, 0xe8553a, 0x3f78b8, 0x4f9a40];
 
 function buildConfetti() {
-  cf = { m: new THREE.InstancedMesh(new THREE.BoxGeometry(0.13, 0.02, 0.08), new THREE.MeshLambertMaterial({ emissive: 0x555555 }), CONF), next: 0, end: 0,
+  cf = { m: new THREE.InstancedMesh(new THREE.BoxGeometry(0.26, 0.03, 0.16), new THREE.MeshLambertMaterial({ emissive: 0x555555 }), CONF), next: 0, end: 0,
     t0: new Float64Array(CONF), x: new Float32Array(CONF * 3), v: new Float32Array(CONF * 3), spin: new Float32Array(CONF), life: new Float32Array(CONF) };
   for (var i = 0; i < CONF; i++) {
     cf.m.setColorAt(i, fxC.set(CONF_COL[i % CONF_COL.length]));
@@ -6741,6 +6822,20 @@ function snap(group, box) {
   return c.toDataURL('image/png');
 }
 
+// a regular's portrait, head and shoulders, drawn once from the same model and hat that walk the store
+function regIcon(i) {
+  var key = 'r' + i;
+  if (icons[key] !== undefined) return icons[key];
+  var r = REGS[i];
+  var f = figure(r.ref, 'idle');
+  var h = hatOf(r);
+  if (h) f.obj.add(h);
+  f.obj.rotation.y = 0.4;
+  icons[key] = snap(f.obj, new THREE.Box3(new THREE.Vector3(-0.22, 0.32, -0.22), new THREE.Vector3(0.22, 0.84, 0.22)));
+  f.obj.traverse(function (o) { if (o.geometry && o !== h) o.geometry.dispose(); });
+  return icons[key];
+}
+
 // the way a piece's fixtures face on the floor, as the angle that turns them to +z, which the icon camera looks at;
 // fixtures count more than loose models, and a piece that faces two ways at once is left as it is
 function frontOf(list) {
@@ -6974,5 +7069,6 @@ window.View = {
   tillScreen: tillScreen,
   upName: function (id, k) { var u = PLAN.areas[id].ups[k]; return u ? u.name : ''; },
   upIcon: upIcon,
+  regIcon: regIcon,
   placeIcon: placeIcon
 };
