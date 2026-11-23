@@ -1405,7 +1405,7 @@ small {
   color: var(--muted);
 }
 
-  .vol input {
+.vol input {
   width: 100%;
   accent-color: var(--green2);
 }

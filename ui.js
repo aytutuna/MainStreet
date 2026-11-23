@@ -49,7 +49,9 @@ var cur = null;
 var nxt = null;
 var order = [];
 var skips = 0;
-var probeT = 0;
+var unsure = false;
+var unsureT = 0;
+var restT = 0;
 var streamOn = false;
 var stUrl = 0;
 var stEl = null;
@@ -101,7 +103,10 @@ function loadSound(name) {
 
 // rate shifts the pitch, vol scales the loudness
 function sfx(name, rate, vol) {
-  if (!ac || !snd || document.hidden || ac.state !== 'running') return;
+  if (!ac || !snd || document.hidden) return;
+  if (ac.state === 'suspended' && otherOn && !adOpen) ac.resume();
+  else if (ac.state !== 'running') return;
+  rest();
   if (VARY[name]) rate = (rate || 1) * (0.95 + Math.random() * 0.1);
   if (buf[name]) {
     var s = ac.createBufferSource();
@@ -171,7 +176,16 @@ function station(id) {
 
 function langGroup() {
   var l = (navigator.language || 'en').toLowerCase();
-  return /-ca$/.test(l) ? 'Canada' : RADIO_LANG[l.slice(0, 2)] || '';
+  return RADIO_LANG[l] || RADIO_LANG[l.slice(0, 2)] || '';
+}
+
+// the phone's group comes first, the rest stay in the order of data.js
+function radioGroups() {
+  var groups = [];
+  RADIO.forEach(function (s) { if (groups.indexOf(s.g) < 0) groups.push(s.g); });
+  var mine = groups.indexOf(langGroup());
+  if (mine > 0) groups.unshift(groups.splice(mine, 1)[0]);
+  return groups;
 }
 
 function saveRadio() {
@@ -210,9 +224,9 @@ function mixPick() {
 }
 
 // a play() that a pause or a new source cuts short is not an error
-function go(el) {
+function go(el, fail) {
   var p = el.play();
-  if (p) p.catch(function () {});
+  if (p) p.catch(function (e) { if (fail && e.name === 'NotSupportedError') fail(); });
 }
 
 function mixEl() {
@@ -228,20 +242,27 @@ function mixEl() {
     mixNext();
   });
   a.addEventListener('error', function () {
-    if (a === cur && ++skips < MIX.length) mixNext();
+    src.disconnect();
+    a.bad = true;
+    if (a === cur) mixSkip();
   });
   // the web view pauses its media when another app takes the audio focus
   a.addEventListener('pause', function () {
-    if (!a.hold && !a.ended && native()) post({ cmd: 'radio', check: true });
+    if (!a.hold && !a.ended) askOther();
   });
   return a;
 }
 
 // the next song is already loading while one plays, so they follow each other without a gap
+function mixSkip() {
+  if (++skips < MIX.length) mixNext();
+}
+
 function mixNext() {
-  cur = nxt || mixEl();
+  var a = cur = nxt || mixEl();
   nxt = mixEl();
-  go(cur);
+  if (a.bad) return mixSkip();
+  go(a, function () { if (a === cur) mixSkip(); });
   radioPaint();
 }
 
@@ -290,7 +311,7 @@ function streamStop() {
 
 // the radio only plays while the game is in front, sound is on, no ad is open and no other music is playing
 function radioSync() {
-  var on = snd && !document.hidden && !adOpen && !otherOn && radio.sel !== 'off';
+  var on = snd && !document.hidden && !adOpen && !otherOn && !unsure && radio.sel !== 'off';
   var mix = on && radio.sel === 'mix';
   if (mix && ac) {
     if (!cur) mixNext();
@@ -310,6 +331,8 @@ function radioSync() {
   } else if (!st && streamOn) streamStop();
   ambience();
   radioPaint();
+  if (otherOn) rest();
+  else if (ac && ac.state === 'suspended' && snd && !adOpen && !document.hidden) ac.resume();
   if (mix && cur && !radio.tip && langGroup()) {
     radio.tip = 1;
     saveRadio();
@@ -317,33 +340,44 @@ function radioSync() {
   }
 }
 
-// Android cannot say when another app stops, only whether music is playing, and the game's own audio counts. So while
-// another app plays, the audio context rests for a moment now and then to ask again
-function watchOther() {
-  if (!otherOn || probeT || !/Android/.test(navigator.userAgent)) return;
-  probeT = setTimeout(function () {
-    probeT = 0;
-    if (!otherOn || !ac) return;
-    ac.suspend().then(function () {
-      setTimeout(function () {
-        post({ cmd: 'radio', check: true });
-        setTimeout(function () { if (snd && !adOpen && !document.hidden) ac.resume(); }, 200);
-      }, 400);
-    });
-  }, 3000);
+// While another app plays, the audio context idles between effects so the app can tell that music from the game's own
+function rest() {
+  clearTimeout(restT);
+  if (!otherOn || !native()) return;
+  restT = setTimeout(function () {
+    if (otherOn && ac && !adOpen && !document.hidden) ac.suspend();
+  }, 2500);
+}
+
+// Whether another app plays is not known after coming to the front until the app answers, so the radio waits for it
+function askOther() {
+  if (!native()) return;
+  unsure = true;
+  clearTimeout(unsureT);
+  unsureT = setTimeout(function () {
+    unsure = false;
+    radioSync();
+  }, 2000);
+  post({ cmd: 'radio', check: true });
 }
 
 function radioEvent(ev) {
   if (ev.t === 'other') {
     otherOn = !!ev.on;
+    unsure = false;
+    clearTimeout(unsureT);
     radioSync();
-    watchOther();
   } else if (streamOn && ev.url === station(radio.sel).urls[stUrl]) {
     if (ev.state === 'error') return streamFail();
     stState = ev.state;
     stTitle = ev.title || stTitle;
     radioPaint();
   }
+}
+
+// a stream that gave out, or that the system paused, can be started again from the panel
+function stOff() {
+  return stState === 'error' || stState === 'paused';
 }
 
 function nowText() {
@@ -353,6 +387,7 @@ function nowText() {
   if (radio.sel === 'mix') return cur ? MIX[cur.n].t + ' - ' + MIX[cur.n].a : 'Main Street Mix';
   var s = station(radio.sel);
   if (stState === 'error') return 'Station unavailable';
+  if (stState === 'paused') return s.name + ' (paused)';
   if (stState === 'buffering') return 'Connecting to ' + s.name;
   return s.name + (stTitle ? ' - ' + stTitle : '');
 }
@@ -362,30 +397,31 @@ function radioPaint() {
   set(shown, 'npt', $('np').firstChild, 'textContent', '♪ ' + t);
   set(shown, 'nph', $('np'), 'hidden', radio.sel === 'off' || !snd);
   set(shown, 'rnow', $('r-now'), 'textContent', t);
+  var bad = stOff() && streamOn;
+  if (set(shown, 'rbad', {}, 'x', bad) && !$('radio').hidden) paintRadio();
 }
 
-function radioRow(id, name, line) {
-  var on = radio.sel === id;
+function radioRow(id, name, line, pick, done) {
+  var on = radio.sel === id && !(stOff() && streamOn);
+  var label = on ? done : radio.sel === id ? (stState === 'paused' ? 'Resume' : 'Retry') : pick;
   return '<div class="offer"><div><b>' + name + '</b><span>' + line + '</span></div><button type="button" class="btn' + (on ? '' : ' alt') + '" data-r="' + id + '"' +
-    (on ? ' disabled' : '') + '>' + (on ? 'On' : 'Play') + '</button></div>';
+    (on ? ' disabled' : '') + '>' + label + '</button></div>';
 }
 
 function paintRadio() {
   $('r-vol').value = Math.round(radio.vol * 100);
-  var groups = [];
-  RADIO.forEach(function (s) { if (groups.indexOf(s.g) < 0) groups.push(s.g); });
-  var h = radioRow('off', 'Off', 'No music') + radioRow('mix', 'Main Street Mix', MIX.length + ' songs, shuffled');
-  groups.forEach(function (g) {
+  var h = radioRow('off', 'Off', 'No music', 'Turn off', 'Off') + radioRow('mix', 'Main Street Mix', MIX.length + ' songs, shuffled', 'Play', 'On');
+  radioGroups().forEach(function (g) {
     var open = g === radioOpen;
     h += '<button type="button" class="btn alt rg" data-g="' + g + '">' + g + '<i>' + (open ? '-' : '+') + '</i></button>';
-    if (open) RADIO.forEach(function (s) { if (s.g === g) h += radioRow(s.id, s.name, s.line); });
+    if (open) RADIO.forEach(function (s) { if (s.g === g) h += radioRow(s.id, s.name, s.line, 'Play', 'On'); });
   });
   $('r-list').innerHTML = h;
 }
 
 function openRadio() {
   var s = station(radio.sel);
-  radioOpen = s ? s.g : langGroup();
+  radioOpen = s ? s.g : radioGroups()[0];
   paintRadio();
   radioPaint();
   $('radio').hidden = false;
@@ -1975,6 +2011,7 @@ function wire() {
       return;
     }
     if (ac && snd) ac.resume();
+    askOther();
     radioSync();
     if (!hiddenAt) return;
     var sec = (Date.now() - hiddenAt) / 1000;
@@ -2130,6 +2167,7 @@ function start() {
     radio = JSON.parse(localStorage.getItem(RADIO_KEY)) || radio;
   } catch (e) {}
   if (radio.sel !== 'off' && radio.sel !== 'mix' && !station(radio.sel)) radio.sel = 'mix';
+  radio.vol = +radio.vol === +radio.vol ? Math.min(1, Math.max(0, +radio.vol)) : 0.5;
   var gone = load();
   View.init($('view'), onTap);
   buildList();
