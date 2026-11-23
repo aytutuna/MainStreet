@@ -1,5 +1,7 @@
 package com.aytutuna.mainstreet
 
+import android.os.Handler
+import android.os.Looper
 import com.google.android.gms.ads.AdError
 import com.google.android.gms.ads.AdRequest
 import com.google.android.gms.ads.FullScreenContentCallback
@@ -9,6 +11,7 @@ import com.google.android.gms.ads.interstitial.InterstitialAd
 import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
 import com.google.android.gms.ads.rewarded.RewardedAd
 import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
+import com.google.android.ump.ConsentInformation
 import com.google.android.ump.ConsentRequestParameters
 import com.google.android.ump.UserMessagingPlatform
 import org.json.JSONObject
@@ -18,18 +21,41 @@ class AdsBridge(private val activity: MainActivity) {
     private var reward: RewardedAd? = null
     private var inter: InterstitialAd? = null
     private var started = false
+    private var stopped = false
+    private val retry = Handler(Looper.getMainLooper())
 
+    // the page asks for this unless the player has No ads
     fun start() {
         val consent = UserMessagingPlatform.getConsentInformation(activity)
         consent.requestConsentInfoUpdate(activity, ConsentRequestParameters.Builder().build(), {
-            UserMessagingPlatform.loadAndShowConsentFormIfRequired(activity) { init() }
+            UserMessagingPlatform.loadAndShowConsentFormIfRequired(activity) {
+                init()
+                privacy()
+            }
         }, { init() })
         // a choice made on an earlier launch already allows requests
         init()
     }
 
+    fun stop() {
+        stopped = true
+        retry.removeCallbacksAndMessages(null)
+        reward = null
+        inter = null
+    }
+
+    private fun privacy() {
+        val required = UserMessagingPlatform.getConsentInformation(activity).privacyOptionsRequirementStatus ==
+            ConsentInformation.PrivacyOptionsRequirementStatus.REQUIRED
+        activity.emit(JSONObject().put("t", "privacy").put("required", required))
+    }
+
+    fun options() {
+        UserMessagingPlatform.showPrivacyOptionsForm(activity) { init() }
+    }
+
     private fun init() {
-        if (started || !UserMessagingPlatform.getConsentInformation(activity).canRequestAds()) return
+        if (started || stopped || !UserMessagingPlatform.getConsentInformation(activity).canRequestAds()) return
         started = true
         MobileAds.initialize(activity) {
             loadReward()
@@ -40,13 +66,14 @@ class AdsBridge(private val activity: MainActivity) {
     private fun loadReward() {
         RewardedAd.load(activity, BuildConfig.AD_REWARD, AdRequest.Builder().build(), object : RewardedAdLoadCallback() {
             override fun onAdLoaded(ad: RewardedAd) {
+                if (stopped) return
                 reward = ad
                 state("reward", "ready")
             }
 
             override fun onAdFailedToLoad(error: LoadAdError) {
                 reward = null
-                activity.webView.postDelayed({ loadReward() }, RETRY)
+                if (!stopped) retry.postDelayed({ loadReward() }, RETRY)
             }
         })
     }
@@ -54,13 +81,14 @@ class AdsBridge(private val activity: MainActivity) {
     private fun loadInter() {
         InterstitialAd.load(activity, BuildConfig.AD_INTER, AdRequest.Builder().build(), object : InterstitialAdLoadCallback() {
             override fun onAdLoaded(ad: InterstitialAd) {
+                if (stopped) return
                 inter = ad
                 state("inter", "ready")
             }
 
             override fun onAdFailedToLoad(error: LoadAdError) {
                 inter = null
-                activity.webView.postDelayed({ loadInter() }, RETRY)
+                if (!stopped) retry.postDelayed({ loadInter() }, RETRY)
             }
         })
     }
@@ -99,7 +127,7 @@ class AdsBridge(private val activity: MainActivity) {
         }
     }
 
-    private fun again(kind: String) = if (kind == "reward") loadReward() else loadInter()
+    private fun again(kind: String) = if (stopped) Unit else if (kind == "reward") loadReward() else loadInter()
 
     private fun state(kind: String, state: String) {
         activity.emit(JSONObject().put("t", "ad").put("kind", kind).put("state", state))

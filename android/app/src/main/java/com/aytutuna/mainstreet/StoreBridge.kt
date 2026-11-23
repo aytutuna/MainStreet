@@ -26,6 +26,10 @@ class StoreBridge(private val activity: MainActivity) {
         Purchases.sharedInstance.updatedCustomerInfoListener = UpdatedCustomerInfoListener { send(it, false) }
     }
 
+    fun stop() {
+        Purchases.sharedInstance.updatedCustomerInfoListener = null
+    }
+
     fun products(ids: JSONArray?) {
         val list = List(ids?.length() ?: 0) { ids!!.getString(it) }
         Purchases.sharedInstance.getProducts(list, object : GetStoreProductsCallback {
@@ -53,9 +57,10 @@ class StoreBridge(private val activity: MainActivity) {
         Purchases.sharedInstance.purchase(PurchaseParams.Builder(activity, product).build(), object : PurchaseCallback {
             override fun onCompleted(storeTransaction: StoreTransaction, customerInfo: CustomerInfo) {
                 // the id the store list uses for it, so the page counts the purchase once
-                val tx = customerInfo.nonSubscriptionTransactions.filter { it.productIdentifier == id }
-                    .maxByOrNull { it.purchaseDate }?.transactionIdentifier ?: storeTransaction.orderId ?: storeTransaction.purchaseToken
-                activity.emit(JSONObject().put("t", "bought").put("id", id).put("tx", tx))
+                val listed = customerInfo.nonSubscriptionTransactions.filter { it.productIdentifier == id }.maxByOrNull { it.purchaseDate }
+                val tx = listed?.transactionIdentifier ?: storeTransaction.orderId ?: storeTransaction.purchaseToken
+                val at = listed?.purchaseDate?.time ?: storeTransaction.purchaseTime
+                activity.emit(JSONObject().put("t", "bought").put("id", id).put("tx", tx).put("at", at))
             }
 
             override fun onError(error: PurchasesError, userCancelled: Boolean) {

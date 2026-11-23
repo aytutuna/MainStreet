@@ -34,7 +34,9 @@ class Bridge(private val activity: MainActivity) {
                 "products" -> activity.store.products(msg.optJSONArray("ids"))
                 "buy" -> activity.store.buy(msg.optString("id"))
                 "restore" -> activity.store.restore()
+                "adStart" -> activity.ads.start()
                 "adReady" -> activity.ads.report()
+                "privacy" -> activity.ads.options()
                 "ad" -> activity.ads.show(msg.optString("kind"))
             }
         }

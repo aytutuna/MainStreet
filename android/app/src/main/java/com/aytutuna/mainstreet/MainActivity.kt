@@ -103,7 +103,6 @@ class MainActivity : ComponentActivity() {
         setContentView(frame)
         store = StoreBridge(this)
         ads = AdsBridge(this)
-        ads.start()
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -138,7 +137,7 @@ class MainActivity : ComponentActivity() {
 
     // the page's single entry point for the store and the ads, see shop.js
     fun emit(msg: JSONObject) {
-        runOnUiThread { webView.evaluateJavascript("window.nativeStore && window.nativeStore($msg)", null) }
+        runOnUiThread { if (!isDestroyed) webView.evaluateJavascript("window.nativeStore && window.nativeStore($msg)", null) }
     }
 
     fun askNotifications() {
@@ -197,6 +196,8 @@ class MainActivity : ComponentActivity() {
     }
 
     override fun onDestroy() {
+        store.stop()
+        ads.stop()
         webView.destroy()
         super.onDestroy()
     }
