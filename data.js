@@ -277,3 +277,66 @@ var ACHS = [
 ];
 var ACH_TIER = [{ name: 'Bronze', gems: 5 }, { name: 'Silver', gems: 15 }, { name: 'Gold', gems: 40, sales: 0.01 }];
 var ACH_CAP = 0.1;
+
+// Main Street Mix: bundled songs in assets/music/<f>.m4a (Pixabay Content License), shuffled
+var MIX = [
+  { f: 'positive-easy-listening', t: 'Positive Easy Listening', a: '331music' },
+  { f: 'feel-good-feel-good', t: 'Feel Good - Feel Good Music', a: 'STAROSTIN' },
+  { f: 'upbeat-upbeat-music', t: 'Upbeat - Upbeat Music', a: 'ViacheslavStarostin' },
+  { f: 'happy-happy-music', t: 'Happy - Happy Music', a: 'kulishov' },
+  { f: 'pop-light', t: 'Pop Light', a: '331music' },
+  { f: 'shopping-shopping-music', t: 'Shopping - Shopping Music', a: 'iepmusic' },
+  { f: 'summer-pop', t: 'Summer Pop', a: 'Caldena' },
+  { f: 'ukulele-circus-funk', t: 'Ukulele Circus Funk', a: '51604229' },
+  { f: 'cheerful-cheerful-music', t: 'Cheerful - Cheerful Music', a: 'JonasBlakewood' },
+  { f: 'indie-pop', t: 'Indie Pop', a: 'AtlasAudio' },
+  { f: 'fun-jazz-background', t: 'Fun Jazz Background', a: '51604229' },
+  { f: 'country-pop', t: 'Country Pop', a: 'Music_for_Creators' }
+];
+
+// Live radio. A station's urls are tried in order; .m3u8 ones are HLS, which the apps and Safari play. g is the group
+// shown in the Radio panel, RADIO_LANG the group suggested for a phone language.
+var RADIO_LANG = { en: 'USA', tr: 'Turkey', de: 'Germany', fr: 'France', nl: 'Netherlands', ar: 'Arabic', es: 'Latin', hi: 'India' };
+var RADIO = [
+  { id: 'kiis', g: 'USA', name: 'KIIS FM', line: 'Pop hits from Los Angeles', web: 'https://www.iheart.com/live/kiis-fm-185/', urls: ['https://stream.revma.ihrhls.com/zc185'] },
+  { id: 'lite', g: 'USA', name: 'Lite FM 93.9', line: 'Adult contemporary from Chicago', web: 'https://www.iheart.com/live/939-lite-fm-853/', urls: ['https://stream.revma.ihrhls.com/zc853'] },
+  { id: 'hot97', g: 'USA', name: 'Hot 97', line: 'Hip-hop and R&B from New York', web: 'https://www.hot97.com/', urls: ['https://18313.live.streamtheworld.com/WQHTFMAAC.aac'] },
+  { id: 'oldies', g: 'USA', name: '181.FM Great Oldies', line: 'Pop oldies', web: 'https://www.181.fm/', urls: ['https://listen.181fm.com/181-greatoldies_128k.mp3'] },
+  { id: 'poptron', g: 'USA', name: 'SomaFM PopTron', line: 'Electropop and indie dance', web: 'https://somafm.com/poptron/', urls: ['https://ice6.somafm.com/poptron-128-mp3', 'https://ice2.somafm.com/poptron-128-aac'] },
+  { id: 'kral', g: 'Turkey', name: 'Kral FM', line: 'Turkish pop hits', web: 'https://www.kralfm.com.tr/', urls: ['https://dygedge2.radyotvonline.net/kralfm/playlist.m3u8'] },
+  { id: 'power', g: 'Turkey', name: 'Power Türk', line: 'Turkish pop hits', web: 'https://www.powerapp.com.tr/', urls: ['https://listen.powerapp.com.tr/powerturk/mpeg/icecast.audio', 'https://live.powerapp.com.tr/powerturk/abr/playlist.m3u8'] },
+  { id: 'joy', g: 'Turkey', name: 'Joy Türk', line: 'Turkish and world hits', web: 'https://www.joyturk.com.tr/', urls: ['https://playerservices.streamtheworld.com/api/livestream-redirect/JOY_TURK_SC', 'https://playerservices.streamtheworld.com/api/livestream-redirect/JOY_TURK_ITUNES.mp3'] },
+  { id: 'best', g: 'Turkey', name: 'Best FM', line: 'Turkish pop', web: 'https://www.bestfm.com.tr/', urls: ['https://ssldyg.radyotvonline.com/best/bestfm.stream/playlist.m3u8'] },
+  { id: 'trtfm', g: 'Turkey', name: 'TRT FM', line: 'Turkish pop from the state broadcaster', web: 'https://www.trt.net.tr/', urls: ['https://trt.radyotvonline.net/trtfm'] },
+  { id: 'metro', g: 'Turkey', name: 'Metro FM', line: 'Turkish and world pop', web: 'https://www.metrofm.com.tr/', urls: ['https://playerservices.streamtheworld.com/api/livestream-redirect/METRO_FM_SC'] },
+  { id: 'antenne', g: 'Germany', name: 'Antenne Bayern', line: 'Pop and rock hits', web: 'https://www.antenne.de/', urls: ['https://stream.antenne.de/antenne/stream/mp3'] },
+  { id: 'swr3', g: 'Germany', name: 'SWR3', line: 'Pop hits', web: 'https://www.swr3.de/', urls: ['https://liveradio.swr.de/sw282p3/swr3/play.mp3', 'https://liveradio.swr.de/sw331ch/swr3/play.aac'] },
+  { id: 'bayern3', g: 'Germany', name: 'Bayern 3', line: 'Pop hits', web: 'https://www.br.de/radio/bayern3/', urls: ['https://dispatcher.rndfnk.com/br/br3/live/mp3/mid'] },
+  { id: '1live', g: 'Germany', name: '1LIVE', line: 'Young pop and charts', web: 'https://www1.wdr.de/radio/1live/', urls: ['https://wdr-1live-live.icecastssl.wdr.de/wdr/1live/live/mp3/128/stream.mp3'] },
+  { id: 'ndr2', g: 'Germany', name: 'NDR 2', line: 'Pop hits from the north', web: 'https://www.ndr.de/ndr2/', urls: ['https://icecast.ndr.de/ndr/ndr2/niedersachsen/mp3/128/stream.mp3'] },
+  { id: 'fip', g: 'France', name: 'FIP', line: 'Eclectic, from jazz to pop', web: 'https://www.radiofrance.fr/fip', urls: ['https://icecast.radiofrance.fr/fip-midfi.mp3', 'https://icecast.radiofrance.fr/fip-lofi.aac'] },
+  { id: 'nrj', g: 'France', name: 'NRJ', line: 'Pop hits', web: 'https://www.nrj.fr/', urls: ['https://streaming.nrjaudio.fm/ou7xugf3s5gi', 'https://streaming.nrjaudio.fm/ou5k6tirv93h'] },
+  { id: 'rtl2', g: 'France', name: 'RTL 2', line: 'Pop and rock', web: 'https://www.rtl2.fr/', urls: ['https://icecast.rtl.fr/rtl2-1-44-128'] },
+  { id: 'fun', g: 'France', name: 'Fun Radio', line: 'Dance and pop', web: 'https://www.funradio.fr/', urls: ['https://icecast.funradio.fr/fun-1-44-128'] },
+  { id: 'rfm', g: 'France', name: 'RFM', line: 'Easy pop', web: 'https://rfm.fr/', urls: ['https://stream.rfm.fr/rfm-wr3.aac'] },
+  { id: 'radio2', g: 'Netherlands', name: 'NPO Radio 2', line: 'Pop and rock classics', web: 'https://www.nporadio2.nl/', urls: ['https://icecast.omroep.nl/radio2-bb-mp3'] },
+  { id: '3fm', g: 'Netherlands', name: 'NPO 3FM', line: 'New pop and alternative', web: 'https://www.npo3fm.nl/', urls: ['https://icecast.omroep.nl/3fm-bb-mp3'] },
+  { id: 'qmusic', g: 'Netherlands', name: 'Qmusic', line: 'Pop hits', web: 'https://qmusic.nl/', urls: ['https://stream.qmusic.nl/qmusic/mp3', 'https://icecast-qmusicnl-cdp.triple-it.nl/Qmusic_nl_live.mp3'] },
+  { id: '538', g: 'Netherlands', name: 'Radio 538', line: 'Pop and dance hits', web: 'https://www.538.nl/', urls: ['https://playerservices.streamtheworld.com/api/livestream-redirect/RADIO538.mp3'] },
+  { id: 'sky', g: 'Netherlands', name: 'Sky Radio', line: 'Easy pop', web: 'https://www.skyradio.nl/', urls: ['https://playerservices.streamtheworld.com/api/livestream-redirect/SRGSTR01.mp3', 'https://www.mp3streams.nl/zender/skyradio/stream/8-mp3-128'] },
+  { id: 'cbcmusic', g: 'Canada', name: 'CBC Music', line: 'Canadian music from Toronto', web: 'https://www.cbc.ca/listen/live-radio', urls: ['https://26373.live.streamtheworld.com/CBLFM_CBC_SC', 'https://26733.live.streamtheworld.com/CBUFM_CBC_SC'] },
+  { id: 'cbc1', g: 'Canada', name: 'CBC Radio One', line: 'News, talk and music from Toronto', web: 'https://www.cbc.ca/listen/live-radio', urls: ['https://17813.live.streamtheworld.com/CBLAFM_CBC_SC', 'https://22983.live.streamtheworld.com/CBU2FM_CBC_SC'] },
+  { id: 'kiss1053', g: 'Canada', name: 'Kiss 105.3', line: 'Pop hits from Ottawa', web: 'https://www.kiss1053.com/', urls: ['https://rogers.leanstream.co/rogers/ott1053.stream/icy'] },
+  { id: 'mcd', g: 'Arabic', name: 'Monte Carlo Doualiya', line: 'Arabic pop and talk', web: 'https://www.mc-doualiya.com/', urls: ['https://montecarlodoualiya128k.ice.infomaniak.ch/mc-doualiya.mp3'] },
+  { id: 'arabmix', g: 'Arabic', name: 'Arab Mix FM', line: 'Arabic hits', web: 'https://zeno.fm/radio/arab-mix-fm/', urls: ['https://stream.zeno.fm/na3vpvn10qruv', 'https://stream-29.zeno.fm/na3vpvn10qruv'] },
+  { id: 'nogoum', g: 'Arabic', name: 'Nogoum FM', line: 'Egyptian pop', web: 'https://zeno.fm/radio/nogoum-fm/', urls: ['https://stream-159.zeno.fm/qb1zvsykm98uv'] },
+  { id: 'los40', g: 'Latin', name: 'LOS40', line: 'Pop hits from Spain', web: 'https://los40.com/', urls: ['https://playerservices.streamtheworld.com/api/livestream-redirect/LOS40.mp3'] },
+  { id: 'los40co', g: 'Latin', name: 'LOS40 Colombia', line: 'Latin pop hits', web: 'https://los40.com.co/', urls: ['https://playerservices.streamtheworld.com/api/livestream-redirect/LOS40_COLOMBIA.mp3', 'https://playerservices.streamtheworld.com/api/livestream-redirect/LOS40_COLOMBIAAAC.aac'] },
+  { id: 'rockpop', g: 'Latin', name: 'Rock & Pop', line: 'Pop and rock from Buenos Aires', web: 'https://www.rockandpop.com.ar/', urls: ['https://playerservices.streamtheworld.com/api/livestream-redirect/ROCKANDPOPAAC.aac'] },
+  { id: 'reggaeton', g: 'Latin', name: 'Latina Reggaeton', line: 'Reggaeton', web: 'https://www.latina.fr/', urls: ['https://latinareggaeton.ice.infomaniak.ch/latinareggaeton.mp3'] },
+  { id: 'lamega', g: 'Latin', name: 'La Mega 97.9', line: 'Tropical and urban from New York', web: 'https://www.lamega.com/', urls: ['https://liveaudio.lamusica.com/NY_WSKQ_icy'] },
+  { id: 'gaane', g: 'India', name: 'Bollywood Gaane Purane', line: 'Old Bollywood songs', web: 'https://zeno.fm/radio/filmy-mirchi/', urls: ['https://stream.zeno.fm/6n6ewddtad0uv', 'https://stream-142.zeno.fm/6n6ewddtad0uv'] },
+  { id: 'bolly10', g: 'India', name: 'Bollywood 2010s', line: 'Bollywood hits of the 2010s', web: 'https://drive.uber.radio/', urls: ['https://drive.uber.radio/uber/bollywood2010s/icecast.audio'] },
+  { id: 'hungama', g: 'India', name: 'Radio Hungama Dil Se', line: 'Bollywood hits', web: 'https://www.hungama.com/', urls: ['https://stream.zeno.fm/143d7gty24zuv'] },
+  { id: 'hindigold', g: 'India', name: 'Hindi Gold', line: 'Hindi film classics', web: 'https://vibesounds.in/', urls: ['https://azuracast.vibesounds.in:8010/radio.mp3'] }
+];

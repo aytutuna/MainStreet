@@ -181,6 +181,7 @@ function handle(ev) {
     if (ev.why !== 'cancel') banner('<b>Purchase not completed.</b>', 0);
   } else if (ev.t === 'privacy') $('m-priv').hidden = !ev.required;
   else if (ev.t === 'ad') adEvent(ev);
+  else if (ev.t === 'radio' || ev.t === 'other') radioEvent(ev);
   if (!$('shop').hidden) paintShop();
 }
 
@@ -235,6 +236,8 @@ function adEvent(ev) {
   if (ev.state === 'ready' || ev.state === 'none') adOk[ev.kind] = ev.state === 'ready';
   else if (ev.state === 'open') {
     S.ads.li = clock();
+    adOpen = true;
+    radioSync();
     if (ac) ac.suspend();
   } else if (ev.state === 'rewarded' && watching) {
     var w = watching;
@@ -243,7 +246,9 @@ function adEvent(ev) {
     w.give();
     save();
   } else if (ev.state === 'closed' || ev.state === 'failed') {
+    adOpen = false;
     if (ac && snd) ac.resume();
+    radioSync();
     if (!watching || ev.kind !== 'reward') return;
     // the reward can arrive a moment after the ad closes
     var w = watching;

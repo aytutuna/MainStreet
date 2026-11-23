@@ -42,6 +42,22 @@ var chips = [];
 var HINT_KEY = 'mainstreet.hints';
 var hinted = {};
 var dailyAsked = -1;
+var RADIO_KEY = 'mainstreet.radio';
+var radio = { sel: 'mix', vol: 0.5, tip: 0 };
+var mus = null;
+var cur = null;
+var nxt = null;
+var order = [];
+var skips = 0;
+var streamOn = false;
+var stUrl = 0;
+var stEl = null;
+var stState = '';
+var stTitle = '';
+var otherOn = false;
+var adOpen = false;
+var duck = 1;
+var radioOpen = '';
 
 function $(id) {
   return document.getElementById(id);
@@ -58,10 +74,14 @@ function wake() {
     ac = new AudioContext();
     out = ac.createGain();
     out.connect(ac.destination);
+    mus = ac.createGain();
+    mus.gain.value = radio.vol * duck;
+    mus.connect(ac.destination);
     Object.keys(VOL).forEach(loadSound);
   }
   if (ac && ac.state !== 'running') ac.resume();
   ambience();
+  radioSync();
 }
 
 function loadSound(name) {
@@ -124,10 +144,10 @@ function askNotify() {
   tell({ cmd: 'ask' });
 }
 
-// the shopping mall murmur, looped under everything while sound is on
+// the shopping mall murmur, looped under everything while sound is on and no other music plays
 function ambience() {
   if (!ac || !buf.amb) return;
-  if (!snd) {
+  if (!snd || otherOn) {
     if (hum) hum.stop();
     hum = null;
     return;
@@ -141,6 +161,241 @@ function ambience() {
   hum.connect(v);
   v.connect(out);
   hum.start();
+}
+
+function station(id) {
+  for (var i = 0; i < RADIO.length; i++) if (RADIO[i].id === id) return RADIO[i];
+  return null;
+}
+
+function langGroup() {
+  var l = (navigator.language || 'en').toLowerCase();
+  return /-ca$/.test(l) ? 'Canada' : RADIO_LANG[l.slice(0, 2)] || '';
+}
+
+function saveRadio() {
+  try {
+    localStorage.setItem(RADIO_KEY, JSON.stringify(radio));
+  } catch (e) {}
+}
+
+function radioVol() {
+  var v = radio.vol * duck;
+  if (mus) mus.gain.setTargetAtTime(v, ac.currentTime, 0.2);
+  if (!streamOn) return;
+  if (native()) post({ cmd: 'radio', vol: v });
+  else if (stEl) stEl.volume = v;
+}
+
+// a rush plays over the radio a little quieter
+function duckRadio() {
+  var d = rush ? 0.6 : 1;
+  if (d === duck) return;
+  duck = d;
+  radioVol();
+}
+
+function mixPick() {
+  if (!order.length) {
+    for (var i = 0; i < MIX.length; i++) order.push(i);
+    for (i = order.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = order[i];
+      order[i] = order[j];
+      order[j] = t;
+    }
+  }
+  return order.pop();
+}
+
+// a play() that a pause or a new source cuts short is not an error
+function go(el) {
+  var p = el.play();
+  if (p) p.catch(function () {});
+}
+
+function mixEl() {
+  var i = mixPick();
+  var a = new Audio('assets/music/' + MIX[i].f + '.m4a');
+  a.n = i;
+  a.preload = 'auto';
+  var src = ac.createMediaElementSource(a);
+  src.connect(mus);
+  a.addEventListener('playing', function () { skips = 0; });
+  a.addEventListener('ended', function () {
+    src.disconnect();
+    mixNext();
+  });
+  a.addEventListener('error', function () {
+    if (a === cur && ++skips < MIX.length) mixNext();
+  });
+  return a;
+}
+
+// the next song is already loading while one plays, so they follow each other without a gap
+function mixNext() {
+  cur = nxt || mixEl();
+  nxt = mixEl();
+  go(cur);
+  radioPaint();
+}
+
+function streamPlay() {
+  var u = station(radio.sel).urls[stUrl];
+  stState = 'buffering';
+  if (native()) post({ cmd: 'radio', url: u, vol: radio.vol * duck });
+  else if (/\.m3u8/.test(u) && !new Audio().canPlayType('application/vnd.apple.mpegurl')) return streamFail();
+  else {
+    if (!stEl) {
+      stEl = new Audio();
+      stEl.addEventListener('playing', function () { streamEvent('playing'); });
+      stEl.addEventListener('waiting', function () { streamEvent('buffering'); });
+      stEl.addEventListener('error', function () { if (streamOn) streamFail(); });
+    }
+    stEl.src = u;
+    stEl.volume = radio.vol * duck;
+    go(stEl);
+  }
+  radioPaint();
+}
+
+function streamEvent(state) {
+  stState = state;
+  radioPaint();
+}
+
+// the alternate url is tried next, then the station is given up on
+function streamFail() {
+  if (++stUrl < station(radio.sel).urls.length) return streamPlay();
+  stState = 'error';
+  radioPaint();
+}
+
+function streamStop() {
+  streamOn = false;
+  stState = '';
+  stTitle = '';
+  if (native()) post({ cmd: 'radio', stop: true });
+  else if (stEl) {
+    stEl.pause();
+    stEl.removeAttribute('src');
+    stEl.load();
+  }
+}
+
+// the radio only plays while the game is in front, sound is on, no ad is open and no other music is playing
+function radioSync() {
+  var on = snd && !document.hidden && !adOpen && !otherOn && radio.sel !== 'off';
+  var mix = on && radio.sel === 'mix';
+  if (mix && ac) {
+    if (!cur) mixNext();
+    else if (cur.paused) go(cur);
+  } else if (cur && !cur.paused) cur.pause();
+  var st = on && !mix;
+  if (st && !streamOn) {
+    streamOn = true;
+    stUrl = 0;
+    streamPlay();
+  } else if (!st && streamOn) streamStop();
+  ambience();
+  radioPaint();
+  if (mix && cur && !radio.tip && langGroup()) {
+    radio.tip = 1;
+    saveRadio();
+    banner('<b>Main Street Mix</b><small>Try the ' + langGroup() + ' stations in the menu, under Radio</small>', 0);
+  }
+}
+
+function radioEvent(ev) {
+  if (ev.t === 'other') {
+    otherOn = !!ev.on;
+    radioSync();
+  } else if (streamOn && ev.url === station(radio.sel).urls[stUrl]) {
+    if (ev.state === 'error') return streamFail();
+    stState = ev.state;
+    stTitle = ev.title || stTitle;
+    radioPaint();
+  }
+}
+
+function nowText() {
+  if (otherOn) return 'Your music is playing';
+  if (radio.sel === 'off') return 'Radio is off';
+  if (!snd) return 'Sound is off';
+  if (radio.sel === 'mix') return cur ? MIX[cur.n].t + ' - ' + MIX[cur.n].a : 'Main Street Mix';
+  var s = station(radio.sel);
+  if (stState === 'error') return 'Station unavailable';
+  if (stState === 'buffering') return 'Connecting to ' + s.name;
+  return s.name + (stTitle ? ' - ' + stTitle : '');
+}
+
+function radioPaint() {
+  var t = nowText();
+  set(shown, 'npt', $('np').firstChild, 'textContent', '♪ ' + t);
+  set(shown, 'nph', $('np'), 'hidden', radio.sel === 'off' || !snd);
+  set(shown, 'rnow', $('r-now'), 'textContent', t);
+}
+
+function radioRow(id, name, line) {
+  var on = radio.sel === id;
+  return '<div class="offer"><div><b>' + name + '</b><span>' + line + '</span></div><button type="button" class="btn' + (on ? '' : ' alt') + '" data-r="' + id + '"' +
+    (on ? ' disabled' : '') + '>' + (on ? 'On' : 'Play') + '</button></div>';
+}
+
+function paintRadio() {
+  $('r-vol').value = Math.round(radio.vol * 100);
+  var groups = [];
+  RADIO.forEach(function (s) { if (groups.indexOf(s.g) < 0) groups.push(s.g); });
+  var h = radioRow('off', 'Off', 'No music') + radioRow('mix', 'Main Street Mix', MIX.length + ' songs, shuffled');
+  groups.forEach(function (g) {
+    var open = g === radioOpen;
+    h += '<button type="button" class="btn alt rg" data-g="' + g + '">' + g + '<i>' + (open ? '-' : '+') + '</i></button>';
+    if (open) RADIO.forEach(function (s) { if (s.g === g) h += radioRow(s.id, s.name, s.line); });
+  });
+  $('r-list').innerHTML = h;
+}
+
+function openRadio() {
+  var s = station(radio.sel);
+  radioOpen = s ? s.g : langGroup();
+  paintRadio();
+  radioPaint();
+  $('radio').hidden = false;
+  sfx('card');
+}
+
+function pickRadio(id) {
+  if (streamOn) streamStop();
+  radio.sel = id;
+  saveRadio();
+  radioSync();
+  paintRadio();
+}
+
+function wireRadio() {
+  $('m-radio').addEventListener('click', function () {
+    $('menu').hidden = true;
+    openRadio();
+  });
+  $('np').addEventListener('click', openRadio);
+  $('radio-x').addEventListener('click', function () { $('radio').hidden = true; });
+  $('r-vol').addEventListener('input', function () {
+    radio.vol = this.value / 100;
+    radioVol();
+  });
+  $('r-vol').addEventListener('change', saveRadio);
+  $('r-list').addEventListener('click', function (e) {
+    var b = e.target.closest('button');
+    var d = b && b.dataset;
+    if (!d) return;
+    if (d.r) {
+      sfx('tap');
+      pickRadio(d.r);
+    } else if (d.g) {
+      radioOpen = radioOpen === d.g ? '' : d.g;
+      paintRadio();
+    }
+  });
 }
 
 function buzz(kind) {
@@ -867,6 +1122,7 @@ function updateHud() {
     set(shown, 'rt', r.firstChild, 'textContent', rush.kind === 'bus' ? 'Tour bus' : 'Flash sale');
     set(shown, 'rw', r.querySelector('u').style, 'width', Math.round(rush.left / rush.len * 100) + '%');
   }
+  duckRadio();
 }
 
 // each meter shows its rate a minute, or what is wrong when it is the limit
@@ -1573,6 +1829,7 @@ function wire() {
     } catch (e) {}
     wake();
     ambience();
+    radioSync();
     setSound();
   });
   $('m-buzz').addEventListener('click', function () {
@@ -1683,12 +1940,14 @@ function wire() {
   document.addEventListener('visibilitychange', function () {
     if (document.hidden) {
       if (ac) ac.suspend();
+      radioSync();
       save();
       tell({ cmd: 'set', list: reminders() });
       hiddenAt = Date.now();
       return;
     }
     if (ac && snd) ac.resume();
+    radioSync();
     if (!hiddenAt) return;
     var sec = (Date.now() - hiddenAt) / 1000;
     hiddenAt = 0;
@@ -1840,7 +2099,9 @@ function start() {
     vib = localStorage.getItem(BUZZ_KEY) !== '0';
     free = localStorage.getItem(FREE_KEY) === '1';
     hinted = JSON.parse(localStorage.getItem(HINT_KEY)) || {};
+    radio = JSON.parse(localStorage.getItem(RADIO_KEY)) || radio;
   } catch (e) {}
+  if (radio.sel !== 'off' && radio.sel !== 'mix' && !station(radio.sel)) radio.sel = 'mix';
   var gone = load();
   View.init($('view'), onTap);
   buildList();
@@ -1848,6 +2109,7 @@ function start() {
   paintSpeed();
   wire();
   wireShop();
+  wireRadio();
   shopStart();
   setFree(free);
   paintFree();

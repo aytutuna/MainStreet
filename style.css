@@ -414,6 +414,21 @@ small {
   font-size: 13px;
 }
 
+#np {
+  max-width: 220px;
+  font-size: 12px;
+  font-weight: 600;
+  opacity: 0.85;
+  background: var(--paper2);
+}
+
+#np span {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
 #rush {
   background: #ffd7cf;
   color: #7a2a1c;
@@ -1363,6 +1378,36 @@ small {
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+#r-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+#r-list .rg {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+#r-list .rg i {
+  font-style: normal;
+}
+
+.vol {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+  .vol input {
+  width: 100%;
+  accent-color: var(--green2);
 }
 
 #reg-list {
