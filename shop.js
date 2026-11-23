@@ -128,18 +128,30 @@ function buyProduct(id) {
   post({ cmd: 'buy', id: PID + id });
 }
 
+var adOn = false;
+
 // called once the saved game is loaded: the queue is replayed, then the store and the ads are asked for
 function shopStart() {
   if (!native()) return;
   loaded = true;
-  var ads = !S.iap.noads;
   queued.splice(0).forEach(handle);
   post({ cmd: 'products', ids: PRODUCTS.map(function (p) { return PID + p.id; }) });
-  if (ads) post({ cmd: 'adStart' });
-  post({ cmd: 'adReady' });
+  if (S.ads.pt >= AD_START) adBegin();
   $('b-shop').hidden = false;
   // play time counts only while the game is in front
-  setInterval(function () { if (!document.hidden) S.ads.pt++; }, 1000);
+  setInterval(function () {
+    if (document.hidden) return;
+    S.ads.pt++;
+    if (S.ads.pt >= AD_START) adBegin();
+  }, 1000);
+}
+
+// the consent form and the tracking prompt wait until the player has had a few minutes with the game
+function adBegin() {
+  if (adOn || S.iap.noads) return;
+  adOn = true;
+  post({ cmd: 'adStart' });
+  post({ cmd: 'adReady' });
 }
 
 window.nativeStore = function (ev) {
