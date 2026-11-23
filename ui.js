@@ -384,7 +384,7 @@ function makeRoom(id) {
     var q = { el: row, k: {}, pic: row.querySelector('.ic'), n: row.querySelector('.segs'), fx: row.querySelector('.fx span'),
       up: row.querySelector('.up') };
     row.querySelector('b').textContent = x.name;
-    for (var s = 0; s < x.at.length; s++) q.n.appendChild(document.createElement('i'));
+    for (var s = 0; s < (x.got || 0) + x.at.length; s++) q.n.appendChild(document.createElement('i'));
     q.up.addEventListener('click', function () {
       cardSel = j;
       upgrade(id, j);
@@ -485,8 +485,9 @@ function upRoom(r) {
     flag(qk, 'best', q.el, 'best', hl);
     flag(qk, 'done', q.el, 'done', done);
     flag(qk, 'sel', q.el, 'sel', j === cardSel);
-    if (set(qk, 'n', q.n, 'title', lvl + '/' + x.at.length)) {
-      for (var s = 0; s < q.n.children.length; s++) q.n.children[s].className = s < lvl ? 'on' : '';
+    var got = x.got || 0;
+    if (set(qk, 'n', q.n, 'title', got + lvl + '/' + (got + x.at.length))) {
+      for (var s = 0; s < q.n.children.length; s++) q.n.children[s].className = s < got + lvl ? 'on' : '';
     }
     set(qk, 'fx', q.fx, 'textContent', done ? '' : effect(id, x, j));
     if (set(qk, 'pc', q.pic, 'title', name)) q.pic.src = p ? placeIcon(id, piece + 1) : upIcon(id, piece);

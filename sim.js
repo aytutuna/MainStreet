@@ -66,7 +66,8 @@ BIZ.forEach(function (b, i) {
   BZ[b.id] = b;
 });
 PLACES.forEach(function (p) {
-  p.items = p.it.map(function (n) { return { name: n, at: [] }; });
+  // got: how many of each item the place starts with, like the first lane and the first stocker
+  p.items = p.it.map(function (n, j) { return { name: n, at: [], got: p.got ? p.got[j] : 0 }; });
   p.rk = [];
   for (var k = 0; k < p.of.length; k++) {
     var e = p.items[+p.of.charAt(k)];
