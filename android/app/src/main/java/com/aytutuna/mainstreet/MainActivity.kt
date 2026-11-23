@@ -207,7 +207,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onDestroy() {
         store.stop()
-        radio.stop()
+        radio.release()
         ads.stop()
         webView.destroy()
         super.onDestroy()
