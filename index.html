@@ -25,12 +25,8 @@
       <button type="button" id="gear" class="pill" aria-label="Menu"><i></i><i></i><i></i></button>
     </div>
     <div id="goals"></div>
-    <div id="meters">
-      <button type="button" id="m-in"><div><span>Shoppers</span><em></em></div><i><u></u></i></button>
-      <button type="button" id="m-tills"><div><span>Checkouts</span><em></em></div><i><u></u></i></button>
-      <button type="button" id="m-shelf"><div><span>Shelves</span><em></em></div><i><u></u></i></button>
-    </div>
     <div id="side">
+      <button type="button" id="warn" class="pill sm" hidden></button>
       <span id="x2" class="pill sm" hidden></span>
       <button type="button" id="call" class="pill sm" hidden></button>
       <span id="rush" class="pill sm" hidden><span></span><i><u></u></i></span>
@@ -49,6 +45,7 @@
       <button type="button" id="t-boost"><img src="assets/ui_bolt.png" alt="">Boosts</button>
       <button type="button" id="t-daily"><img src="assets/ui_gift.png" alt=""><u id="daily-dot" hidden></u>Daily</button>
       <button type="button" id="t-sell"><img src="assets/ui_star.png" alt=""><u id="sell-dot" hidden></u>New store</button>
+      <button type="button" id="t-stats"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="13" width="5" height="8" fill="#4f9a40"/><rect x="10" y="5" width="5" height="16" fill="#f0c040"/><rect x="17" y="9" width="5" height="12" fill="#3f78b8"/><path d="M2 21.5h21" stroke="#3b2a1e" stroke-width="2"/></svg>Stats</button>
     </div>
   </div>
   <div id="sheet" hidden>
@@ -139,10 +136,35 @@
     </div>
   </div>
   <div id="loading"><div class="box"><b>Main Street</b><i><u id="load-bar"></u></i></div></div>
+  <div id="stats" class="veil" hidden>
+    <div class="box wide">
+      <h2>Stats</h2>
+      <div class="srow" id="st-in"><div class="si"><div class="sl"><b>Shoppers</b><em></em></div><i class="bar"><u></u></i><span class="why"></span><small class="more"></small></div><button type="button" class="btn alt fix">Bring more</button></div>
+      <div class="srow" id="st-tills"><div class="si"><div class="sl"><b>Checkouts</b><em></em></div><i class="bar"><u></u></i><span class="why"></span><small class="more"></small></div><button type="button" class="btn alt fix">Add lanes</button></div>
+      <div class="srow" id="st-shelf"><div class="si"><div class="sl"><b>Shelves</b><em></em></div><i class="bar"><u></u></i><span class="why"></span><small class="more"></small></div><button type="button" class="btn alt fix">Hire stockers</button></div>
+      <div id="st-grid"></div>
+      <h3>Spent a shopper</h3>
+      <p class="small" id="st-none" hidden>Nothing is on sale yet.</p>
+      <div id="st-dept"></div>
+      <button type="button" id="stats-x" class="btn alt">Close</button>
+    </div>
+  </div>
+  <div id="sound" class="veil" hidden>
+    <div class="box">
+      <h2>Sound</h2>
+      <label class="vol"><span>Music <em id="sv-mus-n"></em></span><input type="range" id="sv-mus" min="0" max="100"></label>
+      <label class="vol"><span>Store sounds <em id="sv-amb-n"></em></span><input type="range" id="sv-amb" min="0" max="100"></label>
+      <label class="vol"><span>Effects <em id="sv-fx-n"></em></span><input type="range" id="sv-fx" min="0" max="100"></label>
+      <p class="small">Music is the radio. Store sounds are the shoppers and the hum of the mall. Effects are the taps, tills and chimes.</p>
+      <p class="small need" id="sound-off" hidden>Sound is off. Turn it on in the menu.</p>
+      <button type="button" id="sound-x" class="btn">Close</button>
+    </div>
+  </div>
   <div id="menu" class="veil" hidden>
     <div class="box">
       <h2 id="m-title">Menu</h2>
       <button type="button" id="m-snd" class="btn alt"></button>
+      <button type="button" id="m-mix" class="btn alt">Sound mixer</button>
       <button type="button" id="m-radio" class="btn alt">Radio</button>
       <button type="button" id="m-buzz" class="btn alt"></button>
       <button type="button" id="m-look" class="btn alt">Store look</button>
@@ -168,6 +190,7 @@
       <h2>Radio</h2>
       <p id="r-now"></p>
       <label class="vol"><span>Music volume</span><input type="range" id="r-vol" min="0" max="100"></label>
+      <button type="button" id="r-mix" class="btn alt">Sound mixer</button>
       <div id="r-list"></div>
       <p class="small">Stations play over the internet and only while the game is open.</p>
       <button type="button" id="radio-x" class="btn">Close</button>

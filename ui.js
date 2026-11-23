@@ -61,6 +61,10 @@ var otherOn = false;
 var adOpen = false;
 var duck = 1;
 var radioOpen = '';
+var MIXER_KEY = 'mainstreet.mixer';
+// store sounds and effects as the mixer sliders hold them; the music level is radio.vol
+var lvl = { amb: 1 / 3, fx: 0.8 };
+var humG = null;
 
 function $(id) {
   return document.getElementById(id);
@@ -111,7 +115,7 @@ function sfx(name, rate, vol) {
   if (buf[name]) {
     var s = ac.createBufferSource();
     var v = ac.createGain();
-    v.gain.value = VOL[name] * (vol || 1);
+    v.gain.value = VOL[name] * (vol || 1) * lvl.fx;
     s.playbackRate.value = rate || 1;
     s.buffer = buf[name];
     s.connect(v);
@@ -129,7 +133,7 @@ function sfx(name, rate, vol) {
     o.type = c[0];
     o.frequency.value = f * (rate || 1);
     g.gain.setValueAtTime(0.0001, at);
-    g.gain.linearRampToValueAtTime(0.05 * (vol || 1), at + 0.012);
+    g.gain.linearRampToValueAtTime(0.05 * (vol || 1) * lvl.fx, at + 0.012);
     g.gain.exponentialRampToValueAtTime(0.0001, at + c[2]);
     o.connect(g);
     g.connect(ac.destination);
@@ -160,13 +164,68 @@ function ambience() {
   }
   if (hum) return;
   hum = ac.createBufferSource();
-  var v = ac.createGain();
-  v.gain.value = VOL.amb;
+  humG = ac.createGain();
+  ambVol();
   hum.buffer = buf.amb;
   hum.loop = true;
-  hum.connect(v);
-  v.connect(out);
+  hum.connect(humG);
+  humG.connect(out);
   hum.start();
+}
+
+function ambVol() {
+  if (humG) humG.gain.value = VOL.amb * lvl.amb;
+}
+
+function saveMixer() {
+  try {
+    localStorage.setItem(MIXER_KEY, JSON.stringify(lvl));
+  } catch (e) {}
+}
+
+var SLIDERS = [
+  ['sv-mus', function () { return radio.vol; }, function (v) { radio.vol = v; radioVol(); }],
+  ['sv-amb', function () { return lvl.amb; }, function (v) { lvl.amb = v; ambVol(); }],
+  ['sv-fx', function () { return lvl.fx; }, function (v) { lvl.fx = v; }]
+];
+
+function paintSound() {
+  SLIDERS.forEach(function (s) {
+    var v = Math.round(s[1]() * 100);
+    $(s[0]).value = v;
+    $(s[0] + '-n').textContent = v + '%';
+  });
+  $('sound-off').hidden = snd;
+}
+
+function openSound() {
+  paintSound();
+  $('sound').hidden = false;
+  sfx('card');
+}
+
+function wireSound() {
+  SLIDERS.forEach(function (s) {
+    var el = $(s[0]);
+    el.addEventListener('input', function () {
+      s[2](this.value / 100);
+      $(s[0] + '-n').textContent = this.value + '%';
+    });
+    el.addEventListener('change', function () {
+      if (s[0] === 'sv-mus') saveRadio();
+      else saveMixer();
+      if (s[0] === 'sv-fx') sfx('buy');
+    });
+  });
+  $('sound-x').addEventListener('click', function () { $('sound').hidden = true; });
+  $('m-mix').addEventListener('click', function () {
+    $('menu').hidden = true;
+    openSound();
+  });
+  $('r-mix').addEventListener('click', function () {
+    $('radio').hidden = true;
+    openSound();
+  });
 }
 
 function station(id) {
@@ -478,7 +537,7 @@ function clock2(v) {
 }
 
 function fitInsets() {
-  var top = $('meters').getBoundingClientRect().bottom + 6;
+  var top = $('top').getBoundingClientRect().bottom + 6;
   var bot = innerHeight - (sheetOpen ? $('sheet').getBoundingClientRect().top : $('bottom').getBoundingClientRect().top) + 6;
   if (cardId && !sheetOpen) bot += 25;
   if (top !== insets[0] || bot !== insets[1]) {
@@ -1067,7 +1126,7 @@ function upgrade(id, j) {
   var pane = sheetOpen ? $('sheet') : $('card').hidden ? $('bottom') : $('card');
   var top = pane.getBoundingClientRect().top - $('app').getBoundingClientRect().top;
   // above the piece's name bubble; under it when the piece is too high for that
-  var hud = $('meters').getBoundingClientRect().bottom - $('app').getBoundingClientRect().top;
+  var hud = $('top').getBoundingClientRect().bottom - $('app').getBoundingClientRect().top;
   var y = at.y - 96;
   // the pill rises 30px as it fades
   if (y - 30 < hud + 6) y = at.y + 24;
@@ -1189,8 +1248,15 @@ function updateHud() {
   duckRadio();
 }
 
-// each meter shows its rate a minute, or what is wrong when it is the limit
-function meter(id, v, k, val, word) {
+// the three meters live in the Stats sheet; the main screen only warns when one is red
+var METERS = [
+  { id: 'st-in', h: 'm-in', warn: 'Few shoppers', go: function () { openDraw(); } },
+  { id: 'st-tills', h: 'm-tills', warn: 'Slow checkouts', go: function () { tapMeter('hall', capacity); } },
+  { id: 'st-shelf', h: 'm-shelf', warn: 'Low shelves', go: function () { tapMeter('dock', stockCap); } }
+];
+
+// a row shows its rate a minute, why it is where it is, and a button for the fix
+function meter(id, v, k, val, why, more) {
   var b = $(id);
   // a sliver stays in the track so an empty meter still reads as red
   var w = Math.max(4, Math.round(Math.max(0, Math.min(1, v)) * 100));
@@ -1200,27 +1266,24 @@ function meter(id, v, k, val, word) {
     k[id] = w;
     b.querySelector('u').style.width = w + '%';
   }
-  set(k, id + 't', b.querySelector('em'), 'textContent', v < 0.8 ? word : val);
-  if (v < 0.8) meterHint(id);
+  set(k, id + 't', b.querySelector('em'), 'textContent', val);
+  set(k, id + 'w', b.querySelector('.why'), 'textContent', why);
+  set(k, id + 'm', b.querySelector('.more'), 'textContent', more);
+  flag(k, id + 'f', b.querySelector('.fix'), 'alt', v >= 0.8);
 }
 
-var METER_HINT = {
-  'm-in': ['Few shoppers', 'Tap Shoppers to bring more in'],
-  'm-tills': ['The checkouts are the limit', 'Tap Checkouts to serve them faster'],
-  'm-shelf': ['The shelves are the limit', 'Tap Shelves to restock faster']
-};
-
-// the first time a meter runs low, once ever, and not over a box or before the first purchase
-function meterHint(id) {
-  if (hinted[id] || !started() || veilUp() || bqBusy || toastTimer) return;
-  hinted[id] = 1;
+// the first time a meter runs red, once ever, and not over a box or before the first purchase
+function meterHint(i) {
+  var h = METERS[i].h;
+  if (hinted[h] || !started() || veilUp() || bqBusy || toastTimer) return;
+  hinted[h] = 1;
   try {
     localStorage.setItem(HINT_KEY, JSON.stringify(hinted));
   } catch (e) {}
   var t = $('mtoast');
   var a = $('app').getBoundingClientRect();
-  var m = $(id).getBoundingClientRect();
-  t.innerHTML = '<b>' + METER_HINT[id][0] + '</b><small>' + METER_HINT[id][1] + '</small>';
+  var m = $('warn').getBoundingClientRect();
+  t.innerHTML = '<b>' + METERS[i].warn + '</b><small>Tap the warning to see Stats and fix it</small>';
   t.hidden = false;
   t.style.left = '0px';
   var w = t.offsetWidth;
@@ -1246,9 +1309,106 @@ function updateMeters() {
   var cap = capacity();
   var inr = inRate();
   var st = stockCap();
-  meter('m-in', inr / cap, k, perMin(inr) + '/m', 'Too few');
-  meter('m-tills', cap / inr, k, perMin(cap) + '/m', 'Too slow');
-  meter('m-shelf', st / served(), k, isFinite(st) ? perMin(st) + '/m' : '-', 'Low');
+  var srv = served();
+  var v = [inr / cap, cap / inr, st / srv];
+  var bad = -1;
+  for (var i = 0; i < 3; i++) if (v[i] < 0.5 && (bad < 0 || v[i] < v[bad])) bad = i;
+  set(k, 'wh', $('warn'), 'hidden', bad < 0);
+  if (bad >= 0) {
+    set(k, 'wt', $('warn'), 'textContent', '! ' + METERS[bad].warn);
+    meterHint(bad);
+  }
+  if ($('stats').hidden) return;
+  var f = flow();
+  var more = isFinite(st) ? perMin(st) : '-';
+  meter('st-in', v[0], k, perMin(inr) + '/m', v[0] < 0.8 ? 'Too few shoppers for the checkouts' : 'Enough shoppers for the checkouts',
+    'On foot ' + perMin(f.walk) + ', by car ' + perMin(f.car) + ', by taxi ' + perMin(f.taxi) + ' a minute');
+  meter('st-tills', v[1], k, perMin(cap) + '/m', v[1] < 0.8 ? 'The checkouts are the limit' : 'The checkouts keep up',
+    'They take ' + perMin(cap) + ' a minute, shoppers come at ' + perMin(inr));
+  meter('st-shelf', v[2], k, more + '/m', v[2] < 0.8 ? 'The shelves are the limit' : 'The stockers keep up',
+    'They restock ' + more + ' a minute, shoppers need ' + perMin(srv));
+}
+
+// the figures of the Stats sheet, in the order they show
+var STATS = [
+  ['Income a second', function () { return money(rate()) + '/s'; }],
+  ['Income a minute', function () { return money(rate() * 60) + '/m'; }],
+  ['Served this store', function () { return short(S.st.sr); }],
+  ['Served in all', function () { return short(S.st.srv); }],
+  ['Lost shoppers', function () { return short(S.st.lost); }],
+  ['Earned this store', function () { return money(S.run); }],
+  ['Earned in all', function () { return money(S.all); }],
+  ['Stars', function () { return rating() + ' of ' + STAR_AT.length * BIZ.length; }],
+  ['Store', function () { return S.store + ', sales x' + storeMul(S.store); }],
+  ['Time played', function () { return playTime(S.st.t); }],
+  ['Gems', function () { return short(S.gems); }],
+  ['Regulars met', function () { return regOwned() + ' of ' + REGS.length; }],
+  ['Achievements', function () {
+    var n = 0;
+    ACHS.forEach(function (a) { if (S.ac.o[a.id]) n++; });
+    return n + ' of ' + ACHS.length;
+  }]
+];
+var dRows = {};
+
+function playTime(s) {
+  if (s < 60) return Math.floor(s) + ' s';
+  var h = Math.floor(s / 3600);
+  var m = Math.floor(s % 3600 / 60);
+  return (h ? h + ' h ' : '') + m + ' min';
+}
+
+function buildStats() {
+  $('st-grid').innerHTML = STATS.map(function (x) { return '<div><span>' + x[0] + '</span><b></b></div>'; }).join('');
+  BIZ.forEach(function (b) {
+    var el = document.createElement('div');
+    el.innerHTML = '<span></span><em></em><i class="bar"><u></u></i>';
+    el.firstChild.textContent = b.name;
+    dRows[b.id] = { el: el, em: el.querySelector('em'), u: el.querySelector('u') };
+    $('st-dept').appendChild(el);
+  });
+  METERS.forEach(function (m) {
+    $(m.id).querySelector('.fix').addEventListener('click', function () {
+      $('stats').hidden = true;
+      hideToast();
+      m.go();
+    });
+  });
+}
+
+function paintStats() {
+  var k = shown;
+  var vals = $('st-grid').querySelectorAll('b');
+  STATS.forEach(function (x, i) { set(k, 'sg' + i, vals[i], 'textContent', x[1]()); });
+  var open = BIZ.filter(function (b) { return spendAt(b.id) > 0; });
+  var spend = {};
+  open.forEach(function (b) { spend[b.id] = spendAt(b.id) * bmul(); });
+  open.sort(function (a, b) { return spend[b.id] - spend[a.id]; });
+  var top = open.length ? spend[open[0].id] : 1;
+  var all = basket() * bmul();
+  var key = open.map(function (b) { return b.id; }).join();
+  if (k.sdo !== key) {
+    k.sdo = key;
+    BIZ.forEach(function (b) { dRows[b.id].el.hidden = true; });
+    open.forEach(function (b) {
+      dRows[b.id].el.hidden = false;
+      $('st-dept').appendChild(dRows[b.id].el);
+    });
+  }
+  open.forEach(function (b) {
+    var r = dRows[b.id];
+    set(k, 'sd' + b.id, r.em, 'textContent', money(spend[b.id]) + ' \u00b7 ' + Math.round(spend[b.id] / all * 100) + '%');
+    set(k, 'sw' + b.id, r.u.style, 'width', Math.round(spend[b.id] / top * 100) + '%');
+  });
+  set(k, 'sde', $('st-none'), 'hidden', open.length > 0);
+}
+
+function openStats() {
+  hideToast();
+  $('stats').hidden = false;
+  updateMeters();
+  paintStats();
+  sfx('card');
 }
 
 // what brings the most shoppers for the money: Parking, the Taxi Stand or the cheapest draw item in a department
@@ -2138,7 +2298,9 @@ function onTap(h) {
 
 function loop(t) {
   requestAnimationFrame(loop);
-  tick(Math.min(1, (t - lastTick) / 1000));
+  var dt = Math.min(1, (t - lastTick) / 1000);
+  tick(dt);
+  S.st.t += dt;
   topUp();
   lastTick = t;
   if (t - bestAt > 250) {
@@ -2149,6 +2311,7 @@ function loop(t) {
     checkAch();
     autoDaily();
     updateMeters();
+    if (!$('stats').hidden) paintStats();
     updateHint();
     fitInsets();
     hold = !started() || !!cardId || sheetOpen || veilUp();
@@ -2165,6 +2328,9 @@ function start() {
     free = localStorage.getItem(FREE_KEY) === '1';
     hinted = JSON.parse(localStorage.getItem(HINT_KEY)) || {};
     radio = JSON.parse(localStorage.getItem(RADIO_KEY)) || radio;
+    var mx = JSON.parse(localStorage.getItem(MIXER_KEY)) || {};
+    if (+mx.amb >= 0 && +mx.amb <= 1) lvl.amb = +mx.amb;
+    if (+mx.fx >= 0 && +mx.fx <= 1) lvl.fx = +mx.fx;
   } catch (e) {}
   if (radio.sel !== 'off' && radio.sel !== 'mix' && !station(radio.sel)) radio.sel = 'mix';
   radio.vol = +radio.vol === +radio.vol ? Math.min(1, Math.max(0, +radio.vol)) : 0.5;
@@ -2176,15 +2342,16 @@ function start() {
   wire();
   wireShop();
   wireRadio();
+  wireSound();
+  buildStats();
   shopStart();
   setFree(free);
   paintFree();
   $('stars').addEventListener('click', openSell);
   $('mtoast').addEventListener('click', hideToast);
-  ['m-in', 'm-tills', 'm-shelf'].forEach(function (id) { $(id).addEventListener('click', hideToast); });
-  $('m-in').addEventListener('click', openDraw);
-  $('m-tills').addEventListener('click', function () { tapMeter('hall', capacity); });
-  $('m-shelf').addEventListener('click', function () { tapMeter('dock', stockCap); });
+  $('warn').addEventListener('click', openStats);
+  $('t-stats').addEventListener('click', openStats);
+  $('stats-x').addEventListener('click', function () { $('stats').hidden = true; });
   onShopper = onSale;
   onPerk = onPerkEvent;
   onYesterday = function (g, x) {
