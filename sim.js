@@ -393,10 +393,24 @@ function storeCost() {
   return Math.pow(STORE_COST, Math.max(0, S.store - 2));
 }
 
-function cost(id, n) {
-  if (lv(id) + n > UPS) return Infinity;
+// a piece's price is set by its place in plan.js, so buying one item never moves the price of another
+function pieceCost(id, k) {
+  if (k < 0) return Infinity;
   var b = BZ[id];
-  return b.c0 * Math.pow(b.g, lv(id)) * (Math.pow(b.g, n) - 1) / (b.g - 1) * (1 - pv('cheap')) * storeCost();
+  return b.c0 * Math.pow(b.g, k) * (1 - pv('cheap')) * storeCost();
+}
+
+// the cheapest n pieces a department still lacks; an item's pieces are in plan order, so these can all be bought
+function cost(id, n) {
+  if (n === undefined) n = 1;
+  var have = pieces(id);
+  var c = 0;
+  for (var k = 0; k < UPS && n > 0; k++) {
+    if (have.indexOf(k) >= 0) continue;
+    c += pieceCost(id, k);
+    n--;
+  }
+  return n > 0 ? Infinity : c;
 }
 
 // unlimited money for testing: spending is free, and the real balance waits in FREE so saves never hold the top-up
@@ -439,7 +453,7 @@ function nextPiece(id, j) {
 // earned and its gems
 function buy(id, j) {
   if (!avail(id) || nextPiece(id, j) < 0) return null;
-  var c = cost(id, 1);
+  var c = pieceCost(id, nextPiece(id, j));
   if (c > S.cash) return null;
   S.cash -= c;
   var b = S.b[id] || (S.b[id] = atLevel(id, 0));
@@ -462,10 +476,17 @@ function buy(id, j) {
   return res;
 }
 
-function placeCost(id) {
+// the price of item j's next piece, or without j of the cheapest piece left; 0 when there is none to buy
+function placeCost(id, j) {
   var p = PL[id];
-  var l = S.pl[id];
-  return l < p.cost.length && has(p.after) ? p.cost[l] * (1 - pv('cheap')) * storeCost() : 0;
+  if (!has(p.after)) return 0;
+  var k = -1;
+  if (j !== undefined) k = placePiece(id, j);
+  else p.items.forEach(function (x, i) {
+    var q = placePiece(id, i);
+    if (q >= 0 && (k < 0 || q < k)) k = q;
+  });
+  return k >= 0 ? p.cost[k] * (1 - pv('cheap')) * storeCost() : 0;
 }
 
 // the piece of a place's next list that item j adds next, or -1 when it has them all
@@ -477,7 +498,7 @@ function placePiece(id, j) {
 
 function buyPlace(id, j) {
   var piece = placePiece(id, j);
-  var c = placeCost(id);
+  var c = placeCost(id, j);
   if (piece < 0 || !c || S.cash < c) return null;
   S.cash -= c;
   S.pi[id][j]++;
@@ -1055,13 +1076,14 @@ function options() {
     var id = z.id;
     if (!avail(id)) return;
     z.items.forEach(function (x, j) {
-      if (nextPiece(id, j) >= 0) add({ k: 'lv', id: id, item: j, cost: cost(id, 1), gain: levelGain(id, j, r0) });
+      var k = nextPiece(id, j);
+      if (k >= 0) add({ k: 'lv', id: id, item: j, cost: pieceCost(id, k), gain: levelGain(id, j, r0) });
     });
   });
   PLACES.forEach(function (p) {
-    var c = placeCost(p.id);
-    if (c) p.items.forEach(function (x, j) {
-      if (placePiece(p.id, j) >= 0) add({ k: 'place', id: p.id, item: j, cost: c, gain: placeGain(p.id, j, r0) });
+    p.items.forEach(function (x, j) {
+      var c = placeCost(p.id, j);
+      if (c) add({ k: 'place', id: p.id, item: j, cost: c, gain: placeGain(p.id, j, r0) });
     });
   });
   return out;

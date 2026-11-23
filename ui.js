@@ -808,9 +808,8 @@ function makeRoom(id) {
     row.className = 'biz it';
     row.innerHTML = '<div class="pic"><img class="ic" alt=""></div><div class="l1"><b></b></div><div class="segs"></div>' +
       '<div class="l3 fx"><span></span></div><div class="btns"><button type="button" class="up"></button></div>';
-    var q = { el: row, k: {}, pic: row.querySelector('.ic'), n: row.querySelector('.segs'), fx: row.querySelector('.fx span'),
+    var q = { el: row, k: {}, pic: row.querySelector('.ic'), nm: row.querySelector('b'), n: row.querySelector('.segs'), fx: row.querySelector('.fx span'),
       up: row.querySelector('.up') };
-    row.querySelector('b').textContent = x.name;
     for (var s = 0; s < (x.got || 0) + x.at.length; s++) q.n.appendChild(document.createElement('i'));
     q.up.addEventListener('click', function () {
       cardSel = j;
@@ -897,7 +896,6 @@ function upRoom(r) {
   var p = PL[id];
   if (p) placeHead(r);
   else deptHead(r);
-  var c = p ? placeCost(id) : cost(id, 1);
   if (cardSel < 0 || nextOf(id, cardSel) < 0) cardSel = defaultItem(id);
   var at = cardSel < 0 ? -1 : nextOf(id, cardSel);
   markNext(r, at);
@@ -908,6 +906,8 @@ function upRoom(r) {
     var done = lvl >= x.at.length;
     var piece = x.at[done ? x.at.length - 1 : lvl];
     var name = p ? p.next[piece] : upName(id, piece);
+    var c = done ? 0 : p ? placeCost(id, j) : pieceCost(id, piece);
+    set(qk, 'nm', q.nm, 'textContent', done ? x.name : name);
     var hl = !!bestOpt && bestOpt.id === id && bestOpt.item === j;
     flag(qk, 'best', q.el, 'best', hl);
     flag(qk, 'done', q.el, 'done', done);
@@ -1128,7 +1128,7 @@ function upgrade(id, j) {
   var y = at.y - 96;
   // the pill rises 30px as it fades
   if (y - 30 < hud + 6) y = at.y + 24;
-  popAt(gain || '+ ' + x.name, at.x, Math.min(y, top - 40), 'item');
+  popAt(gain || '+ ' + (PL[id] ? PL[id].next[res.piece] : upName(id, res.piece)), at.x, Math.min(y, top - 40), 'item');
   if (res.star) ring(at.x, at.y);
 }
 
@@ -1430,10 +1430,11 @@ function drawPlace() {
     }
   });
   BIZ.forEach(function (z) {
-    if (!has(z.id) || DRAW * sm / cost(z.id, 1) <= best) return;
-    var left = z.items.some(function (x, j) { return x.stat === 'draw' && nextPiece(z.id, j) >= 0; });
-    if (!left) return;
-    best = DRAW * sm / cost(z.id, 1);
+    if (!has(z.id)) return;
+    var c = Infinity;
+    z.items.forEach(function (x, j) { if (x.stat === 'draw') c = Math.min(c, pieceCost(z.id, nextPiece(z.id, j))); });
+    if (DRAW * sm / c <= best) return;
+    best = DRAW * sm / c;
     pick = z.id;
   });
   return pick || (S.pl.lot < PL.lot.cost.length ? 'lot' : 'taxi');
@@ -1470,7 +1471,7 @@ function firstLeft(id) {
 
 // what f() gains for the price from one more level of an item of a place
 function perCoin(id, j, f) {
-  var c = placeCost(id);
+  var c = placeCost(id, j);
   if (!c || j < 0 || placePiece(id, j) < 0) return 0;
   var was = f();
   S.pi[id][j]++;
