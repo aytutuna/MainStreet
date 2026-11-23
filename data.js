@@ -131,3 +131,19 @@ var GIFT = { gap: [30, 60], life: [10, 15], cash: [3, 9], gems: 0.04, gemN: [1, 
 // Rush events: one every gap seconds of play, shoppers coming mul times as fast for secs, and each tap on a till gives
 // its front shopper tap seconds of service
 var RUSH = { gap: [240, 360], secs: 30, mul: 2, tap: 0.9 };
+
+// Perks bought with reputation, which each store move pays and which a move keeps. cost is what each level takes in
+// reputation and val what the perk is worth at level 0 and then at each level bought: cash, away hours and rush seconds
+// are extra on top of the base, the rest are the whole value
+var PERKS = [
+  { id: 'open', name: 'Head start', what: 'Start with', cost: [8, 16, 30, 55, 95], val: [[1, 0], [8, 0], [15, 0], [15, 8], [15, 15], [20, 20]] },
+  { id: 'cash', name: 'Seed money', what: 'Start cash', cost: [6, 12, 22, 40, 70], val: [0, 100, 2e3, 4e4, 8e5, 1.6e7] },
+  { id: 'cheap', name: 'Bulk deals', what: 'Upgrades cost', cost: [8, 14, 24, 40, 66, 100], val: [0, 0.05, 0.1, 0.15, 0.2, 0.25, 0.3] },
+  { id: 'pace', name: 'Quick staff', what: 'Staff work', cost: [10, 18, 30, 50, 80], val: [1, 0.95, 0.9, 0.85, 0.8, 0.75] },
+  { id: 'away', name: 'Night shift', what: 'Away earnings last', cost: [6, 12, 24, 48], val: [0, 1, 2, 3, 4] },
+  { id: 'rush', name: 'Rush hour', what: 'Rushes last', cost: [6, 12, 24], val: [0, 5, 10, 15] },
+  { id: 'sales', name: 'Loyal shoppers', what: 'Sales', cost: [10, 20, 36, 60, 100], val: [1, 1.1, 1.2, 1.3, 1.45, 1.6] },
+  { id: 'gems', name: 'Mission pay', what: 'Each mission pays', cost: [10, 25, 60], val: [0, 1, 2, 3] }
+];
+var PK = {};
+PERKS.forEach(function (p) { PK[p.id] = p; });

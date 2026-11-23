@@ -81,7 +81,7 @@ PLACES.forEach(function (p) {
 var S = fresh();
 
 function fresh() {
-  var s = { v: 11, cash: START_CASH, gems: 0, store: 1, run: 0, all: 0, pend: 0, x2: 0, b: {}, ms: {},
+  var s = { v: 11, cash: START_CASH, gems: 0, rep: 0, pk: {}, store: 1, run: 0, all: 0, pend: 0, x2: 0, b: {}, ms: {},
     st: { srv: 0, lost: 0 }, goal: [0, 1, 2], gn: 3, gd: {}, day: { n: 0, d: -1 }, mi: { d: -1, m: [], b: 0 }, ask: 0, ts: clock() };
   noPlaces(s);
   s.b.produce = atLevel('produce', 1);
@@ -192,7 +192,7 @@ function drawLv() {
 }
 
 function gmul() {
-  return Math.pow(STORE_MUL, S.store - 1) * (1 + HALL_BOOST * S.pl.hall) * (1 + REST * S.pl.rest);
+  return Math.pow(STORE_MUL, S.store - 1) * (1 + HALL_BOOST * S.pl.hall) * (1 + REST * S.pl.rest) * pv('sales');
 }
 
 function bmul() {
@@ -200,12 +200,12 @@ function bmul() {
 }
 
 function maxAway() {
-  return MAX_AWAY + 3600 * S.pl.head;
+  return MAX_AWAY + 3600 * (S.pl.head + pv('away'));
 }
 
 // what the break room does to the time a till or a stocker takes
 function pace() {
-  return Math.pow(LOUNGE, S.pl.lounge);
+  return Math.pow(LOUNGE, S.pl.lounge) * pv('pace');
 }
 
 // what each sales level adds to a shopper's basket: a full department sells what UPS levels of sales used to, however
@@ -341,7 +341,7 @@ function rate() {
 function cost(id, n) {
   if (lv(id) + n > UPS) return Infinity;
   var b = BZ[id];
-  return b.c0 * Math.pow(b.g, lv(id)) * (Math.pow(b.g, n) - 1) / (b.g - 1);
+  return b.c0 * Math.pow(b.g, lv(id)) * (Math.pow(b.g, n) - 1) / (b.g - 1) * (1 - pv('cheap'));
 }
 
 // unlimited money for testing: spending is free, and the real balance waits in FREE so saves never hold the top-up
@@ -410,7 +410,7 @@ function buy(id, j) {
 function placeCost(id) {
   var p = PL[id];
   var l = S.pl[id];
-  return l < p.cost.length && has(p.after) ? p.cost[l] : 0;
+  return l < p.cost.length && has(p.after) ? p.cost[l] * (1 - pv('cheap')) : 0;
 }
 
 // the piece of a place's next list that item j adds next, or -1 when it has them all
@@ -677,6 +677,10 @@ function tick(dt) {
   perkStep(dt);
 }
 
+function rushSecs() {
+  return RUSH.secs + pv('rush');
+}
+
 function rnd(r) {
   return r[0] + Math.random() * (r[1] - r[0]);
 }
@@ -713,11 +717,11 @@ function perkStep(dt) {
       rushT = rnd(RUSH.gap);
       calmT = 8;
       // what the rush added to the steady income
-      r.extra = Math.max(0, r.got - incRate * RUSH.secs);
+      r.extra = Math.max(0, r.got - incRate * rushSecs());
       if (onPerk) onPerk('rushend', r);
     }
   } else if (!hold && (rushT -= dt) <= 0) {
-    rush = { kind: Math.random() < 0.5 ? 'bus' : 'sale', left: RUSH.secs, got: 0 };
+    rush = { kind: Math.random() < 0.5 ? 'bus' : 'sale', left: rushSecs(), got: 0 };
     if (onPerk) onPerk('rush', rush);
   }
 }
@@ -966,15 +970,47 @@ function canMove() {
   return BIZ.every(function (b) { return has(b.id); }) && rating() >= gate();
 }
 
+// reputation a move pays: a point for each star and each open department, and one for each digit earned in the store
+function repGain() {
+  return rating() + opened() + Math.floor(Math.log10(S.run + 1));
+}
+
+// what a perk is worth at the level bought
+function pv(id) {
+  return PK[id].val[S.pk[id] || 0];
+}
+
+// reputation the next level of a perk takes, 0 at the top
+function perkCost(id) {
+  return PK[id].cost[S.pk[id] || 0] || 0;
+}
+
+function buyPerk(id) {
+  var c = perkCost(id);
+  if (!c || c > S.rep) return false;
+  S.rep -= c;
+  S.pk[id] = (S.pk[id] || 0) + 1;
+  return true;
+}
+
+// the departments a store starts with
+function startBiz() {
+  var v = pv('open');
+  var b = { produce: atLevel('produce', v[0]) };
+  if (v[1]) b.bakery = atLevel('bakery', v[1]);
+  return b;
+}
+
 function move() {
   if (!canMove()) return false;
   claimAway();
+  S.rep += repGain();
   S.store++;
-  S.cash = START_CASH;
+  S.cash = START_CASH + pv('cash');
   S.run = 0;
   S.ms = {};
   noPlaces(S);
-  S.b = { produce: atLevel('produce', 1) };
+  S.b = startBiz();
   clearShoppers();
   repick();
   return true;
@@ -1056,7 +1092,7 @@ function missionPool() {
   var open = BIZ.filter(function (b) { return has(b.id); }).length;
   pool.forEach(function (m) {
     m.p = 0;
-    m.g = 3 + Math.floor(open / 3);
+    m.g = 3 + Math.floor(open / 3) + pv('gems');
     m.c = 0;
   });
   return pool;
@@ -1192,6 +1228,10 @@ function validate(o) {
   s.b = {};
   s.cash = num(o.cash, 0);
   s.gems = Math.floor(num(o.gems, 0));
+  s.rep = Math.floor(num(o.rep, 0));
+  PERKS.forEach(function (p) {
+    if (o.pk && o.pk[p.id] > 0) s.pk[p.id] = Math.min(p.cost.length, Math.floor(num(o.pk[p.id], 0)));
+  });
   s.run = num(o.run, 0);
   s.all = Math.max(s.run, num(o.all, 0));
   s.pend = num(o.pend, 0);
