@@ -91,7 +91,7 @@ var PLACES = [
       'Two more self checkouts', 'A courtesy desk', 'Vending machines and a news rack', 'Two more self checkouts', 'A bench and planters'],
     it: ['Lanes', 'Self checkout pairs', 'Extras'], of: '0212012212', got: [1, 0, 0] },
   { id: 'dock', name: 'Stockroom', ic: 'shop/hand-truck', after: 'produce', open: true,
-    cost: [150, 1.5e4, 1.5e6, 1.5e8, 1.5e10, 1.5e12, 1.5e14, 1.5e16, 1.5e18, 1.5e20],
+    cost: geo(150, 12, 10),
     next: ['A second stocker', 'A third stocker', 'A box more on every dolly', 'A fourth stocker', 'A fifth stocker',
       'A box more on every dolly', 'A sixth stocker', 'A seventh stocker', 'A box more on every dolly', 'An eighth stocker'],
     it: ['Stockers', 'Boxes a dolly'], of: '0010010010', got: [1, 2] },

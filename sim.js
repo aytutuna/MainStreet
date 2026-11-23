@@ -42,12 +42,11 @@ var CAP = 4;
 var PATIENCE = 6;
 var SHOP_T = 30;
 var PLANT = 0.3;
-// goods are counted by what they sell for. A dolly carries LOAD0 dollars of them at Stockroom level 0 and LOAD times
-// that at each level, and a full department holds SHELF loads. A stocker takes SHELVE seconds to put a load out
+// goods are counted in shoppers: a box holds what BOX shoppers take from a department, a dolly carries its boxes, and a
+// full department holds SHELF loads. A stocker takes SHELVE seconds to put a load out
 var SHELF = 6;
 var SHELVE = 4;
-var LOAD0 = 300;
-var LOAD = 100;
+var BOX = 8;
 // each Staff level cuts the stockers' work in its department to this share
 var STAFF = 0.7;
 
@@ -75,8 +74,6 @@ PLACES.forEach(function (p) {
     e.at.push(k);
   }
 });
-// the departments by how far the stockers walk to them, nearest first
-var NEAR = BIZ.slice().sort(function (a, b) { return a.w - b.w; });
 
 var S = fresh();
 
@@ -271,9 +268,9 @@ function crewAt() {
   return [1 + S.pi.dock[0], 2 + S.pi.dock[1]];
 }
 
-// what one dolly load sells for; the boosts that raise what shoppers spend raise it too
-function haul() {
-  return LOAD0 * Math.pow(LOAD, S.pl.dock) * gmul();
+// shoppers one dolly load keeps supplied
+function dolly() {
+  return BOX * crewAt()[1];
 }
 
 function walkT(id) {
@@ -290,7 +287,7 @@ function trip(id) {
 
 // stocker seconds a second it takes to keep a department full for n shoppers a second
 function need(id, n) {
-  return n * spendAt(id) * trip(id) / haul() * Math.pow(STAFF, statLv(id, 'staff'));
+  return spendAt(id) ? n * trip(id) / dolly() * Math.pow(STAFF, statLv(id, 'staff')) : 0;
 }
 
 // what a load is worth on the shelves once the department's clerks have put it out
@@ -305,13 +302,22 @@ function stockCap() {
   return crewAt()[0] / t;
 }
 
-// what the shoppers pay for at the tills a second while the store runs steady. Stockers keep the departments nearest
-// the stock doors full first; past what they can carry the ones further off are empty part of the time
+// the departments with goods to sell, best first by what a stocker's second there earns, so a new department only
+// takes what the stockers have left over
+function ranked() {
+  var out = BIZ.filter(function (b) { return spendAt(b.id) > 0; });
+  var v = {};
+  out.forEach(function (b) { v[b.id] = spendAt(b.id) / need(b.id, 1); });
+  return out.sort(function (a, b) { return v[b.id] - v[a.id]; });
+}
+
+// what the shoppers pay for at the tills a second while the store runs steady. Stockers keep the departments that
+// earn most per stocker second full first; past what they can carry the rest are empty part of the time
 function sold() {
   var n = served();
   var left = crewAt()[0];
   var v = 0;
-  NEAR.forEach(function (b) {
+  ranked().forEach(function (b) {
     var t = need(b.id, n);
     if (!t) return;
     v += n * spendAt(b.id) * Math.min(1, left / t);
@@ -513,14 +519,14 @@ function gone(c) {
 // left on its shelves
 function take() {
   var v = 0;
-  var full = SHELF * haul();
+  var full = SHELF * dolly();
   BIZ.forEach(function (b) {
     var id = b.id;
     var sp = spendAt(id);
     if (!sp) return;
     if (fill[id] > 0) {
-      v += Math.min(sp, fill[id] * full);
-      fill[id] = Math.max(0, fill[id] - sp / full);
+      v += sp * Math.min(1, fill[id] * full);
+      fill[id] = Math.max(0, fill[id] - 1 / full);
     } else if (!rush && calmT <= 0) outT = 20;
   });
   return v;
@@ -571,11 +577,10 @@ function shelvesOut() {
   return outT > 0;
 }
 
-// the open department nearest the stock doors with room for one more load besides the ones on their way
-function pickDept() {
-  for (var i = 0; i < NEAR.length; i++) {
-    var id = NEAR[i].id;
-    if (!has(id)) continue;
+// the department that earns most per stocker second with room for one more load besides the ones on their way
+function pickDept(r) {
+  for (var i = 0; i < r.length; i++) {
+    var id = r[i].id;
     var on = 0;
     crew.forEach(function (w) { if (w.id === id) on++; });
     if (fill[id] + (on + 1) * lift(id) / SHELF <= 1) return id;
@@ -590,11 +595,12 @@ function stockStep(dt) {
   var n = crewAt()[0];
   while (crew.length < n) crew.push({ id: null, t: 0, out: 0, T: 0 });
   crew.length = n;
+  var r = ranked();
   crew.forEach(function (w) {
     var left = dt;
     while (left > 0) {
       if (!w.id) {
-        w.id = pickDept();
+        w.id = pickDept(r);
         if (!w.id) return;
         w.t = 0;
         w.out = walkT(w.id);
