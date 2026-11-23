@@ -6,11 +6,16 @@ import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.SystemClock
 import android.view.Gravity
+import android.view.View
+import android.widget.Button
 import android.widget.FrameLayout
+import android.widget.LinearLayout
+import android.widget.TextView
 import android.webkit.RenderProcessGoneDetail
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
@@ -29,6 +34,9 @@ import java.io.ByteArrayInputStream
 class MainActivity : ComponentActivity() {
     lateinit var webView: WebView
         private set
+
+    private lateinit var notice: LinearLayout
+    private var loaded = false
 
     private val permission = registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
 
@@ -84,6 +92,7 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
+        frame.addView(updateNotice())
         setContentView(frame)
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
@@ -91,8 +100,6 @@ class MainActivity : ComponentActivity() {
                 webView.evaluateJavascript(closePanel) { if (it != "true") finish() }
             }
         })
-
-        webView.loadUrl("https://$HOST/index.html")
     }
 
     private fun client(loader: WebViewAssetLoader) = object : WebViewClient() {
@@ -127,8 +134,44 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    // ES modules with import maps need Chromium 89
+    private fun startIfCurrent() {
+        val major = WebViewCompat.getCurrentWebViewPackage(this)?.versionName?.substringBefore('.')?.toIntOrNull() ?: 0
+        val current = major >= MIN_WEBVIEW
+        notice.visibility = if (current) View.GONE else View.VISIBLE
+        webView.visibility = if (current) View.VISIBLE else View.GONE
+        if (current && !loaded) {
+            loaded = true
+            webView.loadUrl("https://$HOST/index.html")
+        }
+    }
+
+    private fun updateNotice() = LinearLayout(this).apply {
+        notice = this
+        orientation = LinearLayout.VERTICAL
+        gravity = Gravity.CENTER
+        setPadding(48, 48, 48, 48)
+        addView(TextView(context).apply {
+            setText(R.string.webview_old)
+            setTextColor(Color.WHITE)
+            textSize = 18f
+            gravity = Gravity.CENTER
+        })
+        addView(Button(context).apply {
+            setText(R.string.update)
+            setOnClickListener {
+                try {
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$WEBVIEW_PACKAGE")))
+                } catch (_: ActivityNotFoundException) {
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=$WEBVIEW_PACKAGE")))
+                }
+            }
+        })
+    }
+
     override fun onResume() {
         super.onResume()
+        startIfCurrent()
         webView.onResume()
         Reminders.clear(this)
     }
@@ -146,6 +189,8 @@ class MainActivity : ComponentActivity() {
     private companion object {
         const val HOST = "appassets.androidplatform.net"
         const val MAX_WIDTH_DP = 480
+        const val MIN_WEBVIEW = 89
+        const val WEBVIEW_PACKAGE = "com.google.android.webview"
         val crashes = ArrayDeque<Long>()
     }
 }
