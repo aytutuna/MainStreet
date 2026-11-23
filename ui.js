@@ -697,6 +697,8 @@ function afterBuy(res) {
     banner('<b>' + name + ': ' + res.star + (res.star === 1 ? ' star' : ' stars') + ', sales here x' + Math.pow(STAR_MUL, res.star) + '</b>' + (res.gems ? '<small>+' + res.gems + ' gems</small>' : ''),
       t + 0.3, res.star === STAR_AT.length);
     if (res.gems) flyGems(innerWidth / 2, innerHeight * 0.3, Math.min(6, res.gems));
+    View.burst(res.id, t, [30, 44, 50][res.star - 1]);
+    if (res.star === STAR_AT.length) View.burst(res.id, t + 0.4, 30);
     setTimeout(askNotify, 2500);
   } else if (res.unlock) {
     sfx('unlock');
@@ -751,6 +753,37 @@ function upgrade(id, j) {
   // the pill rises 30px as it fades
   if (y - 30 < hud + 6) y = at.y + 24;
   popAt(gain || '+ ' + x.name, at.x, Math.min(y, top - 40), 'item');
+  if (res.star) ring(at.x, at.y);
+}
+
+// coins falling from the top of the screen, one tick of the coin sound as each wave lands
+function rain(n) {
+  var w = $('fly').clientWidth;
+  var h = $('fly').clientHeight;
+  for (var i = 0; i < n; i++) {
+    var d = document.createElement('img');
+    d.src = 'assets/coin.png';
+    d.className = 'fc';
+    d.style.left = Math.random() * (w - 20) + 'px';
+    d.style.top = '-24px';
+    $('fly').appendChild(d);
+    var a = d.animate([{ transform: 'translateY(0) rotate(0deg)' }, { transform: 'translateY(' + (h + 40) + 'px) rotate(' + Math.round(Math.random() * 540 - 270) + 'deg)' }],
+      { duration: 1300 + Math.random() * 900, delay: i * 50, easing: 'cubic-bezier(.4,0,.8,.6)', fill: 'backwards' });
+    a.onfinish = function (e) { e.target.effect.target.remove(); };
+  }
+  for (var k = 0; k < 5; k++) setTimeout(function (r) { sfx('coins', r); }, 350 + k * 330, 1 + k * 0.05);
+}
+
+// the new store opens: coins and confetti over the screen, and two banners one after the other
+function moveParty(rep) {
+  View.punch();
+  pulse(1);
+  View.burst(null, 0.2, 50);
+  View.burst(null, 0.7, 40);
+  rain(28);
+  banner('<b>Store ' + S.store + ' is open!</b><small>Income x' + storeMul(S.store) + '</small>', 0.2, true);
+  banner('<b>+' + rep + ' reputation</b><small>Spend it on perks</small>', 0.1);
+  setTimeout(function () { if (!veilUp()) openSell(); }, 4500);
 }
 
 function claimGoalAt(i, el) {
@@ -1390,9 +1423,8 @@ function wire() {
     afterLoad();
     sfx('mile');
     buzz('success');
-    banner('<b>Welcome to store ' + S.store + '</b><small>Income x' + storeMul(S.store) + ' · +' + rep + ' rep</small>', 0.2, true);
+    moveParty(rep);
     nudge();
-    openSell();
   });
   $('gear').addEventListener('click', function () {
     setSound();

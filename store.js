@@ -4331,7 +4331,9 @@ function warmFx() {
     o.frustumCulled = false;
     root.add(o);
   });
+  cf.m.visible = true;
   renderer.compile(scene, cam);
+  cf.m.visible = false;
   parts.forEach(function (o) { root.remove(o); });
   inst.dispose();
   mats.forEach(function (m) { m.dispose(); });
@@ -6102,6 +6104,7 @@ function build() {
   buildWing();
   root.add(still.b.group(), still.x);
   makeTags();
+  buildConfetti();
   fitShadow();
   sync(false, 0);
   focusNow();
@@ -6154,6 +6157,7 @@ function draw(now) {
   giftStep(dt, now);
   blobsStep();
   puffsStep(now);
+  confStep(now);
   riseStep(now);
   selStep(now);
   flashStep(now);
@@ -6189,6 +6193,72 @@ function confetti() {
     ], { duration: 1300 + Math.random() * 900, easing: 'ease-in' });
     a.onfinish = (function (el) { return function () { el.remove(); }; })(d);
   }
+}
+
+// A burst of confetti thrown up from a spot and falling back. One instanced mesh for all of it, its arrays reused, so a
+// burst costs a draw call while it lasts and nothing at all after
+var CONF = 90;
+var cf = null;
+var CONF_COL = [0xf2c230, 0xffffff, 0xe8553a, 0x3f78b8, 0x4f9a40];
+
+function buildConfetti() {
+  cf = { m: new THREE.InstancedMesh(new THREE.BoxGeometry(0.13, 0.02, 0.08), new THREE.MeshLambertMaterial({ emissive: 0x555555 }), CONF), next: 0, end: 0,
+    t0: new Float64Array(CONF), x: new Float32Array(CONF * 3), v: new Float32Array(CONF * 3), spin: new Float32Array(CONF), life: new Float32Array(CONF) };
+  for (var i = 0; i < CONF; i++) {
+    cf.m.setColorAt(i, fxC.set(CONF_COL[i % CONF_COL.length]));
+    cf.t0[i] = -1e9;
+  }
+  cf.m.frustumCulled = false;
+  cf.m.visible = false;
+  root.add(cf.m);
+}
+
+// n pieces from a department or place, or from the middle of the view when id is empty, starting delay seconds from now
+function burst(id, delay, n) {
+  var p = id ? spot(id) : { x: focus.x, y: focus.z };
+  var now = performance.now() + delay * 1000;
+  var tint = DEPT[id] ? fxC.set(DEPT[id]).getHex() : 0xf2c230;
+  for (var k = 0; k < n; k++) {
+    var i = cf.next;
+    cf.next = (i + 1) % CONF;
+    var a = Math.random() * 6.283;
+    var r = 0.6 + Math.random() * 2;
+    var j = i * 3;
+    cf.x[j] = p.x + Math.cos(a) * 0.3;
+    cf.x[j + 1] = 0.8;
+    cf.x[j + 2] = p.y + Math.sin(a) * 0.3;
+    cf.v[j] = Math.cos(a) * r;
+    cf.v[j + 1] = 5 + Math.random() * 2.5;
+    cf.v[j + 2] = Math.sin(a) * r;
+    cf.t0[i] = now + Math.random() * 150;
+    cf.life[i] = 1.7 + Math.random() * 0.8;
+    cf.spin[i] = 2 + Math.random() * 5;
+    cf.m.setColorAt(i, fxC.set(k % 3 === 0 ? tint : CONF_COL[k % CONF_COL.length]));
+  }
+  cf.m.instanceColor.needsUpdate = true;
+  cf.end = Math.max(cf.end, now + 3000);
+  cf.m.visible = true;
+}
+
+function confStep(now) {
+  if (!cf.m.visible) return;
+  if (now > cf.end) {
+    cf.m.visible = false;
+    return;
+  }
+  for (var i = 0; i < CONF; i++) {
+    var t = (now - cf.t0[i]) / 1000;
+    if (t < 0 || t > cf.life[i]) {
+      lifeM.makeScale(0, 0, 0);
+    } else {
+      var j = i * 3;
+      lifeP.set(cf.x[j] + cf.v[j] * t + Math.sin(t * 5 + i) * 0.08, Math.max(0.04, cf.x[j + 1] + cf.v[j + 1] * t - 4.2 * t * t), cf.x[j + 2] + cf.v[j + 2] * t);
+      lifeE.set(t * cf.spin[i], t * cf.spin[i] * 0.7, 0);
+      lifeM.compose(lifeP, lifeQ.setFromEuler(lifeE), fxS.setScalar(Math.min(1, (cf.life[i] - t) * 2.5)));
+    }
+    cf.m.setMatrixAt(i, lifeM);
+  }
+  cf.m.instanceMatrix.needsUpdate = true;
 }
 
 function spot(id) {
@@ -6880,6 +6950,7 @@ window.View = {
   event: event,
   refresh: refresh,
   confetti: confetti,
+  burst: burst,
   populate: function () { sync(true, performance.now()); },
   focusNow: focusNow,
   screenOf: function (id) {
