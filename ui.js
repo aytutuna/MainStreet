@@ -988,6 +988,7 @@ function updateGoals() {
     c.bar.style.width = (g.v / g.n * 100) + '%';
     set(c.k, 'g', c.tag, 'textContent', g.done ? 'Claim +' + g.gems : '+' + g.gems);
   });
+  if (!$('daily').hidden && missSig !== missionSig()) paintMissions();
   var cd = daily().can || missionDue();
   set(shown, 'dd', $('daily-dot'), 'hidden', !cd);
   set(shown, 'sd', $('sell-dot'), 'hidden', !canMove());
@@ -1064,8 +1065,16 @@ function dayText(d) {
   return p.join(', ');
 }
 
+var missSig = '';
+
+// what the open sheet shows, so it is only painted again when that changes
+function missionSig() {
+  return missions().map(function (m) { return Math.floor(m.p / m.n * 100) + ':' + m.c; }).join() + S.mi.b + S.mi.d;
+}
+
 // the day's missions with a claim for each finished one, and the bonus for all three
 function paintMissions() {
+  missSig = missionSig();
   var box = $('miss');
   box.innerHTML = '';
   function row(text, bar, tag, on, go) {
@@ -1082,7 +1091,7 @@ function paintMissions() {
     b.addEventListener('click', function () {
       var c = centerOf(b);
       var r = go();
-      if (!r) return;
+      if (!r) return paintMissions();
       if (r.x2) banner('<b>All three done</b><small>' + r.gems + ' gems and income x2 for ' + r.x2 + ' min</small>', 0);
       flyGems(c.x, c.y, Math.min(8, r.gems));
       sfx('done');
@@ -1528,6 +1537,9 @@ function start() {
   $('m-shelf').addEventListener('click', function () { tapMeter('dock', stockCap); });
   onShopper = onSale;
   onPerk = onPerkEvent;
+  onYesterday = function (g, x) {
+    banner('<b>Yesterday: +' + plural(g, 'gem') + '</b>' + (x ? '<small>Income x2 for ' + x / 60 + ' min</small>' : ''), 0);
+  };
   onMission = function (m) {
     banner('<b>Mission done</b><small>' + missionText(m) + '</small>', 0);
     sfx('done');

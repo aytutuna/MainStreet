@@ -55,6 +55,7 @@ var speed = 1;
 var clock = function () { return Date.now(); };
 var onShopper = null;
 var onMission = null;
+var onYesterday = null;
 var BZ = {};
 BIZ.forEach(function (b, i) {
   var it = ITEMS[b.id];
@@ -746,8 +747,9 @@ function takeGift() {
 function rushTap(i) {
   var t = tills[i];
   if (!rush || !t || !t.q.length || (t.q[0].v && !t.q[0].here)) return false;
+  var was = t.t;
   t.t = Math.min(t.t + RUSH.tap, svc(t.k) + (t.q[0].v ? 0 : GAP[t.k]) - 0.05);
-  mis('rush', 1);
+  if (t.t > was) mis('rush', 1);
   return true;
 }
 
@@ -974,6 +976,7 @@ function move() {
   noPlaces(S);
   S.b = { produce: atLevel('produce', 1) };
   clearShoppers();
+  repick();
   return true;
 }
 
@@ -1018,13 +1021,26 @@ function nice(v) {
   return Math.round(v / p) * p;
 }
 
-function pickMissions() {
-  var open = BIZ.filter(function (b) { return has(b.id); }).length;
-  var g = 3 + Math.floor(open / 3);
+// upgrades still to buy in the departments and places that can be bought from now
+function upsLeft() {
+  var n = 0;
+  BIZ.forEach(function (z) {
+    if (!avail(z.id)) return;
+    z.items.forEach(function (x, j) { n += x.at.length - (S.b[z.id] ? S.b[z.id].it[j] : 0); });
+  });
+  PLACES.forEach(function (p) {
+    if (has(p.after)) p.items.forEach(function (x, j) { n += x.at.length - S.pi[p.id][j]; });
+  });
+  return n;
+}
+
+function missionPool() {
   var pool = [
-    { k: 'serve', n: Math.max(10, nice(served() * 480)) }, { k: 'earn', n: Math.max(20, nice(rate() * 480)) },
-    { k: 'gift', n: 4 }, { k: 'rush', n: 12 }, { k: 'buy', n: 6 }
+    { k: 'serve', n: Math.max(10, nice((served() + gardenServed()) * 480)) },
+    { k: 'earn', n: Math.max(20, nice(baseRate() * (1 + HEAD * S.pl.head) * 480)) },
+    { k: 'gift', n: 4 }, { k: 'rush', n: 12 }
   ];
+  if (upsLeft() >= 6) pool.push({ k: 'buy', n: 6 });
   // a department to open or a star to earn only when about 15 minutes of income pays for it
   var room = rate() * 900;
   var next = BIZ.filter(function (b) { return !has(b.id) && avail(b.id) && cost(b.id, 1) <= room; })[0];
@@ -1037,20 +1053,55 @@ function pickMissions() {
     if (c <= room && (!star || c < star.c)) star = { id: b.id, c: c };
   });
   if (star) pool.push({ k: 'star', n: 1, id: star.id });
-  var out = [];
-  while (out.length < 3) {
-    var m = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
+  var open = BIZ.filter(function (b) { return has(b.id); }).length;
+  pool.forEach(function (m) {
     m.p = 0;
-    m.g = g;
+    m.g = 3 + Math.floor(open / 3);
     m.c = 0;
-    out.push(m);
-  }
+  });
+  return pool;
+}
+
+function pickMissions() {
+  var pool = missionPool();
+  var out = [];
+  while (out.length < 3) out.push(pool.splice(Math.floor(Math.random() * pool.length), 1)[0]);
   return out;
 }
 
+// after a move the targets of what is not done yet are picked again for the new store
+function repick() {
+  var cur = missions();
+  var pool = missionPool();
+  cur.forEach(function (m, i) {
+    if (m.p >= m.n) return;
+    var free = pool.filter(function (x) { return !cur.some(function (y) { return y.k === x.k; }); });
+    if (free.length) cur[i] = free[Math.floor(Math.random() * free.length)];
+  });
+}
+
+// a day's unclaimed rewards are paid when the next day's missions are picked
 function missions() {
   var d = dayNum(clock());
-  if (S.mi.d < d) S.mi = { d: d, m: pickMissions(), b: 0 };
+  if (S.mi.d < d) {
+    var g = 0;
+    var x = 0;
+    S.mi.m.forEach(function (m) {
+      if (m.p >= m.n && !m.c) {
+        m.c = 1;
+        g += m.g;
+      }
+    });
+    if (S.mi.m.length && !S.mi.b && S.mi.m.every(function (m) { return m.c; })) {
+      g += MISS_BONUS.gems;
+      x = MISS_BONUS.x2 * 60;
+    }
+    S.gems += g;
+    S.x2 += x;
+    S.mi = { d: d, m: [], b: 0 };
+    S.mi.m = pickMissions();
+    if (g && onYesterday) onYesterday(g, x);
+  }
   return S.mi.m;
 }
 
@@ -1207,7 +1258,7 @@ function validate(o) {
       if (!m || MISS_KINDS.indexOf(m.k) < 0 || !(n > 0)) return null;
       var r = { k: m.k, n: n, p: Math.min(n, num(m.p, 0)), g: Math.floor(num(m.g, 3)), c: m.c ? 1 : 0 };
       if (m.k === 'open' || m.k === 'star') {
-        if (!BZ[m.id]) return null;
+        if (!BZ.hasOwnProperty(m.id)) return null;
         r.id = m.id;
       }
       return r;
