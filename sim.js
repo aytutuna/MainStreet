@@ -341,7 +341,7 @@ function rate() {
 function cost(id, n) {
   if (lv(id) + n > UPS) return Infinity;
   var b = BZ[id];
-  return b.c0 * Math.pow(b.g, lv(id)) * (Math.pow(b.g, n) - 1) / (b.g - 1) * (1 - pv('cheap'));
+  return b.c0 * Math.pow(b.g, lv(id)) * (Math.pow(b.g, n) - 1) / (b.g - 1) * (1 - pv('cheap'))
 }
 
 // unlimited money for testing: spending is free, and the real balance waits in FREE so saves never hold the top-up
@@ -1011,6 +1011,13 @@ function move() {
   S.ms = {};
   noPlaces(S);
   S.b = startBiz();
+  // stars the start already has pay their gems, as if earned
+  for (var id in S.b) {
+    for (var i = 0; i < starsAt(S.b[id].l); i++) {
+      S.ms[id] = i + 1;
+      S.gems += STAR_GEMS[i];
+    }
+  }
   clearShoppers();
   repick();
   return true;
