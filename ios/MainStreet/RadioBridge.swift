@@ -42,11 +42,14 @@ final class RadioBridge: NSObject, AVPlayerItemMetadataOutputPushDelegate {
         url = address.absoluteString
         held = false
         let item = AVPlayerItem(url: address)
+        // a live station starts on a couple of seconds of sound instead of the long buffer AVPlayer waits for by default
+        item.preferredForwardBufferDuration = 2
         let output = AVPlayerItemMetadataOutput(identifiers: nil)
         output.setDelegate(self, queue: .main)
         item.add(output)
         titles = output
         let next = AVPlayer(playerItem: item)
+        next.automaticallyWaitsToMinimizeStalling = false
         next.volume = volume
         watching = [
             item.observe(\.status) { [weak self] item, _ in

@@ -466,13 +466,15 @@ function radioPaint() {
   set(shown, 'npt', $('np').firstChild, 'textContent', '♪ ' + t);
   set(shown, 'nph', $('np'), 'hidden', radio.sel === 'off' || !snd);
   set(shown, 'rnow', $('r-now'), 'textContent', t);
-  var bad = stOff() && streamOn;
-  if (set(shown, 'rbad', {}, 'x', bad) && !$('radio').hidden) paintRadio();
+  var st = stOff() && streamOn ? 'bad' : streamOn && stState === 'buffering' ? 'load' : '';
+  if (set(shown, 'rbad', {}, 'x', st) && !$('radio').hidden) paintRadio();
 }
 
 function radioRow(id, name, line, pick, done) {
   var on = radio.sel === id && !(stOff() && streamOn);
-  var label = on ? done : radio.sel === id ? (stState === 'paused' ? 'Resume' : 'Retry') : pick;
+  // a station takes a few seconds to connect, so its button says so until the sound starts
+  var load = on && streamOn && stState === 'buffering';
+  var label = load ? '<i class="spin"></i>Loading' : on ? done : radio.sel === id ? (stState === 'paused' ? 'Resume' : 'Retry') : pick;
   return '<div class="offer"><div><b>' + name + '</b><span>' + line + '</span></div><button type="button" class="btn' + (on ? '' : ' alt') + '" data-r="' + id + '"' +
     (on ? ' disabled' : '') + '>' + label + '</button></div>';
 }

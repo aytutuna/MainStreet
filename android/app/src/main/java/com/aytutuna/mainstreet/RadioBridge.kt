@@ -9,6 +9,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
 import org.json.JSONObject
 
@@ -38,7 +39,9 @@ class RadioBridge(private val activity: MainActivity) {
     private fun play(address: String, volume: Float) {
         stop()
         url = address
-        player = ExoPlayer.Builder(activity).build().apply {
+        // start a station on half a second of sound instead of the default two and a half
+        val load = DefaultLoadControl.Builder().setBufferDurationsMs(15000, 50000, 500, 2000).build()
+        player = ExoPlayer.Builder(activity).setLoadControl(load).build().apply {
             // no audio focus: the radio mixes with other sound and never pauses the player's own music
             setAudioAttributes(AudioAttributes.Builder().setUsage(C.USAGE_GAME).setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).build(), false)
             setHandleAudioBecomingNoisy(true)
