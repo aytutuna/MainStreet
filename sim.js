@@ -54,6 +54,7 @@ var STAFF = 0.7;
 var speed = 1;
 var clock = function () { return Date.now(); };
 var onShopper = null;
+var onMission = null;
 var BZ = {};
 BIZ.forEach(function (b, i) {
   var it = ITEMS[b.id];
@@ -80,7 +81,7 @@ var S = fresh();
 
 function fresh() {
   var s = { v: 11, cash: START_CASH, gems: 0, store: 1, run: 0, all: 0, pend: 0, x2: 0, b: {}, ms: {},
-    st: { srv: 0, lost: 0 }, goal: [0, 1, 2], gn: 3, gd: {}, day: { n: 0, d: -1 }, ask: 0, ts: clock() };
+    st: { srv: 0, lost: 0 }, goal: [0, 1, 2], gn: 3, gd: {}, day: { n: 0, d: -1 }, mi: { d: -1, m: [], b: 0 }, ask: 0, ts: clock() };
   noPlaces(s);
   s.b.produce = atLevel('produce', 1);
   return s;
@@ -390,6 +391,7 @@ function buy(id, j) {
   var piece = nextPiece(id, j);
   b.it[j]++;
   b.l++;
+  mis('buy', 1);
   var res = { id: id, item: j, piece: piece, from: was, to: b.l, unlock: was === 0, star: 0, gems: 0 };
   STAR_AT.forEach(function (a, i) {
     if (was >= a || b.l < a) return;
@@ -399,6 +401,8 @@ function buy(id, j) {
     S.gems += STAR_GEMS[i];
     res.gems += STAR_GEMS[i];
   });
+  if (res.unlock) mis('open', 1, id);
+  if (res.star) mis('star', 1, id);
   return res;
 }
 
@@ -422,6 +426,7 @@ function buyPlace(id, j) {
   S.cash -= c;
   S.pi[id][j]++;
   S.pl[id]++;
+  mis('buy', 1);
   return { id: id, item: j, piece: piece, place: true };
 }
 
@@ -539,6 +544,8 @@ function pay(c, t) {
   if (rush) rush.got += v;
   else inc += v;
   S.st.srv++;
+  mis('serve', 1);
+  mis('earn', v);
   gone(c);
   if (onShopper) onShopper('paid', c, v, t);
 }
@@ -731,6 +738,7 @@ function takeGift() {
   }
   gift = null;
   giftT = rnd(GIFT.gap);
+  mis('gift', 1);
   return r;
 }
 
@@ -739,6 +747,7 @@ function rushTap(i) {
   var t = tills[i];
   if (!rush || !t || !t.q.length || (t.q[0].v && !t.q[0].here)) return false;
   t.t = Math.min(t.t + RUSH.tap, svc(t.k) + (t.q[0].v ? 0 : GAP[t.k]) - 0.05);
+  mis('rush', 1);
   return true;
 }
 
@@ -998,6 +1007,98 @@ function claimDaily() {
   return r;
 }
 
+// three missions a day, picked the first time the day needs them. Targets are about 8 minutes of the income and
+// traffic of that moment, so they stay in reach as the store grows
+var MISS_BONUS = { gems: 5, x2: 20 };
+var MISS_KINDS = ['serve', 'earn', 'gift', 'rush', 'buy', 'open', 'star'];
+
+// two significant digits
+function nice(v) {
+  var p = Math.pow(10, Math.max(0, Math.floor(Math.log10(v)) - 1));
+  return Math.round(v / p) * p;
+}
+
+function pickMissions() {
+  var open = BIZ.filter(function (b) { return has(b.id); }).length;
+  var g = 3 + Math.floor(open / 3);
+  var pool = [
+    { k: 'serve', n: Math.max(10, nice(served() * 480)) }, { k: 'earn', n: Math.max(20, nice(rate() * 480)) },
+    { k: 'gift', n: 4 }, { k: 'rush', n: 12 }, { k: 'buy', n: 6 }
+  ];
+  // a department to open or a star to earn only when about 15 minutes of income pays for it
+  var room = rate() * 900;
+  var next = BIZ.filter(function (b) { return !has(b.id) && avail(b.id) && cost(b.id, 1) <= room; })[0];
+  if (next) pool.push({ k: 'open', n: 1, id: next.id });
+  var star = null;
+  BIZ.forEach(function (b) {
+    var st = deptStars(b.id);
+    if (!has(b.id) || st >= STAR_AT.length) return;
+    var c = cost(b.id, STAR_AT[st] - lv(b.id));
+    if (c <= room && (!star || c < star.c)) star = { id: b.id, c: c };
+  });
+  if (star) pool.push({ k: 'star', n: 1, id: star.id });
+  var out = [];
+  while (out.length < 3) {
+    var m = pool.splice(Math.floor(Math.random() * pool.length), 1)[0];
+    m.p = 0;
+    m.g = g;
+    m.c = 0;
+    out.push(m);
+  }
+  return out;
+}
+
+function missions() {
+  var d = dayNum(clock());
+  if (S.mi.d < d) S.mi = { d: d, m: pickMissions(), b: 0 };
+  return S.mi.m;
+}
+
+function missionText(m) {
+  switch (m.k) {
+    case 'serve': return 'Serve ' + m.n.toLocaleString('en-US') + ' shoppers';
+    case 'earn': return 'Earn $' + short(m.n);
+    case 'gift': return 'Tap ' + m.n + ' gifts';
+    case 'rush': return 'Tap checkouts ' + m.n + ' times in a rush';
+    case 'buy': return 'Buy ' + m.n + ' upgrades';
+    case 'open': return 'Open ' + BZ[m.id].name;
+  }
+  return 'Earn a star in ' + BZ[m.id].name;
+}
+
+function mis(k, n, id) {
+  missions().forEach(function (m) {
+    if (m.k !== k || m.p >= m.n || (m.id && m.id !== id)) return;
+    m.p = Math.min(m.n, m.p + n);
+    if (m.p >= m.n && onMission) onMission(m);
+  });
+}
+
+function claimMission(i) {
+  var m = missions()[i];
+  if (!m || m.p < m.n || m.c) return null;
+  m.c = 1;
+  S.gems += m.g;
+  return m;
+}
+
+function bonusReady() {
+  return !S.mi.b && missions().every(function (m) { return m.c; });
+}
+
+function claimBonus() {
+  if (!bonusReady()) return null;
+  S.mi.b = 1;
+  S.gems += MISS_BONUS.gems;
+  S.x2 += MISS_BONUS.x2 * 60;
+  return MISS_BONUS;
+}
+
+// something waits to be claimed
+function missionDue() {
+  return bonusReady() || missions().some(function (m) { return m.p >= m.n && !m.c; });
+}
+
 function buyX2() {
   if (S.gems < X2_COST) return false;
   S.gems -= X2_COST;
@@ -1099,6 +1200,20 @@ function validate(o) {
   while (s.goal.length < 3 && s.gn < GOALS.length) s.goal.push(s.gn++);
   if (o.gd) for (var k in o.gd) if (s.goal.indexOf(+k) >= 0) s.gd[k] = 1;
   if (o.day && isFinite(o.day.n) && isFinite(o.day.d)) s.day = { n: Math.floor(o.day.n), d: Math.floor(o.day.d) };
+  var mi = o.mi;
+  if (mi && isFinite(mi.d) && Array.isArray(mi.m) && mi.m.length === 3) {
+    var ms = mi.m.map(function (m) {
+      var n = num(m && m.n, 0);
+      if (!m || MISS_KINDS.indexOf(m.k) < 0 || !(n > 0)) return null;
+      var r = { k: m.k, n: n, p: Math.min(n, num(m.p, 0)), g: Math.floor(num(m.g, 3)), c: m.c ? 1 : 0 };
+      if (m.k === 'open' || m.k === 'star') {
+        if (!BZ[m.id]) return null;
+        r.id = m.id;
+      }
+      return r;
+    });
+    if (ms.indexOf(null) < 0) s.mi = { d: Math.floor(mi.d), m: ms, b: mi.b ? 1 : 0 };
+  }
   return s;
 }
 
