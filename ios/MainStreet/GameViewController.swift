@@ -71,18 +71,25 @@ private final class BundleHandler: NSObject, WKURLSchemeHandler {
         var path = url.path
         if path.isEmpty || path == "/" { path = "/index.html" }
         let file = Bundle.main.bundleURL.appendingPathComponent(String(path.dropFirst()))
-        var data = path.contains("..") ? nil : try? Data(contentsOf: file)
+        var data = path.contains("..") ? nil : try? Data(contentsOf: file, options: .mappedIfSafe)
         let type = BundleHandler.types[file.pathExtension.lowercased()] ?? "application/octet-stream"
         var headers = ["Content-Type": type, "Accept-Ranges": "bytes"]
         var status = data == nil ? 404 : 200
         if let all = data, let ask = urlSchemeTask.request.value(forHTTPHeaderField: "Range"), ask.hasPrefix("bytes=") {
             let ends = ask.dropFirst(6).split(separator: "-", omittingEmptySubsequences: false)
-            let from = Int(ends[0]) ?? 0
-            let to = min(Int(ends.count > 1 ? ends[1] : "") ?? all.count - 1, all.count - 1)
+            let first = ends.count > 0 ? Int(ends[0]) : nil
+            let last = ends.count > 1 ? Int(ends[1]) : nil
+            // bytes=-N is the last N bytes
+            let from = first ?? max(all.count - (last ?? 0), 0)
+            let to = first == nil ? all.count - 1 : min(last ?? all.count - 1, all.count - 1)
             if from <= to {
                 data = all.subdata(in: from..<to + 1)
                 headers["Content-Range"] = "bytes \(from)-\(to)/\(all.count)"
                 status = 206
+            } else {
+                data = nil
+                headers["Content-Range"] = "bytes */\(all.count)"
+                status = 416
             }
         }
         headers["Content-Length"] = String(data?.count ?? 0)

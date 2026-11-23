@@ -50,6 +50,8 @@ final class AdsBridge: NSObject, FullScreenContentDelegate {
         guard !started, ConsentInformation.shared.canRequestAds else { return }
         started = true
         let go = {
+            // the game's audio session (ambient, mixing) stays as it is, so the radio carries on after an ad
+            MobileAds.shared.audioVideoManager.isAudioSessionApplicationManaged = true
             MobileAds.shared.start { [weak self] _ in
                 self?.loadReward()
                 self?.loadInter()

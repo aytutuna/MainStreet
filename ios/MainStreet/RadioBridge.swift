@@ -8,6 +8,8 @@ final class RadioBridge: NSObject, AVPlayerItemMetadataOutputPushDelegate {
     private var player: AVPlayer?
     private var url = ""
     private var watching: [NSKeyValueObservation] = []
+    private var titles: AVPlayerItemMetadataOutput?
+    private var held = false
     private let emit: ([String: Any]) -> Void
 
     init(emit: @escaping ([String: Any]) -> Void) {
@@ -18,6 +20,9 @@ final class RadioBridge: NSObject, AVPlayerItemMetadataOutputPushDelegate {
         center.addObserver(self, selector: #selector(check), name: UIApplication.didBecomeActiveNotification, object: nil)
         // streams only play while the game is in front
         center.addObserver(self, selector: #selector(stop), name: UIApplication.didEnterBackgroundNotification, object: nil)
+        center.addObserver(self, selector: #selector(routeChanged), name: AVAudioSession.routeChangeNotification, object: nil)
+        center.addObserver(self, selector: #selector(dropped), name: .AVPlayerItemFailedToPlayToEndTime, object: nil)
+        center.addObserver(self, selector: #selector(dropped), name: .AVPlayerItemDidPlayToEndTime, object: nil)
     }
 
     func command(_ msg: [String: Any]) {
@@ -35,10 +40,12 @@ final class RadioBridge: NSObject, AVPlayerItemMetadataOutputPushDelegate {
     private func play(_ address: URL, volume: Float) {
         stop()
         url = address.absoluteString
+        held = false
         let item = AVPlayerItem(url: address)
-        let titles = AVPlayerItemMetadataOutput(identifiers: nil)
-        titles.setDelegate(self, queue: .main)
-        item.add(titles)
+        let output = AVPlayerItemMetadataOutput(identifiers: nil)
+        output.setDelegate(self, queue: .main)
+        item.add(output)
+        titles = output
         let next = AVPlayer(playerItem: item)
         next.volume = volume
         watching = [
@@ -49,7 +56,9 @@ final class RadioBridge: NSObject, AVPlayerItemMetadataOutputPushDelegate {
                 switch player.timeControlStatus {
                 case .waitingToPlayAtSpecifiedRate: self?.event("buffering")
                 case .playing: self?.event("playing")
-                default: break
+                // it only pauses by itself when the stream gives out or the system interrupts it
+                case .paused: self?.event(self?.held == true ? "paused" : "error")
+                @unknown default: break
                 }
             },
         ]
@@ -62,6 +71,21 @@ final class RadioBridge: NSObject, AVPlayerItemMetadataOutputPushDelegate {
         watching = []
         player?.pause()
         player = nil
+        titles = nil
+    }
+
+    // a stream that stops or fails after it started is dropped; the page tries the next url
+    @objc private func dropped(_ note: Notification) {
+        if note.object as? AVPlayerItem === player?.currentItem { event("error") }
+    }
+
+    // unplugged headphones pause the radio, as they do any player
+    @objc private func routeChanged(_ note: Notification) {
+        let why = (note.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt).flatMap(AVAudioSession.RouteChangeReason.init)
+        if why == .oldDeviceUnavailable, player != nil {
+            held = true
+            player?.pause()
+        }
     }
 
     // the hint is on while another app plays audio of its own
@@ -70,9 +94,10 @@ final class RadioBridge: NSObject, AVPlayerItemMetadataOutputPushDelegate {
     }
 
     func metadataOutput(_ output: AVPlayerItemMetadataOutput, didOutputTimedMetadataGroups groups: [AVTimedMetadataGroup], from track: AVPlayerItemTrack?) {
-        guard let item = groups.flatMap({ $0.items }).first(where: { $0.identifier == .icyMetadataStreamTitle }) else { return }
+        guard output === titles, let item = groups.flatMap({ $0.items }).first(where: { $0.identifier == .icyMetadataStreamTitle }) else { return }
+        let from = url
         Task { @MainActor in
-            if let title = try? await item.load(.stringValue) { event("playing", title) }
+            if let title = try? await item.load(.stringValue), from == url { event("playing", title) }
         }
     }
 
