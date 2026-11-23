@@ -988,7 +988,7 @@ function updateGoals() {
     c.bar.style.width = (g.v / g.n * 100) + '%';
     set(c.k, 'g', c.tag, 'textContent', g.done ? 'Claim +' + g.gems : '+' + g.gems);
   });
-  var cd = daily().can;
+  var cd = daily().can || missionDue();
   set(shown, 'dd', $('daily-dot'), 'hidden', !cd);
   set(shown, 'sd', $('sell-dot'), 'hidden', !canMove());
 }
@@ -1064,7 +1064,47 @@ function dayText(d) {
   return p.join(', ');
 }
 
+// the day's missions with a claim for each finished one, and the bonus for all three
+function paintMissions() {
+  var box = $('miss');
+  box.innerHTML = '';
+  function row(text, bar, tag, on, go) {
+    var r = document.createElement('div');
+    r.className = 'mrow' + (on ? ' ready' : '');
+    r.innerHTML = '<span></span><i><u></u></i>';
+    r.firstChild.textContent = text;
+    r.querySelector('u').style.width = bar * 100 + '%';
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'btn';
+    b.textContent = tag;
+    b.disabled = !on;
+    b.addEventListener('click', function () {
+      var c = centerOf(b);
+      var r = go();
+      if (!r) return;
+      if (r.x2) banner('<b>All three done</b><small>' + r.gems + ' gems and income x2 for ' + r.x2 + ' min</small>', 0);
+      flyGems(c.x, c.y, Math.min(8, r.gems));
+      sfx('done');
+      buzz('success');
+      nudge();
+      updateGoals();
+      paintMissions();
+    });
+    r.appendChild(b);
+    box.appendChild(r);
+  }
+  missions().forEach(function (m, i) {
+    var done = m.p >= m.n;
+    var v = m.k === 'earn' ? short(Math.floor(m.p)) + '/' + short(m.n) : Math.floor(m.p) + '/' + m.n;
+    row(missionText(m) + (m.k === 'open' || m.k === 'star' ? '' : ' (' + v + ')'), m.p / m.n, m.c ? 'Done' : '+' + m.g, done && !m.c, function () { return claimMission(i); });
+  });
+  var all = missions().every(function (m) { return m.c; });
+  row('All three: ' + MISS_BONUS.gems + ' gems, x2 ' + MISS_BONUS.x2 + ' min', all ? 1 : missions().filter(function (m) { return m.c; }).length / 3, S.mi.b ? 'Done' : 'Bonus', bonusReady(), claimBonus);
+}
+
 function openDaily() {
+  paintMissions();
   var info = daily();
   var done = info.can ? info.idx : (S.day.n % 7 === 0 && S.day.n > 0 ? 7 : S.day.n % 7);
   var box = $('days');
@@ -1488,6 +1528,10 @@ function start() {
   $('m-shelf').addEventListener('click', function () { tapMeter('dock', stockCap); });
   onShopper = onSale;
   onPerk = onPerkEvent;
+  onMission = function (m) {
+    banner('<b>Mission done</b><small>' + missionText(m) + '</small>', 0);
+    sfx('done');
+  };
   var wait = setInterval(function () {
     if (!View.ready()) return;
     clearInterval(wait);

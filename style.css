@@ -1204,6 +1204,51 @@ small {
   font-size: 15px;
 }
 
+#miss {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.mrow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 4px 8px;
+  border: 2px solid var(--ink);
+  border-radius: 12px;
+  background: var(--paper2);
+  padding: 7px 8px;
+  text-align: left;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.mrow.ready {
+  background: var(--gold);
+}
+
+.mrow i {
+  grid-column: 1;
+  height: 8px;
+  border-radius: 4px;
+  background: rgba(59, 42, 30, 0.2);
+  overflow: hidden;
+}
+
+.mrow u {
+  display: block;
+  height: 100%;
+  background: var(--green);
+}
+
+.mrow .btn {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  padding: 6px 10px;
+  font-size: 14px;
+}
+
 #days {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
