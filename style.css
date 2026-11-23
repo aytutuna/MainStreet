@@ -2201,7 +2201,7 @@ small {
   white-space: nowrap;
 }
 
-.sec {
+.box .sec {
   font-size: 17px;
   text-align: center;
   margin: 4px 0 -4px;
