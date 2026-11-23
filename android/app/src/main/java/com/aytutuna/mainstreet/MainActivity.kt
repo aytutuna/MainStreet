@@ -51,7 +51,8 @@ class MainActivity : ComponentActivity() {
     // Closes the topmost panel; the answer says whether there was one. The away box collects instead of closing.
     private val closePanel = """
         (function () {
-          var panels = [['pack', 'pack-x'], ['shop', 'shop-x'], ['away', 'away-ok'], ['daily', 'daily-x'], ['sell', 'sell-x'], ['regs', 'regs-x'],
+          var panels = [['pack', 'pack-x'], ['shop', 'shop-x'], ['away', 'away-ok'], ['look', 'look-x'], ['ach', 'ach-x'], ['sound', 'sound-x'],
+                        ['stats', 'stats-x'], ['menu', 'm-ok'], ['daily', 'daily-x'], ['sell', 'sell-x'], ['regs', 'regs-x'],
                         ['boost', 'boost-x'], ['radio', 'radio-x'],
                         ['sheet', 'sheet-x'], ['card', 'card-x']];
           for (var i = 0; i < panels.length; i++) {

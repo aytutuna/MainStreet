@@ -65,6 +65,10 @@ var MIXER_KEY = 'mainstreet.mixer';
 // store sounds and effects as the mixer sliders hold them; the music level is radio.vol
 var lvl = { amb: 1 / 3, fx: 0.8 };
 var humG = null;
+// the button that closes each panel a tap outside or a swipe can dismiss; the away box is left out since it pays out
+var CLOSE = { pack: 'pack-x', shop: 'shop-x', daily: 'daily-x', sell: 'sell-x', regs: 'regs-x', boost: 'boost-x', radio: 'radio-x',
+  sound: 'sound-x', stats: 'stats-x', menu: 'm-ok', ach: 'ach-x', look: 'look-x' };
+var IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
 
 function $(id) {
   return document.getElementById(id);
@@ -2293,6 +2297,7 @@ function onTap(h) {
   else if (h.kind === 'reg') tapReg(h);
   else if (h.kind === 'till') tapTill(h.i);
   else if (h.kind === 'biz') showCard(h.id);
+  else if (sheetOpen) closeSheet();
   else closeCard();
 }
 
@@ -2321,6 +2326,118 @@ function loop(t) {
   updateOpen();
 }
 
+function closeVeil(v) {
+  var x = $(CLOSE[v.id]);
+  if (x) x.click();
+  else v.hidden = true;
+}
+
+// the panel on top: the last open veil, else the upgrades sheet, else a card. False when nothing can close
+function closeTop() {
+  var v = document.querySelectorAll('.veil:not([hidden])');
+  if (v.length) {
+    v = v[v.length - 1];
+    if (!CLOSE[v.id]) return false;
+    closeVeil(v);
+    return true;
+  }
+  if (sheetOpen) closeSheet();
+  else if (cardId) closeCard();
+  else return false;
+  return true;
+}
+
+// true when something between the touch and the panel is scrolled down, so a pull down belongs to it
+function scrolled(t, root) {
+  for (var n = t; n && n !== document; n = n.parentNode) {
+    if (n.scrollTop > 0) return true;
+    if (n === root) break;
+  }
+  return false;
+}
+
+function panelOf(t) {
+  if (!t.closest || t.closest('input[type=range]')) return null;
+  var box = t.closest('.veil .box');
+  if (box) {
+    var v = box.parentNode;
+    return CLOSE[v.id] ? { el: box, done: function () { closeVeil(v); } } : null;
+  }
+  if (t.closest('#sheet')) return { el: $('sheet'), done: closeSheet };
+  if (t.closest('#card')) return { el: $('card'), done: closeCard };
+  return null;
+}
+
+function dragPanel(d, y) {
+  d.el.style.transition = 'none';
+  d.el.style.transform = 'translateY(' + Math.max(0, y) + 'px)';
+}
+
+function dragEnd(d, dy, ms) {
+  var el = d.el;
+  var go = dy > 110 || dy > 40 && dy / ms > 0.6;
+  el.style.transition = 'transform 0.18s ease-out';
+  el.style.transform = go ? 'translateY(' + innerHeight + 'px)' : '';
+  setTimeout(function () {
+    el.style.transition = '';
+    el.style.transform = '';
+    if (go) d.done();
+  }, 190);
+}
+
+function wireClose() {
+  // a tap on the dark backdrop, outside the box
+  document.addEventListener('click', function (e) {
+    var v = e.target;
+    if (v.classList && v.classList.contains('veil') && CLOSE[v.id]) closeVeil(v);
+  });
+  var d = null;
+  var edge = null;
+  document.addEventListener('touchstart', function (e) {
+    var t = e.touches[0];
+    d = null;
+    edge = null;
+    if (e.touches.length !== 1) return;
+    if (IOS && t.clientX <= 24) edge = { x: t.clientX, y: t.clientY };
+    var p = panelOf(e.target);
+    if (p && !scrolled(e.target, p.el)) d = { el: p.el, done: p.done, x: t.clientX, y: t.clientY, at: Date.now(), on: false, dy: 0 };
+  }, { passive: true });
+  document.addEventListener('touchmove', function (e) {
+    var t = e.touches[0];
+    if (edge) {
+      var ex = t.clientX - edge.x;
+      if (Math.abs(t.clientY - edge.y) > ex) edge = null;
+      else if (ex > 70) {
+        edge = null;
+        d = null;
+        if (closeTop()) sfx('close');
+        return;
+      }
+    }
+    if (!d) return;
+    var dx = t.clientX - d.x;
+    var dy = t.clientY - d.y;
+    if (!d.on) {
+      if (Math.abs(dx) > 8 && Math.abs(dx) > Math.abs(dy) || dy < -8) {
+        d = null;
+        return;
+      }
+      if (dy <= 8) return;
+      d.on = true;
+    }
+    d.dy = dy;
+    if (e.cancelable) e.preventDefault();
+    dragPanel(d, dy - 8);
+  }, { passive: false });
+  var drop = function () {
+    edge = null;
+    if (d && d.on) dragEnd(d, d.dy - 8, Math.max(1, Date.now() - d.at));
+    d = null;
+  };
+  document.addEventListener('touchend', drop);
+  document.addEventListener('touchcancel', drop);
+}
+
 function start() {
   try {
     snd = localStorage.getItem(SND_KEY) !== '0';
@@ -2343,6 +2460,7 @@ function start() {
   wireShop();
   wireRadio();
   wireSound();
+  wireClose();
   buildStats();
   shopStart();
   setFree(free);
