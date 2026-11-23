@@ -4533,7 +4533,7 @@ function vehicle(ref) {
 function addCar(ref, path, kind, extra) {
   var o = vehicle(ref);
   o.position.set(path[0].x, 0, path[0].z);
-  var c = { o: o, path: path, i: 1, kind: kind, speed: 0, wait: 0 };
+  var c = { o: o, path: path, i: 1, kind: kind, speed: 0, wait: 0, out: 0, jam: 0, free: 0, idle: 0, by: null };
   for (var k in extra) c[k] = extra[k];
   var q = path[1];
   o.rotation.y = Math.atan2(q.x - path[0].x, q.z - path[0].z);
@@ -4569,18 +4569,23 @@ function trafficStep(dt) {
   carT -= dt;
   taxiT -= dt;
   truckT -= dt;
+  bays.forEach(function (b) {
+    if (b.gap > 0 && (b.gap -= dt) <= 0 && b.car === b.left) b.car = null;
+  });
   var through = cars.filter(function (c) { return c.kind === 'pass'; }).length;
   if (trafficT <= 0 && through < 5) {
     var d = Math.random() < 0.5 ? 1 : -1;
     addCar(CARS[Math.floor(Math.random() * CARS.length)], road(d), 'pass', { lane: d });
     trafficT = 2 + Math.random() * 3;
   }
-  if (carT <= 0 && carQ.length) {
+  // no more than a few cars at a time between the street and the bays, so the aisle never backs up into the road
+  var coming = cars.filter(function (c) { return c.inn && Math.abs(c.o.position.x) < 30; }).length;
+  if (carT <= 0 && carQ.length && coming < 8) {
     var bay = freeBay();
     if (bay) {
       var p = [{ x: STREET, z: LANE_W }, { x: DRIVE + 0.6, z: LANE_W, lane: -1 }, { x: DRIVE, z: 10.2 }, { x: DRIVE, z: AISLE + 0.4 }, { x: DRIVE - 0.6, z: AISLE },
         { x: bay.x + 0.6, z: AISLE }, { x: bay.x, z: AISLE + bay.nose * 0.6 }, { x: bay.x, z: bay.z, park: true }];
-      bay.car = addCar(CARS[Math.floor(Math.random() * CARS.length)], p, 'shop', { bay: bay, lane: -1, cust: carQ.shift() });
+      bay.car = addCar(CARS[Math.floor(Math.random() * CARS.length)], p, 'shop', { bay: bay, lane: -1, cust: carQ.shift(), inn: true });
     }
     carT = 1.2 + Math.random();
   }
@@ -4611,11 +4616,15 @@ function trafficStep(dt) {
     if (carStep(c, dt)) {
       root.remove(c.o);
       cars.splice(i, 1);
+      if (c.bay && c.bay.car === c) c.bay.car = null;
+      // a car that never made it to its bay: the driver carries on unseen
+      if (c.inn && c.cust) c.cust.v = false;
     }
   }
 }
 
 function blocked(c) {
+  c.by = null;
   var o = c.o.position;
   var q = c.path[c.i];
   var dx = q.x - o.x;
@@ -4625,14 +4634,18 @@ function blocked(c) {
   var fz = dz / d;
   for (var i = 0; i < cars.length; i++) {
     var e = cars[i];
-    if (e === c || e.parked || c.kind === 'truck') continue;
+    if (e === c || e.parked || c.kind === 'truck' || c.free > 0) continue;
     var rx = e.o.position.x - o.x;
     var rz = e.o.position.z - o.z;
     var ahead = rx * fx + rz * fz;
     var side = Math.abs(rx * fz - rz * fx);
-    if (ahead > 0.2 && ahead < 1.7 && side < 0.6) return true;
+    if (ahead > 0.2 && ahead < 1.7 && side < 0.6) {
+      c.by = e;
+      return true;
+    }
   }
-  // people on the crossing or the walkway
+  // people on the crossing or the walkway, unless a car has waited out a whole crowd
+  if (c.idle > 8) return false;
   if (Math.abs(o.z - 12) < 2 && Math.abs(o.x) < 4.5 && o.x * fx < 0) {
     for (var j = 0; j < people.length; j++) {
       var p = people[j].f.obj.position;
@@ -4649,11 +4662,31 @@ function blocked(c) {
   return false;
 }
 
+// a car backs out of its bay only into a clear stretch of aisle that no other car is backing into
+function pullOk(c) {
+  var bx = c.bay.x;
+  for (var i = 0; i < cars.length; i++) {
+    var e = cars[i];
+    if (e === c || e.parked) continue;
+    var p = e.o.position;
+    if (e.out === 2 && Math.abs(p.x - bx) < 2.2) return false;
+    // the aisle runs west, so a car still to come from the east counts too
+    if (p.x - bx > -1.2 && p.x - bx < 3 && Math.abs(p.z - AISLE) < 1.3) return false;
+  }
+  return true;
+}
+
 function carStep(c, dt) {
   if (c.parked) return false;
   if (c.wait > 0) {
     c.wait -= dt;
     return false;
+  }
+  if (c.out === 1) {
+    c.jam += dt;
+    if (!pullOk(c) && c.jam < 12) return false;
+    c.out = 2;
+    c.jam = 0;
   }
   var o = c.o.position;
   var q = c.path[c.i];
@@ -4662,7 +4695,20 @@ function carStep(c, dt) {
   var d = Math.hypot(dx, dz);
   var onRoad = Math.abs(o.z - 12) < 1.6;
   var top = onRoad ? (c.bus ? 7 : 3.2) : 1.5;
-  var want = blocked(c) ? 0 : top;
+  var jam = blocked(c);
+  var want = jam ? 0 : top;
+  // two cars waiting on each other never sort it out, so such a pair, or a car held up for a long time, drives through
+  // the others for a few seconds, and one that gets nowhere at all drives off the map
+  if (c.free > 0) c.free -= dt;
+  if (jam) {
+    c.jam += dt;
+    if (c.jam > (c.by && c.by.by === c ? 2 : 25)) {
+      c.free = 3;
+      c.jam = 0;
+    }
+  } else c.jam = 0;
+  c.idle = c.speed < 0.3 ? c.idle + dt : 0;
+  if (c.idle > 30 && c.kind === 'shop') return true;
   if (q.stop || q.park) want = Math.min(want, Math.max(0.35, d * 1.6));
   c.speed += Math.max(-6 * dt, Math.min(3 * dt, want - c.speed));
   var step = c.speed * dt;
@@ -4675,8 +4721,10 @@ function carStep(c, dt) {
     o.x = q.x;
     o.z = q.z;
     c.i++;
+    if (c.out === 2 && c.i >= 2) c.out = 0;
     if (q.park) {
       c.parked = true;
+      c.inn = false;
       c.speed = 0;
       spawnFrom('car', c, 0, c.cust);
       return false;
@@ -4703,7 +4751,10 @@ function leaveBay(c) {
     { x: -DRIVE, z: 10.2 }, { x: -DRIVE - 0.6, z: LANE_W, lane: -1 }, { x: -STREET, z: LANE_W, lane: -1 }];
   c.i = 1;
   c.speed = 0;
-  setTimeout(function () { if (b.car === c) b.car = null; }, 2500);
+  c.out = 1;
+  c.jam = 0;
+  b.left = c;
+  b.gap = 2.5;
 }
 
 // Every shopper the sim lets in gets a figure when one is free. It comes by car, by taxi or on foot, takes a basket
@@ -6144,7 +6195,10 @@ function resetCrowd() {
   says = [];
   cars.forEach(function (c) { root.remove(c.o); });
   cars = [];
-  bays.forEach(function (b) { b.car = null; });
+  bays.forEach(function (b) {
+    b.car = null;
+    b.gap = 0;
+  });
   truckQ = 0;
 }
 
