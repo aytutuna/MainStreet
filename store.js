@@ -3130,7 +3130,7 @@ function buildNature() {
     var key = Math.floor(x / TILE) + ',' + Math.floor(z / TILE);
     var b = tiles[key] = tiles[key] || new Batch();
     var k = (big ? 0.85 + rand() * 0.4 : 0.8 + rand() * 0.5);
-    if (big) natureTrees.push([x, z]);
+    if (big) natureTrees.push([x, z, (lib.model(ref).box.x1 - lib.model(ref).box.x0) * k]);
     b.model(ref, x, -lib.model(ref).box.y0 * k, z, rand() * 6.283, k);
   }
   function clear(x, z) {
@@ -3154,30 +3154,17 @@ function buildNature() {
       }
     }
   }
-  // patches of lighter and darker lawn, so the ground is not one flat green
-  function mow(r) {
-    var w = r[1] - r[0];
-    var d = r[3] - r[2];
-    var top = Math.min(w, d) / 2 * 0.8;
-    if (top < 0.5) return;
-    for (var n = Math.min(14, Math.round(w * d / 50)); n > 0; n--) {
-      var rad = Math.min(top, 1.2 + rand() * 1.8);
-      var cx = r[0] + rad + rand() * (w - 2 * rad);
-      var cz = r[2] + rad + rand() * (d - 2 * rad);
-      var pts = [];
-      for (var a = 0; a < 14; a++) pts.push([cx + Math.cos(a / 14 * 6.283) * rad * (1 + rand() * 0.2), cz + Math.sin(a / 14 * 6.283) * rad * (0.8 + rand() * 0.2)]);
-      var g = patch(pts);
-      g.deleteAttribute('uv');
-      var key = Math.floor(cx / TILE) + ',' + Math.floor(cz / TILE);
-      (tiles[key] = tiles[key] || new Batch()).geom(g, flat([0x91ca72, 0x6cae58, 0x84c468][Math.floor(rand() * 3)]), -0.02 + rand() * 0.004);
-    }
-  }
   NATURE.zones.forEach(function (zn) {
-    mow(zn.r);
     var trees = [];
     zn.tr.forEach(function (s) { trees = trees.concat(NATURE.tree[s]); });
-    scatter(zn.r, zn.t, function (x, z) { put(pick(trees), x, z, true); });
-    scatter(zn.r, zn.b, function (x, z) { put(pick(NATURE.bush), x, z); });
+    // twice the trees offered, kept where the noise says grove, so they stand in clumps with clearings between
+    scatter(zn.r, zn.t * 2, function (x, z) {
+      if (rand() < LAND.smooth(0.42, 0.6, LAND.noise(x / 9 + 3, z / 9 - 2))) put(pick(trees), x, z, true);
+    });
+    // where there are woods the bushes keep to them and their edges
+    scatter(zn.r, zn.b, function (x, z) {
+      if (!zn.t || rand() < LAND.smooth(0.3, 0.5, LAND.noise(x / 9 + 3, z / 9 - 2))) put(pick(NATURE.bush), x, z);
+    });
     scatter(zn.r, zn.g, function (x, z) { put(pick(NATURE.grass), x, z); });
     scatter(zn.r, zn.f, function (x, z) { put(pick(NATURE.flower), x, z); });
     scatter(zn.r, zn.k, function (x, z) { put(pick(NATURE.rock), x, z); });
@@ -3411,6 +3398,43 @@ function lifeStep(dt, k) {
   }
 }
 
+// A soft dark pool under each tree the sun's shadow map does not reach, laid over the ground and pushed a little away
+// from the sun. Dark in the middle, clear at the rim, all of them one mesh
+var shadeMat = new THREE.MeshBasicMaterial({ color: 0x1f3a1a, vertexColors: true, transparent: true, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2 });
+function treeShade(list) {
+  var pos = [];
+  var col = [];
+  var idx = [];
+  var SEG = 10;
+  list.forEach(function (t) {
+    var x = t[0];
+    var z = t[1];
+    if (Math.abs(x) < 22 && z > -32 && z < 20) return;
+    var r = t[2] * 0.62;
+    x += r * 0.3;
+    z -= r * 0.4;
+    var o = pos.length / 3;
+    pos.push(x, LAND.ground(x, z) + 0.05, z);
+    col.push(1, 1, 1, 0.5);
+    for (var i = 0; i < SEG; i++) {
+      var a = i / SEG * 6.283;
+      var px = x + Math.cos(a) * r * 1.15;
+      var pz = z + Math.sin(a) * r;
+      pos.push(px, LAND.ground(px, pz) + 0.05, pz);
+      col.push(1, 1, 1, 0);
+      idx.push(o, o + 1 + (i + 1) % SEG, o + 1 + i);
+    }
+  });
+  if (!idx.length) return;
+  var g = new THREE.BufferGeometry();
+  g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
+  g.setAttribute('color', new THREE.Float32BufferAttribute(col, 4));
+  g.setIndex(idx);
+  var m = new THREE.Mesh(g, shadeMat);
+  m.renderOrder = 1;
+  root.add(m);
+}
+
 function buildLand() {
   var X0 = LAND.DOM[0];
   var Z0 = LAND.DOM[2];
@@ -3430,12 +3454,36 @@ function buildLand() {
     }
   }
   function hAt(i, j) { return hh[Math.max(0, Math.min(nz, j)) * W + Math.max(0, Math.min(nx, i))]; }
+  var sc = LAND.scenery(function (x, z) {
+    return natureTrees.some(function (t) { return Math.hypot(x - t[0], z - t[1]) < 2.2; });
+  });
+  // every tree, yard or wild, binned by 6 units, so the ground under a stand of them can be shaded as forest floor
+  var stands = {};
+  natureTrees.concat(sc.trees.map(function (s) {
+    var b = lib.model(s[0]).box;
+    return [s[1], s[2], (b.x1 - b.x0) * s[4]];
+  })).forEach(function (t) {
+    var key = Math.floor(t[0] / 6) + ',' + Math.floor(t[1] / 6);
+    (stands[key] = stands[key] || []).push(t);
+  });
+  function under(x, z) {
+    var s = 0;
+    for (var a = -1; a <= 1; a++) {
+      for (var b = -1; b <= 1; b++) {
+        (stands[(Math.floor(x / 6) + a) + ',' + (Math.floor(z / 6) + b)] || []).forEach(function (t) {
+          s += Math.max(0, 1 - Math.hypot(x - t[0], z - t[1]) / (t[2] * 1.2 + 2.6));
+        });
+      }
+    }
+    return Math.min(1, s);
+  }
   var c = new THREE.Color();
   var c2 = new THREE.Color();
-  var cMeadow = [new THREE.Color(0x9bd06a), new THREE.Color(0x6db555)];
-  var cDry = new THREE.Color(0xbcc86a);
+  var cMeadow = [new THREE.Color(0x98cf62), new THREE.Color(0x62ad50)];
+  var cDry = new THREE.Color(0xc6cf6c);
   var cBloom = [new THREE.Color(0xf0d95e), new THREE.Color(0xd8c4f0), new THREE.Color(0xf0a2bb)];
-  var cWood = [new THREE.Color(0x4f9a4d), new THREE.Color(0x3f8447)];
+  var cWood = [new THREE.Color(0x417f40), new THREE.Color(0x336b38)];
+  var cFloor = new THREE.Color(0x2f6234);
   var cRock = new THREE.Color(0x9a9b8e);
   var cHigh = new THREE.Color(0x7aa267);
   var cSand = new THREE.Color(0xd9c88e);
@@ -3450,7 +3498,7 @@ function buildLand() {
     c.copy(cMeadow[0]).lerp(cMeadow[1], LAND.noise(x / 13, z / 13 + 8));
     var fo = LAND.forest(x, z);
     c.lerp(cDry, LAND.smooth(0.55, 0.75, LAND.noise(x / 17 + 30, z / 17)) * 0.55 * (1 - fo));
-    c.lerp(cBloom[Math.floor(LAND.noise(x / 23, z / 23) * 2.99)], LAND.smooth(0.6, 0.78, LAND.noise(x / 6 + 70, z / 6 + 10)) * LAND.meadow(x, z) * 0.75 * (1 - fo));
+    c.lerp(cBloom[Math.floor(LAND.noise(x / 23, z / 23) * 2.99)], LAND.smooth(0.6, 0.78, LAND.noise(x / 11 + 70, z / 11 + 10)) * LAND.meadow(x, z) * 0.45 * (1 - fo));
     c.lerp(c2.copy(cWood[0]).lerp(cWood[1], LAND.noise(x / 9, z / 9)), fo * 0.8);
     c.lerp(cHigh, LAND.smooth(5, 16, h) * 0.5);
     c.lerp(cRock, LAND.smooth(0.7, 0.9, 1 - ny) * 0.55 + LAND.smooth(14, 26, h) * 0.35);
@@ -3462,6 +3510,7 @@ function buildLand() {
       if (up < 0) c.lerp(cBed, LAND.smooth(0.2, 2.2, -up));
     }
     c.lerp(cLot, 1 - LAND.smooth(0, 12, d));
+    c.lerp(cFloor, under(x, z) * 0.7);
     return c;
   }
 
@@ -3564,8 +3613,14 @@ function buildLand() {
   var q = new THREE.Quaternion();
   var up = new THREE.Vector3(0, 1, 0);
   var lists = {};
+  var batches = {};
   function stand(ref, x, y, z, rot, k) {
     var key = Math.floor((x - X0) / LAND_CHUNK) + ',' + Math.floor((z - Z0) / LAND_CHUNK);
+    // the textured flora keeps its own materials
+    if (ref.indexOf('flora/') === 0) {
+      (batches[key] = batches[key] || new Batch()).model(ref, x, y - lib.model(ref).box.y0 * k, z, rot, k);
+      return;
+    }
     var list = lists[key] = lists[key] || [];
     mtx.compose(new THREE.Vector3(x, y, z), q.setFromAxisAngle(up, rot), new THREE.Vector3(k, k, k));
     var pick = rand();
@@ -3622,9 +3677,6 @@ function buildLand() {
     root.add(new THREE.Mesh(tg, vcMat));
   });
 
-  var sc = LAND.scenery(function (x, z) {
-    return natureTrees.some(function (t) { return Math.hypot(x - t[0], z - t[1]) < 2.2; });
-  });
   ['trees', 'low', 'rocks', 'flowers'].forEach(function (kind) {
     sc[kind].forEach(function (s) {
       var r = kind === 'trees' ? 0.4 : kind === 'rocks' ? 0.8 : 0.2;
@@ -3640,6 +3692,16 @@ function buildLand() {
     var merged = mergeGeometries(lists[key], false);
     if (merged) root.add(new THREE.Mesh(merged, vcMat));
   });
+  Object.keys(batches).forEach(function (key) {
+    var ij = key.split(',');
+    var wx0 = X0 + ij[0] * LAND_CHUNK;
+    var wz0 = Z0 + ij[1] * LAND_CHUNK;
+    root.add(batches[key].group(wx0 < 26 && wx0 + LAND_CHUNK > -26 && wz0 < 22 && wz0 + LAND_CHUNK > -38));
+  });
+  treeShade(natureTrees.concat(sc.trees.map(function (s) {
+    var b = lib.model(s[0]).box;
+    return [s[1], s[2], (b.x1 - b.x0) * s[4]];
+  })));
   buildLife(sc);
 }
 // parking bays: two rows across the front split by a walkway to each entrance; the lot paints more of them at each level

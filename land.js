@@ -199,15 +199,16 @@ export function meadow(x, z) {
   return smooth(0.5, 0.66, noise(x / 11 + 40, z / 11 + 2));
 }
 
-var CONIFER = ['nature/tree_pineTallA*1.7', 'nature/tree_pineTallB*1.5', 'nature/tree_pineTallC*1.6', 'nature/tree_pineTallD*1.5', 'nature/tree_pineSmallB*2.1', 'nature/tree_pineSmallC*2.1', 'nature/tree_pineRoundD*2.4'];
-var BROAD = ['nature/tree_default*1.5', 'nature/tree_simple*1.6', 'nature/tree_oak*2', 'nature/tree_tall*1.5', 'nature/tree_fat*2.2'];
-var FALL = ['nature/tree_fat_fall*2.2', 'nature/tree_oak_fall*2', 'nature/tree_simple_fall*1.6'];
-var LONE = ['nature/tree_oak*2.3', 'nature/tree_plateau*2.3', 'nature/tree_default*1.8'];
-var BUSH = ['nature/plant_bush*2.5', 'nature/plant_bushLarge*2.5', 'nature/plant_bushSmall*2.8'];
-var CLIFF = ['nature/stone_largeA*2.4', 'nature/stone_largeB*2.4', 'nature/stone_largeC*2.4', 'nature/stone_largeA*1.6'];
-var STONE = ['nature/stone_largeA*1.2', 'nature/stone_largeB*1.2', 'nature/stone_largeC*1.2', 'nature/stone_smallA*1.6', 'nature/stone_smallB*1.6'];
-var FLOWER = ['nature/flower_redA*1.5', 'nature/flower_yellowA*1.5', 'nature/flower_purpleA*1.5'];
-var GRASS = ['nature/grass_leafs*2', 'nature/grass_large*1.5', 'nature/grass_leafs*1.6'];
+// the same textured trees and plants as the yards, a size up out here
+var CONIFER = ['flora/st-pine-1*0.28', 'flora/st-pine-2*0.29', 'flora/st-pine-3*0.27', 'flora/st-pine-4*0.3'];
+var BROAD = ['flora/st-oak-1*0.17', 'flora/st-oak-2*0.175', 'flora/st-oak-3*0.18', 'flora/st-oak-4*0.165', 'flora/sn-stylised-tree-8*0.7', 'flora/sn-stylised-tree-9*0.75'];
+var FALL = ['flora/st-oak-1%Leaf=ffb24a*0.17', 'flora/st-oak-3%Leaf=ff8a4a*0.18', 'flora/st-columnar-2%Leaf=ffd25a*0.26'];
+var LONE = ['flora/st-oak-2*0.2', 'flora/st-oak-4*0.2', 'flora/st-columnar-1*0.28', 'flora/st-columnar-3*0.26'];
+var BUSH = ['flora/sn-stylised-bush-1*0.24', 'flora/sn-stylised-bush-2*0.24', 'flora/sn-stylised-bush-3*0.22', 'flora/sn-stylised-bush-1*0.3'];
+var CLIFF = ['flora/sn-rock-1*0.28', 'flora/sn-rock-2*0.45', 'flora/sn-rock-3*0.3'];
+var STONE = ['flora/sn-rock-1*0.12', 'flora/sn-rock-2*0.2', 'flora/sn-rock-3*0.13', 'flora/sn-stone-collection-4*1.2', 'flora/sn-stone-collection-5*1.2'];
+var FLOWER = ['flora/flower-3-single*0.24', 'flora/flower-3-single%Flowers=ffd84a*0.24', 'flora/flower-3-single%Flowers=c9a2ff*0.24'];
+var GRASS = ['flora/fern-1*0.22', 'flora/fern-1*0.18'];
 var CANOE = 'nature/canoe*2.2';
 var REED = ['nature/plant_flatTall*2.2'];
 var PAD = ['nature/lily_large*3', 'nature/lily_small*3'];
@@ -225,7 +226,7 @@ export function scenery(blocked) {
   }
   function pick(l) { return l[Math.floor(rand() * l.length)]; }
   var out = { trees: [], low: [], rocks: [], flowers: [], water: [] };
-  var CELL = 3.6;
+  var CELL = 2.9;
   function slope(x, z) {
     return Math.hypot(ground(x + 1, z) - ground(x - 1, z), ground(x, z + 1) - ground(x, z - 1)) / 2;
   }
@@ -241,25 +242,31 @@ export function scenery(blocked) {
       var near = shore(x, z) < 7 ? 0.35 : 0;
       var turn = rand() * 6.283;
       var k = 0.8 + rand() * 0.5 + (rand() < 0.15 ? 0.6 : 0);
-      if (sl > 0.7) {
+      if (sl > 1.1) {
         if (rand() < 0.07) out.rocks.push([pick(CLIFF), x, z, turn, 0.6 + rand() * 0.8]);
         continue;
       }
-      if (rand() < f * 0.8 + near * (1 - f)) {
+      // woods close up into a canopy, their edges break up into bushes and the odd sapling, the meadows stay open
+      var wood = smooth(0.3, 0.62, f);
+      // far out, where only the zoomed-out view reaches, the woods take fewer and bigger trees
+      var far = smooth(14, 40, d);
+      if (rand() < (wood * 0.95 + near * (1 - f)) * (1 - 0.6 * far)) {
         var high = h > 8 || rand() < 0.2 + 0.4 * smooth(-60, -120, z);
-        var ref = high || (f > 0.6 && rand() < 0.3) ? pick(CONIFER) : rand() < 0.04 ? pick(FALL) : pick(BROAD);
-        out.trees.push([ref, x, z, turn, k * (1 + h * 0.012), 1]);
-        for (var bn = rand() < 0.55 ? 1 + Math.floor(rand() * 2) : 0; bn > 0; bn--) out.low.push([pick(BUSH), x + (rand() - 0.5) * 4, z + (rand() - 0.5) * 4, turn, 0.9 + rand() * 0.8]);
-      } else if (f < 0.3 && rand() < 0.05 && d > 8) {
+        var ref = high || (f > 0.6 && rand() < 0.3) ? pick(CONIFER) : rand() < 0.07 ? pick(FALL) : pick(BROAD);
+        out.trees.push([ref, x, z, turn, k * (1 + h * 0.012) * (0.75 + 0.35 * wood) * (1 + 0.35 * far), 1]);
+        for (var bn = rand() < 0.75 - 0.4 * far ? 1 + Math.floor(rand() * 2) : 0; bn > 0; bn--) out.low.push([pick(BUSH), x + (rand() - 0.5) * 3, z + (rand() - 0.5) * 3, turn, 0.9 + rand() * 0.8]);
+      } else if (f > 0.15 && f < 0.45 && rand() < 0.55) {
+        for (var en = 1 + Math.floor(rand() * 3); en > 0; en--) out.low.push([pick(BUSH), x + (rand() - 0.5) * 2.4, z + (rand() - 0.5) * 2.4, turn, 0.8 + rand() * 0.9]);
+      } else if (f < 0.3 && rand() < 0.03 && d > 8) {
         out.trees.push([pick(LONE), x, z, turn, 1 + rand() * 0.35, 1]);
-      } else if (f < 0.6 && rand() < 0.45) {
+      } else if (f < 0.6 && rand() < 0.12) {
         out.low.push([pick(GRASS), x, z, turn, 0.9 + rand() * 0.9]);
       }
     }
   }
   // patches of flowers in the meadows near the lot, one colour mostly, a few of another. Tight and dense, so a patch
   // still reads from the far view
-  for (var n = 0; n < 6000 && out.flowers.length < 210; n++) {
+  for (var n = 0; n < 6000 && out.flowers.length < 120; n++) {
     var px = SEEN[0] + rand() * (SEEN[1] - SEEN[0]);
     var pz = SEEN[2] + rand() * (SEEN[3] - SEEN[2]);
     // half of them in the strip of meadow right behind the lot, the only ground the top bars leave in view when zoomed out
@@ -271,7 +278,7 @@ export function scenery(blocked) {
     if (meadow(px, pz) < 0.35 && rand() < 0.7) continue;
     var base = pick(FLOWER);
     var rad = 0.9 + rand() * 1.1;
-    for (var q = 16 + Math.floor(rand() * 10); q > 0; q--) {
+    for (var q = 10 + Math.floor(rand() * 6); q > 0; q--) {
       var a = rand() * 6.283;
       var r = Math.sqrt(rand()) * rad;
       var fx = px + Math.cos(a) * r;
