@@ -560,7 +560,7 @@ var lampOn = new THREE.Color(0xffe2a0);
 var dayT = 60;
 
 function daylight() {
-  var h = hours();
+  var h = dayHour();
   if (h >= 6.5 && h < 18) return 1;
   if (h >= 18 && h < 20) return 1 - (h - 18) / 2;
   if (h >= 4.5 && h < 6.5) return (h - 4.5) / 2;

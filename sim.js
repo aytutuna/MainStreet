@@ -256,13 +256,13 @@ function opened() {
   return n;
 }
 
-function hours() {
+function dayHour() {
   return S.clk * 24 / CLOCK;
 }
 
 // closed for the night unless the store stays open all night
 function shut() {
-  var h = hours();
+  var h = dayHour();
   return !pv('night') && (h >= SHUT[0] || h < SHUT[1]);
 }
 
