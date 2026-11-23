@@ -120,7 +120,7 @@ function sfx(name, rate, vol) {
   if (buf[name]) {
     var s = ac.createBufferSource();
     var v = ac.createGain();
-    v.gain.value = VOL[name] * (vol || 1) * lvl.fx;
+    v.gain.value = VOL[name] * (vol || 1) * lvl.fx * (name === 'till' || name === 'stock' ? near() : 1);
     s.playbackRate.value = rate || 1;
     s.buffer = buf[name];
     s.connect(v);
@@ -179,7 +179,12 @@ function ambience() {
 }
 
 function ambVol() {
-  if (humG) humG.gain.value = VOL.amb * lvl.amb;
+  if (humG) humG.gain.setTargetAtTime(VOL.amb * lvl.amb * near(), ac.currentTime, 0.15);
+}
+
+// the store's own sounds get louder as the camera closes in and fade as it pulls back
+function near() {
+  return window.View ? Math.max(0.2, Math.min(1.8, Math.pow(View.zoom(), 0.9))) : 1;
 }
 
 function saveMixer() {
@@ -2370,6 +2375,7 @@ function loop(t) {
     updateMeters();
     if (!$('stats').hidden) paintStats();
     updateHint();
+    ambVol();
     fitInsets();
     hold = !started() || !!cardId || sheetOpen || veilUp();
   }

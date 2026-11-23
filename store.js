@@ -84,6 +84,8 @@ var root;
 var bestId = null;
 var VIEW_AZ = 0;
 var focus = { x: 0, z: 0, dist: 30, az: VIEW_AZ };
+// the distance the game opens at; store sounds are at the mixer's level there
+var homeDist = 30;
 var goal = null;
 var DMIN = 8;
 var DMAX = 80;
@@ -6630,7 +6632,7 @@ function focusNow() {
   goal = null;
   focus.x = 10.5;
   focus.z = -4.5;
-  focus.dist = fit(19);
+  focus.dist = homeDist = fit(19);
   focus.az = VIEW_AZ;
   clamp();
   place();
@@ -7321,6 +7323,7 @@ window.View = {
   burst: burst,
   populate: function () { sync(true, performance.now()); },
   focusNow: focusNow,
+  zoom: function () { return homeDist / focus.dist; },
   screenOf: function (id) {
     var a = anchorXY[id];
     return a ? { x: a.x, y: a.y } : null;
