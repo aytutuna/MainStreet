@@ -29,10 +29,16 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.webkit.WebViewAssetLoader
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
+import org.json.JSONObject
 import java.io.ByteArrayInputStream
 
 class MainActivity : ComponentActivity() {
     lateinit var webView: WebView
+        private set
+
+    lateinit var store: StoreBridge
+        private set
+    lateinit var ads: AdsBridge
         private set
 
     private lateinit var notice: LinearLayout
@@ -43,7 +49,8 @@ class MainActivity : ComponentActivity() {
     // Closes the topmost panel; the answer says whether there was one. The away box collects instead of closing.
     private val closePanel = """
         (function () {
-          var panels = [['away', 'away-ok'], ['daily', 'daily-x'], ['sell', 'sell-x'], ['regs', 'regs-x'], ['boost', 'boost-x'],
+          var panels = [['pack', 'pack-x'], ['shop', 'shop-x'], ['away', 'away-ok'], ['daily', 'daily-x'], ['sell', 'sell-x'], ['regs', 'regs-x'],
+                        ['boost', 'boost-x'],
                         ['sheet', 'sheet-x'], ['card', 'card-x']];
           for (var i = 0; i < panels.length; i++) {
             var el = document.getElementById(panels[i][0]);
@@ -94,6 +101,9 @@ class MainActivity : ComponentActivity() {
         }
         frame.addView(updateNotice())
         setContentView(frame)
+        store = StoreBridge(this)
+        ads = AdsBridge(this)
+        ads.start()
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -124,6 +134,11 @@ class MainActivity : ComponentActivity() {
             if (crashes.size > 2) finish() else recreate()
             return true
         }
+    }
+
+    // the page's single entry point for the store and the ads, see shop.js
+    fun emit(msg: JSONObject) {
+        runOnUiThread { webView.evaluateJavascript("window.nativeStore && window.nativeStore($msg)", null) }
     }
 
     fun askNotifications() {

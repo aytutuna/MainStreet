@@ -1,4 +1,4 @@
-// Purchases. The native app takes {cmd: 'products' | 'buy' | 'restore', id} on window.webkit.messageHandlers.store and
+// Purchases. The native app takes {cmd: 'products', ids}, {cmd: 'buy', id} and {cmd: 'restore'} on window.webkit.messageHandlers.store and
 // answers through window.nativeStore(ev), ev being one of
 //   {t: 'products', list: [{id, price}]}   the products the store knows, price already in the player's currency
 //   {t: 'owned', ids: [id], restore}       one-time products the player owns; answers 'products' and 'restore'
@@ -92,7 +92,7 @@ function buyProduct(id) {
 
 function shopStart() {
   if (!native()) return;
-  post({ cmd: 'products' });
+  post({ cmd: 'products', ids: PRODUCTS.map(function (p) { return PID + p.id; }) });
   post({ cmd: 'adReady' });
   $('b-shop').hidden = false;
   // play time counts only while the game is in front

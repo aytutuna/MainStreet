@@ -39,6 +39,7 @@ android {
         targetSdk = 37
         versionCode = 1
         versionName = "1.0"
+        buildConfigField("String", "RC_KEY", "\"goog_nHCOIYdmsGqpubsJiIwMEGqMvYI\"")
     }
 
     signingConfigs {
@@ -53,8 +54,19 @@ android {
         }
     }
 
+    buildFeatures {
+        buildConfig = true
+    }
+
+    // Debug builds show Google's test ads; the real units only go in the release build
     buildTypes {
+        debug {
+            buildConfigField("String", "AD_REWARD", "\"ca-app-pub-3940256099942544/5224354917\"")
+            buildConfigField("String", "AD_INTER", "\"ca-app-pub-3940256099942544/1033173712\"")
+        }
         release {
+            buildConfigField("String", "AD_REWARD", "\"ca-app-pub-8985801196261971/6757412125\"")
+            buildConfigField("String", "AD_INTER", "\"ca-app-pub-8985801196261971/6205701600\"")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
@@ -85,4 +97,7 @@ dependencies {
     implementation(libs.core.ktx)
     implementation(libs.activity.ktx)
     implementation(libs.webkit)
+    implementation(libs.purchases)
+    implementation(libs.play.ads)
+    implementation(libs.ump)
 }

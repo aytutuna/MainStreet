@@ -26,6 +26,20 @@ class Bridge(private val activity: MainActivity) {
         }
     }
 
+    @JavascriptInterface
+    fun store(json: String) {
+        val msg = JSONObject(json)
+        activity.runOnUiThread {
+            when (msg.optString("cmd")) {
+                "products" -> activity.store.products(msg.optJSONArray("ids"))
+                "buy" -> activity.store.buy(msg.optString("id"))
+                "restore" -> activity.store.restore()
+                "adReady" -> activity.ads.report()
+                "ad" -> activity.ads.show(msg.optString("kind"))
+            }
+        }
+    }
+
     companion object {
         const val NAME = "nativeBridge"
 
@@ -36,7 +50,8 @@ class Bridge(private val activity: MainActivity) {
               function text(m) { return typeof m === 'string' ? m : JSON.stringify(m); }
               window.webkit = { messageHandlers: {
                 buzz: { postMessage: function (m) { b.buzz(text(m)); } },
-                notify: { postMessage: function (m) { b.notify(text(m)); } }
+                notify: { postMessage: function (m) { b.notify(text(m)); } },
+                store: { postMessage: function (m) { b.store(text(m)); } }
               } };
               Object.defineProperty(Navigator.prototype, 'vibrate', { value: undefined });
             })();
