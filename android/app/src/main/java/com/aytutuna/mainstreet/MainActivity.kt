@@ -40,6 +40,8 @@ class MainActivity : ComponentActivity() {
         private set
     lateinit var ads: AdsBridge
         private set
+    lateinit var radio: RadioBridge
+        private set
 
     private lateinit var notice: LinearLayout
     private var loaded = false
@@ -50,7 +52,7 @@ class MainActivity : ComponentActivity() {
     private val closePanel = """
         (function () {
           var panels = [['pack', 'pack-x'], ['shop', 'shop-x'], ['away', 'away-ok'], ['daily', 'daily-x'], ['sell', 'sell-x'], ['regs', 'regs-x'],
-                        ['boost', 'boost-x'],
+                        ['boost', 'boost-x'], ['radio', 'radio-x'],
                         ['sheet', 'sheet-x'], ['card', 'card-x']];
           for (var i = 0; i < panels.length; i++) {
             var el = document.getElementById(panels[i][0]);
@@ -103,6 +105,7 @@ class MainActivity : ComponentActivity() {
         setContentView(frame)
         store = StoreBridge(this)
         ads = AdsBridge(this)
+        radio = RadioBridge(this)
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -185,6 +188,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
+        radio.check()
         startIfCurrent()
         webView.onResume()
         Reminders.clear(this)
@@ -195,8 +199,15 @@ class MainActivity : ComponentActivity() {
         super.onPause()
     }
 
+    // streams only play while the game is in front
+    override fun onStop() {
+        radio.stop()
+        super.onStop()
+    }
+
     override fun onDestroy() {
         store.stop()
+        radio.stop()
         ads.stop()
         webView.destroy()
         super.onDestroy()

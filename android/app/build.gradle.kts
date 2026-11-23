@@ -100,4 +100,6 @@ dependencies {
     implementation(libs.purchases)
     implementation(libs.play.ads)
     implementation(libs.ump)
+    implementation(libs.media3.exoplayer)
+    implementation(libs.media3.hls)
 }
