@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
-import { PLAN, PW, NATURE } from './plan.js';
+import { PLAN, PW, NATURE, HOMES } from './plan.js';
 import * as LAND from './land.js';
 
 var BASE = 'assets/models/';
@@ -546,6 +546,8 @@ function modelList() {
     'forest/fence', 'furn/plantSmall2*1.6', 'sub/building-type-a', 'sub/building-type-c', 'sub/building-type-e', 'sub/building-type-h',
     'sub/building-type-k'].forEach(function (r) { seen[r] = 1; });
   CABIN_REFS.forEach(function (r) { seen[r] = 1; });
+  HOMES.lots.forEach(function (l) { seen[l.ref] = 1; });
+  ['sub/fence', 'roads/road-intersection', 'roads/road-bend'].forEach(function (r) { seen[r] = 1; });
   FOLK.forEach(function (r) { seen[r] = 1; });
   REGS.forEach(function (r) { seen[r.ref] = 1; });
   CARS.forEach(function (r) { seen[r] = 1; });
@@ -3069,19 +3071,52 @@ function paintPylon() {
 }
 
 // in front of the store: a paved apron, the parking lot with a walkway to each entrance, the sidewalk and the street,
-// and across the street a row of houses. Behind and beside: the yard with the service road, the tire bay drive, woods
+// and across the street the neighbourhood. Behind and beside: the yard with the service road, the tire bay drive, woods
+// The neighbourhood: a side street down from the main street at each end of the houses, turning into the residential
+// street behind the first row; sidewalks, a drive and a front path to every house, a car in some drives, fenced back
+// gardens between the first two rows and lamps along the residential street
+function homes(b) {
+  var sx = HOMES.side;
+  var sz = HOMES.street;
+  var walk = flat(PAVE);
+  [-1, 1].forEach(function (s) {
+    for (var z = 15; z < sz - 1; z += 3) b.add('roads/road-straight', s * sx, z, Math.PI / 2, 0.002);
+    b.add('roads/road-bend', s * sx, sz, s > 0 ? Math.PI : -Math.PI / 2, 0.002);
+    b.slab(walk, s * (sx - 1.9) - 0.4, s * (sx - 1.9) + 0.4, 14.4, sz - 2.3, 0, 0.02);
+    b.slab(walk, s * (sx + 1.9) - 0.4, s * (sx + 1.9) + 0.4, 14.4, sz + 2.3, 0, 0.02);
+  });
+  for (var x = -sx + 3; x < sx - 1; x += 3) b.add('roads/road-straight', x, sz, 0, 0.002);
+  b.slab(walk, -sx + 1.5, sx - 1.5, sz - 2.3, sz - 1.5, 0, 0.02);
+  b.slab(walk, -sx - 2.3, sx + 2.3, sz + 1.5, sz + 2.3, 0, 0.02);
+  for (var lx = -28; lx <= 28; lx += 14) lamp(b, 'roads/light-curved', lx, sz + 2.05, 0);
+  var drive = flat(0xc9c3b6);
+  var path = flat(0xddd3bf);
+  HOMES.lots.forEach(function (l, i) {
+    b.add(l.ref, l.x, l.z, l.rot);
+    var z0 = Math.min(l.z, l.walk);
+    var z1 = Math.max(l.z, l.walk);
+    b.slab(drive, l.dx - 0.65, l.dx + 0.65, z0, z1, 0.012, 0.02);
+    b.slab(path, l.x - 0.3, l.x + 0.3, z0, z1, 0.01, 0.02);
+    if (l.car) b.add(CARS[i % CARS.length], l.dx, l.walk + (l.rot ? 1.6 : -1.6), l.rot ? Math.PI : 0, 0.01);
+  });
+  // the back fence between the first two rows, and one between each pair of back gardens
+  for (var fx = -34.2; fx < 35; fx += 1.6) b.add('sub/fence', fx, 23, 0);
+  for (var px = -35; px <= 35; px += 7) for (var fz = 19.9; fz < 23; fz += 1.6) b.add('sub/fence', px, fz, Math.PI / 2);
+}
+
 function buildOutside() {
   var b = new Batch();
   b.slab(flat(PAVE), -EDGE - 3, 22.9, FRONT, LOT[0], 0, 0.02);
   b.slab(flat(PAVE), -STREET - 1.5, STREET + 1.5, LOT[1], 10.5, 0, 0.02);
-  b.slab(flat(PAVE), -STREET - 1.5, STREET + 1.5, 13.5, 14.4, 0, 0.02);
+  var sx = HOMES.side;
+  // the far sidewalk stops where each side street comes in
+  [[-STREET - 1.5, -sx - 1.5], [-sx + 1.5, sx - 1.5], [sx + 1.5, STREET + 1.5]].forEach(function (r) { b.slab(flat(PAVE), r[0], r[1], 13.5, 14.4, 0, 0.02); });
   b.slab(flat(ASPHALT), -STREET - 1.5, STREET + 1.5, 10.5, 13.5, 0, 0.015);
-  for (var x = -STREET; x <= STREET; x += 3) b.add(Math.abs(x) < 1 ? 'roads/road-crossing' : 'roads/road-straight', x, 12, 0, 0.002);
-  for (var lx = -48; lx <= 48; lx += 8) lamp(b, 'roads/light-curved', lx + 4, 14.15, 0);
-  var houses = ['sub/building-type-a', 'sub/building-type-c', 'sub/building-type-e', 'sub/building-type-h', 'sub/building-type-k'];
-  for (var hx = -30, hi = 0; hx <= 30; hx += 6, hi++) {
-    b.add(houses[hi % houses.length], hx, 17.6, Math.PI);
+  for (var x = -STREET; x <= STREET; x += 3) {
+    b.add(Math.abs(x) < 1 ? 'roads/road-crossing' : Math.abs(Math.abs(x) - sx) < 1 ? 'roads/road-intersection' : 'roads/road-straight', x, 12, Math.abs(Math.abs(x) - sx) < 1 ? Math.PI : 0, 0.002);
   }
+  for (var lx = -48; lx <= 48; lx += 8) if (Math.abs(Math.abs(lx + 4) - sx) > 2.5) lamp(b, 'roads/light-curved', lx + 4, 14.15, 0);
+  homes(b);
   // the yard behind the store, the service road down the east side and the tire bay's drive on the west
   b.slab(flat(ASPHALT), -EDGE - 4, 26.5, -40, SB - 0.3, 0.008, 0.02);
   b.slab(flat(ASPHALT), 23, 26.5, -40, 10.5, 0.008, 0.02);

@@ -12,6 +12,21 @@
 // the Pipework kit is drawn at this size against the shop kit's people (store.js SCALE)
 export var PW = 0.5;
 
+// The neighbourhood across the street: a row of houses facing the main street, and two rows facing a residential
+// street behind it, which a side street at each end joins to the main street. Lots are 7 wide, and neighbours put their
+// drives side by side. walk is the edge of the sidewalk the house fronts on
+var HOUSE_TYPES = 'acefghijklmopqrstu'.split('');
+// the kit's roofs are all one green (atlas cells 0,1 and 1,1); these move them to red, blue, slate and brown
+var ROOFS = ['', '@0,1>6,1;1,1>7,1', '@0,1>8,1;1,1>9,1', '@0,1>2,2;1,1>3,2', '@0,1>10,2;1,1>11,2'];
+export var HOMES = { lots: [], street: 33, side: 39 };
+[[17.6, Math.PI, 14.4], [27.2, 0, 30.7], [38.8, Math.PI, 35.3]].forEach(function (row, ri) {
+  for (var i = 0; i < 10; i++) {
+    var x = -31.5 + i * 7;
+    HOMES.lots.push({ ref: 'sub/building-type-' + HOUSE_TYPES[(i * 7 + ri * 5) % HOUSE_TYPES.length] + ROOFS[(i * 3 + ri * 2) % ROOFS.length], x: x, z: row[0], rot: row[1],
+      dx: x + (i % 2 ? -2.95 : 2.95), walk: row[2], car: (i * 3 + ri) % 4 === 0 });
+  }
+});
+
 function tints(ref, from, to) {
   return to.map(function (c) { return ref + '@' + from + '>' + c; });
 }
@@ -1032,7 +1047,11 @@ DECOR.out = cat(
     { m: 'furn/bench', x: -22.0, z: 9.95, k: 1.5, flat: 1 }, tx('BUS', -20.4, 10.2, 0.5, 0.7)],
   [cab(-14.0, 10.15, 0.14, 0.14, 0.3, 0xc8402f), cab(14.0, 10.15, 0.14, 0.14, 0.3, 0xc8402f), cab(-16.5, 10.15, 0.22, 0.3, 0.4, 0x3f6fb5),
     pw('TrashCan_Outdoor_01', -12.0, 10.1, 's', { spots: 0 }), pw('TrashCan_Outdoor_01', 12.0, 10.1, 's', { spots: 0 })],
-  line(40, -43, 14.85, 2.2, 0, function (x, z, i) { return { m: 'nature/plant_bush', x: x, z: z, r: i, flat: 1 }; }),
+  // broken by the side streets, each drive and front path and the street trees
+  line(40, -43, 14.85, 2.2, 0, function (x, z, i) { return { m: 'nature/plant_bush', x: x, z: z, r: i, flat: 1 }; }).filter(function (b) {
+    return Math.abs(Math.abs(b.x) - HOMES.side) > 2.6 && [7, 21].every(function (t) { return Math.abs(Math.abs(b.x) - t) > 1; }) &&
+      !HOMES.lots.some(function (l) { return l.walk === 14.4 && (Math.abs(b.x - l.dx) < 1 || Math.abs(b.x - l.x) < 0.7); });
+  }),
   // the tire bay: a car at the door, tires stacked and in a rack, drums, a bench and the sign
   [{ m: 'car/sedan', x: -19.2, z: -17, r: Math.PI / 2 }, { m: 'surv/workbench', x: -16.3, z: -14.6, k: 2, r: 3.14 }, cab(-16.3, -14.9, 0.3, 0.2, 0.3, 0xc8402f),
     { m: 'surv/barrel', x: -16.0, z: -19.4, k: 1.3 }, { m: 'surv/barrel', x: -16.4, z: -19.4, k: 1.3 }, { m: 'surv/barrel', x: -16.2, z: -19.8, k: 1.3 },
@@ -1286,15 +1305,24 @@ export var NATURE = {
     { r: [40, 48, -41, 9.4], tr: ['col', 'lol', 'oak', 'pine'], t: 20, b: 8, g: 0, f: 0, k: 0 },
     { r: [-40, -27.3, -41, 9.4], tr: ['oak', 'pine', 'lol'], t: 20, b: 8, g: 0, f: 0, k: 0 },
     { r: [-48, -40, -41, 9.4], tr: ['col', 'lol', 'oak', 'pine'], t: 20, b: 8, g: 0, f: 0, k: 0 },
-    // across the street: front yards, the gaps between the houses, and the gardens behind them
-    { r: [-34, 34, 15.05, 15.85], tr: [], t: 0, b: 22, g: 20, f: 40, k: 0 },
-    { r: [-48, 48, 19.8, 28], tr: ['oak', 'lol', 'col'], t: 4, b: 6, g: 8, f: 6, k: 1 },
-    { r: [-48, 48, 28, 40], tr: ['col', 'lol', 'pine', 'oak', 'maple'], t: 16, b: 6, g: 0, f: 0, k: 0 },
-    { r: [-48, -33, 14.8, 19.8], tr: ['oak', 'col'], t: 4, b: 6, g: 6, f: 4, k: 0 },
-    { r: [33, 48, 14.8, 19.8], tr: ['oak', 'col'], t: 4, b: 6, g: 6, f: 4, k: 0 }
+    // across the street: flower strips along the sidewalks, back gardens, and woods beyond the side streets
+    { r: [-35, 35, 14.5, 15.2], tr: [], t: 0, b: 14, g: 0, f: 30, k: 0 },
+    { r: [-35, 35, 19.6, 22.6], tr: ['oak', 'lol', 'maple'], t: 3, b: 10, g: 6, f: 8, k: 0 },
+    { r: [-35, 35, 23.3, 24.8], tr: [], t: 0, b: 10, g: 0, f: 6, k: 0 },
+    { r: [-35, 35, 29.8, 30.6], tr: [], t: 0, b: 14, g: 0, f: 30, k: 0 },
+    { r: [-35, 35, 35.4, 36.2], tr: [], t: 0, b: 14, g: 0, f: 30, k: 0 },
+    { r: [-35, 35, 41.4, 44], tr: ['oak', 'lol', 'pine'], t: 6, b: 8, g: 0, f: 0, k: 0 },
+    { r: [35, 36.6, 14.5, 30.6], tr: [], t: 0, b: 12, g: 0, f: 10, k: 0 },
+    { r: [-36.6, -35, 14.5, 30.6], tr: [], t: 0, b: 12, g: 0, f: 10, k: 0 },
+    { r: [41.4, 48, 14.6, 44], tr: ['oak', 'col', 'pine'], t: 16, b: 8, g: 0, f: 0, k: 0 },
+    { r: [-48, -41.4, 14.6, 44], tr: ['oak', 'col', 'pine'], t: 16, b: 8, g: 0, f: 0, k: 0 }
   ],
-  // the garden center and the pylon sign by the street
-  clear: [[-20.6, -15, -2.5, 3.1], [20.4, 22.1, 8.0, 9.6]],
-  // one oak in the gap between each pair of houses
-  singles: [-27, -21, -15, -9, -3, 3, 9, 15, 21, 27, 33].map(function (x) { return ['oak', x, 15.5]; })
+  // the garden center and the pylon sign by the street, then each house and its drive
+  clear: [[-20.6, -15, -2.5, 3.1], [20.4, 22.1, 8.0, 9.6],
+    [HOMES.side - 2.4, HOMES.side + 2.4, 13.5, HOMES.street + 2.4], [-HOMES.side - 2.4, -HOMES.side + 2.4, 13.5, HOMES.street + 2.4],
+    [-HOMES.side, HOMES.side, HOMES.street - 2.4, HOMES.street + 2.4]].concat(HOMES.lots.reduce(function (a, l) {
+    return a.concat([[l.x - 2.5, l.x + 2.5, l.z - 2.5, l.z + 2.5], [l.dx - 0.8, l.dx + 0.8, Math.min(l.z, l.walk) - 0.2, Math.max(l.z, l.walk) + 0.2]]);
+  }, [])),
+  // street trees where two lots meet away from their drives
+  singles: [-21, -7, 7, 21].reduce(function (a, x) { return a.concat([['oak', x, 14.85], ['oak', x, 30.2], ['oak', x, 35.8]]); }, [])
 };
