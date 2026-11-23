@@ -4544,7 +4544,7 @@ function vehicle(ref) {
 function addCar(ref, path, kind, extra) {
   var o = vehicle(ref);
   o.position.set(path[0].x, 0, path[0].z);
-  var c = { o: o, path: path, i: 1, kind: kind, speed: 0, wait: 0, out: 0, jam: 0, free: 0, idle: 0, by: null };
+  var c = { o: o, path: path, i: 1, kind: kind, speed: 0, wait: 0, out: 0, jam: 0, free: 0, idle: 0, by: null, mx: path[0].x, mz: path[0].z, fade: -1 };
   for (var k in extra) c[k] = extra[k];
   var q = path[1];
   o.rotation.y = Math.atan2(q.x - path[0].x, q.z - path[0].z);
@@ -4590,7 +4590,7 @@ function trafficStep(dt) {
     trafficT = 2 + Math.random() * 3;
   }
   // no more than a few cars at a time between the street and the bays, so the aisle never backs up into the road
-  var coming = cars.filter(function (c) { return c.inn && Math.abs(c.o.position.x) < 30; }).length;
+  var coming = cars.filter(function (c) { return c.inn; }).length;
   if (carT <= 0 && carQ.length && coming < 8) {
     var bay = freeBay();
     if (bay) {
@@ -4645,7 +4645,7 @@ function blocked(c) {
   var fz = dz / d;
   for (var i = 0; i < cars.length; i++) {
     var e = cars[i];
-    if (e === c || e.parked || c.kind === 'truck' || c.free > 0) continue;
+    if (e === c || e.parked || e.fade >= 0 || c.kind === 'truck' || c.free > 0) continue;
     var rx = e.o.position.x - o.x;
     var rz = e.o.position.z - o.z;
     var ahead = rx * fx + rz * fz;
@@ -4698,8 +4698,17 @@ function carStep(c, dt) {
     if (!pullOk(c) && c.jam < 12) return false;
     c.out = 2;
     c.jam = 0;
+    c.idle = 0;
+    c.bay.left = c;
+    c.bay.gap = 2.5;
   }
   var o = c.o.position;
+  if (c.fade >= 0) {
+    c.fade -= dt;
+    o.y = 0;
+    c.o.scale.setScalar(Math.max(0.01, c.fade));
+    return c.fade <= 0;
+  }
   var q = c.path[c.i];
   var dx = q.x - o.x;
   var dz = q.z - o.z;
@@ -4709,7 +4718,7 @@ function carStep(c, dt) {
   var jam = blocked(c);
   var want = jam ? 0 : top;
   // two cars waiting on each other never sort it out, so such a pair, or a car held up for a long time, drives through
-  // the others for a few seconds, and one that gets nowhere at all drives off the map
+  // the others for a few seconds, and one that makes no headway at all shrinks away
   if (c.free > 0) c.free -= dt;
   if (jam) {
     c.jam += dt;
@@ -4718,8 +4727,12 @@ function carStep(c, dt) {
       c.jam = 0;
     }
   } else c.jam = 0;
-  c.idle = c.speed < 0.3 ? c.idle + dt : 0;
-  if (c.idle > 30 && c.kind === 'shop') return true;
+  if (Math.hypot(o.x - c.mx, o.z - c.mz) > 0.5) {
+    c.mx = o.x;
+    c.mz = o.z;
+    c.idle = 0;
+  } else c.idle += dt;
+  if (c.idle > 30 && c.kind === 'shop') c.fade = 1;
   if (q.stop || q.park) want = Math.min(want, Math.max(0.35, d * 1.6));
   c.speed += Math.max(-6 * dt, Math.min(3 * dt, want - c.speed));
   var step = c.speed * dt;
@@ -4732,6 +4745,9 @@ function carStep(c, dt) {
     o.x = q.x;
     o.z = q.z;
     c.i++;
+    c.idle = 0;
+    c.mx = q.x;
+    c.mz = q.z;
     if (c.out === 2 && c.i >= 2) c.out = 0;
     if (q.park) {
       c.parked = true;
@@ -4764,8 +4780,11 @@ function leaveBay(c) {
   c.speed = 0;
   c.out = 1;
   c.jam = 0;
-  b.left = c;
-  b.gap = 2.5;
+  c.idle = 0;
+  c.free = 0;
+  c.by = null;
+  c.mx = b.x;
+  c.mz = b.z;
 }
 
 // Every shopper the sim lets in gets a figure when one is free. It comes by car, by taxi or on foot, takes a basket
@@ -5758,8 +5777,7 @@ function busUp() {
   return g;
 }
 
-// a flash sale: sale tags pop up over the departments, confetti bursts, a red and yellow light flashes over the store and
-// shoppers run. Sprites and the flash plane are made once and reused
+// pooled sale tags and the light plane, made on the first sale
 var SALE_N = 8;
 var SALE_TXT = [['SALE!', '#e03a2e', '#ffd84a'], ['50% OFF', '#ffd84a', '#c42a1e'], ['HOT DEAL', '#e03a2e', '#fff'], ['2 FOR 1', '#2b7de0', '#ffe14d']];
 var saleS = null;
@@ -5809,7 +5827,7 @@ function saleUp() {
     g.fillText(t[0], 128, 68);
     var tex = new THREE.CanvasTexture(tc);
     tex.colorSpace = THREE.SRGBColorSpace;
-    return new THREE.SpriteMaterial({ map: tex, depthWrite: false, depthTest: false });
+    return new THREE.SpriteMaterial({ map: tex, depthWrite: false });
   });
   saleS = [];
   for (var k = 0; k < SALE_N; k++) {
@@ -5833,11 +5851,12 @@ function frenzyStep(dt, now) {
   saleK = Math.max(0, Math.min(1, saleK + (mad ? 2 : -2) * dt));
   saleFlash.visible = saleK > 0.01;
   if (saleFlash.visible) {
-    var w = Math.sin(now * 0.011);
-    saleFlash.material.color.setHex(w > 0 ? 0xff2a1a : 0xffc01a);
-    saleFlash.material.opacity = 0.22 * saleK * (0.35 + 0.65 * Math.abs(w));
+    // slow on purpose: about 1 Hz brightness, and the colour eases between red and yellow
+    var w = 0.5 + 0.5 * Math.sin(now * 0.0063);
+    saleFlash.material.color.setHex(0xff2a1a).lerp(fxC.setHex(0xffc01a), 0.5 + 0.5 * Math.sin(now * 0.0031));
+    saleFlash.material.opacity = 0.2 * saleK * (0.4 + 0.6 * w) * (0.35 + 0.65 * daylight());
   }
-  saleBan.forEach(function (m) { m.scale.setScalar(1 + Math.sin(now * 0.014) * 0.07 + 0.06); });
+  saleBan.forEach(function (m) { m.scale.setScalar(1.06 + Math.sin(now * 0.0063) * 0.07); });
   saleT -= dt;
   var ids = null;
   for (var i = 0; i < saleS.length; i++) {
@@ -5848,7 +5867,7 @@ function frenzyStep(dt, now) {
       var pop = u < 0.15 ? u / 0.15 * 1.25 : 1.25 - Math.min(0.25, (u - 0.15) * 1.5);
       var out = u > 0.85 ? (1 - u) / 0.15 : 1;
       e.s.scale.set(2.2 * pop * out, 1.1 * pop * out, 1);
-      e.s.position.set(e.x, 2.6 + Math.sin(now * 0.01 + i) * 0.08 + u * 0.4, e.z);
+      e.s.position.set(e.x, 2.6 + Math.sin(now * 0.006 + i) * 0.08 + u * 0.4, e.z);
     } else if (mad && saleT <= 0) {
       // the ones near what the player is looking at, so the signs are seen
       ids = ids || order.filter(function (id) { return has(id) && Math.hypot(shops[id].cx - focus.x, shops[id].cz - focus.z) < focus.dist * 0.7; });
