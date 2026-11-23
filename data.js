@@ -187,6 +187,10 @@ var REGS = [
 var REGC = { sales: 0.01, set: 0.05, odds: 0.02, tip: [3, 8], cool: 600 };
 var RG = {};
 REGS.forEach(function (r) { RG[r.id] = r; });
+// The VIP is not a regular to collect: a gold shopper who comes in once in gap seconds of play (the first after first), and
+// a tap before they leave tips tip seconds of income, now and then with a few gems
+var VIP = { first: [300, 720], gap: [600, 900], tip: [40, 60], gems: 0.1, gemN: [1, 3] };
+RG.vip = { id: 'vip', name: 'VIP', ref: 'chars/character-male-b@9,2>15,2', hat: 'top', hc: 0xf2c230, vip: true };
 
 // Things sold in the shop, under the ids com.aytutuna.mainstreet.<id> in both stores. A one-time product is kept as a
 // flag in S.iap; a gem pack pays its gems every time. The starter pack adds STARTER to a store's first move

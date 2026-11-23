@@ -4772,6 +4772,7 @@ function idlePerson() {
 var regs = {};
 var regList = [];
 var REG_R = 28;
+var vipMat = new THREE.MeshLambertMaterial({ vertexColors: true, color: 0xffe08a, emissive: 0x5a4200 });
 var hats = {};
 var HAT = {
   cap: function (c) {
@@ -4802,12 +4803,19 @@ function regPerson(id) {
   var p = regs[id];
   if (!p) {
     var r = RG[id];
-    p = person(REGS.indexOf(r), r.ref);
+    p = person(r.vip ? REGS.length : REGS.indexOf(r), r.ref);
     p.reg = id;
+    if (r.vip) {
+      p.f.obj.traverse(function (o) { if (o.isMesh) o.material = vipMat; });
+      var halo = new THREE.Mesh(new THREE.PlaneGeometry(1.4, 1.4).rotateX(-Math.PI / 2), sparkMat);
+      halo.position.y = 0.06;
+      halo.renderOrder = 2;
+      p.f.obj.add(halo);
+    }
     var h = hatOf(r);
     if (h) p.f.obj.add(h);
     p.tag = document.createElement('div');
-    p.tag.className = 'say reg';
+    p.tag.className = r.vip ? 'say reg vip' : 'say reg';
     p.tag.textContent = r.name;
     p.tag.hidden = true;
     tagsEl.appendChild(p.tag);

@@ -1520,6 +1520,13 @@ small {
   font-size: 12px;
 }
 
+.say.vip {
+  background: #ffd84a;
+  border-color: #7a4a10;
+  color: #5a3400;
+  font-size: 13px;
+}
+
 .say.reg.tip {
   border-color: #e0a010;
   box-shadow: 0 0 0 3px rgba(255, 216, 74, 0.6);

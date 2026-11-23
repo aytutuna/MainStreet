@@ -467,6 +467,7 @@ var gift = null;
 var giftT = 0;
 var rush = null;
 var rushT = 0;
+var vipT = 0;
 // the rush's extra arrivals still owed, and how many of them the view has a figure for
 var xdue = { walk: 0, car: 0, taxi: 0 };
 var extraRoom = 1e9;
@@ -503,9 +504,19 @@ function come(by) {
   var c = { id: ++sid, by: by, garden: by === 'garden', t: by === 'garden' ? SHOP_T / 2 : SHOP_T, age: 0, v: false, here: false, front: false, wait: 0,
     at: null, done: false, reg: null, tipped: false };
   // now and then the shopper is one of the regulars
-  if (by !== 'garden' && speed === 1 && Math.random() < REGC.odds) c.reg = pickReg();
+  if (by !== 'garden' && speed === 1) {
+    if (vipT <= 0 && !hold && !vipIn()) {
+      c.reg = 'vip';
+      vipT = rnd(VIP.gap);
+    } else if (Math.random() < REGC.odds) c.reg = pickReg();
+  }
   shoppers.push(c);
   if (onShopper) onShopper('in', c);
+}
+
+function vipIn() {
+  for (var i = 0; i < shoppers.length; i++) if (shoppers[i].reg === 'vip') return true;
+  return false;
 }
 
 // the shortest line with room, or a free self checkout when the lines have people in them
@@ -715,10 +726,12 @@ function perkOff() {
   inc = incRate = 0;
   giftT = rnd(GIFT.gap);
   rushT = rnd(RUSH.gap);
+  vipT = rnd(VIP.first);
   if (was && onPerk) onPerk('off');
 }
 
 function perkStep(dt) {
+  if (!hold && vipT > 0) vipT -= dt;
   if (gift) {
     gift.left -= dt;
     if (gift.left <= 0) {
@@ -901,8 +914,14 @@ function pickReg() {
 function tipReg(c) {
   if (!c.reg || c.tipped) return 0;
   c.tipped = true;
-  var v = Math.max(1, rate() * rnd(REGC.tip));
+  var vip = c.reg === 'vip';
+  var v = Math.max(1, rate() * rnd(vip ? VIP.tip : REGC.tip));
   earn(v);
+  c.gems = 0;
+  if (vip && Math.random() < VIP.gems) {
+    c.gems = Math.round(rnd(VIP.gemN));
+    S.gems += c.gems;
+  }
   return v;
 }
 

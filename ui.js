@@ -1773,10 +1773,13 @@ function tapReg(h) {
   var v = tipReg(h.c);
   if (!v) return;
   ring(h.x, h.y);
-  popAt(RG[h.c.reg].name, h.x, h.y - 46, 'small');
+  var vip = h.c.reg === 'vip';
+  popAt(vip ? 'VIP tip!' : RG[h.c.reg].name, h.x, h.y - 46, 'small');
   popAt('+' + money(v), h.x, h.y - 20, 'big');
-  flyCoins(h.x, h.y, 5);
+  flyCoins(h.x, h.y, vip ? 14 : 5);
+  if (h.c.gems) flyGems(h.x, h.y, h.c.gems);
   sfx('gift', 1.25, 0.7);
+  if (vip) sfx('coins');
   buzz('medium');
   nudge();
 }
