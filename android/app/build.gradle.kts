@@ -1,16 +1,25 @@
 import java.util.Properties
+import javax.inject.Inject
 
 plugins {
     alias(libs.plugins.android.application)
 }
 
 // The game lives at the repository root; the APK gets the same files the iPhone bundle does.
-val copyGame by tasks.registering(Sync::class) {
-    val root = rootProject.projectDir.parentFile
-    into(layout.buildDirectory.dir("game"))
-    from(root) {
-        include("index.html", "style.css", "data.js", "sim.js", "store.js", "plan.js", "land.js", "ui.js")
-        include("vendor/**", "assets/**")
+abstract class CopyGame @Inject constructor(private val fs: FileSystemOperations) : DefaultTask() {
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.RELATIVE)
+    abstract val files: ConfigurableFileCollection
+
+    @get:OutputDirectory
+    abstract val out: DirectoryProperty
+
+    @TaskAction
+    fun copy() {
+        fs.sync {
+            from(files.asFileTree)
+            into(out)
+        }
     }
 }
 
@@ -31,8 +40,6 @@ android {
         versionCode = 1
         versionName = "1.0"
     }
-
-    sourceSets["main"].assets.directories.add(copyGame.map { it.destinationDir.path }.get())
 
     signingConfigs {
         val store = signingValue("storeFile", "MAINSTREET_KEYSTORE")
@@ -61,7 +68,18 @@ android {
     }
 }
 
-tasks.named("preBuild") { dependsOn(copyGame) }
+androidComponents {
+    onVariants { variant ->
+        val copy = tasks.register<CopyGame>("copyGame${variant.name.replaceFirstChar { it.uppercase() }}") {
+            val game = rootProject.layout.projectDirectory.dir("..")
+            files.from(game.asFileTree.matching {
+                include("index.html", "style.css", "data.js", "sim.js", "store.js", "plan.js", "land.js", "ui.js")
+                include("vendor/**", "assets/**")
+            })
+        }
+        variant.sources.assets?.addGeneratedSourceDirectory(copy, CopyGame::out)
+    }
+}
 
 dependencies {
     implementation(libs.core.ktx)

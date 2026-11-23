@@ -2,11 +2,15 @@ package com.aytutuna.mainstreet
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
+import android.os.SystemClock
+import android.view.Gravity
+import android.widget.FrameLayout
 import android.webkit.RenderProcessGoneDetail
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
@@ -28,13 +32,14 @@ class MainActivity : ComponentActivity() {
 
     private val permission = registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
 
-    // Closes whatever panel is open; the answer says whether there was one
+    // Closes the topmost panel; the answer says whether there was one. The away box collects instead of closing.
     private val closePanel = """
         (function () {
-          var ids = ['boost', 'sheet', 'card'];
-          for (var i = 0; i < ids.length; i++) {
-            var el = document.getElementById(ids[i]);
-            var x = document.getElementById(ids[i] + '-x');
+          var panels = [['away', 'away-ok'], ['daily', 'daily-x'], ['sell', 'sell-x'], ['boost', 'boost-x'],
+                        ['sheet', 'sheet-x'], ['card', 'card-x']];
+          for (var i = 0; i < panels.length; i++) {
+            var el = document.getElementById(panels[i][0]);
+            var x = document.getElementById(panels[i][1]);
             if (el && x && !el.hidden) { x.click(); return true; }
           }
           return false;
@@ -66,7 +71,20 @@ class MainActivity : ComponentActivity() {
         if (WebViewFeature.isFeatureSupported(WebViewFeature.DOCUMENT_START_SCRIPT)) {
             WebViewCompat.addDocumentStartJavaScript(webView, Bridge.SHIM, setOf("https://$HOST"))
         }
-        setContentView(webView)
+
+        // Past a phone-sized width the game stays centred on the launch colour
+        val maxWidth = (MAX_WIDTH_DP * resources.displayMetrics.density).toInt()
+        val frame = FrameLayout(this).apply {
+            setBackgroundColor(getColor(R.color.launch))
+            addView(webView, FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT, Gravity.CENTER_HORIZONTAL))
+            addOnLayoutChangeListener { v, l, _, r, _, _, _, _, _ ->
+                val width = minOf(r - l, maxWidth)
+                if (webView.layoutParams.width != width) {
+                    webView.layoutParams = (webView.layoutParams as FrameLayout.LayoutParams).apply { this.width = width }
+                }
+            }
+        }
+        setContentView(frame)
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -83,13 +101,20 @@ class MainActivity : ComponentActivity() {
                 ?: WebResourceResponse("text/plain", "utf-8", 404, "Not Found", emptyMap(), ByteArrayInputStream(ByteArray(0)))
 
         override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean {
-            if (request.url.host != HOST) startActivity(Intent(Intent.ACTION_VIEW, request.url))
-            return request.url.host != HOST
+            if (request.url.host == HOST) return false
+            try {
+                startActivity(Intent(Intent.ACTION_VIEW, request.url))
+            } catch (_: ActivityNotFoundException) {
+            }
+            return true
         }
 
         // The renderer can die in the background; a fresh activity brings the page back
         override fun onRenderProcessGone(view: WebView, detail: RenderProcessGoneDetail): Boolean {
-            recreate()
+            val now = SystemClock.elapsedRealtime()
+            crashes.removeAll { now - it > 60_000 }
+            crashes.addLast(now)
+            if (crashes.size > 2) finish() else recreate()
             return true
         }
     }
@@ -120,5 +145,7 @@ class MainActivity : ComponentActivity() {
 
     private companion object {
         const val HOST = "appassets.androidplatform.net"
+        const val MAX_WIDTH_DP = 480
+        val crashes = ArrayDeque<Long>()
     }
 }
