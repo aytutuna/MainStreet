@@ -4718,7 +4718,7 @@ function arrive(c) {
   if (!ready || speed !== 1) return;
   c.v = true;
   if (c.garden) gardenRoute(c);
-  else if (c.by === 'car') carQ.push(c);
+  else if (c.by === 'car' && !(mad && Math.random() < 0.6)) carQ.push(c);
   else if (c.by === 'taxi') taxiQ.push(c);
   else onFoot(c);
 }
@@ -5302,7 +5302,8 @@ function crowdStep(dt) {
     if (!p.path) return;
     var o = p.f.obj;
     var far = Math.abs(o.position.x) > 26;
-    if (p.f.mixer && !far) p.f.mixer.update(dt);
+    var run = 1 + 0.9 * saleK;
+    if (p.f.mixer && !far) p.f.mixer.update(dt * run);
     if (p.wait > 0) {
       p.wait -= dt;
       if (p.wait <= 0) {
@@ -5318,7 +5319,7 @@ function crowdStep(dt) {
     var dx = q.x - o.position.x;
     var dz = q.z - o.position.z;
     var d = Math.hypot(dx, dz);
-    var step = p.speed * dt * (far ? 2.5 : 1);
+    var step = p.speed * dt * (far ? 2.5 : 1) * run;
     if (d > 0.001) {
       var want = Math.atan2(dx, dz);
       var da = Math.atan2(Math.sin(want - o.rotation.y), Math.cos(want - o.rotation.y));
@@ -5695,6 +5696,16 @@ function busUp() {
   return g;
 }
 
+// a flash sale: sale tags pop up over the departments, confetti bursts, a red and yellow light flashes over the store and
+// shoppers run. Sprites and the flash plane are made once and reused
+var SALE_N = 8;
+var SALE_TXT = [['SALE!', '#e03a2e', '#ffd84a'], ['50% OFF', '#ffd84a', '#c42a1e'], ['HOT DEAL', '#e03a2e', '#fff'], ['2 FOR 1', '#2b7de0', '#ffe14d']];
+var saleS = null;
+var saleFlash = null;
+var saleK = 0;
+var saleT = 0;
+var mad = false;
+
 function saleUp() {
   var c = document.createElement('canvas');
   c.width = 256;
@@ -5718,6 +5729,77 @@ function saleUp() {
     root.add(m);
     return m;
   });
+  var mats = SALE_TXT.map(function (t) {
+    var tc = document.createElement('canvas');
+    tc.width = 256;
+    tc.height = 128;
+    var g = tc.getContext('2d');
+    rr(g, 6, 6, 244, 116, 26);
+    g.fillStyle = t[1];
+    g.fill();
+    g.lineWidth = 8;
+    g.strokeStyle = '#fff';
+    g.stroke();
+    g.fillStyle = t[2];
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    fitFont(g, [t[0]], 210, 70);
+    g.fillText(t[0], 128, 68);
+    var tex = new THREE.CanvasTexture(tc);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    return new THREE.SpriteMaterial({ map: tex, depthWrite: false, depthTest: false });
+  });
+  saleS = [];
+  for (var k = 0; k < SALE_N; k++) {
+    var sp2 = new THREE.Sprite(mats[k % mats.length]);
+    sp2.visible = false;
+    sp2.renderOrder = 6;
+    root.add(sp2);
+    saleS.push({ s: sp2, t0: 0, life: 0, x: 0, z: 0, id: '' });
+  }
+  saleFlash = new THREE.Mesh(wash.geometry, new THREE.MeshBasicMaterial({ color: 0xff2a1a, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }));
+  saleFlash.position.copy(wash.position);
+  saleFlash.position.y = 0.12;
+  saleFlash.renderOrder = 3;
+  saleFlash.visible = false;
+  root.add(saleFlash);
+}
+
+function frenzyStep(dt, now) {
+  mad = !!rush && rush.kind === 'sale';
+  if (!saleS) return;
+  saleK = Math.max(0, Math.min(1, saleK + (mad ? 2 : -2) * dt));
+  saleFlash.visible = saleK > 0.01;
+  if (saleFlash.visible) {
+    var w = Math.sin(now * 0.011);
+    saleFlash.material.color.setHex(w > 0 ? 0xff2a1a : 0xffc01a);
+    saleFlash.material.opacity = 0.3 * saleK * (0.35 + 0.65 * Math.abs(w));
+  }
+  saleBan.forEach(function (m) { m.scale.setScalar(1 + Math.sin(now * 0.014) * 0.07 + 0.06); });
+  saleT -= dt;
+  var ids = null;
+  for (var i = 0; i < saleS.length; i++) {
+    var e = saleS[i];
+    var u = (now - e.t0) / e.life;
+    if (e.s.visible && u >= 1) e.s.visible = false;
+    if (e.s.visible) {
+      var pop = u < 0.15 ? u / 0.15 * 1.25 : 1.25 - Math.min(0.25, (u - 0.15) * 1.5);
+      var out = u > 0.85 ? (1 - u) / 0.15 : 1;
+      e.s.scale.set(1.7 * pop * out, 0.85 * pop * out, 1);
+      e.s.position.set(e.x, 2.6 + Math.sin(now * 0.01 + i) * 0.08 + u * 0.4, e.z);
+    } else if (mad && saleT <= 0) {
+      ids = ids || order.filter(has);
+      if (!ids.length) continue;
+      var sh = shops[ids[Math.floor(Math.random() * ids.length)]];
+      e.x = sh.cx + (Math.random() - 0.5) * 2;
+      e.z = sh.cz + (Math.random() - 0.5) * 2;
+      e.t0 = now;
+      e.life = 1800 + Math.random() * 1400;
+      e.s.visible = true;
+      saleT = 0.25 + Math.random() * 0.25;
+      if (Math.random() < 0.6) burst(sh.id, 0, 14);
+    }
+  }
 }
 
 function rushStart(kind) {
@@ -6318,6 +6400,7 @@ function draw(now) {
   // the sim's rush only brings in as many extra shoppers as there are figures beyond the reserve
   extraRoom = spare() - 8;
   dayStep(dt);
+  frenzyStep(dt, now);
   trafficStep(dt);
   crowdStep(dt);
   doorsStep(dt);

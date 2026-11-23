@@ -714,7 +714,7 @@ function tick(dt) {
     }
     // a rush's extra shoppers only come in while the view has figures to spare; the rest never arrive, so none is lost
     if (rush && k !== 'garden') {
-      xdue[k] += f[k] * dt * (RUSH.mul - 1);
+      xdue[k] += f[k] * dt * ((rush.kind === 'sale' ? RUSH.sale : RUSH.mul) - 1);
       while (xdue[k] >= 1) {
         xdue[k]--;
         if (extraRoom > 0) {

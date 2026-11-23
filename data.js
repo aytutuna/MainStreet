@@ -136,7 +136,7 @@ GIFT.jmix = 0.25;
 // Rush events: one every gap seconds of play, shoppers coming mul times as fast for secs, and each tap on a till gives
 // its front shopper tap seconds of service. Taps in a row, each within a second of the one before, make a combo that
 // adds combo of a tap for every tap after the first, up to top of them
-var RUSH = { gap: [240, 360], secs: 30, mul: 2, tap: 0.9, combo: 0.05, top: 10 };
+var RUSH = { gap: [240, 360], secs: 30, mul: 2, sale: 3, tap: 0.9, combo: 0.05, top: 10 };
 // the manager's call for a rush: cool seconds between calls, or gems to call one now
 var CALL = { cool: 1200, gems: 5 };
 
