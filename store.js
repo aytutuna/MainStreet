@@ -303,6 +303,8 @@ function loadModels(list, progress, done) {
       src.map.colorSpace = THREE.SRGBColorSpace;
     }
     var c = tint ? new THREE.Color(parseInt(tint, 16)) : src.map && kit !== 'flora' ? new THREE.Color(1, 1, 1) : src.color;
+    // the scenery's leaves a touch warmer and greener, to sit with the bright grass
+    if (kit === 'flora' && src.map && /lea|bush|pine|grass/i.test(src.name)) c = c.clone().multiply(new THREE.Color(1.02, 1.1, 0.82));
     var opt = src.map ? { map: src.map, color: c } : { color: c };
     if (src.alphaTest) {
       opt.alphaTest = src.alphaTest;
@@ -608,7 +610,7 @@ function sceneUp() {
   renderer.shadowMap.autoUpdate = false;
   scene = new THREE.Scene();
   scene.background = new THREE.Color(0xa9d8ee);
-  scene.fog = new THREE.Fog(0xa9d8ee, 90, 200);
+  scene.fog = new THREE.Fog(0xa9d8ee, 115, 250);
   cam = new THREE.PerspectiveCamera(40, 1, 1, 400);
   hemi = new THREE.HemisphereLight(0xffffff, 0xb4bedc, 2.4);
   scene.add(hemi);
@@ -1193,7 +1195,7 @@ function dye(g, mat) {
   g.setAttribute('color', new THREE.BufferAttribute(a, 3));
   return vcMat;
 }
-var GRASS = 0x7bbb63;
+var GRASS = 0x8acb58;
 var PAVE = 0xd9d3c7;
 var ASPHALT = 0x5b5e66;
 var GRAVEL = 0xa39886;
@@ -3237,6 +3239,12 @@ landMat.onBeforeCompile = function (sh) {
     // grass grain: a broad wash and a finer mottle, each tilting the green a little warmer or cooler
     '#include <color_fragment>\nfloat gg = gv(cp * 0.22) * 0.6 + gv(mat2(0.8, 0.6, -0.6, 0.8) * cp * 0.9) * 0.4 - 0.5;\n' +
     'diffuseColor.rgb *= 1.0 + gg * 0.22;\ndiffuseColor.r += gg * 0.035;\n' +
+    // painted grass: broad sunlit patches and short strokes laid one way, lighter on the tips
+    'float sunp = smoothstep(0.55, 0.78, gv(cp * 0.09 + 7.0));\n' +
+    'diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * vec3(1.12, 1.12, 0.92), sunp * 0.7);\n' +
+    'vec2 sp = mat2(0.94, 0.34, -0.34, 0.94) * cp;\n' +
+    'float stroke = gv(vec2(sp.x * 4.5, sp.y * 1.2)) * 0.65 + gv(vec2(sp.x * 9.0, sp.y * 2.4) + 3.0) * 0.35;\n' +
+    'diffuseColor.rgb *= 0.95 + 0.11 * smoothstep(0.35, 0.8, stroke);\n' +
     // where the ground is too steep for grass it is bare rock in layers, warmer low down
     'vec3 nn = normalize(cn3);\nfloat steep = 1.0 - smoothstep(0.4, 0.62, nn.y);\n' +
     'float band = 0.8 + 0.12 * sin(cy * 2.6 + gv(cp * 0.3) * 5.0) + 0.08 * sin(cy * 7.0 + gv(cp * 0.8) * 3.0) + (gv(cp * 2.1 + cy * 1.3) - 0.5) * 0.14;\n' +
@@ -3538,14 +3546,14 @@ function buildLand() {
   }
   var c = new THREE.Color();
   var c2 = new THREE.Color();
-  var cMeadow = [new THREE.Color(0x98cf62), new THREE.Color(0x62ad50)];
-  var cDry = new THREE.Color(0xc6cf6c);
+  var cMeadow = [new THREE.Color(0xa8dc58), new THREE.Color(0x74c046)];
+  var cDry = new THREE.Color(0xd4d86a);
   var cBloom = [new THREE.Color(0xf0d95e), new THREE.Color(0xd8c4f0), new THREE.Color(0xf0a2bb)];
-  var cWood = [new THREE.Color(0x417f40), new THREE.Color(0x336b38)];
-  var cFloor = new THREE.Color(0x2f6234);
+  var cWood = [new THREE.Color(0x4c9238), new THREE.Color(0x3c7e34)];
+  var cFloor = new THREE.Color(0x3a722e);
   var cRock = new THREE.Color(0x9a9b8e);
-  var cHigh = new THREE.Color(0x7aa267);
-  var cSand = new THREE.Color(0xd9c88e);
+  var cHigh = new THREE.Color(0x88b65a);
+  var cSand = new THREE.Color(0xead690);
   var cBed = new THREE.Color(0x6d9486);
   var cLot = new THREE.Color(GRASS);
   function tint(i, j, ny) {
@@ -3613,7 +3621,7 @@ function buildLand() {
           var depth = lv - hh[gj * W + gi];
           wmap[key] = wp.length / 3;
           wp.push(X0 + gi * LAND_STEP, lv, Z0 + gj * LAND_STEP);
-          c.setHex(0x62c9cf).lerp(c2.setHex(0x1b6fa3), LAND.smooth(0.1, 1.8, depth));
+          c.setHex(0x4fd8cf).lerp(c2.setHex(0x1586b8), LAND.smooth(0.1, 1.8, depth));
           wc.push(c.r, c.g, c.b, Math.max(0, Math.min(0.92, 0.45 + depth * 0.8)));
         }
         return wmap[key];
