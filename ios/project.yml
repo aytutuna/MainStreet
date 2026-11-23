@@ -16,6 +16,18 @@ settings:
     CURRENT_PROJECT_VERSION: "1"
     IPHONEOS_DEPLOYMENT_TARGET: "16.4"
 
+# Pinned releases of the two SDKs and Google's consent SDK, which the ads package depends on anyway.
+packages:
+  RevenueCat:
+    url: https://github.com/RevenueCat/purchases-ios-spm.git
+    exactVersion: 5.103.2
+  GoogleMobileAds:
+    url: https://github.com/googleads/swift-package-manager-google-mobile-ads.git
+    exactVersion: 13.13.0
+  GoogleUserMessagingPlatform:
+    url: https://github.com/googleads/swift-package-manager-google-user-messaging-platform.git
+    exactVersion: 3.1.0
+
 targets:
   MainStreet:
     type: application
@@ -50,6 +62,13 @@ targets:
         type: folder
       - path: ../assets
         type: folder
+    dependencies:
+      - package: RevenueCat
+        product: RevenueCat
+      - package: GoogleMobileAds
+        product: GoogleMobileAds
+      - package: GoogleUserMessagingPlatform
+        product: GoogleUserMessagingPlatform
     settings:
       base:
         PRODUCT_NAME: MainStreet

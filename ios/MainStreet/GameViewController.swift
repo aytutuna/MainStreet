@@ -85,6 +85,8 @@ final class GameViewController: UIViewController, WKNavigationDelegate, WKUIDele
     static let background = UIColor(red: 58.0 / 255.0, green: 58.0 / 255.0, blue: 80.0 / 255.0, alpha: 1)
 
     private var webView: WKWebView!
+    private lazy var store = StoreBridge(presenter: { [weak self] in self })
+    private var asked = false
 
     override var preferredStatusBarStyle: UIStatusBarStyle { .lightContent }
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask { .portrait }
@@ -94,6 +96,7 @@ final class GameViewController: UIViewController, WKNavigationDelegate, WKUIDele
         let config = WKWebViewConfiguration()
         config.userContentController.add(BuzzHandler(), name: "buzz")
         config.userContentController.add(NotifyHandler(), name: "notify")
+        config.userContentController.add(store, name: "store")
         config.setURLSchemeHandler(BundleHandler(), forURLScheme: "app")
         let web = WKWebView(frame: .zero, configuration: config)
         web.isOpaque = true
@@ -106,8 +109,18 @@ final class GameViewController: UIViewController, WKNavigationDelegate, WKUIDele
         web.allowsLinkPreview = false
         web.navigationDelegate = self
         web.uiDelegate = self
+        store.web = web
         webView = web
         view = web
+    }
+
+    // The consent form needs a visible screen to appear on
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        if !asked {
+            asked = true
+            store.startAds()
+        }
     }
 
     override func viewDidLoad() {
