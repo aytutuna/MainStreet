@@ -86,7 +86,6 @@ final class GameViewController: UIViewController, WKNavigationDelegate, WKUIDele
 
     private var webView: WKWebView!
     private lazy var store = StoreBridge(presenter: { [weak self] in self })
-    private var asked = false
 
     override var preferredStatusBarStyle: UIStatusBarStyle { .lightContent }
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask { .portrait }
@@ -112,15 +111,6 @@ final class GameViewController: UIViewController, WKNavigationDelegate, WKUIDele
         store.web = web
         webView = web
         view = web
-    }
-
-    // The consent form needs a visible screen to appear on
-    override func viewDidAppear(_ animated: Bool) {
-        super.viewDidAppear(animated)
-        if !asked {
-            asked = true
-            store.startAds()
-        }
     }
 
     override func viewDidLoad() {

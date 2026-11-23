@@ -14,17 +14,15 @@ final class StoreBridge: NSObject, WKScriptMessageHandler, PurchasesDelegate {
     init(presenter: @escaping () -> UIViewController?) {
         self.presenter = presenter
         super.init()
-        Purchases.configure(withAPIKey: "appl_JggXVTqKaiECcMheJWpRuGVcZgJ")
+        if !Purchases.isConfigured {
+            Purchases.configure(withAPIKey: "appl_JggXVTqKaiECcMheJWpRuGVcZgJ")
+        }
         Purchases.shared.delegate = self
     }
 
     // a purchase finished while the page was gone shows up here; the page credits it if it has not yet
     func purchases(_ purchases: Purchases, receivedUpdated customerInfo: CustomerInfo) {
         send(customerInfo, restored: false)
-    }
-
-    func startAds() {
-        ads.start()
     }
 
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
@@ -36,8 +34,12 @@ final class StoreBridge: NSObject, WKScriptMessageHandler, PurchasesDelegate {
             if let id = msg["id"] as? String { buy(id) }
         case "restore":
             Task { @MainActor in await owned(restored: true) }
+        case "adStart":
+            ads.start()
         case "adReady":
             ads.report()
+        case "privacy":
+            ads.options()
         case "ad":
             ads.show(msg["kind"] as? String ?? "")
         default:
@@ -83,8 +85,10 @@ final class StoreBridge: NSObject, WKScriptMessageHandler, PurchasesDelegate {
                 } else {
                     // the id the store list uses for it, so the page counts the purchase once
                     let listed = result.customerInfo.nonSubscriptionTransactions.filter { $0.productIdentifier == id }
-                        .max { $0.purchaseDate < $1.purchaseDate }?.transactionIdentifier
-                    emit(["t": "bought", "id": id, "tx": listed ?? result.transaction?.transactionIdentifier ?? "\(id)-\(Date().timeIntervalSince1970)"])
+                        .max { $0.purchaseDate < $1.purchaseDate }
+                    let at = (listed?.purchaseDate ?? result.transaction?.purchaseDate ?? Date()).timeIntervalSince1970 * 1000
+                    emit(["t": "bought", "id": id, "at": at,
+                          "tx": listed?.transactionIdentifier ?? result.transaction?.transactionIdentifier ?? "\(id)-\(Date().timeIntervalSince1970)"])
                 }
             } catch {
                 failed(id, (error as NSError).code == ErrorCode.purchaseCancelledError.rawValue ? "cancel" : "error")

@@ -29,8 +29,21 @@ final class AdsBridge: NSObject, FullScreenContentDelegate {
         ConsentInformation.shared.requestConsentInfoUpdate(with: RequestParameters()) { [weak self] _ in
             guard let self = self else { return }
             guard let vc = self.presenter() else { return self.begin() }
-            ConsentForm.loadAndPresentIfRequired(from: vc) { [weak self] _ in self?.begin() }
+            ConsentForm.loadAndPresentIfRequired(from: vc) { [weak self] _ in
+                self?.begin()
+                self?.privacy()
+            }
         }
+    }
+
+    // the menu shows "Privacy choices" only where the consent SDK says the player must be able to reopen the form
+    private func privacy() {
+        emit(["t": "privacy", "required": ConsentInformation.shared.privacyOptionsRequirementStatus == .required])
+    }
+
+    func options() {
+        guard let vc = presenter() else { return }
+        ConsentForm.presentPrivacyOptionsForm(from: vc) { [weak self] _ in self?.begin() }
     }
 
     private func begin() {
