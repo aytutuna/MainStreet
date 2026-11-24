@@ -225,7 +225,7 @@ var AD_START = 180;
 var AD_NEW = 600;
 var AD_GAP = 600;
 
-// How a store can look: a multiplying tint for the floors, the walls and the columns, the colours of the sign over the
+// How a store can look: a multiplying tint for the floors, the walls and the steel trim, the colours of the sign over the
 // doors and of the pylon by the street. A look opens at store `store` or with the achievement `ach`, and then costs
 // `gems` once if it has a price. They change nothing but looks
 var LOOKS = [
