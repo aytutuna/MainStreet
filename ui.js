@@ -606,42 +606,93 @@ function flag(c, key, el, name, on) {
 // labels that must stay on one line shrink until they fit, so a long translation loses size instead of letters
 var FIT = '#cash b, #rate, .chip span, #tabs button span, #st-grid b, .l1 b, .pr em, .btn, .offer b';
 var fitEpoch = 0;
+var fitSteps = [1, 0.92, 0.84, 0.76, 0.7, 0.65];
+var fitQueue = [];
 
+// one measure, one write: the size is worked out from how far the text overflows and snapped to a few steps, so digits
+// changing in a pill do not make it jitter. Once shrunk a label only shrinks more until its box or the language changes.
 function fitOne(el) {
-  var key = fitEpoch + el.clientWidth + el.textContent;
-  if (el.fit === key || !el.offsetParent) return;
+  if (!el.offsetParent) return;
+  var cw = el.clientWidth;
+  var key = fitEpoch + '|' + cw + '|' + el.textContent;
+  if (el.fit === key) return;
+  var layout = fitEpoch + '|' + cw;
+  if (el.fitLayout !== layout) {
+    el.fitLayout = layout;
+    el.fitBase = 0;
+    el.style.fontSize = '';
+  }
   el.fit = key;
-  el.style.fontSize = '';
-  var px = parseFloat(getComputedStyle(el).fontSize);
-  var min = px * 0.65;
-  while (el.scrollWidth > el.clientWidth && px > min) el.style.fontSize = (px -= 0.5) + 'px';
+  var sw = el.scrollWidth;
+  if (sw <= cw) return;
+  var cur = parseFloat(getComputedStyle(el).fontSize);
+  if (!el.fitBase) el.fitBase = cur;
+  var base = el.fitBase;
+  var want = cur * cw / sw;
+  // the largest step that still fits, the smallest when none does
+  var i = 0;
+  while (i < fitSteps.length - 1 && base * fitSteps[i] > want) i++;
+  var px = base * fitSteps[i];
+  if (px < cur - 0.01) el.style.fontSize = px + 'px';
 }
 
-function fitAll() {
-  var all = document.querySelectorAll(FIT);
+function fitAll(root) {
+  var all = root.querySelectorAll(FIT);
   for (var i = 0; i < all.length; i++) fitOne(all[i]);
+}
+
+function fitFlush() {
+  var q = fitQueue;
+  fitQueue = [];
+  for (var i = 0; i < q.length; i++) {
+    var t = q[i];
+    if (q.indexOf(t) !== i || !t.isConnected) continue;
+    if (t === document) fitAll(document);
+    else {
+      var up = t.closest(FIT);
+      if (up) fitOne(up);
+      fitAll(t);
+    }
+  }
 }
 
 function fitWire() {
   var queued = false;
-  function ask() {
+  function ask(node) {
+    fitQueue.push(node);
     if (queued) return;
     queued = true;
     requestAnimationFrame(function () {
       queued = false;
-      fitAll();
+      fitFlush();
     });
   }
-  new MutationObserver(ask).observe($('app'), { childList: true, characterData: true, subtree: true, attributes: true, attributeFilter: ['hidden'] });
-  window.addEventListener('resize', function () {
+  new MutationObserver(function (recs) {
+    for (var i = 0; i < recs.length; i++) {
+      var t = recs[i].target;
+      if (t.nodeType === 3) t = t.parentNode;
+      if (t && t.closest && !t.closest('#fly, .pop')) ask(t);
+    }
+  }).observe($('app'), { childList: true, characterData: true, subtree: true, attributes: true, attributeFilter: ['hidden'] });
+  function all() {
     fitEpoch++;
-    ask();
-  });
-  if (document.fonts) document.fonts.ready.then(function () {
-    fitEpoch++;
-    ask();
-  });
-  ask();
+    ask(document);
+  }
+  window.addEventListener('resize', all);
+  if (document.fonts) {
+    document.fonts.ready.then(all);
+    // a face that arrives late (the extended Latin Lilita, a system fallback) changes every width again
+    document.fonts.addEventListener('loadingdone', all);
+  }
+  ask(document);
+}
+
+// writes only when the value changed, for texts repainted every frame
+function put(el, prop, v) {
+  var k = '_' + prop;
+  if (el[k] === v) return;
+  el[k] = v;
+  el[prop] = v;
 }
 
 function popAt(text, x, y, cls) {
@@ -1752,8 +1803,8 @@ function missBars() {
   var rs = $('miss').children;
   missions().forEach(function (m, i) {
     if (!rs[i]) return;
-    rs[i].firstChild.textContent = missLine(m);
-    rs[i].querySelector('u').style.width = m.p / m.n * 100 + '%';
+    put(rs[i].firstChild, 'textContent', missLine(m));
+    put(rs[i].querySelector('u').style, 'width', m.p / m.n * 100 + '%');
   });
 }
 
@@ -1837,23 +1888,23 @@ function gemsLeft(cost) {
 }
 
 function paintBoost() {
-  $('boost-gems').textContent = tl('boost.have', { n: short(S.gems) });
-  $('x2-txt').textContent = S.x2 > 0 ? tl('boost.x2.active', { t: clock2(S.x2) }) : tl('boost.x2.idle');
-  $('x2-need').textContent = gemsLeft(X2_COST);
-  $('b-x2').innerHTML = '<img src="assets/ui_gem.png" alt="">' + X2_COST;
-  $('b-x2').disabled = S.gems < X2_COST;
+  put($('boost-gems'), 'textContent', tl('boost.have', { n: short(S.gems) }));
+  put($('x2-txt'), 'textContent', S.x2 > 0 ? tl('boost.x2.active', { t: clock2(S.x2) }) : tl('boost.x2.idle'));
+  put($('x2-need'), 'textContent', gemsLeft(X2_COST));
+  put($('b-x2'), 'innerHTML', '<img src="assets/ui_gem.png" alt="">' + X2_COST);
+  put($('b-x2'), 'disabled', S.gems < X2_COST);
   var full = rate() * WARP_SECS;
   var v = Math.min(full, Math.max(S.run, 100));
   var weak = v < rate() * 600 || v <= 0;
-  $('warp-txt').textContent = tl(v < full ? 'boost.warp.so_far' : 'boost.warp.hour', { v: money(v) });
-  $('warp-need').textContent = gemsLeft(WARP_COST) || (weak ? tl('boost.warp.weak') : '');
-  $('b-warp').innerHTML = '<img src="assets/ui_gem.png" alt="">' + WARP_COST;
-  $('b-warp').disabled = S.gems < WARP_COST || weak;
-  $('call-txt').textContent = S.call > 0 ? tl('boost.call.ready_in', { t: clock2(S.call) }) : tl('boost.call.brings', { n: CALL.cool / 60 });
-  $('call-need').textContent = rush ? tl('boost.call.rush_on') : shut() ? tl('boost.call.closed') : S.call > 0 ? gemsLeft(CALL.gems) : '';
-  $('b-call').innerHTML = S.call > 0 ? '<img src="assets/ui_gem.png" alt="">' + CALL.gems : tl('boost.call.btn');
-  $('b-call').disabled = !!rush || shut() || (S.call > 0 && S.gems < CALL.gems);
-  $('reg-txt').textContent = tl('boost.regs', { a: regOwned(), b: REGS.length, pct: Math.round((regMul() - 1) * 100) });
+  put($('warp-txt'), 'textContent', tl(v < full ? 'boost.warp.so_far' : 'boost.warp.hour', { v: money(v) }));
+  put($('warp-need'), 'textContent', gemsLeft(WARP_COST) || (weak ? tl('boost.warp.weak') : ''));
+  put($('b-warp'), 'innerHTML', '<img src="assets/ui_gem.png" alt="">' + WARP_COST);
+  put($('b-warp'), 'disabled', S.gems < WARP_COST || weak);
+  put($('call-txt'), 'textContent', S.call > 0 ? tl('boost.call.ready_in', { t: clock2(S.call) }) : tl('boost.call.brings', { n: CALL.cool / 60 }));
+  put($('call-need'), 'textContent', rush ? tl('boost.call.rush_on') : shut() ? tl('boost.call.closed') : S.call > 0 ? gemsLeft(CALL.gems) : '');
+  put($('b-call'), 'innerHTML', S.call > 0 ? '<img src="assets/ui_gem.png" alt="">' + CALL.gems : tl('boost.call.btn'));
+  put($('b-call'), 'disabled', !!rush || shut() || (S.call > 0 && S.gems < CALL.gems));
+  put($('reg-txt'), 'textContent', tl('boost.regs', { a: regOwned(), b: REGS.length, pct: Math.round((regMul() - 1) * 100) }));
   paintAds();
 }
 

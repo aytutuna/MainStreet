@@ -420,7 +420,7 @@ function paintAds() {
       (off ? ' disabled' : '') + '>' + adLabel() + '</button></div>';
   });
   set(shown, 'ads', $('ads'), 'innerHTML', html);
-  $('ads').hidden = !native();
+  put($('ads'), 'hidden', !native());
 }
 
 // side buttons on the main screen, at most three: the starter pack, the deal, free gems and double income, in that order
