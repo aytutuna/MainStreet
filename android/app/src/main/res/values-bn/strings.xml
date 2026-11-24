@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Main Street Idle</string>
+    <string name="channel_name">রিমাইন্ডার</string>
+    <string name="notification_title">Main Street</string>
+    <string name="webview_old">Main Street চালাতে নতুন Android System WebView লাগবে।</string>
+    <string name="update">আপডেট</string>
+</resources>

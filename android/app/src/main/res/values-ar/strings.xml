@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Main Street Idle</string>
+    <string name="channel_name">التذكيرات</string>
+    <string name="notification_title">Main Street</string>
+    <string name="webview_old">تحتاج Main Street إلى إصدار أحدث من Android System WebView.</string>
+    <string name="update">تحديث</string>
+</resources>

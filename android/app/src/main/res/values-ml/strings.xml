@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Main Street Idle</string>
+    <string name="channel_name">ഓർമ്മപ്പെടുത്തലുകൾ</string>
+    <string name="notification_title">Main Street</string>
+    <string name="webview_old">Main Street പ്രവർത്തിക്കാൻ പുതിയ Android System WebView വേണം.</string>
+    <string name="update">അപ്ഡേറ്റ്</string>
+</resources>

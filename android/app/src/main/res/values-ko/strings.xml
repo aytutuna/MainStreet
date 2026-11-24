@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Main Street Idle</string>
+    <string name="channel_name">알림</string>
+    <string name="notification_title">Main Street</string>
+    <string name="webview_old">Main Street을 실행하려면 더 최신 Android System WebView가 필요해요.</string>
+    <string name="update">업데이트</string>
+</resources>

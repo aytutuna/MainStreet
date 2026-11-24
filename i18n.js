@@ -59,7 +59,7 @@ var LANGS = [
 ];
 // The languages that have translations. Only these are picked from the phone's language and offered in the menu; the
 // rest of LANGS are empty files waiting for translators. scripts/gen_native.mjs rewrites this line.
-var LANG_READY = ['en'];
+var LANG_READY = ['en', 'ar', 'bn', 'ca', 'cs', 'da', 'de', 'el', 'es-ES', 'es-MX', 'fi', 'fr-FR', 'fr-CA', 'gu', 'he', 'hi', 'hr', 'hu', 'id', 'it', 'ja', 'kn', 'ko', 'ml', 'mr', 'ms', 'nl', 'no', 'or', 'pa', 'pl', 'pt-BR', 'pt-PT', 'ro', 'ru', 'sk', 'sl', 'sv', 'ta', 'te', 'th', 'tr', 'uk', 'ur', 'vi', 'zh-Hans', 'zh-Hant'];
 var LANG_KEY = 'mainstreet.lang';
 
 // Lilita One only has Latin letters. Everything else falls to the phone's own fonts, listed per script because the
