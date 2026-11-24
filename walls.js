@@ -234,8 +234,8 @@ export function buildWalls(o) {
     return mats[k];
   }
   var alu = std(ALU, 0.38, 0.65);
-  var glassMat = new THREE.MeshPhysicalMaterial({ color: 0x9fcad8, roughness: 0.05, metalness: 0, transparent: true, opacity: 0.3, side: THREE.DoubleSide,
-    depthWrite: false, envMap: env, envMapIntensity: 1.6, clearcoat: 1 });
+  var glassMat = new THREE.MeshPhysicalMaterial({ color: 0x9fcad8, roughness: 0.1, metalness: 0, transparent: true, opacity: 0.3, side: THREE.DoubleSide,
+    depthWrite: false, envMap: env, envMapIntensity: 2.2 });
   var glareMat = new THREE.MeshStandardMaterial({ color: 0xffffff, roughness: 1, transparent: true, opacity: 0.12, depthWrite: false, emissive: 0xffffff,
     emissiveIntensity: 0.3 });
   var shadowMat = null;
@@ -292,7 +292,7 @@ export function buildWalls(o) {
     if (!glassy(side, plain)) {
       if (y0 < 0.14) P(side, prof(L, rrPts(-hw - 0.02, hw + 0.02, 0, 0.14, 0.012, 0), 0), tc, std(0x5d646e, 0.7));
       P(side, prof(L, rrPts(-hw, hw, Math.max(y0, 0.13), H - 0.06, 0, 0), 0), tc, std(0xf0f1f2, 0.9));
-      P(side, prof(L, rrPts(-hw - 0.03, hw + 0.03, H - 0.07, H, 0.012, 0.004), 1), tc, alu);
+      P(side, prof(L, rrPts(-0.11, 0.11, H - 0.07, H, 0.012, 0.004), 1), tc, alu);
       if (y0 < 0.3) P(side, prof(L, rrPts(-hw - 0.004, hw + 0.004, 0.45 * H, 0.45 * H + 0.012, 0, 0), 0), tc, std(0x9aa1ab, 0.6));
       return;
     }
@@ -343,7 +343,7 @@ export function buildWalls(o) {
     });
   }
   function corner(side, t, H) {
-    P(side, col(rrPts(-0.35, 0.35, -0.35, 0.35, 0.02, 0.02, 3), 0, H + 0.02), t, alu);
+    P(side, col(rrPts(-0.18, 0.18, -0.18, 0.18, 0.02, 0.02, 3), 0, H + 0.02), t, alu);
   }
 
   // a light box on the back wall: dark rim, the board, and a soft shadow under it
