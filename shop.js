@@ -121,7 +121,7 @@ function shopBtn(p) {
   var done = p.once && S.iap[p.id];
   var price = priceOf(p);
   var off = done || !price || !!buying;
-  return '<button type="button" class="btn' + (done ? ' alt' : '') + '" data-p="' + p.id + '"' + (off ? ' disabled' : '') + '>' + (done ? 'Owned' : price || '-') + '</button>';
+  return '<button type="button" class="btn' + (done ? ' alt' : '') + '" data-p="' + p.id + '"' + (off ? ' disabled' : '') + '>' + (done ? tl('shop.owned') : price || '-') + '</button>';
 }
 
 function hms(v) {
@@ -158,8 +158,8 @@ function pile(n) {
 }
 
 function heroCard(p) {
-  var chips = [['ui_gem', STARTER.gems, 'gems'], ['ui_bolt', STARTER.x2 / 3600 + ' h', 'double income'], ['ui_star', STARTER.rep, 'rep']];
-  return '<div class="hero" data-k="starter"><i class="rib">Starter deal</i><h3>' + p.name + '</h3><span>Buy once</span><div class="gifts">' +
+  var chips = [['ui_gem', STARTER.gems, tl('shop.chip_gems')], ['ui_bolt', tl('shop.chip_hours', { n: STARTER.x2 / 3600 }), tl('shop.chip_x2')], ['ui_star', STARTER.rep, tl('shop.chip_rep')]];
+  return '<div class="hero" data-k="starter"><i class="rib">' + tl('shop.starter_ribbon') + '</i><h3>' + p.name + '</h3><span>' + tl('shop.buy_once') + '</span><div class="gifts">' +
     chips.map(function (c) { return '<div><img src="assets/' + c[0] + '.png" alt=""><b>' + c[1] + '</b><small>' + c[2] + '</small></div>'; }).join('') +
     '</div>' + shopBtn(p) + '</div>';
 }
@@ -171,11 +171,11 @@ function featCard(p) {
 function gemTile(p, i, base, deal) {
   var on = deal && deal.id === p.id;
   var more = Math.round((p.gems / p.usd / base - 1) * 100);
-  var tag = p.id === 'gems2' ? 'Most popular' : p.id === 'gems4' ? 'Best value' : '';
-  var badge = on ? '+' + Math.round(DEAL.bonus * 100) + '% bonus' : more > 0 ? '+' + more + '% gems' : '';
+  var tag = p.id === 'gems2' ? tl('shop.most_popular') : p.id === 'gems4' ? tl('shop.best_value') : '';
+  var badge = on ? tl('shop.badge_bonus', { n: Math.round(DEAL.bonus * 100) }) : more > 0 ? tl('shop.badge_more', { n: more }) : '';
   return '<div class="tile' + (on ? ' deal' : '') + '" data-k="' + p.id + '">' + (tag ? '<i class="rib">' + tag + '</i>' : '') +
-    (badge ? '<em>' + badge + '</em>' : '') + pile(i) + '<b>' + p.gems.toLocaleString('en-US') + ' gems</b>' +
-    (on ? '<small>Deal of the day: +' + deal.bonus + ' gems</small>' : '') + shopBtn(p) + '</div>';
+    (badge ? '<em>' + badge + '</em>' : '') + pile(i) + '<b>' + tl('shop.gems', { n: p.gems }) + '</b>' +
+    (on ? '<small>' + tl('shop.deal_day', { n: deal.bonus }) + '</small>' : '') + shopBtn(p) + '</div>';
 }
 
 function paintShop() {
@@ -185,9 +185,9 @@ function paintShop() {
   var deal = dealNow();
   var html = S.iap.starter ? '' : heroCard(starter);
   html += '<div class="feats">' + featCard(product('noads')) + featCard(product('x2')) + '</div>';
-  html += '<h3 class="sec">Gems</h3><div class="tiles">' + gems.map(function (p, i) { return gemTile(p, i, base, deal); }).join('') + '</div>';
+  html += '<h3 class="sec">' + tl('shop.gems_heading') + '</h3><div class="tiles">' + gems.map(function (p, i) { return gemTile(p, i, base, deal); }).join('') + '</div>';
   $('shop-list').innerHTML = html;
-  $('shop-txt').textContent = storeUp ? 'Gems are for boosts and time warps.' : 'The store is not available right now. Try again later.';
+  $('shop-txt').textContent = tl(storeUp ? 'shop.intro' : 'shop.unavailable');
   $('shop-restore').disabled = !storeUp || !!buying;
   $('b-shop').hidden = !native();
 }
@@ -252,8 +252,8 @@ function handle(ev) {
   } else if (ev.t === 'owned') {
     (ev.ids || []).forEach(function (id) { own(id.slice(PID.length), false); });
     var back = recover(ev.tx);
-    if (back) banner('<b>' + plural(back, 'gem') + ' added</b><small>From a purchase that was not credited.</small>', 0);
-    if (ev.restore) banner('<b>' + (S.iap.noads + S.iap.x2 + S.iap.starter > restoreWas ? 'Purchases restored' : 'Nothing to restore') + '</b>', 0);
+    if (back) banner('<b>' + tl('shop.recovered', { n: back, count: short(back) }) + '</b><small>' + tl('shop.recovered_note') + '</small>', 0);
+    if (ev.restore) banner('<b>' + tl(S.iap.noads + S.iap.x2 + S.iap.starter > restoreWas ? 'shop.restored' : 'shop.nothing_to_restore') + '</b>', 0);
     save();
   } else if (ev.t === 'bought') {
     buying = '';
@@ -261,11 +261,11 @@ function handle(ev) {
     var extra = grant(bid, ev.tx, ev.at) && product(bid).gems ? dealBonus(bid, ev.at) : 0;
     sfx('done');
     buzz('success');
-    banner('<b>Thank you</b><small>' + product(bid).name + (extra ? ' · +' + extra + ' bonus gems' : '') + '</small>', 0, true);
+    banner('<b>' + tl('shop.thanks') + '</b><small>' + (extra ? tl('shop.thanks_bonus', { name: product(bid).name, n: extra }) : product(bid).name) + '</small>', 0, true);
   } else if (ev.t === 'failed') {
     buying = '';
     S.iap.deal = null;
-    if (ev.why !== 'cancel') banner('<b>Purchase not completed.</b>', 0);
+    if (ev.why !== 'cancel') banner('<b>' + tl('shop.failed') + '</b>', 0);
   } else if (ev.t === 'privacy') $('m-priv').hidden = !ev.required;
   else if (ev.t === 'ad') adEvent(ev);
   else if (ev.t === 'radio' || ev.t === 'other') radioEvent(ev);
@@ -359,7 +359,7 @@ function adEvent(ev) {
     setTimeout(function () {
       if (watching !== w) return;
       watching = null;
-      banner('<b>No reward</b><small>' + (ev.state === 'failed' ? 'No ad was available.' : 'The ad was not finished.') + '</small>', 0);
+      banner('<b>' + tl('ads.no_reward') + '</b><small>' + tl(ev.state === 'failed' ? 'ads.unavailable' : 'ads.unfinished') + '</small>', 0);
     }, ev.state === 'failed' ? 0 : 1500);
   }
 }
@@ -384,14 +384,14 @@ function shopAwayDone() {
 }
 
 function adLabel() {
-  return S.iap.noads ? 'Free' : adOk.reward ? 'Watch' : 'No ad yet';
+  return tl(S.iap.noads ? 'ads.free' : adOk.reward ? 'ads.watch' : 'ads.none_yet');
 }
 
 function adGive(k, from) {
   var c = centerOf(from || $('ads'));
   if (k === 'x2') {
     S.x2 += X2_SECS;
-    banner('<b>Double income</b><small>Active for ' + clock2(S.x2) + '</small>', 0);
+    banner('<b>' + tl('ads.x2') + '</b><small>' + tl('ads.x2_active', { time: clock2(S.x2) }) + '</small>', 0);
   } else if (k === 'rush') {
     if (callRush(true)) $('boost').hidden = true;
   } else if (k === 'warp') {
@@ -409,14 +409,14 @@ function adGive(k, from) {
 
 function paintAds() {
   var weak = Math.min(rate() * WARP_SECS, Math.max(S.run, 100)) < rate() * 600;
-  var rows = [['x2', 'ui_bolt', 'Double income', '30 min of x2'], ['warp', 'ui_warp', 'Time warp', 'An hour of income'],
-    ['gems', 'ui_gem', 'Free gems', AD_GEMS + ' gems'], ['rush', 'ui_bolt', 'Call a rush', 'Skips the wait']];
-  var html = '<p class="small">Free, and a few a day:</p>';
+  var rows = [['x2', 'ui_bolt', tl('ads.x2'), tl('ads.x2_note')], ['warp', 'ui_warp', tl('ads.warp'), tl('ads.warp_note')],
+    ['gems', 'ui_gem', tl('ads.gems'), tl('shop.gems', { n: AD_GEMS })], ['rush', 'ui_bolt', tl('ads.rush'), tl('ads.rush_note')]];
+  var html = '<p class="small">' + tl('ads.intro') + '</p>';
   rows.forEach(function (r) {
     var left = adLeft(r[0]);
     var off = !canWatch(r[0]) || (r[0] === 'warp' && weak) || (r[0] === 'rush' && (rush || shut() || S.call <= 0));
     html += '<div class="offer"><img src="assets/' + r[1] + '.png" alt=""><div><b>' + r[2] + '</b><span>' + r[3] + ' · ' +
-      (left > 0 ? left + ' left today' : 'back tomorrow') + '</span></div><button type="button" class="btn" data-a="' + r[0] + '"' +
+      (left > 0 ? tl('ads.left', { n: left }) : tl('ads.tomorrow')) + '</span></div><button type="button" class="btn" data-a="' + r[0] + '"' +
       (off ? ' disabled' : '') + '>' + adLabel() + '</button></div>';
   });
   set(shown, 'ads', $('ads'), 'innerHTML', html);
@@ -447,7 +447,7 @@ function updateDeals() {
 function paintAwayAd() {
   var on = S.pend > 0 && canWatch('away');
   set(shown, 'awa', $('away-ad'), 'hidden', !on);
-  set(shown, 'awat', $('away-ad'), 'textContent', S.iap.noads ? 'Double it, free' : adOk.reward ? 'Double it: watch an ad' : 'Ad loading');
+  set(shown, 'awat', $('away-ad'), 'textContent', tl(S.iap.noads ? 'ads.double_free' : adOk.reward ? 'ads.double_watch' : 'ads.loading'));
   set(shown, 'awad', $('away-ad'), 'disabled', !S.iap.noads && !adOk.reward);
 }
 
@@ -455,8 +455,8 @@ function paintAwayAd() {
 function offerStarter() {
   if (!native() || S.iap.starter || S.iap.offered || S.store < 2 || !priceOf(product('starter'))) return;
   S.iap.offered = 1;
-  $('pack-txt').textContent = 'One time only: ' + product('starter').text;
-  $('pack-buy').textContent = 'Get it for ' + priceOf(product('starter'));
+  $('pack-txt').textContent = tl('pack.once', { text: product('starter').text });
+  $('pack-buy').textContent = tl('pack.get', { price: priceOf(product('starter')) });
   $('pack').hidden = false;
 }
 

@@ -108,25 +108,26 @@ function noPlaces(s) {
 }
 
 // numbers: 1.2K, 3.4M, 5.6B, 7.8T and so on up to Dc, then 1.5e42
-var SUFFIX = ['', 'K', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc'];
+var SUFFIX = null;
 
 function short(v) {
   if (!isFinite(v)) return '∞';
-  if (v < 1000) return v < 10 && v !== Math.floor(v) ? String(Math.round(v * 10) / 10) : String(Math.floor(v));
+  if (!SUFFIX) SUFFIX = tl('num.suffixes').split(',');
+  if (v < 1000) return fmtn(v < 10 && v !== Math.floor(v) ? Math.round(v * 10) / 10 : Math.floor(v));
   var i = Math.floor(Math.log10(v) / 3);
   var x = v / Math.pow(1000, i);
   if (x >= 999.5) {
     x /= 1000;
     i++;
   }
-  if (i < SUFFIX.length) return Number(x.toPrecision(3)) + SUFFIX[i];
+  if (i < SUFFIX.length) return fmtn(Number(x.toPrecision(3))) + SUFFIX[i];
   var e = Math.floor(Math.log10(v));
   var m = Number((v / Math.pow(10, e)).toPrecision(2));
   if (m >= 10) {
     m = 1;
     e++;
   }
-  return m + 'e' + e;
+  return fmtn(m) + 'e' + e;
 }
 
 function lv(id) {
@@ -272,10 +273,7 @@ function openShare() {
 }
 
 function stamp() {
-  var m = Math.floor(S.clk * 1440 / CLOCK);
-  var h = Math.floor(m / 60);
-  var n = m % 60;
-  return ((h + 11) % 12 + 1) + ':' + (n < 10 ? '0' : '') + n + (h < 12 ? ' AM' : ' PM');
+  return fmtClock(Math.floor(S.clk * 1440 / CLOCK));
 }
 
 // the first purchase is what the opening prompt waits for
@@ -1034,10 +1032,10 @@ function away(sec) {
 // what to tell the player while the app is closed: when the store fills up and when the next daily reward unlocks
 function reminders() {
   var now = clock();
-  var out = [{ id: 'full', at: now + maxAway() * 1000, body: 'Your store is full. Come and collect what it earned.' }];
+  var out = [{ id: 'full', at: now + maxAway() * 1000, body: tl('notify.full') }];
   if (!daily().can) {
     var d = new Date(now);
-    out.push({ id: 'daily', at: new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1, 10).getTime(), body: 'Your daily reward is ready.' });
+    out.push({ id: 'daily', at: new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1, 10).getTime(), body: tl('notify.daily') });
   }
   return out;
 }
@@ -1143,13 +1141,13 @@ function goTo(g, id, j) {
   return g;
 }
 function gLv(id, n, gems, x2) {
-  return goTo(gl(n === 1 ? 'Open ' + BZ[id].name : BZ[id].name + ' to level ' + n, gems, n, function () { return lv(id); }, x2), id);
+  return goTo(gl(n === 1 ? tl('goal.open', { dept: BZ[id].name }) : tl('goal.dept_level', { dept: BZ[id].name, n: n }), gems, n, function () { return lv(id); }, x2), id);
 }
 function gEarn(n, gems, x2) {
-  return gl('Earn $' + short(n) + ' in total', gems, n, function () { return S.all; }, x2);
+  return gl(tl('goal.earn', { amount: short(n) }), gems, n, function () { return S.all; }, x2);
 }
 function gServe(n, gems, x2) {
-  return gl('Serve ' + n.toLocaleString('en-US') + ' shoppers', gems, n, function () { return S.st.srv; }, x2);
+  return gl(tl('goal.serve', { n: n }), gems, n, function () { return S.st.srv; }, x2);
 }
 function gPl(id, n, t, gems) {
   return goTo(gl(t, gems, n, function () { return S.pl[id]; }), id);
@@ -1164,18 +1162,18 @@ function nw(g) {
   return g;
 }
 var GOALS = [
-  gServe(10, 3), gLv('produce', 10, 3), gLv('bakery', 1, 4), gIt('hall', 0, 1, 'Open lane 2', 5), nw(gIt('dock', 0, 1, 'Hire a second stocker', 4)),
-  gPl('lot', 1, 'Build the Parking', 4),
+  gServe(10, 3), gLv('produce', 10, 3), gLv('bakery', 1, 4), gIt('hall', 0, 1, tl('goal.lane', { n: 2 }), 5), nw(gIt('dock', 0, 1, tl('goal.stocker'), 4)),
+  gPl('lot', 1, tl('goal.parking'), 4),
   gServe(100, 3), gLv('bakery', 10, 4), gEarn(1000, 3), gLv('dairy', 1, 5), gLv('produce', 20, 5, 15), gLv('meat', 1, 6),
-  gEarn(1e5, 5), gLv('bakery', 20, 6), gServe(500, 5), gLv('frozen', 1, 8), gLv('dairy', 20, 8, 30), gPl('taxi', 1, 'Open the Taxi Stand', 8),
-  gIt('hall', 1, 1, 'Put in self checkouts', 10), nw(gPl('dock', 3, 'Stockroom to level 3', 10)), gEarn(1e7, 8), gLv('pantry', 1, 10), gLv('produce', 30, 12), gLv('snacks', 1, 10),
-  gPl('lot', 3, 'Parking to level 3', 10), gLv('toys', 1, 12), gServe(2000, 10), gEarn(1e9, 10, 30), gLv('tech', 1, 15),
-  gIt('hall', 0, 2, 'Open lane 3', 15), gLv('kitchen', 1, 20), gEarn(1e11, 15), gLv('kitchen', 20, 15, 30), gLv('toys', 25, 15),
-  goTo(gl('Move to a new store', 30, 1, function () { return S.store - 1; }), 'sell'), gServe(10000, 20), gEarn(1e13, 20, 60), gLv('clothes', 1, 25),
-  gPl('garden', 1, 'Open the Garden Center', 25), gLv('home', 1, 30), gLv('office', 1, 30), gPl('hall', 10, 'Checkouts to level 10', 30),
-  nw(gPl('dock', 10, 'Stockroom to level 10', 30)),
+  gEarn(1e5, 5), gLv('bakery', 20, 6), gServe(500, 5), gLv('frozen', 1, 8), gLv('dairy', 20, 8, 30), gPl('taxi', 1, tl('goal.taxi'), 8),
+  gIt('hall', 1, 1, tl('goal.self'), 10), nw(gPl('dock', 3, tl('goal.stockroom_level', { n: 3 }), 10)), gEarn(1e7, 8), gLv('pantry', 1, 10), gLv('produce', 30, 12), gLv('snacks', 1, 10),
+  gPl('lot', 3, tl('goal.parking_level', { n: 3 }), 10), gLv('toys', 1, 12), gServe(2000, 10), gEarn(1e9, 10, 30), gLv('tech', 1, 15),
+  gIt('hall', 0, 2, tl('goal.lane', { n: 3 }), 15), gLv('kitchen', 1, 20), gEarn(1e11, 15), gLv('kitchen', 20, 15, 30), gLv('toys', 25, 15),
+  goTo(gl(tl('goal.move'), 30, 1, function () { return S.store - 1; }), 'sell'), gServe(10000, 20), gEarn(1e13, 20, 60), gLv('clothes', 1, 25),
+  gPl('garden', 1, tl('goal.garden'), 25), gLv('home', 1, 30), gLv('office', 1, 30), gPl('hall', 10, tl('goal.checkouts_level', { n: 10 }), 30),
+  nw(gPl('dock', 10, tl('goal.stockroom_level', { n: 10 }), 30)),
   gLv('pets', 1, 35), gEarn(1e15, 25), gLv('sports', 1, 35), gServe(50000, 30), gLv('tools', 1, 40), gLv('auto', 1, 40),
-  goTo(gl('Reach store #3', 40, 2, function () { return S.store - 1; }), 'sell'), gLv('seasonal', 1, 50), gEarn(1e21, 30)
+  goTo(gl(tl('goal.store', { n: 3 }), 40, 2, function () { return S.store - 1; }), 'sell'), gLv('seasonal', 1, 50), gEarn(1e21, 30)
 ];
 
 // a v8 save's goal numbers, moved to where those goals are now; the new ones before them are passed over
@@ -1415,14 +1413,14 @@ function missions() {
 
 function missionText(m) {
   switch (m.k) {
-    case 'serve': return 'Serve ' + m.n.toLocaleString('en-US') + ' shoppers';
-    case 'earn': return 'Earn $' + short(m.n);
-    case 'gift': return 'Tap ' + m.n + ' gifts';
-    case 'rush': return 'Tap checkouts ' + m.n + ' times in a rush';
-    case 'buy': return 'Buy ' + m.n + ' upgrades';
-    case 'open': return 'Open ' + BZ[m.id].name;
+    case 'serve': return tl('goal.serve', { n: m.n });
+    case 'earn': return tl('mission.earn', { amount: short(m.n) });
+    case 'gift': return tl('mission.gift', { n: m.n });
+    case 'rush': return tl('mission.rush', { n: m.n });
+    case 'buy': return tl('mission.buy', { n: m.n });
+    case 'open': return tl('goal.open', { dept: BZ[m.id].name });
   }
-  return 'Earn a star in ' + BZ[m.id].name;
+  return tl('mission.star', { dept: BZ[m.id].name });
 }
 
 function mis(k, n, id) {
