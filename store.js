@@ -1630,9 +1630,46 @@ function patch(pts, holes) {
   return g;
 }
 
-var FONT = 'ui-rounded, "SF Pro Rounded", "Arial Rounded MT Bold", system-ui, sans-serif';
+var FONT = 'ui-rounded, "SF Pro Rounded", "Arial Rounded MT Bold", ' + I18N.font;
+var FONT_BLACK = '"Arial Black", Impact, ' + I18N.font;
+var FONT_PLAIN = 'sans-serif, ' + I18N.font;
 function font(px) {
   return '800 ' + px + 'px ' + FONT;
+}
+
+function dir(g) {
+  g.direction = I18N.rtl ? 'rtl' : 'ltr';
+}
+
+// a board's text is a table key, or key|n for one with a number; anything else is shown as it is
+function boardText(t) {
+  var p = t.split('|');
+  return p.length > 1 ? tl(p[0], { n: Number(p[1]) }) : tl(t);
+}
+
+function caps(t) {
+  return t.toLocaleUpperCase(I18N.locale);
+}
+
+// a text cut in two near the middle: at a space, or between words for scripts that have none; null if it has no place to cut
+function halves(t) {
+  var w = t.split(' ');
+  if (w.length > 1) {
+    var half = Math.ceil(w.length / 2);
+    return [w.slice(0, half).join(' '), w.slice(half).join(' ')];
+  }
+  var seg = typeof Intl !== 'undefined' && Intl.Segmenter ? Array.from(new Intl.Segmenter(I18N.locale, { granularity: 'word' }).segment(t), function (x) { return x.segment; }) : Array.from(t);
+  if (seg.length < 2) return null;
+  var len = 0;
+  var at = 0;
+  while (at < seg.length - 1 && len + seg[at].length / 2 < t.length / 2) len += seg[at++].length;
+  if (!at) at = 1;
+  return [seg.slice(0, at).join(''), seg.slice(at).join('')];
+}
+
+// letters spaced apart only in scripts that are not joined or stacked
+function spaced(t) {
+  return !/[\u0590-\u08FF\u0900-\u0DFF\u0E00-\u0EFF]/.test(t);
 }
 
 function rr(g, x, y, w, h, r) {
@@ -1640,24 +1677,37 @@ function rr(g, x, y, w, h, r) {
   g.roundRect(x, y, w, h, r);
 }
 
-// the largest size at or under fs that fits every line in w; leaves the font set
+// the largest size at or under fs that fits every line in w, down to a floor; leaves the font set. Text still wider than w at
+// the floor is squeezed by the maxWidth argument of fillText
 function fitFont(g, lines, w, fs) {
+  var min = Math.max(8, Math.round(fs * 0.4));
   g.font = font(fs);
-  while (fs > 8 && lines.some(function (l) { return g.measureText(l).width > w; })) g.font = font(fs -= 2);
+  while (fs > min && lines.some(function (l) { return g.measureText(l).width > w; })) g.font = font(fs -= 2);
   return fs;
 }
 
 // deals look like shelf price cards, the rest of the standing boards like chalkboards, flat ones like plates
 function boardKind(text, post) {
-  return !post ? 'plate' : /\d|SALE/.test(text) ? 'deal' : 'chalk';
+  var en = LANG.en[text.split('|')[0]];
+  if (typeof en !== 'string') en = text;
+  return !post ? 'plate' : /\d|SALE/.test(en) ? 'deal' : 'chalk';
 }
 
+// a deal's text is the product on the first line and the offer below it; one line is split before the first number
 function paintDeal(g, w, h, text) {
-  var t = text.split(' ');
-  var i = t.findIndex(function (s) { return /\d/.test(s); });
-  if (i < 0) i = t.length - 1;
-  var head = t.slice(0, i).join(' ') || 'THIS WEEK';
-  var price = t.slice(i).join(' ');
+  var head;
+  var price;
+  var nl = text.indexOf('\n');
+  if (nl > 0) {
+    head = text.slice(0, nl);
+    price = text.slice(nl + 1).replace(/\n/g, ' ');
+  } else {
+    var t = text.split(' ');
+    var i = t.findIndex(function (s) { return /\d/.test(s); });
+    if (i < 0) i = t.length - 1;
+    head = t.slice(0, i).join(' ') || tl('board.this_week');
+    price = t.slice(i).join(' ');
+  }
   if (/^\d+\.\d\d$/.test(price)) price = '$' + price;
   var e = h * 0.05;
   rr(g, 0, 0, w, h, h * 0.16);
@@ -1683,15 +1733,15 @@ function paintDeal(g, w, h, text) {
   g.textBaseline = 'middle';
   fitFont(g, [head], w * 0.8, Math.floor(hb * 0.62));
   g.fillStyle = '#7a1710';
-  g.fillText(head, w / 2, hb * 0.5 + 3);
+  g.fillText(head, w / 2, hb * 0.5 + 3, w * 0.8);
   g.fillStyle = '#fff';
-  g.fillText(head, w / 2, hb * 0.5);
+  g.fillText(head, w / 2, hb * 0.5, w * 0.8);
   var py = hb + (h - e - hb) * 0.5;
   fitFont(g, [price], w * 0.84, Math.floor((h - hb - e) * 0.95));
   g.fillStyle = 'rgba(255,255,255,0.65)';
-  g.fillText(price, w / 2, py + 4);
+  g.fillText(price, w / 2, py + 4, w * 0.84);
   g.fillStyle = '#3a1410';
-  g.fillText(price, w / 2, py);
+  g.fillText(price, w / 2, py, w * 0.84);
   rr(g, e + 2, e + 2, w - 2 * e - 4, h - 2 * e - 4, h * 0.1);
   g.strokeStyle = 'rgba(120,60,0,0.3)';
   g.lineWidth = 3;
@@ -1735,7 +1785,7 @@ function paintChalk(g, w, h, lines) {
   g.fillStyle = '#f6f2e4';
   g.shadowColor = 'rgba(255,255,255,0.4)';
   g.shadowBlur = 5;
-  lines.forEach(function (l, i) { g.fillText(l, w / 2, h / 2 + (i + 0.5 - lines.length / 2) * fs * 1.05); });
+  lines.forEach(function (l, i) { g.fillText(l, w / 2, h / 2 + (i + 0.5 - lines.length / 2) * fs * 1.05, w * 0.76); });
   g.shadowBlur = 0;
 }
 
@@ -1763,7 +1813,7 @@ function paintPlate(g, w, h, lines) {
   g.textBaseline = 'middle';
   var fs = fitFont(g, lines, w * 0.84, Math.floor((h - 2 * e - h * 0.1) / lines.length * 0.7));
   g.fillStyle = '#2f3446';
-  lines.forEach(function (l, i) { g.fillText(l, w / 2, h * 0.47 + (i + 0.5 - lines.length / 2) * fs * 1.05); });
+  lines.forEach(function (l, i) { g.fillText(l, w / 2, h * 0.47 + (i + 0.5 - lines.length / 2) * fs * 1.05, w * 0.84); });
 }
 
 // a board's face painted in a w by h cell at (x, y) of a canvas. The board is asp times wider than high, so the cell
@@ -1772,9 +1822,12 @@ function paintBoard(g, x, y, w, h, text, asp, post) {
   g.save();
   g.translate(x, y);
   g.scale(w / (h * asp), 1);
+  dir(g);
+  g.lineJoin = 'round';
   var kind = boardKind(text, post);
-  if (kind === 'deal') paintDeal(g, h * asp, h, text);
-  else (kind === 'chalk' ? paintChalk : paintPlate)(g, h * asp, h, text.split('\n'));
+  var shown = boardText(text);
+  if (kind === 'deal') paintDeal(g, h * asp, h, shown);
+  else (kind === 'chalk' ? paintChalk : paintPlate)(g, h * asp, h, shown.split('\n'));
   g.restore();
 }
 
@@ -1907,19 +1960,19 @@ function paintSign(g, id, gold, im) {
     g.imageSmoothingEnabled = false;
     g.drawImage(im, 100 - 44, cy - 44, 88, 88);
   }
-  var t = BZ[id].name.toUpperCase();
+  var t = caps(BZ[id].name);
   var lines = [t];
   var fs = fitFont(g, lines, 550, 100);
-  var w = t.split(' ');
-  if (fs < 56 && w.length > 1) {
-    var half = Math.ceil(w.length / 2);
-    lines = [w.slice(0, half).join(' '), w.slice(half).join(' ')];
+  var hv = fs < 56 && halves(t);
+  if (hv) {
+    lines = hv;
     fs = fitFont(g, lines, 550, 70);
   }
+  dir(g);
   g.textAlign = 'center';
   g.textBaseline = 'middle';
   g.fillStyle = '#2a2f40';
-  lines.forEach(function (l, i) { g.fillText(l, 460, cy + 3 + (i + 0.5 - lines.length / 2) * fs * 1.05); });
+  lines.forEach(function (l, i) { g.fillText(l, 460, cy + 3 + (i + 0.5 - lines.length / 2) * fs * 1.05, 550); });
 }
 
 function signTex(id, gold) {
@@ -2148,10 +2201,12 @@ var meter;
 
 function nameLines(id, w) {
   if (!meter) meter = document.createElement('canvas').getContext('2d');
-  meter.font = '900 100px "Arial Black", Impact, sans-serif';
-  var name = BZ[id].name.toUpperCase();
+  meter.font = '900 100px ' + FONT_BLACK;
+  var name = caps(BZ[id].name);
   var fit = function (t) { return w * 0.98 * 100 / meter.measureText(t).width; };
   var lines = fit(name) < NAME && name.indexOf(' & ') > 0 ? [name.split(' & ')[0], '&', name.split(' & ')[1]] : [name];
+  var hv = lines.length === 1 && fit(name) < NAME && halves(name);
+  if (hv && Math.min(fit(hv[0]), fit(hv[1])) > fit(name) * 1.25) lines = hv;
   var size = Math.min.apply(null, [NAME].concat(lines.map(fit)));
   return { lines: lines, size: size, h: 0.42 + lines.length * size * 0.95 + 0.06 };
 }
@@ -2166,7 +2221,8 @@ function floorName(id, w, h) {
   c.height = Math.round(h * k);
   var g = c.getContext('2d');
   var size = L.size * k;
-  g.font = '900 ' + size + 'px "Arial Black", Impact, sans-serif';
+  g.font = '900 ' + size + 'px ' + FONT_BLACK;
+  dir(g);
   g.textAlign = 'center';
   g.textBaseline = 'middle';
   g.lineJoin = 'round';
@@ -2175,14 +2231,15 @@ function floorName(id, w, h) {
   g.fillStyle = DEPT[id];
   L.lines.forEach(function (t, i) {
     var y = (0.36 + (i + 0.5) * L.size * 0.95) * k;
-    g.strokeText(t, c.width / 2, y);
-    g.fillText(t, c.width / 2, y);
+    g.strokeText(t, c.width / 2, y, c.width * 0.98);
+    g.fillText(t, c.width / 2, y, c.width * 0.98);
   });
   var small = SOON * k;
-  g.font = '800 ' + small + 'px "Arial Black", Impact, sans-serif';
-  g.letterSpacing = small * 0.25 + 'px';
+  g.font = '800 ' + small + 'px ' + FONT_BLACK;
+  var soon = tl('sign.opening_soon');
+  g.letterSpacing = spaced(soon) ? small * 0.25 + 'px' : '0px';
   g.fillStyle = 'rgba(70,70,80,0.75)';
-  g.fillText('OPENING SOON', c.width / 2, 0.15 * k);
+  g.fillText(soon, c.width / 2, 0.15 * k, c.width * 0.96);
   // scuffs, so it reads as paint on concrete
   g.globalCompositeOperation = 'destination-out';
   for (var i = 0; i < 130; i++) {
@@ -2377,17 +2434,19 @@ function paintDoor(g, name, glow) {
   g.strokeStyle = sg.edge;
   g.lineWidth = 7;
   g.stroke();
+  dir(g);
   g.textAlign = 'center';
   g.textBaseline = 'middle';
+  name = tl(name);
   fitFont(g, [name], W - 200, 104);
   g.lineWidth = 6;
   g.lineJoin = 'round';
   if (!glow) {
     g.strokeStyle = sg.shade;
-    g.strokeText(name, W / 2, H / 2 + 5);
+    g.strokeText(name, W / 2, H / 2 + 5, W - 200);
   }
   g.fillStyle = sg.text;
-  g.fillText(name, W / 2, H / 2 + 5);
+  g.fillText(name, W / 2, H / 2 + 5, W - 200);
   [60, W - 60].forEach(function (sx) {
     star(g, sx, H / 2, 24);
     g.fill();
@@ -2526,19 +2585,21 @@ function wallSheet() {
     g.lineWidth = 8;
     g.strokeRect(r[0] + 4, r[1] + 4, r[2] - 8, r[3] - 8);
   }
+  dir(g);
   function text(r, s, col, size) {
     g.fillStyle = col;
-    g.font = 'bold ' + size + 'px sans-serif';
+    g.font = 'bold ' + size + 'px ' + FONT_PLAIN;
+    while (size > 24 && g.measureText(s).width > r[2] - 30) g.font = 'bold ' + (size -= 2) + 'px ' + FONT_PLAIN;
     g.textAlign = 'center';
     g.textBaseline = 'middle';
-    g.fillText(s, r[0] + r[2] / 2, r[1] + r[3] / 2 + 3);
+    g.fillText(s, r[0] + r[2] / 2, r[1] + r[3] / 2 + 3, r[2] - 30);
   }
   var r = WALL_ART.fresh;
   box(r, '#3f9a4a');
-  text(r, 'FRESH EVERY DAY', '#fff', 54);
+  text(r, tl('sign.fresh_every_day'), '#fff', 54);
   r = WALL_ART.low;
   box(r, '#e8553a');
-  text(r, 'LOW PRICES', '#ffd84a', 66);
+  text(r, tl('sign.low_prices'), '#ffd84a', 66);
   r = WALL_ART.clock;
   g.fillStyle = '#fff';
   g.strokeStyle = '#2a1c10';
@@ -2693,7 +2754,7 @@ function buildFront() {
     }
     desk.add(dm);
   }
-  desk.add(board({ text: 'COURTESY', x: PLAN.desk.x + (PLAN.desk.n - 1) / 2, z: 0.1, y: 1.7, w: 1.6, h: 0.45, post: true }));
+  desk.add(board({ text: 'board.courtesy', x: PLAN.desk.x + (PLAN.desk.n - 1) / 2, z: 0.1, y: 1.7, w: 1.6, h: 0.45, post: true }));
   desk.visible = false;
   root.add(desk);
   hall.items.push({ g: desk, lv: 7 });
@@ -2825,7 +2886,7 @@ function buildGarden() {
   }
   [-0.74, 0.74].forEach(function (o) { lv[1].block(flat(0x50566a), GATE_X + o - 0.03, GATE_X + o + 0.03, z1 - 0.03, z1 + 0.03, 0, 1.0); });
   lv[1].block(flat(0x2f3446), GATE_X - 0.8, GATE_X + 0.8, z1 - 0.04, z1 + 0.02, 0.78, 1.08);
-  boardAtlas(lv[1], { text: 'GARDEN CENTER', x: GATE_X, y: 0.93, z: z1 + 0.03, w: 1.5, h: 0.28 });
+  boardAtlas(lv[1], { text: 'board.garden_center', x: GATE_X, y: 0.93, z: z1 + 0.03, w: 1.5, h: 0.28 });
   lv[1].add('skate/pallet', x0 + 0.5, 2.55, 0.2);
   for (var sb = 0; sb < 6; sb++) lv[1].add('food/bag', x0 + 0.5 + (sb % 2 - 0.5) * 0.2, 2.55 + (sb % 3 - 1) * 0.1, sb, 0.16 + (sb >> 1) * 0.06);
   // flower displays in pairs, a row more each level, with the gate's path between the two columns
@@ -2870,7 +2931,7 @@ function buildWing() {
   var dw = new THREE.Group();
   var lb = new Batch();
   lb.block(flat(0x7f8597), 14.7, 15.3, 0.5, 1.5, 0.82, 1.0);
-  dw.add(lb.group(), boardFace({ text: 'CUSTOMER SERVICE\nRESTROOMS', x: 14.68, z: 1.0, y: 0.9, w: 1.1, h: 0.3, r: -Math.PI / 2 }));
+  dw.add(lb.group(), boardFace({ text: 'board.service_restrooms', x: 14.68, z: 1.0, y: 0.9, w: 1.1, h: 0.3, r: -Math.PI / 2 }));
   root.add(dw);
   outer.push({ g: dw, n: [1, 0], both: 1, hide: 1 });
   WING_IDS.forEach(function (id) {
@@ -2878,7 +2939,7 @@ function buildWing() {
     var cx = (r.rect[0] + r.rect[1]) / 2;
     var cz = (r.rect[2] + r.rect[3]) / 2;
     var pl = { items: [], shown: -1, add: true, staff: [], foot: [] };
-    var site = board({ text: 'OPENING SOON\n' + PL[id].name.toUpperCase(), x: cx, z: cz, y: 0.6, w: 1.3, h: 0.5, post: true });
+    var site = board({ text: tl('board.opening_soon', { name: caps(PL[id].name) }), x: cx, z: cz, y: 0.6, w: 1.3, h: 0.5, post: true });
     site.visible = false;
     root.add(site);
     pl.items.push({ g: site, lv: 0, only: true });
@@ -2954,10 +3015,12 @@ function paintOpen(on) {
   x.lineWidth = 6;
   x.strokeRect(6, 6, 244, 84);
   x.fillStyle = '#fff';
+  dir(x);
   x.textAlign = 'center';
   x.textBaseline = 'middle';
-  x.font = font(56);
-  x.fillText(on ? 'OPEN' : 'CLOSED', 128, 52);
+  var word = tl(on ? 'sign.open' : 'sign.closed');
+  fitFont(x, [word], 220, 56);
+  x.fillText(word, 128, 52, 220);
   openSign.tex.needsUpdate = true;
 }
 
@@ -2995,15 +3058,18 @@ function paintPylon() {
   x.fill();
   x.stroke();
   x.fillStyle = pl.text;
+  dir(x);
   x.textAlign = 'center';
   x.textBaseline = 'middle';
   var tx = n ? 262 : 300;
-  fitFont(x, ['STREET'], n ? 200 : 280, 84);
-  x.fillText('MAIN', tx, 66);
-  x.fillText('STREET', tx, 140);
+  var tw = n ? 200 : 280;
+  var nm = tl('sign.main_street').split('\n');
+  fitFont(x, nm, tw, 84);
+  nm.forEach(function (l, i) { x.fillText(l, tx, nm.length > 1 ? 66 + i * 74 : 103, tw); });
   x.fillStyle = '#fff';
-  x.font = font(46);
-  x.fillText(big ? 'SUPERCENTER' : 'MARKET', 256, 222);
+  var kind = tl(big ? 'sign.supercenter' : 'sign.market');
+  fitFont(x, [kind], 440, 46);
+  x.fillText(kind, 256, 222, 440);
   if (n) {
     x.beginPath();
     x.arc(434, 100, 54, 0, Math.PI * 2);
@@ -5298,7 +5364,7 @@ function giveUp(p) {
   p.hold = false;
   p.lane = null;
   p.i = 1;
-  say(p, 'Lines too long!');
+  say(p, tl('tag.lines_too_long'));
   if (p.cust.garden) {
     p.plant.visible = false;
     p.path = [{ x: o.x, z: o.z }].concat(p.after(0));
@@ -5882,7 +5948,7 @@ function busUp() {
 
 // pooled sale tags and the light plane, made on the first sale
 var SALE_N = 8;
-var SALE_TXT = [['SALE!', '#e03a2e', '#ffd84a'], ['50% OFF', '#ffd84a', '#c42a1e'], ['HOT DEAL', '#e03a2e', '#fff'], ['2 FOR 1', '#2b7de0', '#ffe14d']];
+var SALE_TXT = [['sign.sale', '#e03a2e', '#ffd84a'], ['sign.half_off', '#ffd84a', '#c42a1e'], ['sign.hot_deal', '#e03a2e', '#fff'], ['sign.two_for_one', '#2b7de0', '#ffe14d']];
 var saleS = null;
 var saleFlash = null;
 var saleK = 0;
@@ -5899,10 +5965,13 @@ function saleUp() {
   x.fillStyle = '#ffd84a';
   for (var i = 0; i < 16; i++) x.fillRect(i * 16 + 4, 0, 8, 6);
   x.fillStyle = '#fff';
-  x.font = 'bold 33px sans-serif';
+  var flash = tl('sign.flash_sale');
+  x.font = 'bold 33px ' + FONT_PLAIN;
+  for (var fz = 33; fz > 16 && x.measureText(flash).width > 236; fz -= 2) x.font = 'bold ' + fz + 'px ' + FONT_PLAIN;
+  dir(x);
   x.textAlign = 'center';
   x.textBaseline = 'middle';
-  x.fillText('FLASH SALE!', 128, 36);
+  x.fillText(flash, 128, 36, 236);
   var mat = new THREE.MeshBasicMaterial({ map: new THREE.CanvasTexture(c) });
   var geo = new THREE.PlaneGeometry(3.2, 0.8);
   saleBan = [-9.5, 9.5].map(function (bx) {
@@ -5924,10 +5993,12 @@ function saleUp() {
     g.strokeStyle = '#fff';
     g.stroke();
     g.fillStyle = t[2];
+    dir(g);
     g.textAlign = 'center';
     g.textBaseline = 'middle';
-    fitFont(g, [t[0]], 210, 70);
-    g.fillText(t[0], 128, 68);
+    var offer = tl(t[0]);
+    fitFont(g, [offer], 210, 70);
+    g.fillText(offer, 128, 68, 210);
     var tex = new THREE.CanvasTexture(tc);
     tex.colorSpace = THREE.SRGBColorSpace;
     return new THREE.SpriteMaterial({ map: tex, depthWrite: false });
@@ -6353,7 +6424,7 @@ function makeTags() {
   markEl = document.createElement('button');
   markEl.type = 'button';
   markEl.id = 'gift-mark';
-  markEl.setAttribute('aria-label', 'Tap for a bonus');
+  markEl.setAttribute('aria-label', tl('tag.bonus.aria'));
   markEl.innerHTML = '<svg viewBox="0 0 24 24"><path d="M12 2l2.9 6.6 7.1.6-5.4 4.7 1.6 7-6.2-3.7-6.2 3.7 1.6-7L2 9.2l7.1-.6z"/></svg>';
   markEl.hidden = true;
   markEl.addEventListener('click', function () { onTap({ kind: 'gift' }); });
@@ -6367,14 +6438,14 @@ function bstate(id) {
     var out = id === 'hall' ? linesFull() : id === 'dock' && shelvesOut();
     if (PLAN.wing[id]) busy = S.pl[id] / p.cost.length;
     return { name: p.name, lv: S.pl[id], own: S.pl[id] > 0 || !!p.open, price: placeCost(id), avail: has(p.after), frac: busy, alert: out,
-      said: id === 'dock' ? 'Shelves empty!' : 'Lines full!' };
+      said: tl(id === 'dock' ? 'tag.shelves_empty' : 'tag.lines_full') };
   }
   var e = S.b[id];
   var l = e ? e.l : 0;
   var n = starsAt(l);
   var from = n ? STAR_AT[n - 1] : 0;
   return { name: BZ[id].name, lv: l, stars: n, own: !!e, price: cost(id, 1), avail: avail(id), frac: !e ? 0 : n >= STAR_AT.length ? 1 : (l - from) / (STAR_AT[n] - from),
-    alert: !!e && window.fill[id] <= 0, said: 'Sold out' };
+    alert: !!e && window.fill[id] <= 0, said: tl('tag.sold_out') };
 }
 
 function toScreen(x, y, z, out) {
@@ -6404,9 +6475,10 @@ function tagText(id, st, mode) {
   if (st.alert) return st.name + '  ' + st.said;
   if (st.own) {
     if (!st.lv) return st.name;
-    return mode ? st.name + ' ' + st.lv : st.name + '  Lv ' + st.lv + (PL[id] ? '' : '/' + UPS + '  ' + '★'.repeat(st.stars));
+    if (mode) return st.name + ' ' + st.lv;
+    return st.name + '  ' + (PL[id] ? tl('tag.lv', { n: st.lv }) : tl('tag.lv_max', { n: st.lv, max: UPS }) + '  ' + '★'.repeat(st.stars));
   }
-  return st.name + '  $' + short(st.price);
+  return st.name + '  ' + money(st.price);
 }
 
 function clash(a, b) {
@@ -6516,7 +6588,7 @@ function init(canvas, tap) {
   try {
     sceneUp();
   } catch (e) {
-    fail('This device cannot start the 3D view (WebGL is not available).');
+    fail(tl('scene.no_webgl'));
     return;
   }
   resize();
@@ -6529,14 +6601,15 @@ function init(canvas, tap) {
         build();
       } catch (e) {
         console.error(e);
-        fail('The store could not be built. Please reload.');
+        fail(tl('scene.build_failed'));
       }
     }, 30);
   });
 }
 
 function fail(msg) {
-  loadingEl.firstChild.innerHTML = '<b>Main Street</b><p>' + msg + '</p>';
+  loadingEl.firstChild.innerHTML = '<b>Main Street</b><p></p>';
+  loadingEl.firstChild.lastChild.textContent = msg;
 }
 
 function build() {
