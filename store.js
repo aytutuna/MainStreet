@@ -3099,9 +3099,10 @@ function homes(b) {
     b.slab(path, l.x - 0.3, l.x + 0.3, z0, z1, 0.01, 0.02);
     if (l.car) b.add(CARS[i % CARS.length], l.dx, l.walk + (l.rot ? 1.6 : -1.6), l.rot ? Math.PI : 0, 0.01);
   });
-  // the back fence between the first two rows, and one between each pair of back gardens
-  for (var fx = -34.2; fx < 35; fx += 1.6) b.add('sub/fence', fx, 23, 0);
-  for (var px = -35; px <= 35; px += 7) for (var fz = 19.9; fz < 23; fz += 1.6) b.add('sub/fence', px, fz, Math.PI / 2);
+  // the back fence between the first two rows, and one between each pair of back gardens from the houses to it. Each
+  // piece has its posts 1.28 apart, so pieces that far apart share a post
+  for (var fi = 0; fi < 55; fi++) b.add('sub/fence', -34.36 + fi * 68.72 / 54, 23, 0);
+  for (var px = -35; px <= 35; px += 7) [22.36, 21.08].forEach(function (fz) { b.add('sub/fence', px, fz, Math.PI / 2); });
 }
 
 function buildOutside() {
