@@ -550,8 +550,6 @@ var FILES = [
   'assets/models/shop/shelf-end.glb',
   'assets/models/shop/shopping-basket.glb',
   'assets/models/shop/shopping-cart.glb',
-  'assets/models/shop/wall-window.glb',
-  'assets/models/shop/wall.glb',
   'assets/models/skate/License.txt',
   'assets/models/skate/Textures/colormap.png',
   'assets/models/skate/pallet.glb',

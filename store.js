@@ -4,6 +4,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
 import { PLAN, PW, NATURE, HOMES } from './plan.js';
 import * as LAND from './land.js';
+import { buildWalls } from './walls.js';
 
 var BASE = 'assets/models/';
 var TILT = 52 * Math.PI / 180;
@@ -537,7 +538,7 @@ function modelList() {
   walk(OVERSTOCK.boxes);
   walk(['food/plate-rectangle*0.55', 'skate/pallet', 'shop/character-employee@5,3>2,2', JAN, 'shop/freezers-standing@13,3>2,2',
     'shop/freezers-standing@13,3>2,1', PARCEL, STAFF]);
-  ['shop/wall', 'shop/wall-window', 'shop/column', 'shop/floor', 'shop/floor%=d5d5d8', 'shop/cash-register', 'shop/character-employee', 'arcade/cash-register', 'pw/Checkout_Lane_30', 'pw/LaneLight_Pole_01',
+  ['shop/column', 'shop/floor', 'shop/floor%=d5d5d8', 'shop/cash-register', 'shop/character-employee', 'arcade/cash-register', 'pw/Checkout_Lane_30', 'pw/LaneLight_Pole_01',
     'pw/Basket_Stack_01', 'pw/SelfCheckout_Kiosk_01', 'pw/SelfCheckout_Attendant_01', 'pw/ServiceDesk_20', 'pw/CartCorral_Indoor_20', 'pw/ShoppingCart_Nested_3_01',
     'shop/hand-truck', 'shop/shopping-basket', 'shop/shopping-basket*0.62', 'furn/cardboardBoxClosed', 'furn/cardboardBoxOpen', 'furn/rugDoormat',
     'furn/bench', 'furn/trashcan', 'furn/pottedPlant', 'sub/planter', 'roads/road-straight', 'roads/road-crossing', 'roads/light-square',
@@ -2465,46 +2466,19 @@ function buildShell() {
   var cg = cb.group();
   lookG.trim.push(cg);
   root.add(cg);
-  var west = new Batch();
-  var east = new Batch();
-  var back = new Batch();
-  var north = new Batch();
-  var glassWall = new Batch();
-  wallPieces(west, -EDGE, FRONT, -EDGE, SB, 1, 0, [[PLAN.tireBay.z, PLAN.tireBay.w]]);
-  wallPieces(east, EDGE, FRONT, EDGE, SB, -1, 0, [[1.0, 1], [-23.0, 1]]);
-  var wingE = new Batch();
-  wallPieces(wingE, WING_X, FRONT, WING_X, SB, -1, 0, []);
-  wallPieces(north, EDGE, SB, WING_X + 0.3, SB, 0, 1, []);
-  wallPieces(glassWall, EDGE, FRONT, WING_X + 0.3, FRONT, 0, -1, [], 'shop/wall-window');
-  wallPieces(back, -EDGE, BACK, EDGE, BACK, 0, 1, PLAN.doors.map(function (d) { return [d, 1]; }));
-  wallPieces(north, -EDGE, SB, EDGE, SB, 0, 1, PLAN.docks.map(function (d) { return [d, 2]; }));
-  wallPieces(glassWall, -EDGE, FRONT, EDGE, FRONT, 0, -1, PLAN.entrances.map(function (en) { return [en.x, en.w]; }), 'shop/wall-window');
   var tz = PLAN.tireBay.z;
   var tw = PLAN.tireBay.w;
-  west.block(flat(0xd9dce6), -EDGE - 0.15, -EDGE + 0.15, tz - tw / 2, tz + tw / 2, 0.82, 0.98);
-  for (var sl = 0; sl < 4; sl++) west.block(flat(0x9aa0b4), -EDGE - 0.16, -EDGE + 0.16, tz - tw / 2, tz + tw / 2, 0.84 + sl * 0.04, 0.855 + sl * 0.04);
-  var wg = west.group();
-  var eg = east.group();
-  var fg = glassWall.group();
-  fg.scale.y = 0.55;
-  var weg = wingE.group();
-  var ng = north.group();
-  lookG.wall.push(wg, eg, weg, ng);
-  root.add(wg, eg, weg, ng, fg);
-  outer.push({ g: wg, n: [-1, 0] }, { g: eg, n: [1, 0], both: 1 }, { g: weg, n: [1, 0] });
-  // the wall between the sales floor and the stockroom stays low, so the camera sees into the stockroom
-  var bg = back.group();
-  lookG.wall.push(bg);
-  bg.scale.y = 0.12;
-  root.add(bg);
+  var walls = buildWalls({ root: root, outer: outer, renderer: renderer, back: BACK, sb: SB, front: FRONT, edge: EDGE, wing: WING_X, tire: PLAN.tireBay,
+    docks: PLAN.docks, doors: PLAN.doors, entrances: PLAN.entrances });
+  lookG.wall.push(walls.west, walls.east, walls.wing, walls.fixed);
+  // the header over the tire bay's open doorway
+  var head = new Batch();
+  head.block(flat(0xd9dce6), -EDGE - 0.15, -EDGE + 0.15, tz - tw / 2, tz + tw / 2, 0.82, 0.98);
+  for (var sl = 0; sl < 4; sl++) head.block(flat(0x9aa0b4), -EDGE - 0.16, -EDGE + 0.16, tz - tw / 2, tz + tw / 2, 0.84 + sl * 0.04, 0.855 + sl * 0.04);
+  walls.west.add(head.group());
   var bay = new Batch();
   for (var hz = 0; hz < 6; hz++) bay.slab(flat(hz % 2 ? 0x2a2d36 : 0xf2c230), -EDGE - 0.5, -EDGE + 0.5, tz - tw / 2 + hz * tw / 6, tz - tw / 2 + (hz + 1) * tw / 6, 0.03, 0.01);
   root.add(bay.group());
-  PLAN.docks.forEach(function (d) {
-    var l = new THREE.Mesh(new THREE.BoxGeometry(2, 0.2, 0.6), flat(0x50566a));
-    l.position.set(d, 0.9, SB);
-    root.add(l);
-  });
   PLAN.doors.forEach(function (d, i) { stockDoor(d, i); });
   var hb = new Batch();
   for (var z = -3.1; z > BACK + 0.4; z -= 1.1) {
@@ -2520,10 +2494,9 @@ function buildShell() {
   buildWallArt();
 }
 
-// Posters, signs, a clock, pictures and a notice board on the inside of the side walls. Each wall's pieces are one
-// mesh of quads cut from a single painted sheet, and they go with the wall when the camera cuts it away. The walls are one
-// unit high, so everything hangs below that
-var WALL_ART = { fresh: [0, 0, 512, 128], low: [512, 0, 512, 128], right: [0, 128, 256, 64], left: [256, 128, 256, 64], clock: [512, 128, 128, 128],
+// Posters, signs, a clock, pictures and a notice board on the stockroom's north wall, one mesh of quads cut from a single
+// painted sheet. The walls are one unit high, so everything hangs below that
+var WALL_ART = { fresh: [0, 0, 512, 128], low: [512, 0, 512, 128], clock: [512, 128, 128, 128],
   sun: [640, 128, 128, 128], fruit: [768, 128, 128, 128], board: [0, 256, 256, 192] };
 
 function wallSheet() {
@@ -2552,22 +2525,6 @@ function wallSheet() {
   r = WALL_ART.low;
   box(r, '#e8553a');
   text(r, 'LOW PRICES', '#ffd84a', 66);
-  [WALL_ART.right, WALL_ART.left].forEach(function (a, i) {
-    box(a, '#3f78b8');
-    text([a[0] + (i ? 40 : 0), a[1], a[2] - 40, a[3]], 'CHECKOUT', '#fff', 30);
-    g.fillStyle = '#ffd84a';
-    g.beginPath();
-    if (i) {
-      g.moveTo(a[0] + 12, a[1] + 32);
-      g.lineTo(a[0] + 40, a[1] + 14);
-      g.lineTo(a[0] + 40, a[1] + 50);
-    } else {
-      g.moveTo(a[0] + a[2] - 12, a[1] + 32);
-      g.lineTo(a[0] + a[2] - 40, a[1] + 14);
-      g.lineTo(a[0] + a[2] - 40, a[1] + 50);
-    }
-    g.fill();
-  });
   r = WALL_ART.clock;
   g.fillStyle = '#fff';
   g.strokeStyle = '#2a1c10';
@@ -2630,28 +2587,24 @@ function wallSheet() {
   return tex;
 }
 
-// items: [name, place along the wall, height of the middle, width, height] on the east, west or north wall, as seen from inside
-function wallArt(side, items, tex) {
+// items: [name, place along the wall, height of the middle, width, height], as seen from inside
+function wallArt(items, tex) {
   var pos = [];
   var uv = [];
   var idx = [];
-  var at = side === 'e' ? EDGE - 0.31 : side === 'w' ? -EDGE + 0.31 : SB + 0.31;
-  var s = side === 'w' ? -1 : 1;
+  var at = SB + 0.31;
   items.forEach(function (it) {
     var a = WALL_ART[it[0]];
     var u0 = a[0] / 1024;
     var u1 = (a[0] + a[2]) / 1024;
     var v0 = 1 - (a[1] + a[3]) / 512;
     var v1 = 1 - a[1] / 512;
-    // the left edge of the piece, as the viewer faces the wall, is the low z on the east wall, the low x on the north wall
-    // and the high z on the west
-    var l = it[1] - s * it[3] / 2;
-    var r = it[1] + s * it[3] / 2;
+    var l = it[1] - it[3] / 2;
+    var r = it[1] + it[3] / 2;
     var b = it[2] - it[4] / 2;
     var t = it[2] + it[4] / 2;
     var n = pos.length / 3;
-    if (side === 'n') pos.push(l, b, at, r, b, at, r, t, at, l, t, at);
-    else pos.push(at, b, l, at, b, r, at, t, r, at, t, l);
+    pos.push(l, b, at, r, b, at, r, t, at, l, t, at);
     uv.push(u0, v0, u1, v0, u1, v1, u0, v1);
     idx.push(n, n + 1, n + 2, n, n + 2, n + 3);
   });
@@ -2668,29 +2621,8 @@ function wallArt(side, items, tex) {
 }
 
 function buildWallArt() {
-  var tex = wallSheet();
-  var e = wallArt('e', [['fresh', -5, 0.74, 1.6, 0.4], ['board', -10.6, 0.64, 0.8, 0.6], ['clock', -9.1, 0.76, 0.36, 0.36], ['low', -15, 0.76, 1.3, 0.33],
-    ['sun', -19.2, 0.74, 0.4, 0.4], ['right', -20.8, 0.78, 1.0, 0.25]], tex);
-  var w = wallArt('w', [['sun', -4.2, 0.74, 0.4, 0.4], ['fruit', -5.6, 0.74, 0.4, 0.4], ['low', -10, 0.76, 1.3, 0.33], ['clock', -14, 0.76, 0.36, 0.36],
-    ['board', -21.5, 0.64, 0.8, 0.6], ['left', -19.6, 0.78, 1.0, 0.25]], tex);
-  wallArt('n', [['sun', -13, 0.74, 0.4, 0.4], ['board', -7.5, 0.64, 0.8, 0.6], ['fresh', -2.2, 0.74, 1.6, 0.4], ['clock', 2.6, 0.76, 0.36, 0.36], ['low', 7.5, 0.76, 1.3, 0.33],
-    ['fruit', 13, 0.74, 0.4, 0.4]], tex);
-  outer.push({ g: e, n: [1, 0], both: 1, hide: 1 }, { g: w, n: [-1, 0], hide: 1 });
-}
-
-// a run of wall from (x0, z0) to (x1, z1), one piece per unit, its decorated side toward (inX, inZ); a gap is
-// [centre, width] along the run
-function wallPieces(b, x0, z0, x1, z1, inX, inZ, gaps, ref) {
-  var n = Math.round(Math.hypot(x1 - x0, z1 - z0));
-  var rot = Math.atan2(inX, inZ);
-  for (var i = 0; i < n; i++) {
-    var u = (i + 0.5) / n;
-    var x = x0 + (x1 - x0) * u;
-    var z = z0 + (z1 - z0) * u;
-    var t = z0 === z1 ? x : z;
-    if (gaps.some(function (g) { return Math.abs(t - g[0]) < g[1] / 2; })) continue;
-    b.add(ref || 'shop/wall', x, z, rot);
-  }
+  wallArt([['sun', -13, 0.74, 0.4, 0.4], ['board', -7.5, 0.64, 0.8, 0.6], ['fresh', -2.2, 0.74, 1.6, 0.4], ['clock', 2.6, 0.76, 0.36, 0.36], ['low', 7.5, 0.76, 1.3, 0.33],
+    ['fruit', 13, 0.74, 0.4, 0.4]], wallSheet());
 }
 
 function buildFront() {
@@ -6127,7 +6059,6 @@ var LANE = -23.1;
 var STAND = PLAN.idle.map(function (q) { return { x: q[0], z: q[1], face: Math.PI }; });
 // where the dolly stands beside a stocker working a shelf, in his own frame, in the order tried
 var PARK = [[0.5, 0.02], [-0.5, 0.02], [0, -0.45], [0.45, -0.3], [-0.45, -0.3]];
-var DOOR_C = 0x8d93a6;
 var LEAF_C = 0xe0823d;
 var stockers = [];
 var dollies = [];
@@ -6140,21 +6071,12 @@ var sdoors = [];
 // a stock door: posts and a lintel in the wall, one leaf that swings out into the sales floor; all of it as low as the
 // wall it stands in
 function stockDoor(d) {
-  var c = flat(DOOR_C);
-  var dg = new THREE.Group();
-  dg.scale.y = 0.12;
-  [[d - 0.4, 0.2, 1], [d + 0.4, 0.2, 1], [d, 0.6, 0.12]].forEach(function (q, i) {
-    var m = new THREE.Mesh(new THREE.BoxGeometry(q[1], i < 2 ? 1 : 0.12, 0.6), c);
-    m.position.set(q[0], i < 2 ? 0.5 : 0.94, BACK);
-    dg.add(m);
-  });
   var piv = new THREE.Group();
-  piv.position.set(d - 0.3, 0, BACK);
-  var leaf = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.86, 0.04), flat(LEAF_C));
-  leaf.position.set(0.3, 0.43, 0);
+  piv.position.set(d - 0.45, 0, BACK);
+  var leaf = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.78, 0.04), flat(LEAF_C));
+  leaf.position.set(0.45, 0.39, 0);
   piv.add(leaf);
-  dg.add(piv);
-  root.add(dg);
+  root.add(piv);
   sdoors.push({ x: d, open: 0, leaf: piv });
 }
 
