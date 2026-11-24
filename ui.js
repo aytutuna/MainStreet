@@ -39,6 +39,8 @@ var testTaps = 0;
 var FREE_KEY = 'mainstreet.free';
 var free = false;
 var chips = [];
+var goalHold = -1;
+var goalUntil = 0;
 var HINT_KEY = 'mainstreet.hints';
 var hinted = {};
 var dailyAsked = -1;
@@ -463,7 +465,7 @@ function nowText() {
 
 function radioPaint() {
   var t = nowText();
-  set(shown, 'npt', $('np').firstChild, 'textContent', '♪ ' + t);
+  set(shown, 'npt', $('np'), 'title', t);
   set(shown, 'nph', $('np'), 'hidden', radio.sel === 'off' || !snd);
   set(shown, 'rnow', $('r-now'), 'textContent', t);
   var st = stOff() && streamOn ? 'bad' : streamOn && stState === 'buffering' ? 'load' : '';
@@ -1172,6 +1174,7 @@ function moveParty(rep) {
 function claimGoalAt(i, el) {
   var g = claimGoal(i);
   if (!g) return;
+  goalHold = -1;
   var c = centerOf(el);
   popAt('+' + g.gems + ' gems', c.x, c.y + 20, 'gem');
   flyGems(c.x, c.y + 10, Math.min(8, g.gems));
@@ -1244,7 +1247,7 @@ function updateHud() {
   if (S.x2 > 0) set(shown, 'x2t', x, 'textContent', 'x2  ' + clock2(S.x2));
   var cl = $('call');
   set(shown, 'ch', cl, 'hidden', !!rush || !started());
-  set(shown, 'ct', cl, 'textContent', shut() ? 'Closed' : S.call > 0 ? 'Call in ' + clock2(S.call) : 'Call a rush');
+  set(shown, 'ct', $('call-t'), 'textContent', shut() ? 'Closed' : S.call > 0 ? clock2(S.call) : '');
   flag(shown, 'cr', cl, 'ready', S.call <= 0 && !shut());
   set(shown, 'cd', cl, 'disabled', shut());
   var r = $('rush');
@@ -1534,7 +1537,7 @@ function buildGoals() {
       else goalTo(g);
     });
     chips.push({ el: c, k: {}, g: null, t: c.querySelector('span'), bar: c.querySelector('u'), tag: c.querySelector('em') });
-    $('goals').appendChild(c);
+    $('goals').insertBefore(c, $('gdots'));
   }
 }
 
@@ -1548,12 +1551,34 @@ function goalTo(g) {
   else openPlace(id, g.j);
 }
 
+// the goal the single chip shows: one that can be claimed, else the closest, unless the dots button picked one lately
+function pickGoal(gs) {
+  if (goalHold >= 0 && goalHold < gs.length && Date.now() < goalUntil) return goalHold;
+  var at = 0;
+  var best = -1;
+  gs.forEach(function (g, i) {
+    var s = g.done ? 2 : g.v / g.n;
+    if (s > best) {
+      best = s;
+      at = i;
+    }
+  });
+  return at;
+}
+
 function updateGoals() {
   var gs = goals();
+  var at = pickGoal(gs);
+  var dots = $('gdots');
+  set(shown, 'gdh', dots, 'hidden', gs.length < 2);
   chips.forEach(function (c, i) {
     var g = gs[i];
+    var d = dots.children[i];
     c.g = g;
-    set(c.k, 'h', c.el, 'hidden', !g);
+    set(c.k, 'h', c.el, 'hidden', !g || i !== at);
+    set(c.k, 'dh', d, 'hidden', !g);
+    flag(c.k, 'dn', d, 'on', i === at);
+    flag(c.k, 'dr', d, 'rdy', g && g.done);
     if (!g) return;
     c.el.dataset.i = g.i;
     set(c.k, 't', c.t, 'textContent', g.t);
@@ -1965,6 +1990,13 @@ function afterLoad() {
 
 function wire() {
   $('card-x').addEventListener('click', closeCard);
+  $('gdots').addEventListener('click', function () {
+    var gs = goals();
+    goalHold = (pickGoal(gs) + 1) % gs.length;
+    goalUntil = Date.now() + 10000;
+    sfx('tap');
+    updateGoals();
+  });
   $('t-biz').addEventListener('click', function () {
     openSheet();
   });
