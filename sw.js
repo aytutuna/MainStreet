@@ -1,4 +1,4 @@
-var CACHE = 'mainstreet-6b789c97';
+var CACHE = 'mainstreet-bb97228f';
 var FILES = [
   './',
   'data.js',
@@ -11,6 +11,7 @@ var FILES = [
   'store.js',
   'style.css',
   'ui.js',
+  'walls.js',
   'icons/apple-touch-icon.png',
   'icons/icon-192.png',
   'icons/icon-512.png',
