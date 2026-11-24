@@ -589,6 +589,7 @@ function dayStep(dt) {
   sun.intensity = 0.35 + 2.75 * k;
   hemi.intensity = (1.3 + 0.3 * k) * (1 - 0.6 * closedK);
   hemi.color.copy(hemiNight).lerp(hemiDay, k);
+  sheen((sun.intensity + hemi.intensity) / 4.7);
   scene.background.copy(skyNight).lerp(skyDay, k);
   scene.fog.color.copy(scene.background);
   bulbMat.emissive.copy(lampOn).multiplyScalar(1 - k);
@@ -2454,17 +2455,35 @@ function kiosk(hall, ki, lv, x) {
   return { k: 'self', x: x + 0.55, z: zc, till: [x, 0.7, zc] };
 }
 
+var wallsLit;
+var sheenK = -1;
+
+// the env map's sheen on the glass and the aluminium follows the scene's light, or it would glow at night and when closed
+function sheen(f) {
+  if (!wallsLit) return;
+  if (Math.abs(f - sheenK) < 0.003) return;
+  sheenK = f;
+  var set = function (m) { if (m.userData.lit) m.envMapIntensity = m.userData.lit * f; };
+  wallsLit.lit.forEach(set);
+  Object.keys(lookM).forEach(function (k) { set(lookM[k]); });
+  wallsLit.glare.emissiveIntensity = 0.3 * f;
+}
+
 function buildShell() {
   var tz = PLAN.tireBay.z;
   var tw = PLAN.tireBay.w;
   var walls = buildWalls({ root: root, outer: outer, renderer: renderer, back: BACK, sb: SB, front: FRONT, edge: EDGE, wing: WING_X, tire: PLAN.tireBay,
     docks: PLAN.docks, doors: PLAN.doors, entrances: PLAN.entrances });
-  lookG.wall.push(walls.west, walls.east, walls.wing, walls.fixed);
+  lookG.wall.push.apply(lookG.wall, walls.wall);
+  lookG.trim.push.apply(lookG.trim, walls.trim);
+  wallsLit = walls;
   // the header over the tire bay's open doorway
   var head = new Batch();
   head.block(flat(0xd9dce6), -EDGE - 0.15, -EDGE + 0.15, tz - tw / 2, tz + tw / 2, 0.82, 0.98);
   for (var sl = 0; sl < 4; sl++) head.block(flat(0x9aa0b4), -EDGE - 0.16, -EDGE + 0.16, tz - tw / 2, tz + tw / 2, 0.84 + sl * 0.04, 0.855 + sl * 0.04);
-  walls.west.add(head.group());
+  var hg = head.group();
+  walls.west.add(hg);
+  lookG.wall.push(hg);
   var bay = new Batch();
   for (var hz = 0; hz < 6; hz++) bay.slab(flat(hz % 2 ? 0x2a2d36 : 0xf2c230), -EDGE - 0.5, -EDGE + 0.5, tz - tw / 2 + hz * tw / 6, tz - tw / 2 + (hz + 1) * tw / 6, 0.03, 0.01);
   root.add(bay.group());
@@ -6057,13 +6076,12 @@ var shadows;
 var blobAt = new THREE.Matrix4();
 var sdoors = [];
 
-// a stock door: posts and a lintel in the wall, one leaf that swings out into the sales floor; all of it as low as the
-// wall it stands in
+// a stock door: one leaf, as low as the back wall it stands in, that swings out into the sales floor
 function stockDoor(d) {
   var piv = new THREE.Group();
   piv.position.set(d - 0.45, 0, BACK);
-  var leaf = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.78, 0.04), flat(LEAF_C));
-  leaf.position.set(0.45, 0.39, 0);
+  var leaf = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.15, 0.04), flat(LEAF_C));
+  leaf.position.set(0.45, 0.075, 0);
   piv.add(leaf);
   root.add(piv);
   sdoors.push({ x: d, open: 0, leaf: piv });
