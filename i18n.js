@@ -150,7 +150,7 @@ function setupLang(code) {
   var h = document.documentElement;
   h.lang = e[2];
   h.dir = I18N.rtl ? 'rtl' : 'ltr';
-  if (I18N.script && !/^(ja|ko|zh)/.test(code)) h.className = 'cx';
+  if (I18N.script && !/^(ja|ko|zh)/.test(code)) h.classList.add('cx');
   // the stack for the page (CSS var --sys) and for text drawn on canvases
   I18N.font = [FONT_BASE, I18N.script, FONT_TAIL].filter(Boolean).join(', ');
   h.style.setProperty('--sys', I18N.font);
@@ -202,7 +202,7 @@ function fmtClock(min) {
       CLOCK_FMT = { format: function (x) { return x.getHours() + ':' + ('0' + x.getMinutes()).slice(-2); } };
     }
   }
-  return CLOCK_FMT.format(d).replace(/ /g, ' ');
+  return isolate(CLOCK_FMT.format(d).replace(/ /g, ' '));
 }
 
 // a number for the text: grouped like the language does it, up to two decimals
@@ -224,12 +224,20 @@ function tl(key, v) {
   if (s === undefined) s = lookup(LANG.en, key, v, 'en');
   if (s === undefined) return key;
   if (!v) return s;
-  return s.replace(/\{(\w+)\}/g, function (m, k) {
+  // 24/30, 3:45 and x1.5 are one left to right run, not pieces a right to left line would put in the wrong order
+  if (I18N.rtl) s = s.replace(/[A-Za-z]+\{\w+\}|\{\w+\}(?:[\/:]\{\w+\})+/g, '⁦$&⁩');
+  s = s.replace(/\{(\w+)\}/g, function (m, k) {
     if (!(k in v)) return m;
     var x = typeof v[k] === 'number' ? fmtn(v[k]) : v[k];
     // a number or money amount keeps its own left to right order inside right to left text
     return I18N.rtl && /^\S*\d\S*$/.test(x) ? '⁦' + x + '⁩' : x;
   });
+  return isolate(s);
+}
+
+// a text with Latin letters or digits and no Arabic or Hebrew letters (Urdu's +$638/s) reads left to right as a whole
+function isolate(s) {
+  return I18N.rtl && !/[֐-ࣿ]/.test(s) && /[A-Za-z0-9]/.test(s) ? '⁦' + s + '⁩' : s;
 }
 
 // fills the static texts of the page: data-t is the text, data-t-html text with markup, data-t-aria, data-t-title and data-t-ph the attributes

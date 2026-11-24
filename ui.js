@@ -78,7 +78,9 @@ function $(id) {
 }
 
 function money(v) {
-  return tl('num.money', { n: short(v) });
+  var m = tl('num.money', { n: short(v) });
+  // the symbol stays on the side the language put it, whatever the line's direction is
+  return I18N.rtl ? '⁦' + m + '⁩' : m;
 }
 
 function wake() {
