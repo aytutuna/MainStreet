@@ -538,7 +538,7 @@ function modelList() {
   walk(OVERSTOCK.boxes);
   walk(['food/plate-rectangle*0.55', 'skate/pallet', 'shop/character-employee@5,3>2,2', JAN, 'shop/freezers-standing@13,3>2,2',
     'shop/freezers-standing@13,3>2,1', PARCEL, STAFF]);
-  ['shop/column', 'shop/floor', 'shop/floor%=d5d5d8', 'shop/cash-register', 'shop/character-employee', 'arcade/cash-register', 'pw/Checkout_Lane_30', 'pw/LaneLight_Pole_01',
+  ['shop/floor', 'shop/floor%=d5d5d8', 'shop/cash-register', 'shop/character-employee', 'arcade/cash-register', 'pw/Checkout_Lane_30', 'pw/LaneLight_Pole_01',
     'pw/Basket_Stack_01', 'pw/SelfCheckout_Kiosk_01', 'pw/SelfCheckout_Attendant_01', 'pw/ServiceDesk_20', 'pw/CartCorral_Indoor_20', 'pw/ShoppingCart_Nested_3_01',
     'shop/hand-truck', 'shop/shopping-basket', 'shop/shopping-basket*0.62', 'furn/cardboardBoxClosed', 'furn/cardboardBoxOpen', 'furn/rugDoormat',
     'furn/bench', 'furn/trashcan', 'furn/pottedPlant', 'sub/planter', 'roads/road-straight', 'roads/road-crossing', 'roads/light-square',
@@ -2455,17 +2455,6 @@ function kiosk(hall, ki, lv, x) {
 }
 
 function buildShell() {
-  var cb = new Batch();
-  var cols = [];
-  [2.5, -2.5, -7.5, -12.5, -15.5, -18.5, -22.5, -28.5].forEach(function (z) { cols.push([-EDGE, z]); });
-  [2.5, -2.5, -7.5, -12.5, -17.5, -22.5, -28.5].forEach(function (z) { cols.push([EDGE, z]); });
-  [2.5, -3, -8, -14, -28.5].forEach(function (z) { cols.push([WING_X, z]); });
-  PLAN.entrances.forEach(function (en) { cols.push([en.x - en.w / 2, FRONT], [en.x + en.w / 2, FRONT]); });
-  PLAN.docks.forEach(function (d) { cols.push([d - 1, SB], [d + 1, SB]); });
-  cols.forEach(function (c) { cb.add('shop/column', c[0], c[1], 0); });
-  var cg = cb.group();
-  lookG.trim.push(cg);
-  root.add(cg);
   var tz = PLAN.tireBay.z;
   var tw = PLAN.tireBay.w;
   var walls = buildWalls({ root: root, outer: outer, renderer: renderer, back: BACK, sb: SB, front: FRONT, edge: EDGE, wing: WING_X, tire: PLAN.tireBay,

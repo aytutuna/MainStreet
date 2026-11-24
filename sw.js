@@ -533,7 +533,6 @@ var FILES = [
   'assets/models/shop/character-employee.glb',
   'assets/models/shop/clothing-rack.glb',
   'assets/models/shop/clothing-table.glb',
-  'assets/models/shop/column.glb',
   'assets/models/shop/display-bread.glb',
   'assets/models/shop/display-cans.glb',
   'assets/models/shop/display-flowers.glb',
