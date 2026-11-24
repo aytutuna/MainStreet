@@ -183,8 +183,7 @@ button.pill:active,
 #gems b,
 #star-n {
   color: #fff;
-  -webkit-text-stroke: 4px var(--ink);
-  paint-order: stroke fill;
+  text-shadow: -2px -2px 0 var(--ink), 0px -2px 0 var(--ink), 2px -2px 0 var(--ink), 2px 0px 0 var(--ink), 2px 2px 0 var(--ink), 0px 2px 0 var(--ink), -2px 2px 0 var(--ink), -2px 0px 0 var(--ink);
   letter-spacing: 0.3px;
 }
 
@@ -604,7 +603,7 @@ button.pill:active,
   margin-top: 6px;
   display: flex;
   flex-direction: column;
-  gap: 6px;
+  gap: 12px;
   align-items: flex-start;
 }
 
@@ -1216,6 +1215,10 @@ button.pill:active,
   }
 }
 
+.biz.best {
+  background: var(--gloss-gold);
+}
+
 #list .biz.best {
   background: var(--gloss-gold);
 }
@@ -1532,8 +1535,7 @@ button.pill:active,
 #away-amt {
   font-size: 40px;
   color: #ffd85a;
-  -webkit-text-stroke: 5px var(--ink);
-  paint-order: stroke fill;
+  text-shadow: -3px -3px 0 var(--ink), 0px -3px 0 var(--ink), 3px -3px 0 var(--ink), 3px 0px 0 var(--ink), 3px 3px 0 var(--ink), 0px 3px 0 var(--ink), -3px 3px 0 var(--ink), -3px 0px 0 var(--ink);
 }
 
 #away-x2 {
@@ -2293,8 +2295,7 @@ button.pill:active,
 .hero h3 {
   font-size: 28px;
   color: #fff;
-  -webkit-text-stroke: 5px var(--ink);
-  paint-order: stroke fill;
+  text-shadow: -3px -3px 0 var(--ink), 0px -3px 0 var(--ink), 3px -3px 0 var(--ink), 3px 0px 0 var(--ink), 3px 3px 0 var(--ink), 0px 3px 0 var(--ink), -3px 3px 0 var(--ink), -3px 0px 0 var(--ink);
 }
 
 .hero > span {

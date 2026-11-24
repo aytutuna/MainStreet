@@ -59,7 +59,7 @@ private final class NotifyHandler: NSObject, WKScriptMessageHandler {
 private final class BundleHandler: NSObject, WKURLSchemeHandler {
     private static let types = [
         "html": "text/html", "js": "text/javascript", "css": "text/css", "json": "application/json",
-        "webmanifest": "application/manifest+json", "png": "image/png", "glb": "model/gltf-binary",
+        "webmanifest": "application/manifest+json", "png": "image/png", "woff2": "font/woff2", "glb": "model/gltf-binary",
         "gltf": "model/gltf+json", "bin": "application/octet-stream", "wav": "audio/wav", "m4a": "audio/mp4",
     ]
 

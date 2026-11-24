@@ -1980,6 +1980,8 @@ function flash(id, text, old) {
 
 function afterLoad() {
   saleAvg = 0;
+  goalHold = -1;
+  goalUntil = 0;
   closeCard(true);
   closeSheet(true);
   View.refresh();

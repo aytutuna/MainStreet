@@ -33,6 +33,7 @@ var FILES = [
   'assets/furn/televisionModern.png',
   'assets/holiday/present-a-cube.png',
   'assets/holiday/tree-decorated.png',
+  'assets/OFL-lilita-one.txt',
   'assets/lilita-one.woff2',
   'assets/models/arcade/License.txt',
   'assets/models/arcade/Textures/colormap.png',
