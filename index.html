@@ -21,44 +21,44 @@
     <div id="bar">
       <div id="cash" class="pill"><img class="ico" src="assets/coin.png" alt=""><div><b id="cash-n"></b><span id="rate"></span></div></div>
       <div id="gems" class="pill sm"><img class="ico" src="assets/ui_gem.png" alt=""><b id="gem-n"></b></div>
-      <button type="button" id="stars" class="pill sm" aria-label="New store"><img class="ico" src="assets/ui_star.png" alt=""><div><span id="store-n"></span><b id="star-n"></b></div></button>
-      <button type="button" id="gear" class="pill" aria-label="Menu"><i></i><i></i><i></i></button>
+      <button type="button" id="stars" class="pill sm" data-t-aria="hud.new_store.aria"><img class="ico" src="assets/ui_star.png" alt=""><div><span id="store-n"></span><b id="star-n"></b></div></button>
+      <button type="button" id="gear" class="pill" data-t-aria="hud.menu.aria"><i></i><i></i><i></i></button>
     </div>
-    <div id="goals"><button type="button" id="gdots" aria-label="Next goal" hidden><i></i><i></i><i></i></button></div>
+    <div id="goals"><button type="button" id="gdots" data-t-aria="hud.next_goal.aria" hidden><i></i><i></i><i></i></button></div>
     <div id="side">
       <span id="clk" class="pill sm"></span>
       <button type="button" id="warn" class="pill sm" hidden></button>
       <span id="x2" class="pill sm" hidden></span>
-      <button type="button" id="call" aria-label="Call a rush" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 2 5 13.5h6L10 22l9-12.5h-6z"/></svg><em id="call-t"></em></button>
+      <button type="button" id="call" data-t-aria="hud.call_rush.aria" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13.5 2 5 13.5h6L10 22l9-12.5h-6z"/></svg><em id="call-t"></em></button>
       <span id="rush" class="pill sm" hidden><span></span><i><u></u></i></span>
-      <button type="button" id="np" hidden aria-label="Radio"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5l11-2v13" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6.5" cy="18" r="3" fill="currentColor"/><circle cx="17.5" cy="16" r="3" fill="currentColor"/></svg></button>
+      <button type="button" id="np" hidden data-t-aria="hud.radio.aria"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 18V5l11-2v13" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/><circle cx="6.5" cy="18" r="3" fill="currentColor"/><circle cx="17.5" cy="16" r="3" fill="currentColor"/></svg></button>
     </div>
     <div id="deals">
-      <button type="button" id="d-start" data-d="start" aria-label="Starter pack" hidden><img src="assets/ui_gift.png" alt=""><em></em></button>
-      <button type="button" id="d-deal" data-d="deal" aria-label="Gem deal" hidden><img src="assets/ui_gem.png" alt=""><u></u><em>Today</em></button>
-      <button type="button" id="d-gems" data-d="gems" aria-label="Free gems" hidden><img src="assets/ui_gem.png" alt=""><em>Free</em></button>
-      <button type="button" id="d-x2" data-d="x2" aria-label="Double income" hidden><img src="assets/ui_bolt.png" alt=""><em>x2</em></button>
+      <button type="button" id="d-start" data-d="start" data-t-aria="hud.starter.aria" hidden><img src="assets/ui_gift.png" alt=""><em></em></button>
+      <button type="button" id="d-deal" data-d="deal" data-t-aria="hud.deal.aria" hidden><img src="assets/ui_gem.png" alt=""><u></u><em data-t="hud.deal.today"></em></button>
+      <button type="button" id="d-gems" data-d="gems" data-t-aria="hud.free_gems.aria" hidden><img src="assets/ui_gem.png" alt=""><em data-t="hud.free"></em></button>
+      <button type="button" id="d-x2" data-d="x2" data-t-aria="hud.x2.aria" hidden><img src="assets/ui_bolt.png" alt=""><em data-t="hud.x2_badge"></em></button>
     </div>
   </div>
   <div id="fly"></div>
   <div id="bottom">
     <div id="hint" hidden></div>
     <div id="card" hidden>
-      <button type="button" id="card-x" aria-label="Close"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 2.5l7 7M9.5 2.5l-7 7"/></svg></button>
+      <button type="button" id="card-x" data-t-aria="common.close"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 2.5l7 7M9.5 2.5l-7 7"/></svg></button>
       <div id="card-row"></div>
     </div>
     <div id="tabs">
-      <button type="button" id="t-biz"><img src="assets/ui_goal.png" alt="">Upgrades</button>
-      <button type="button" id="t-boost"><img src="assets/ui_bolt.png" alt="">Boosts</button>
-      <button type="button" id="t-daily"><img src="assets/ui_gift.png" alt=""><u id="daily-dot" hidden></u>Daily</button>
-      <button type="button" id="t-sell"><img src="assets/ui_star.png" alt=""><u id="sell-dot" hidden></u>New store</button>
-      <button type="button" id="t-stats"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="13" width="5" height="8" fill="#4f9a40"/><rect x="10" y="5" width="5" height="16" fill="#f0c040"/><rect x="17" y="9" width="5" height="12" fill="#3f78b8"/><path d="M2 21.5h21" stroke="#3b2a1e" stroke-width="2"/></svg>Stats</button>
+      <button type="button" id="t-biz"><img src="assets/ui_goal.png" alt=""><span data-t="tab.upgrades"></span></button>
+      <button type="button" id="t-boost"><img src="assets/ui_bolt.png" alt=""><span data-t="tab.boosts"></span></button>
+      <button type="button" id="t-daily"><img src="assets/ui_gift.png" alt=""><u id="daily-dot" hidden></u><span data-t="tab.daily"></span></button>
+      <button type="button" id="t-sell"><img src="assets/ui_star.png" alt=""><u id="sell-dot" hidden></u><span data-t="tab.new_store"></span></button>
+      <button type="button" id="t-stats"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="13" width="5" height="8" fill="#4f9a40"/><rect x="10" y="5" width="5" height="16" fill="#f0c040"/><rect x="17" y="9" width="5" height="12" fill="#3f78b8"/><path d="M2 21.5h21" stroke="#3b2a1e" stroke-width="2"/></svg><span data-t="tab.stats"></span></button>
     </div>
   </div>
   <div id="sheet" hidden>
     <div id="sheet-head">
-      <b>Upgrades</b>
-      <button type="button" id="sheet-x" aria-label="Close"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 2.5l7 7M9.5 2.5l-7 7"/></svg></button>
+      <b data-t="tab.upgrades"></b>
+      <button type="button" id="sheet-x" data-t-aria="common.close"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.5 2.5l7 7M9.5 2.5l-7 7"/></svg></button>
     </div>
     <div id="list"></div>
   </div>
@@ -69,10 +69,10 @@
   <div id="mtoast" hidden></div>
   <div id="away" class="veil" hidden>
     <div class="box">
-      <h2>While you were away</h2>
+      <h2 data-t="away.title"></h2>
       <p id="away-txt"></p>
       <div id="away-amt"></div>
-      <button type="button" id="away-ok" class="btn">Collect</button>
+      <button type="button" id="away-ok" class="btn" data-t="common.collect"></button>
       <button type="button" id="away-x2" class="btn alt"></button>
       <button type="button" id="away-ad" class="btn alt" hidden></button>
       <p class="need" id="away-need"></p>
@@ -80,53 +80,53 @@
   </div>
   <div id="daily" class="veil" hidden>
     <div class="box wide">
-      <h2>Today</h2>
+      <h2 data-t="daily.today"></h2>
       <div id="miss"></div>
-      <h2>Daily reward</h2>
+      <h2 data-t="daily.title"></h2>
       <p id="daily-txt"></p>
       <div id="days"></div>
-      <button type="button" id="daily-ok" class="btn">Claim</button>
-      <button type="button" id="daily-x" class="btn alt">Close</button>
+      <button type="button" id="daily-ok" class="btn" data-t="common.claim"></button>
+      <button type="button" id="daily-x" class="btn alt" data-t="common.close"></button>
     </div>
   </div>
   <div id="boost" class="veil" hidden>
     <div class="box">
-      <h2>Boosts</h2>
+      <h2 data-t="boost.title"></h2>
       <p id="boost-gems"></p>
-      <div class="offer"><img src="assets/ui_bolt.png" alt=""><div><b>Double income</b><span id="x2-txt"></span><span class="need" id="x2-need"></span></div><button type="button" id="b-x2" class="btn"></button></div>
-      <div class="offer"><img src="assets/ui_warp.png" alt=""><div><b>Time warp</b><span id="warp-txt"></span><span class="need" id="warp-need"></span></div><button type="button" id="b-warp" class="btn"></button></div>
-      <div class="offer"><img src="assets/ui_bolt.png" alt=""><div><b>Call a rush</b><span id="call-txt"></span><span class="need" id="call-need"></span></div><button type="button" id="b-call" class="btn"></button></div>
-      <div class="offer"><img src="assets/ui_star.png" alt=""><div><b>Regulars</b><span id="reg-txt"></span></div><button type="button" id="b-reg" class="btn">Meet</button></div>
+      <div class="offer"><img src="assets/ui_bolt.png" alt=""><div><b data-t="boost.x2.title"></b><span id="x2-txt"></span><span class="need" id="x2-need"></span></div><button type="button" id="b-x2" class="btn"></button></div>
+      <div class="offer"><img src="assets/ui_warp.png" alt=""><div><b data-t="boost.warp.title"></b><span id="warp-txt"></span><span class="need" id="warp-need"></span></div><button type="button" id="b-warp" class="btn"></button></div>
+      <div class="offer"><img src="assets/ui_bolt.png" alt=""><div><b data-t="boost.call.title"></b><span id="call-txt"></span><span class="need" id="call-need"></span></div><button type="button" id="b-call" class="btn"></button></div>
+      <div class="offer"><img src="assets/ui_star.png" alt=""><div><b data-t="boost.regs.title"></b><span id="reg-txt"></span></div><button type="button" id="b-reg" class="btn" data-t="boost.regs.btn"></button></div>
       <div id="ads" hidden></div>
-      <button type="button" id="b-shop" class="btn alt" hidden>Shop</button>
-      <p class="small">Gems come from goals, stars, gifts and the daily reward.</p>
-      <button type="button" id="boost-x" class="btn alt">Close</button>
+      <button type="button" id="b-shop" class="btn alt" hidden data-t="boost.shop"></button>
+      <p class="small" data-t="boost.gems_note"></p>
+      <button type="button" id="boost-x" class="btn alt" data-t="common.close"></button>
     </div>
   </div>
   <div id="regs" class="veil" hidden>
     <div class="box">
-      <h2>Regulars</h2>
+      <h2 data-t="regs.title"></h2>
       <p id="regs-txt"></p>
       <div id="reg-list"></div>
-      <button type="button" id="regs-x" class="btn alt">Close</button>
+      <button type="button" id="regs-x" class="btn alt" data-t="common.close"></button>
       </div>
     </div>
   <div id="shop" class="veil" hidden>
     <div class="box wide">
-      <h2>Shop</h2>
+      <h2 data-t="shop.title"></h2>
       <p id="shop-txt"></p>
       <div id="shop-list"></div>
-      <button type="button" id="shop-restore" class="btn alt">Restore purchases</button>
-      <button type="button" id="shop-x" class="btn">Close</button>
+      <button type="button" id="shop-restore" class="btn alt" data-t="shop.restore"></button>
+      <button type="button" id="shop-x" class="btn" data-t="common.close"></button>
     </div>
   </div>
   <div id="pack" class="veil" hidden>
     <div class="box">
-      <h2>Starter pack</h2>
+      <h2 data-t="pack.title"></h2>
       <p id="pack-txt"></p>
       <button type="button" id="pack-buy" class="btn"></button>
-      <button type="button" id="pack-x" class="btn alt">Not now</button>
-      <p class="small">It stays in the shop.</p>
+      <button type="button" id="pack-x" class="btn alt" data-t="common.not_now"></button>
+      <p class="small" data-t="pack.note"></p>
     </div>
   </div>
   <div id="sell" class="veil" hidden>
@@ -136,90 +136,99 @@
       <div id="sell-rep"></div>
       <div id="sell-keep"></div>
       <button type="button" id="sell-ok" class="btn"></button>
-      <button type="button" id="sell-look" class="btn alt">Store look</button>
-      <button type="button" id="sell-x" class="btn alt">Not now</button>
-      <h2>Perks</h2>
+      <button type="button" id="sell-look" class="btn alt" data-t="sell.look"></button>
+      <button type="button" id="sell-x" class="btn alt" data-t="common.not_now"></button>
+      <h2 data-t="sell.perks"></h2>
       <div id="perks"></div>
     </div>
   </div>
-  <div id="loading"><div class="box"><b>Main Street</b><i><u id="load-bar"></u></i></div></div>
+  <div id="loading"><div class="box"><b data-t="app.title"></b><i><u id="load-bar"></u></i></div></div>
   <div id="stats" class="veil" hidden>
     <div class="box wide">
-      <h2>Stats</h2>
-      <div class="srow" id="st-in"><div class="si"><div class="sl"><b>Shoppers</b><em></em></div><i class="bar"><u></u></i><span class="why"></span><small class="more"></small></div><button type="button" class="btn alt fix">Bring more</button></div>
-      <div class="srow" id="st-tills"><div class="si"><div class="sl"><b>Checkouts</b><em></em></div><i class="bar"><u></u></i><span class="why"></span><small class="more"></small></div><button type="button" class="btn alt fix">Add lanes</button></div>
-      <div class="srow" id="st-shelf"><div class="si"><div class="sl"><b>Shelves</b><em></em></div><i class="bar"><u></u></i><span class="why"></span><small class="more"></small></div><button type="button" class="btn alt fix">Hire stockers</button></div>
+      <h2 data-t="stats.title"></h2>
+      <div class="srow" id="st-in"><div class="si"><div class="sl"><b data-t="stats.shoppers"></b><em></em></div><i class="bar"><u></u></i><span class="why"></span><small class="more"></small></div><button type="button" class="btn alt fix" data-t="stats.fix.in"></button></div>
+      <div class="srow" id="st-tills"><div class="si"><div class="sl"><b data-t="stats.checkouts"></b><em></em></div><i class="bar"><u></u></i><span class="why"></span><small class="more"></small></div><button type="button" class="btn alt fix" data-t="stats.fix.tills"></button></div>
+      <div class="srow" id="st-shelf"><div class="si"><div class="sl"><b data-t="stats.shelves"></b><em></em></div><i class="bar"><u></u></i><span class="why"></span><small class="more"></small></div><button type="button" class="btn alt fix" data-t="stats.fix.shelf"></button></div>
       <div id="st-grid"></div>
-      <h3>Spent a shopper</h3>
-      <p class="small" id="st-none" hidden>Nothing is on sale yet.</p>
+      <h3 data-t="stats.spent"></h3>
+      <p class="small" id="st-none" hidden data-t="stats.none"></p>
       <div id="st-dept"></div>
-      <button type="button" id="stats-x" class="btn alt">Close</button>
+      <button type="button" id="stats-x" class="btn alt" data-t="common.close"></button>
     </div>
   </div>
   <div id="sound" class="veil" hidden>
     <div class="box">
-      <h2>Sound</h2>
-      <label class="vol"><span>Music <em id="sv-mus-n"></em></span><input type="range" id="sv-mus" min="0" max="100"></label>
-      <label class="vol"><span>Store sounds <em id="sv-amb-n"></em></span><input type="range" id="sv-amb" min="0" max="100"></label>
-      <label class="vol"><span>Effects <em id="sv-fx-n"></em></span><input type="range" id="sv-fx" min="0" max="100"></label>
-      <p class="small">Music is the radio. Store sounds are the shoppers and the hum of the mall. Effects are the taps, tills and chimes.</p>
-      <p class="small need" id="sound-off" hidden>Sound is off. Turn it on in the menu.</p>
-      <button type="button" id="sound-x" class="btn">Close</button>
+      <h2 data-t="sound.title"></h2>
+      <label class="vol"><span><bdi data-t="sound.music"></bdi> <em id="sv-mus-n"></em></span><input type="range" id="sv-mus" min="0" max="100"></label>
+      <label class="vol"><span><bdi data-t="sound.store"></bdi> <em id="sv-amb-n"></em></span><input type="range" id="sv-amb" min="0" max="100"></label>
+      <label class="vol"><span><bdi data-t="sound.effects"></bdi> <em id="sv-fx-n"></em></span><input type="range" id="sv-fx" min="0" max="100"></label>
+      <p class="small" data-t="sound.note"></p>
+      <p class="small need" id="sound-off" hidden data-t="sound.off_note"></p>
+      <button type="button" id="sound-x" class="btn" data-t="common.close"></button>
     </div>
   </div>
   <div id="menu" class="veil" hidden>
     <div class="box">
-      <h2 id="m-title">Menu</h2>
+      <h2 id="m-title" data-t="menu.title"></h2>
       <button type="button" id="m-snd" class="btn alt"></button>
-      <button type="button" id="m-mix" class="btn alt">Sound mixer</button>
-      <button type="button" id="m-radio" class="btn alt">Radio</button>
+      <button type="button" id="m-mix" class="btn alt" data-t="menu.mixer"></button>
+      <button type="button" id="m-radio" class="btn alt" data-t="menu.radio"></button>
+      <button type="button" id="m-lang" class="btn alt"></button>
       <button type="button" id="m-buzz" class="btn alt"></button>
-      <button type="button" id="m-look" class="btn alt">Store look</button>
-      <button type="button" id="m-ach" class="btn alt">Achievements</button>
-      <button type="button" id="m-priv" class="btn alt" hidden>Privacy choices</button>
-      <button type="button" id="m-copy" class="btn alt">Copy code</button>
-      <div class="row"><input id="m-code" type="text" placeholder="Paste a code" autocomplete="off" autocapitalize="off" spellcheck="false"><button type="button" id="m-load" class="btn alt">Load code</button></div>
-      <p class="small" id="m-help">Copy code is your backup. Paste it on another device to move the game.</p>
+      <button type="button" id="m-look" class="btn alt" data-t="menu.look"></button>
+      <button type="button" id="m-ach" class="btn alt" data-t="menu.achievements"></button>
+      <button type="button" id="m-priv" class="btn alt" hidden data-t="menu.privacy"></button>
+      <button type="button" id="m-copy" class="btn alt" data-t="menu.copy_code"></button>
+      <div class="row"><input id="m-code" type="text" data-t-ph="menu.paste_ph" autocomplete="off" autocapitalize="off" spellcheck="false"><button type="button" id="m-load" class="btn alt" data-t="menu.load_code"></button></div>
+      <p class="small" id="m-help" data-t="menu.help"></p>
       <div id="test" hidden>
         <div class="row" id="t-speed"><button type="button" data-s="1" class="btn alt">x1</button><button type="button" data-s="10" class="btn alt">x10</button><button type="button" data-s="100" class="btn alt">x100</button></div>
         <div class="row"><button type="button" id="t-hour" class="btn alt">+1 h income</button><button type="button" id="t-gems" class="btn alt">+100 gems</button></div>
         <button type="button" id="t-free" class="btn alt">Unlimited money: on</button>
         <button type="button" id="t-goals" class="btn alt">Finish goals</button>
       </div>
-      <button type="button" id="m-reset" class="btn alt">Erase all progress</button>
-      <p class="credit">Models: Kenney (www.kenney.nl)<br>Sounds: Kenney; recordings by Membrans, G4F SFX, The Chris Alan, Gamemaster Audio, SoundBits, 3maze, Mechanical Wave, Shapeforms, Airborne Sound, Soundrangers, SmartSoundFX, Kpow Sounds and Creative Audio Pool, from the Sonniss GameAudioGDC bundles<br>Store models: Pipework packs<br>Pizza props: Vira Voloshyn<br>Tools: mekmeesk<br>Nature: Kay Lousberg (KayKit, www.kaylousberg.com), Quaternius, Elijah Cobden<br>Icons: LimeZu (https://limezu.itch.io/)<br>Font: Lilita One by Juan Montoreano (SIL Open Font License)<br>3D: three.js (threejs.org)</p>
-      <p class="credit">Music, from Pixabay: Positive Easy Listening by 331music; Feel Good - Feel Good Music by STAROSTIN; Upbeat - Upbeat Music by ViacheslavStarostin; Happy - Happy Music by kulishov; Pop Light by 331music; Shopping - Shopping Music by iepmusic; Summer Pop by Caldena; Ukulele Circus Funk by 51604229; Cheerful - Cheerful Music by JonasBlakewood; Indie Pop by AtlasAudio; Fun Jazz Background by 51604229; Country Pop by Music_for_Creators<br>Radio streams are provided by the stations; station names belong to their owners.</p>
-      <button type="button" id="m-ok" class="btn">Close</button>
+      <button type="button" id="m-reset" class="btn alt" data-t="menu.erase"></button>
+      <p class="credit" data-t-html="menu.credits"></p>
+      <p class="credit" data-t-html="menu.credits_music"></p>
+      <button type="button" id="m-ok" class="btn" data-t="common.close"></button>
     </div>
   </div>
   <div id="radio" class="veil" hidden>
     <div class="box">
-      <h2>Radio</h2>
+      <h2 data-t="radio.title"></h2>
       <p id="r-now"></p>
-      <label class="vol"><span>Music volume</span><input type="range" id="r-vol" min="0" max="100"></label>
-      <button type="button" id="r-mix" class="btn alt">Sound mixer</button>
+      <label class="vol"><span data-t="radio.volume"></span><input type="range" id="r-vol" min="0" max="100"></label>
+      <button type="button" id="r-mix" class="btn alt" data-t="menu.mixer"></button>
       <div id="r-list"></div>
-      <p class="small">Stations play over the internet and only while the game is open.</p>
-      <button type="button" id="radio-x" class="btn">Close</button>
+      <p class="small" data-t="radio.note"></p>
+      <button type="button" id="radio-x" class="btn" data-t="common.close"></button>
+    </div>
+  </div>
+  <div id="langs" class="veil" hidden>
+    <div class="box">
+      <h2 data-t="lang.title"></h2>
+      <div id="lang-list"></div>
+      <button type="button" id="langs-x" class="btn alt" data-t="common.close"></button>
     </div>
   </div>
   <div id="ach" class="veil" hidden>
     <div class="box">
-      <h2>Achievements</h2>
+      <h2 data-t="ach.title"></h2>
       <p id="ach-txt"></p>
       <div id="ach-list"></div>
-      <button type="button" id="ach-x" class="btn alt">Close</button>
+      <button type="button" id="ach-x" class="btn alt" data-t="common.close"></button>
     </div>
   </div>
   <div id="look" class="veil" hidden>
     <div class="box">
-      <h2>Store look</h2>
+      <h2 data-t="look.title"></h2>
       <p id="look-txt"></p>
       <div id="look-list"></div>
-      <button type="button" id="look-x" class="btn alt">Close</button>
+      <button type="button" id="look-x" class="btn alt" data-t="common.close"></button>
     </div>
   </div>
 </div>
+<script src="i18n.js"></script>
 <script src="data.js"></script>
 <script src="sim.js"></script>
 <script src="shop.js"></script>

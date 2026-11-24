@@ -68,7 +68,7 @@ var MIXER_KEY = 'mainstreet.mixer';
 var lvl = { amb: 1 / 3, fx: 0.8 };
 var humG = null;
 // the button that closes each panel a tap outside or a swipe can dismiss; the away box is left out since it pays out
-var CLOSE = { pack: 'pack-x', shop: 'shop-x', daily: 'daily-x', sell: 'sell-x', regs: 'regs-x', boost: 'boost-x', radio: 'radio-x',
+var CLOSE = { pack: 'pack-x', shop: 'shop-x', daily: 'daily-x', sell: 'sell-x', regs: 'regs-x', boost: 'boost-x', radio: 'radio-x', langs: 'langs-x',
   sound: 'sound-x', stats: 'stats-x', menu: 'm-ok', ach: 'ach-x', look: 'look-x' };
 var dragging = false;
 var IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
@@ -78,7 +78,7 @@ function $(id) {
 }
 
 function money(v) {
-  return '$' + short(v);
+  return tl('num.money', { n: short(v) });
 }
 
 function wake() {
@@ -407,7 +407,7 @@ function radioSync() {
   if (mix && cur && !radio.tip && langGroup()) {
     radio.tip = 1;
     saveRadio();
-    banner('<b>Main Street Mix</b><small>Try the ' + langGroup() + ' stations in the menu, under Radio</small>', 0);
+    banner('<b>' + tl('radio.mix.name') + '</b><small>' + tl('radio.try', { group: tl('radio.group.' + langGroup()) }) + '</small>', 0);
   }
 }
 
@@ -452,15 +452,15 @@ function stOff() {
 }
 
 function nowText() {
-  if (otherOn) return 'Your music is playing';
-  if (radio.sel === 'off') return 'Radio is off';
-  if (!snd) return 'Sound is off';
-  if (radio.sel === 'mix') return cur ? MIX[cur.n].t + ' - ' + MIX[cur.n].a : 'Main Street Mix';
+  if (otherOn) return tl('radio.now.other');
+  if (radio.sel === 'off') return tl('radio.now.off');
+  if (!snd) return tl('radio.now.sound_off');
+  if (radio.sel === 'mix') return cur ? tl('radio.now.song', { title: MIX[cur.n].t, artist: MIX[cur.n].a }) : tl('radio.mix.name');
   var s = station(radio.sel);
-  if (stState === 'error') return 'Station unavailable';
-  if (stState === 'paused') return s.name + ' (paused)';
-  if (stState === 'buffering') return 'Connecting to ' + s.name;
-  return s.name + (stTitle ? ' - ' + stTitle : '');
+  if (stState === 'error') return tl('radio.now.error');
+  if (stState === 'paused') return tl('radio.now.paused', { name: s.name });
+  if (stState === 'buffering') return tl('radio.now.connecting', { name: s.name });
+  return stTitle ? tl('radio.now.playing', { name: s.name, title: stTitle }) : s.name;
 }
 
 function radioPaint() {
@@ -476,18 +476,19 @@ function radioRow(id, name, line, pick, done) {
   var on = radio.sel === id && !(stOff() && streamOn);
   // a station takes a few seconds to connect, so its button says so until the sound starts
   var load = on && streamOn && stState === 'buffering';
-  var label = load ? '<i class="spin"></i>Loading' : on ? done : radio.sel === id ? (stState === 'paused' ? 'Resume' : 'Retry') : pick;
+  var label = load ? '<i class="spin"></i>' + tl('radio.loading') : on ? done : radio.sel === id ? tl(stState === 'paused' ? 'radio.resume' : 'radio.retry') : pick;
   return '<div class="offer"><div><b>' + name + '</b><span>' + line + '</span></div><button type="button" class="btn' + (on ? '' : ' alt') + '" data-r="' + id + '"' +
     (on ? ' disabled' : '') + '>' + label + '</button></div>';
 }
 
 function paintRadio() {
   $('r-vol').value = Math.round(radio.vol * 100);
-  var h = radioRow('off', 'Off', 'No music', 'Turn off', 'Off') + radioRow('mix', 'Main Street Mix', MIX.length + ' songs, shuffled', 'Play', 'On');
+  var h = radioRow('off', tl('radio.off.name'), tl('radio.off.line'), tl('radio.turn_off'), tl('radio.off.state')) +
+    radioRow('mix', tl('radio.mix.name'), tl('radio.mix.line', { n: MIX.length }), tl('radio.play'), tl('radio.on'));
   radioGroups().forEach(function (g) {
     var open = g === radioOpen;
-    h += '<button type="button" class="btn alt rg" data-g="' + g + '">' + g + '<i>' + (open ? '-' : '+') + '</i></button>';
-    if (open) RADIO.forEach(function (s) { if (s.g === g) h += radioRow(s.id, s.name, s.line, 'Play', 'On'); });
+    h += '<button type="button" class="btn alt rg" data-g="' + g + '">' + tl('radio.group.' + g) + '<i>' + (open ? '-' : '+') + '</i></button>';
+    if (open) RADIO.forEach(function (s) { if (s.g === g) h += radioRow(s.id, s.name, s.line, tl('radio.play'), tl('radio.on')); });
   });
   $('r-list').innerHTML = h;
 }
@@ -507,6 +508,27 @@ function pickRadio(id) {
   saveRadio();
   radioSync();
   paintRadio();
+}
+
+function openLangs() {
+  var h = '';
+  LANGS.forEach(function (l) {
+    h += '<button type="button" class="btn' + (l[0] === I18N.code ? '' : ' alt') + '" data-l="' + l[0] + '" lang="' + l[2] + '" dir="auto">' + l[1] + '</button>';
+  });
+  $('lang-list').innerHTML = h;
+  $('menu').hidden = true;
+  $('langs').hidden = false;
+  sfx('card');
+}
+
+function wireLangs() {
+  $('m-lang').textContent = tl('menu.language', { name: langEntry(I18N.code)[1] });
+  $('m-lang').addEventListener('click', openLangs);
+  $('langs-x').addEventListener('click', function () { $('langs').hidden = true; });
+  $('lang-list').addEventListener('click', function (e) {
+    var b = e.target.closest('button');
+    if (b) setLang(b.dataset.l);
+  });
 }
 
 function wireRadio() {
@@ -701,13 +723,9 @@ function placeIcon(id, k) {
 function perMin(v) {
   v *= 60;
   if (v >= 1000) return short(v);
-  if (v >= 10) return String(Math.round(v));
+  if (v >= 10) return fmtn(Math.round(v));
   var r = Math.round(v * 10) / 10;
-  return r ? String(r) : v > 0 ? '<0.1' : '0';
-}
-
-function plural(n, word) {
-  return short(n) + ' ' + word + (n === 1 ? '' : 's');
+  return r ? fmtn(r) : v > 0 ? '<0.1' : '0';
 }
 
 // how many of the departments are open, which is also the one that opens next
@@ -724,7 +742,7 @@ function far(id) {
 // a button's price, or why it cannot be bought: locked, or too dear for now
 function buyBtn(k, b, label, c, locked) {
   var poor = !locked && S.cash < c;
-  set(k, 'up', b, 'innerHTML', locked ? 'Locked' : label + '<small>' + money(c) + '</small>');
+  set(k, 'up', b, 'innerHTML', locked ? tl('common.locked') : label + '<small>' + money(c) + '</small>');
   // too dear stays tappable, so the tap can say there is not enough cash yet
   set(k, 'upd', b, 'disabled', locked);
   flag(k, 'lk', b, 'lk', locked);
@@ -763,10 +781,10 @@ function room(id) {
 
 // what a level of each room of the east wing does, and what the room does in all
 var ROOMFX = {
-  serv: function (n) { return '+' + perMin(inRate() / (1 + SERV * S.pl.serv) * SERV * (n || 1)) + ' shoppers/min'; },
-  rest: function (n) { return '+' + Math.round(REST * 100 * (n || 1)) + '% spent a shopper'; },
-  lounge: function (n) { return '-' + Math.round((1 - Math.pow(LOUNGE, n || 1)) * 100) + '% till and stock time'; },
-  head: function (n) { return '+' + Math.round(HEAD * 100 * (n || 1)) + '% income, ' + (n || 1) + ' h more away'; }
+  serv: function (n) { return tl('fx.shoppers_min', { v: perMin(inRate() / (1 + SERV * S.pl.serv) * SERV * (n || 1)) }); },
+  rest: function (n) { return tl('fx.rest', { n: Math.round(REST * 100 * (n || 1)) }); },
+  lounge: function (n) { return tl('fx.lounge', { n: Math.round((1 - Math.pow(LOUNGE, n || 1)) * 100) }); },
+  head: function (n) { return tl('fx.head', { n: Math.round(HEAD * 100 * (n || 1)), h: n || 1 }); }
 };
 
 // what one more level of an item does, as the one thing it changes
@@ -782,23 +800,23 @@ function effect(id, x, j) {
   // past the shoppers who come there is nothing more for tills or stockers to do
   var want = id === 'hall' ? inRate() : served();
   var up = Math.min(want, id === 'hall' ? now[1] : now[2]) - Math.min(want, id === 'hall' ? was[1] : was[2]);
-  if (id === 'hall' && up > 0) return '+' + perMin(up) + ' shoppers/min';
-  if (id === 'dock' && up > 0) return '+' + perMin(up) + ' restocked/min';
-  if (id === 'dock' && now[2] > was[2]) return '+' + perMin(now[2] - was[2]) + ' restocked/min';
-  if (now[0] > was[0]) return '+' + perMin(now[0] - was[0]) + ' shoppers/min';
+  if (id === 'hall' && up > 0) return tl('fx.shoppers_min', { v: perMin(up) });
+  if (id === 'dock' && up > 0) return tl('fx.restocked_min', { v: perMin(up) });
+  if (id === 'dock' && now[2] > was[2]) return tl('fx.restocked_min', { v: perMin(now[2] - was[2]) });
+  if (now[0] > was[0]) return tl('fx.shoppers_min', { v: perMin(now[0] - was[0]) });
   var g = gains[id + ':' + j];
-  if (g > 0.005) return '+' + money(g) + '/s';
-  return id === 'hall' ? '+' + HALL_BOOST * 100 + '% sales' : '';
+  if (g > 0.005) return tl('fx.money_s', { v: money(g) });
+  return id === 'hall' ? tl('fx.sales_pct', { n: HALL_BOOST * 100 }) : '';
 }
 
 // what a department item's level changes for each shopper or stocker
 function stat(id, x) {
-  if (x.stat === 'sell') return '+' + money(perSell(id) * bmul()) + '/shopper';
+  if (x.stat === 'sell') return tl('fx.per_shopper', { v: money(perSell(id) * bmul()) });
   if (x.stat === 'draw') {
     var n = DRAW * 60 * (1 + SERV * S.pl.serv);
-    return '+' + n.toFixed(n < 1 ? 2 : 1) + ' shoppers/min';
+    return tl('fx.shoppers_min', { v: n.toFixed(n < 1 ? 2 : 1) });
   }
-  return '-' + Math.round((1 - STAFF) * 100) + '% stocking time';
+  return tl('fx.stocking', { n: Math.round((1 - STAFF) * 100) });
 }
 
 // an open room's card: a department's stars or a place's load, and a row for each of its items
@@ -841,10 +859,10 @@ function deptHead(r) {
   var e = S.b[id];
   var n = deptStars(id);
   var from = n ? STAR_AT[n - 1] : 0;
-  set(k, 'lv', r.lv, 'innerHTML', 'Lv ' + e.l + '/' + UPS + ' ' + starRow(n));
+  set(k, 'lv', r.lv, 'innerHTML', tl('card.lv', { n: e.l, max: UPS }) + ' ' + starRow(n));
   r.fill.style.width = (n >= STAR_AT.length ? 100 : (e.l - from) / (STAR_AT[n] - from) * 100) + '%';
-  set(k, 'bt', r.bt, 'textContent', n >= STAR_AT.length ? 'Sales x' + Math.pow(STAR_MUL, n) :
-    STAR_AT[n] - e.l + ' more to ★' + (n + 1) + ' · sales x' + Math.pow(STAR_MUL, n + 1));
+  set(k, 'bt', r.bt, 'textContent', n >= STAR_AT.length ? tl('card.sales_x', { mul: Math.pow(STAR_MUL, n) }) :
+    tl('card.next_star', { n: STAR_AT[n] - e.l, star: n + 1, mul: Math.pow(STAR_MUL, n + 1) }));
 }
 
 // the header of a place's card; Checkouts and the Stockroom show how loaded they are
@@ -853,10 +871,10 @@ function placeHead(r) {
   var k = r.k;
   var p = PL[id];
   var box = r.el.firstChild;
-  set(k, 'lv', r.lv, 'textContent', 'Lv ' + S.pl[id] + '/' + p.cost.length);
+  set(k, 'lv', r.lv, 'textContent', tl('card.lv', { n: S.pl[id], max: p.cost.length }));
   flag(k, 'nobar', box, 'nobar', id !== 'hall' && id !== 'dock');
   loadBar(r, box, id);
-  var hint = ROOMFX[id] && S.pl[id] ? 'Now: ' + ROOMFX[id](S.pl[id]) : '';
+  var hint = ROOMFX[id] && S.pl[id] ? tl('card.now', { fx: ROOMFX[id](S.pl[id]) }) : '';
   set(k, 'hh', r.hint, 'hidden', !hint);
   set(k, 'ht', r.hint, 'textContent', hint);
 }
@@ -870,11 +888,11 @@ function loadBar(r, box, id) {
   var n = hall ? inRate() : served();
   var cap = hall ? capacity() : stockCap();
   r.fill.style.width = Math.min(100, n / cap * 100) + '%';
-  set(k, 'bt', r.bt, 'textContent', 'Shoppers ' + perMin(n) + '/min \u00b7 ' + (hall ? 'tills ' : 'restock ') + perMin(cap) + '/min');
+  set(k, 'bt', r.bt, 'textContent', tl(hall ? 'card.load.tills' : 'card.load.restock', { n: perMin(n), cap: perMin(cap) }));
   flag(k, 'rd', box, 'rd', hall && linesFull() || !hall && shelvesOut());
   var lim = cap < n;
   flag(k, 'lim', box, 'lim', lim);
-  return lim ? (hall ? 'Add lanes or self checkouts' : 'Hire stockers') : '';
+  return lim ? tl(hall ? 'card.fix.lanes' : 'card.fix.stockers') : '';
 }
 
 // the piece an item adds next, or -1 when it is done
@@ -957,21 +975,22 @@ function upRow(r) {
     var hall = id === 'hall';
     var dock = id === 'dock';
     flag(k, 'lock', r.el, 'lock', !open);
-    set(k, 'lv', r.lv, 'textContent', l ? 'Lv ' + l + '/' + p.cost.length : '');
+    set(k, 'lv', r.lv, 'textContent', l ? tl('card.lv', { n: l, max: p.cost.length }) : '');
     flag(k, 'nobar', r.el, 'nobar', !hall && !dock);
     var hint = loadBar(r, r.el, id);
-    set(k, 'ms', r.ms, 'textContent', !open ? 'Open ' + BZ[p.after].name + ' first' : !built ? 'Next: ' + p.next[0] : hint ? hint : c ? p.items.map(function (x) { return x.name; }).join(', ') : 'Everything is built');
+    set(k, 'ms', r.ms, 'textContent', !open ? tl('card.open_first', { name: BZ[p.after].name }) : !built ? tl('card.next', { name: p.next[0] }) : hint ? hint :
+      c ? p.items.map(function (x) { return x.name; }).join(tl('common.list_sep')) : tl('card.all_built'));
     var newLv = set(k, 'nxl', r.nx.dataset, 'lv', open && !built ? 1 : '');
     if (set(k, 'nxk', r.nx, 'title', open && !built ? p.next[0] : '') || newLv) {
       if (open && !built) r.nx.src = placeIcon(id, 1);
       else r.nx.removeAttribute('src');
     }
     if (built) {
-      set(k, 'up', r.up, 'innerHTML', 'Items');
+      set(k, 'up', r.up, 'innerHTML', tl('card.items'));
       set(k, 'upd', r.up, 'disabled', false);
       flag(k, 'lk', r.up, 'lk', false);
       flag(k, 'poor', r.up, 'poor', false);
-    } else buyBtn(k, r.up, 'Build', c, !open);
+    } else buyBtn(k, r.up, tl('card.build'), c, !open);
     flag(k, 'uphl', r.up, 'hl', hl);
     return;
   }
@@ -982,28 +1001,28 @@ function upRow(r) {
   if (!e) {
     var u = cost(id, 1);
     set(k, 'lv', r.lv, 'textContent', '');
-    set(k, 'ms', r.ms, 'textContent', avail(id) ? upName(id, 0) + ': in every basket' : far(id) ? 'Opens later' : 'Open ' + BIZ[BZ[id].i - 1].name + ' first');
+    set(k, 'ms', r.ms, 'textContent', avail(id) ? tl('card.in_basket', { name: upName(id, 0) }) : far(id) ? tl('card.opens_later') : tl('card.open_first', { name: BIZ[BZ[id].i - 1].name }));
     if (set(k, 'nxk', r.nx, 'title', avail(id) ? upName(id, 0) : '')) {
       if (avail(id)) r.nx.src = upIcon(id, 0);
       else r.nx.removeAttribute('src');
     }
-    buyBtn(k, r.up, 'Open', u, !avail(id));
+    buyBtn(k, r.up, tl('card.open'), u, !avail(id));
     flag(k, 'uphl', r.up, 'hl', hl);
     return;
   }
   var n = deptStars(id);
   var from = n ? STAR_AT[n - 1] : 0;
-  set(k, 'lv', r.lv, 'innerHTML', 'Lv ' + e.l + '/' + UPS + ' ' + starRow(n));
-  set(k, 'ms', r.ms, 'textContent', n >= STAR_AT.length ? 'All three stars: sales here x' + Math.pow(STAR_MUL, n) :
-    'Star ' + (n + 1) + ' at level ' + STAR_AT[n] + ': sales here x' + Math.pow(STAR_MUL, n + 1));
+  set(k, 'lv', r.lv, 'innerHTML', tl('card.lv', { n: e.l, max: UPS }) + ' ' + starRow(n));
+  set(k, 'ms', r.ms, 'textContent', n >= STAR_AT.length ? tl('card.stars_all', { mul: Math.pow(STAR_MUL, n) }) :
+    tl('card.star_at', { star: n + 1, level: STAR_AT[n], mul: Math.pow(STAR_MUL, n + 1) }));
   if (set(k, 'nxk', r.nx, 'title', '')) r.nx.removeAttribute('src');
-  set(k, 'up', r.up, 'innerHTML', 'Items');
+  set(k, 'up', r.up, 'innerHTML', tl('card.items'));
   set(k, 'upd', r.up, 'disabled', false);
   flag(k, 'lk', r.up, 'lk', false);
   flag(k, 'poor', r.up, 'poor', false);
   flag(k, 'uphl', r.up, 'hl', hl);
   r.fill.style.width = (n >= STAR_AT.length ? 100 : (e.l - from) / (STAR_AT[n] - from) * 100) + '%';
-  set(k, 'bt', r.bt, 'textContent', money(spendAt(id) * bmul()) + ' a shopper');
+  set(k, 'bt', r.bt, 'textContent', tl('card.per_shopper', { v: money(spendAt(id) * bmul()) }));
 }
 
 function buildList() {
@@ -1079,7 +1098,7 @@ function afterBuy(res) {
     sfx('mile');
     View.punch();
     pulse(0.9);
-    banner('<b>' + name + ': ' + res.star + (res.star === 1 ? ' star' : ' stars') + ', sales here x' + Math.pow(STAR_MUL, res.star) + '</b>' + (res.gems ? '<small>+' + res.gems + ' gems</small>' : ''),
+    banner('<b>' + tl('banner.star', { name: name, n: res.star, mul: Math.pow(STAR_MUL, res.star) }) + '</b>' + (res.gems ? '<small>' + tl('common.gems_plus', { n: res.gems }) + '</small>' : ''),
       t + 0.3, res.star === STAR_AT.length);
     if (res.gems) flyGems(innerWidth / 2, innerHeight * 0.3, Math.min(6, res.gems));
     View.burst(res.id, t, [30, 44, 50][res.star - 1]);
@@ -1089,12 +1108,12 @@ function afterBuy(res) {
     sfx('unlock');
     View.punch();
     pulse(0.9);
-    banner('<b>New: ' + name + '</b><small>' + upName(res.id, res.piece) + ', now in every basket</small>', t + 0.3, true);
+    banner('<b>' + tl('banner.new_dept', { name: name }) + '</b><small>' + tl('banner.new_dept.line', { item: upName(res.id, res.piece) }) + '</small>', t + 0.3, true);
   } else if (res.place) {
     var p = PL[res.id];
     sfx('mile');
     pulse(0.6);
-    banner('<b>' + name + ' level ' + S.pl[res.id] + '</b><small>' + p.next[res.piece] + '</small>', t + 0.3, S.pl[res.id] === p.cost.length);
+    banner('<b>' + tl('banner.place_level', { name: name, n: S.pl[res.id] }) + '</b><small>' + p.next[res.piece] + '</small>', t + 0.3, S.pl[res.id] === p.cost.length);
   } else {
     sfx('buy', Math.pow(1.0595, Math.min(combo - 1, 8)));
     pulse(0.3);
@@ -1166,8 +1185,8 @@ function moveParty(rep) {
   View.burst(null, 0.2, 50);
   View.burst(null, 0.7, 40);
   rain(28);
-  banner('<b>Store ' + S.store + ' is open!</b><small>Income x' + storeMul(S.store) + '</small>', 0.2, true);
-  banner('<b>+' + rep + ' reputation</b><small>Spend it on perks</small>', 0.1);
+  banner('<b>' + tl('banner.store_open', { n: S.store }) + '</b><small>' + tl('banner.income_x', { n: storeMul(S.store) }) + '</small>', 0.2, true);
+  banner('<b>' + tl('banner.rep', { n: rep }) + '</b><small>' + tl('banner.rep.line') + '</small>', 0.1);
   setTimeout(function () { if (!veilUp() && !sheetOpen && !cardId && !document.hidden) openSell(); }, 4500);
 }
 
@@ -1176,9 +1195,9 @@ function claimGoalAt(i, el) {
   if (!g) return;
   goalHold = -1;
   var c = centerOf(el);
-  popAt('+' + g.gems + ' gems', c.x, c.y + 20, 'gem');
+  popAt(tl('common.gems_plus', { n: g.gems }), c.x, c.y + 20, 'gem');
   flyGems(c.x, c.y + 10, Math.min(8, g.gems));
-  if (g.x2) banner('<b>Goal done</b><small>Income x2 for ' + g.x2 + ' min</small>', 0);
+  if (g.x2) banner('<b>' + tl('banner.goal_done') + '</b><small>' + tl('common.income_x2_min', { n: g.x2 }) + '</small>', 0);
   sfx('done');
   buzz('success');
   nudge();
@@ -1217,7 +1236,7 @@ function bumpCombo() {
     el.hidden = true;
     return;
   }
-  el.textContent = 'x' + combo + ' combo!';
+  el.textContent = tl('hud.combo', { n: combo });
   el.hidden = false;
   el.style.animation = 'none';
   void el.offsetWidth;
@@ -1232,28 +1251,29 @@ function pulse(k) {
 }
 
 function updateHud() {
+  // dev only: unlimited money is a test option
   var cash = free ? 'Unlimited' : money(S.cash);
   set(shown, 'cash', $('cash-n'), 'textContent', cash);
   flag(shown, 'cl', $('cash'), 'long', cash.length > 6);
-  set(shown, 'rate', $('rate'), 'textContent', shut() ? 'Closed' : '+' + money(rate()) + '/s');
-  set(shown, 'clk', $('clk'), 'textContent', (shut() ? 'Closed · ' : '') + stamp());
+  set(shown, 'rate', $('rate'), 'textContent', shut() ? tl('hud.closed') : tl('hud.rate', { v: money(rate()) }));
+  set(shown, 'clk', $('clk'), 'textContent', shut() ? tl('hud.closed_at', { t: stamp() }) : stamp());
   flag(shown, 'clc', $('clk'), 'shut', shut());
   set(shown, 'gems', $('gem-n'), 'textContent', short(S.gems));
   set(shown, 'stars', $('star-n'), 'textContent', Math.min(rating(), gate()) + '/' + gate());
-  set(shown, 'store', $('store-n'), 'textContent', 'Store ' + S.store);
+  set(shown, 'store', $('store-n'), 'textContent', tl('hud.store', { n: S.store }));
   if (!$('away').hidden) awayBtn();
   var x = $('x2');
   set(shown, 'x2h', x, 'hidden', !(S.x2 > 0));
-  if (S.x2 > 0) set(shown, 'x2t', x, 'textContent', 'x2  ' + clock2(S.x2));
+  if (S.x2 > 0) set(shown, 'x2t', x, 'textContent', tl('hud.x2', { t: clock2(S.x2) }));
   var cl = $('call');
   set(shown, 'ch', cl, 'hidden', !!rush || !started());
-  set(shown, 'ct', $('call-t'), 'textContent', shut() ? 'Closed' : S.call > 0 ? clock2(S.call) : '');
+  set(shown, 'ct', $('call-t'), 'textContent', shut() ? tl('hud.closed') : S.call > 0 ? clock2(S.call) : '');
   flag(shown, 'cr', cl, 'ready', S.call <= 0 && !shut());
   set(shown, 'cd', cl, 'disabled', shut());
   var r = $('rush');
   set(shown, 'rh', r, 'hidden', !rush);
   if (rush) {
-    set(shown, 'rt', r.firstChild, 'textContent', rush.kind === 'bus' ? 'Tour bus' : 'Flash sale');
+    set(shown, 'rt', r.firstChild, 'textContent', tl(rush.kind === 'bus' ? 'hud.rush.bus' : 'hud.rush.flash'));
     set(shown, 'rw', r.querySelector('u').style, 'width', Math.round(rush.left / rush.len * 100) + '%');
   }
   duckRadio();
@@ -1261,9 +1281,9 @@ function updateHud() {
 
 // the three meters live in the Stats sheet; the main screen only warns when one is red
 var METERS = [
-  { id: 'st-in', h: 'w-in', warn: 'Few shoppers', go: function () { openDraw(); } },
-  { id: 'st-tills', h: 'w-tills', warn: 'Slow checkouts', go: function () { tapMeter('hall', capacity); } },
-  { id: 'st-shelf', h: 'w-shelf', warn: 'Low shelves', go: function () { tapMeter('dock', stockCap); } }
+  { id: 'st-in', h: 'w-in', warn: 'hud.warn.in', go: function () { openDraw(); } },
+  { id: 'st-tills', h: 'w-tills', warn: 'hud.warn.tills', go: function () { tapMeter('hall', capacity); } },
+  { id: 'st-shelf', h: 'w-shelf', warn: 'hud.warn.shelves', go: function () { tapMeter('dock', stockCap); } }
 ];
 
 // a row shows its rate a minute, why it is where it is, and a button for the fix
@@ -1294,7 +1314,7 @@ function meterHint(i) {
   var t = $('mtoast');
   var a = $('app').getBoundingClientRect();
   var m = $('warn').getBoundingClientRect();
-  t.innerHTML = '<b>' + METERS[i].warn + '</b><small>Tap the warning to see Stats and fix it</small>';
+  t.innerHTML = '<b>' + tl(METERS[i].warn) + '</b><small>' + tl('hud.warn_tip') + '</small>';
   t.hidden = false;
   t.style.left = '0px';
   var w = t.offsetWidth;
@@ -1326,51 +1346,51 @@ function updateMeters() {
   for (var i = 0; i < 3; i++) if (v[i] < 0.5 && (bad < 0 || v[i] < v[bad])) bad = i;
   set(k, 'wh', $('warn'), 'hidden', bad < 0);
   if (bad >= 0) {
-    set(k, 'wt', $('warn'), 'textContent', '! ' + METERS[bad].warn);
+    set(k, 'wt', $('warn'), 'textContent', tl('hud.warn', { t: tl(METERS[bad].warn) }));
     meterHint(bad);
   }
   if ($('stats').hidden) return;
   var f = flow();
   var more = isFinite(st) ? perMin(st) : '-';
-  meter('st-in', v[0], k, perMin(inr) + '/m', v[0] < 0.8 ? 'Too few shoppers for the checkouts' : 'Enough shoppers for the checkouts',
-    'On foot ' + perMin(f.walk) + ', by car ' + perMin(f.car) + ', by taxi ' + perMin(f.taxi) + ' a minute');
-  meter('st-tills', v[1], k, perMin(cap) + '/m', v[1] < 0.8 ? 'The checkouts are the limit' : 'The checkouts keep up',
-    'They take ' + perMin(cap) + ' a minute, shoppers come at ' + perMin(inr));
-  meter('st-shelf', v[2], k, more + '/m', v[2] < 0.8 ? 'The shelves are the limit' : 'The stockers keep up',
-    'They restock ' + more + ' a minute, shoppers need ' + perMin(srv));
+  meter('st-in', v[0], k, tl('stats.per_min', { v: perMin(inr) }), tl(v[0] < 0.8 ? 'stats.in.low' : 'stats.in.ok'),
+    tl('stats.in.more', { walk: perMin(f.walk), car: perMin(f.car), taxi: perMin(f.taxi) }));
+  meter('st-tills', v[1], k, tl('stats.per_min', { v: perMin(cap) }), tl(v[1] < 0.8 ? 'stats.tills.low' : 'stats.tills.ok'),
+    tl('stats.tills.more', { cap: perMin(cap), come: perMin(inr) }));
+  meter('st-shelf', v[2], k, tl('stats.per_min', { v: more }), tl(v[2] < 0.8 ? 'stats.shelf.low' : 'stats.shelf.ok'),
+    tl('stats.shelf.more', { cap: more, need: perMin(srv) }));
 }
 
 // the figures of the Stats sheet, in the order they show
 var STATS = [
-  ['Income a second', function () { return money(rate()) + '/s'; }],
-  ['Income a minute', function () { return money(rate() * 60) + '/m'; }],
-  ['Served this store', function () { return short(S.st.sr); }],
-  ['Served in all', function () { return short(S.st.srv); }],
-  ['Lost shoppers', function () { return short(S.st.lost); }],
-  ['Earned this store', function () { return money(S.run); }],
-  ['Earned in all', function () { return money(S.all); }],
-  ['Stars', function () { return rating() + ' of ' + STAR_AT.length * BIZ.length; }],
-  ['Store', function () { return S.store + ', sales x' + storeMul(S.store); }],
-  ['Time played', function () { return playTime(S.st.t); }],
-  ['Gems', function () { return short(S.gems); }],
-  ['Regulars met', function () { return regOwned() + ' of ' + REGS.length; }],
-  ['Achievements', function () {
+  ['stats.income_s', function () { return tl('stats.per_sec', { v: money(rate()) }); }],
+  ['stats.income_m', function () { return tl('stats.per_min', { v: money(rate() * 60) }); }],
+  ['stats.served_store', function () { return short(S.st.sr); }],
+  ['stats.served_all', function () { return short(S.st.srv); }],
+  ['stats.lost', function () { return short(S.st.lost); }],
+  ['stats.earned_store', function () { return money(S.run); }],
+  ['stats.earned_all', function () { return money(S.all); }],
+  ['stats.stars', function () { return tl('common.x_of_y', { a: rating(), b: STAR_AT.length * BIZ.length }); }],
+  ['stats.store', function () { return tl('stats.store_val', { n: S.store, mul: storeMul(S.store) }); }],
+  ['stats.time', function () { return playTime(S.st.t); }],
+  ['stats.gems', function () { return short(S.gems); }],
+  ['stats.regulars', function () { return tl('common.x_of_y', { a: regOwned(), b: REGS.length }); }],
+  ['stats.achievements', function () {
     var n = 0;
     ACHS.forEach(function (a) { if (S.ac.o[a.id]) n++; });
-    return n + ' of ' + ACHS.length;
+    return tl('common.x_of_y', { a: n, b: ACHS.length });
   }]
 ];
 var dRows = {};
 
 function playTime(s) {
-  if (s < 60) return Math.floor(s) + ' s';
+  if (s < 60) return tl('common.sec', { n: Math.floor(s) });
   var h = Math.floor(s / 3600);
   var m = Math.floor(s % 3600 / 60);
-  return (h ? h + ' h ' : '') + m + ' min';
+  return h ? tl('common.h_min', { h: h, m: m }) : tl('common.min', { n: m });
 }
 
 function buildStats() {
-  $('st-grid').innerHTML = STATS.map(function (x) { return '<div><span>' + x[0] + '</span><b></b></div>'; }).join('');
+  $('st-grid').innerHTML = STATS.map(function (x) { return '<div><span>' + tl(x[0]) + '</span><b></b></div>'; }).join('');
   BIZ.forEach(function (b) {
     var el = document.createElement('div');
     el.innerHTML = '<span></span><em></em><i class="bar"><u></u></i>';
@@ -1408,7 +1428,7 @@ function paintStats() {
   }
   open.forEach(function (b) {
     var r = dRows[b.id];
-    set(k, 'sd' + b.id, r.em, 'textContent', money(spend[b.id]) + ' \u00b7 ' + Math.round(spend[b.id] / all * 100) + '%');
+    set(k, 'sd' + b.id, r.em, 'textContent', tl('stats.dept_share', { v: money(spend[b.id]), pct: Math.round(spend[b.id] / all * 100) }));
     set(k, 'sw' + b.id, r.u.style, 'width', Math.round(spend[b.id] / top * 100) + '%');
   });
   set(k, 'sde', $('st-none'), 'hidden', open.length > 0);
@@ -1584,7 +1604,7 @@ function updateGoals() {
     set(c.k, 't', c.t, 'textContent', g.t);
     flag(c.k, 'd', c.el, 'done', g.done);
     c.bar.style.width = (g.v / g.n * 100) + '%';
-    set(c.k, 'g', c.tag, 'textContent', g.done ? 'Claim +' + g.gems : '+' + g.gems);
+    set(c.k, 'g', c.tag, 'textContent', g.done ? tl('goal.claim', { n: g.gems }) : '+' + g.gems);
   });
   if (!$('daily').hidden) {
     if (missSig !== missionSig()) paintMissions();
@@ -1605,18 +1625,19 @@ function updateOpen() {
 
 function hours(secs) {
   var m = Math.round(secs / 60);
-  return m >= 60 ? Math.floor(m / 60) + ' h' + (m % 60 ? ' ' + (m % 60) + ' min' : '') : m + ' min';
+  if (m < 60) return tl('common.min', { n: m });
+  return m % 60 ? tl('common.h_min', { h: Math.floor(m / 60), m: m % 60 }) : tl('common.h', { n: Math.floor(m / 60) });
 }
 
 // the box for what the store took while the player was away, or what is still waiting from before; a is the new
 // time away if there is one
 function showAway(a) {
   if (S.pend <= 0) return false;
-  var txt = 'Earnings from last time are still waiting: <b>' + money(S.pend) + '</b>.';
+  var txt = tl('away.waiting', { v: money(S.pend) });
   if (a) {
-    txt = 'You were away for ' + hours(a.real) + '. The store served ' + a.n.toLocaleString('en-US') + ' shoppers and took <b>' + money(a.gain) + '</b>.';
-    if (S.pend - a.gain > 0.5) txt += ' <b>' + money(S.pend - a.gain) + '</b> from before is still waiting.';
-    if (a.real > maxAway()) txt += ' It only earns for ' + maxAway() / 3600 + ' h while you are away.';
+    txt = tl('away.report', { time: hours(a.real), n: a.n, v: money(a.gain) });
+    if (S.pend - a.gain > 0.5) txt += ' ' + tl('away.before', { v: money(S.pend - a.gain) });
+    if (a.real > maxAway()) txt += ' ' + tl('away.cap', { n: maxAway() / 3600 });
   }
   $('away-txt').innerHTML = txt;
   awaySecs = a ? a.real : 0;
@@ -1632,7 +1653,7 @@ function showAway(a) {
 // gems can change while the box is open, from the daily reward on top of it
 function awayBtn() {
   var c = awayCost();
-  set(shown, 'awc', $('away-x2'), 'innerHTML', 'Double it <img src="assets/ui_gem.png" alt="">' + c);
+  set(shown, 'awc', $('away-x2'), 'innerHTML', tl('away.double') + ' <img src="assets/ui_gem.png" alt="">' + c);
   set(shown, 'awd', $('away-x2'), 'disabled', S.gems < c);
   set(shown, 'awn', $('away-need'), 'textContent', gemsLeft(c));
   paintAwayAd();
@@ -1663,10 +1684,10 @@ function takeAway(dbl, from, free) {
 
 function dayText(d) {
   var p = [];
-  if (d.cash) p.push(d.cash + ' min of income');
-  if (d.gems) p.push(d.gems + ' gems');
-  if (d.x2) p.push('x2 for ' + d.x2 + ' min');
-  return p.join(', ');
+  if (d.cash) p.push(tl('daily.cash_min', { n: d.cash }));
+  if (d.gems) p.push(tl('common.gems', { n: d.gems }));
+  if (d.x2) p.push(tl('common.x2_min', { n: d.x2 }));
+  return p.join(tl('common.list_sep'));
 }
 
 var missSig = '';
@@ -1678,7 +1699,7 @@ function missionSig() {
 
 function missLine(m) {
   var v = m.k === 'earn' ? short(Math.floor(m.p)) + '/' + short(m.n) : Math.floor(m.p) + '/' + m.n;
-  return missionText(m) + (m.k === 'open' || m.k === 'star' ? '' : ' (' + v + ')');
+  return m.k === 'open' || m.k === 'star' ? missionText(m) : tl('daily.progress', { text: missionText(m), v: v });
 }
 
 // progress moves in place; rebuilding the rows every pass could eat a tap on a claim button
@@ -1711,7 +1732,7 @@ function paintMissions() {
       var c = centerOf(b);
       var r = go();
       if (!r) return paintMissions();
-      if (r.x2) banner('<b>All three done</b><small>' + r.gems + ' gems and income x2 for ' + r.x2 + ' min</small>', 0);
+      if (r.x2) banner('<b>' + tl('daily.all_done') + '</b><small>' + tl('daily.all_done.line', { gems: r.gems, min: r.x2 }) + '</small>', 0);
       flyGems(c.x, c.y, Math.min(8, r.gems));
       sfx('done');
       buzz('success');
@@ -1724,10 +1745,10 @@ function paintMissions() {
   }
   missions().forEach(function (m, i) {
     var done = m.p >= m.n;
-    row(missLine(m), m.p / m.n, m.c ? 'Done' : '+' + m.g, done && !m.c, function () { return claimMission(i); });
+    row(missLine(m), m.p / m.n, m.c ? tl('common.done') : '+' + m.g, done && !m.c, function () { return claimMission(i); });
   });
   var all = missions().every(function (m) { return m.c; });
-  row('All three: ' + MISS_BONUS.gems + ' gems, x2 ' + MISS_BONUS.x2 + ' min', all ? 1 : missions().filter(function (m) { return m.c; }).length / 3, S.mi.b ? 'Done' : 'Bonus', bonusReady(), claimBonus);
+  row(tl('daily.all_three', { gems: MISS_BONUS.gems, min: MISS_BONUS.x2 }), all ? 1 : missions().filter(function (m) { return m.c; }).length / 3, S.mi.b ? tl('common.done') : tl('daily.bonus'), bonusReady(), claimBonus);
 }
 
 function openDaily() {
@@ -1740,12 +1761,12 @@ function openDaily() {
     var c = document.createElement('div');
     c.className = 'day' + (i < done ? ' done' : '') + (info.can && i === info.idx ? ' today' : '') + (i === 6 ? ' last' : '');
     var ic = d.gems && d.x2 ? 'ui_gift' : d.gems ? 'ui_gem' : d.x2 ? 'ui_bolt' : 'coin';
-    c.innerHTML = '<b>Day ' + (i + 1) + '</b><img src="assets/' + ic + '.png" alt=""><span>' + dayText(d) + '</span>';
+    c.innerHTML = '<b>' + tl('daily.day', { n: i + 1 }) + '</b><img src="assets/' + ic + '.png" alt=""><span>' + dayText(d) + '</span>';
     box.appendChild(c);
   });
-  $('daily-txt').textContent = info.can ? 'Day ' + (info.idx + 1) + ' of 7. Come back every day to keep the streak.' : 'Claimed for today. Come back tomorrow to keep the streak.';
+  $('daily-txt').textContent = info.can ? tl('daily.streak', { n: info.idx + 1 }) : tl('daily.claimed');
   $('daily-ok').hidden = !info.can;
-  $('daily-x').textContent = info.can ? 'Later' : 'Close';
+  $('daily-x').textContent = tl(info.can ? 'common.later' : 'common.close');
   $('daily').hidden = false;
 }
 
@@ -1762,31 +1783,31 @@ function updateHint() {
   var h = $('hint');
   var on = !started() && !sheetOpen && (!cardId || cardId === 'produce');
   set(shown, 'hh', h, 'hidden', !on);
-  if (on) set(shown, 'ht', h, 'textContent', cardId ? 'Tap the glowing Buy button' : 'Tap Produce to buy your first stand');
+  if (on) set(shown, 'ht', h, 'textContent', cardId ? tl('hud.hint.buy') : tl('hud.hint.produce', { dept: BZ.produce.name }));
 }
 
 function gemsLeft(cost) {
-  return S.gems < cost ? 'Need ' + plural(cost - S.gems, 'more gem') + '.' : '';
+  return S.gems < cost ? tl('common.need_gems', { n: cost - S.gems }) : '';
 }
 
 function paintBoost() {
-  $('boost-gems').textContent = 'You have ' + plural(S.gems, 'gem') + '.';
-  $('x2-txt').textContent = S.x2 > 0 ? 'Active: ' + clock2(S.x2) + ' left. Buying adds 30 min.' : 'All income x2 for 30 minutes.';
+  $('boost-gems').textContent = tl('boost.have', { n: short(S.gems) });
+  $('x2-txt').textContent = S.x2 > 0 ? tl('boost.x2.active', { t: clock2(S.x2) }) : tl('boost.x2.idle');
   $('x2-need').textContent = gemsLeft(X2_COST);
   $('b-x2').innerHTML = '<img src="assets/ui_gem.png" alt="">' + X2_COST;
   $('b-x2').disabled = S.gems < X2_COST;
   var full = rate() * WARP_SECS;
   var v = Math.min(full, Math.max(S.run, 100));
   var weak = v < rate() * 600 || v <= 0;
-  $('warp-txt').textContent = 'Get ' + money(v) + ' now' + (v < full ? ', as much as this store has earned so far.' : ', an hour of income.');
-  $('warp-need').textContent = gemsLeft(WARP_COST) || (weak ? 'Worth less than 10 minutes of income. Better later.' : '');
+  $('warp-txt').textContent = tl(v < full ? 'boost.warp.so_far' : 'boost.warp.hour', { v: money(v) });
+  $('warp-need').textContent = gemsLeft(WARP_COST) || (weak ? tl('boost.warp.weak') : '');
   $('b-warp').innerHTML = '<img src="assets/ui_gem.png" alt="">' + WARP_COST;
   $('b-warp').disabled = S.gems < WARP_COST || weak;
-  $('call-txt').textContent = S.call > 0 ? 'Ready in ' + clock2(S.call) + ', or call one now.' : 'Brings a rush now. Then ' + CALL.cool / 60 + ' min to wait.';
-  $('call-need').textContent = rush ? 'A rush is on.' : shut() ? 'The store is closed.' : S.call > 0 ? gemsLeft(CALL.gems) : '';
-  $('b-call').innerHTML = S.call > 0 ? '<img src="assets/ui_gem.png" alt="">' + CALL.gems : 'Call';
+  $('call-txt').textContent = S.call > 0 ? tl('boost.call.ready_in', { t: clock2(S.call) }) : tl('boost.call.brings', { n: CALL.cool / 60 });
+  $('call-need').textContent = rush ? tl('boost.call.rush_on') : shut() ? tl('boost.call.closed') : S.call > 0 ? gemsLeft(CALL.gems) : '';
+  $('b-call').innerHTML = S.call > 0 ? '<img src="assets/ui_gem.png" alt="">' + CALL.gems : tl('boost.call.btn');
   $('b-call').disabled = !!rush || shut() || (S.call > 0 && S.gems < CALL.gems);
-  $('reg-txt').textContent = regOwned() + ' of ' + REGS.length + ' met, sales +' + Math.round((regMul() - 1) * 100) + '%';
+  $('reg-txt').textContent = tl('boost.regs', { a: regOwned(), b: REGS.length, pct: Math.round((regMul() - 1) * 100) });
   paintAds();
 }
 
@@ -1802,16 +1823,16 @@ function perkDue() {
 function perkFx(id, l) {
   var v = PK[id].val[l];
   switch (id) {
-    case 'open': return v[1] ? 'Produce ' + v[0] + ', Bakery ' + v[1] : 'Produce ' + v[0];
+    case 'open': return v[1] ? tl('perk.fx.open2', { a: BZ.produce.name, x: v[0], b: BZ.bakery.name, y: v[1] }) : tl('perk.fx.open1', { dept: BZ.produce.name, n: v[0] });
     case 'cash': return money(START_CASH + v);
-    case 'cheap': return v ? Math.round(v * 100) + '% off' : 'full price';
-    case 'pace': return v < 1 ? Math.round((1 - v) * 100) + '% quicker' : 'normal';
-    case 'away': return MAX_AWAY / 3600 + S.pl.head + v + ' h';
-    case 'rush': return RUSH.secs + v + ' s';
-    case 'night': return v ? 'open 24 hours' : 'closed 11 PM – 1 AM';
+    case 'cheap': return v ? tl('perk.fx.off', { n: Math.round(v * 100) }) : tl('perk.fx.full');
+    case 'pace': return v < 1 ? tl('perk.fx.quicker', { n: Math.round((1 - v) * 100) }) : tl('perk.fx.normal');
+    case 'away': return tl('common.h', { n: MAX_AWAY / 3600 + S.pl.head + v });
+    case 'rush': return tl('common.sec', { n: RUSH.secs + v });
+    case 'night': return tl(v ? 'perk.fx.night_open' : 'perk.fx.night_closed');
     case 'sales': return 'x' + v;
   }
-  return v ? '+' + v + (v > 1 ? ' gems' : ' gem') : 'base';
+  return v ? tl('common.gems_plus', { n: v }) : tl('perk.fx.base');
 }
 
 var PERK_IC = {
@@ -1837,9 +1858,8 @@ function paintPerks() {
     var c = perkCost(p.id);
     var pips = '';
     for (var i = 0; i < p.cost.length; i++) pips += '<u' + (i < l ? ' class="on"' : '') + '></u>';
-    return '<div class="perk"><div class="ph">' + icon(p.id) + '<div><b>' + p.name + '</b><div class="pips">' + pips + '</div></div></div><span>' + p.what + ': ' +
-      perkFx(p.id, l) + (c ? ' → ' + perkFx(p.id, l + 1) : ' (max)') + '</span>' +
-      (c ? '<button type="button" class="btn" data-p="' + p.id + '"' + (c > S.rep ? ' disabled' : '') + '>' + c + ' rep</button>' : '<em>Maxed</em>') + '</div>';
+    return '<div class="perk"><div class="ph">' + icon(p.id) + '<div><b>' + p.name + '</b><div class="pips">' + pips + '</div></div></div><span>' + tl(c ? 'perk.line.next' : 'perk.line.max', { what: p.what, now: perkFx(p.id, l), next: c ? perkFx(p.id, l + 1) : '' }) + '</span>' +
+      (c ? '<button type="button" class="btn" data-p="' + p.id + '"' + (c > S.rep ? ' disabled' : '') + '>' + tl('perk.cost', { n: c }) + '</button>' : '<em>' + tl('perk.maxed') + '</em>') + '</div>';
   }).join('');
 }
 
@@ -1858,14 +1878,14 @@ function paintSell() {
     '<stop offset="1" stop-color="#f6ecd2"/></linearGradient></defs><rect width="300" height="110" fill="url(#sky)"/><rect y="94" width="300" height="16" fill="#4f9a40"/>' + stars +
     '<rect x="96" y="60" width="9" height="40" fill="#6a5640"/><rect x="195" y="60" width="9" height="40" fill="#6a5640"/>' +
     '<rect x="64" y="12" width="172" height="64" rx="10" fill="#c4432f" stroke="#3b2a1e" stroke-width="3"/><rect x="71" y="19" width="158" height="50" rx="6" fill="none" stroke="#fff" stroke-width="2"/>' +
-    '<text x="150" y="37" text-anchor="middle" fill="#fff" font-size="12" font-weight="800" letter-spacing="3">STORE</text>' +
+    '<text x="150" y="37" text-anchor="middle" fill="#fff" font-size="12" font-weight="800" letter-spacing="3">' + tl('sell.sign') + '</text>' +
     '<text x="150" y="64" text-anchor="middle" fill="#fff" font-size="29" font-weight="800">' + (S.store + 1) + '</text></svg>';
   $('sell-txt').innerHTML = '<div class="sring"><svg viewBox="0 0 88 88" aria-hidden="true"><circle cx="44" cy="44" r="36" fill="none" stroke="#ead9ae" stroke-width="9"/>' +
     '<circle cx="44" cy="44" r="36" fill="none" stroke="' + (ok ? '#4f9a40' : '#f0c040') + '" stroke-width="9" stroke-linecap="round" stroke-dasharray="' + (circ * got / g).toFixed(1) + ' ' + circ.toFixed(1) +
-    '" transform="rotate(-90 44 44)"/></svg><div><b>' + got + '/' + g + '</b><span>stars</span></div></div><div class="srows">' +
-    '<span>Open <b>' + opened() + ' of ' + BIZ.length + '</b> departments</span><span>Income <b>x' + storeMul(S.store) + ' → x' + storeMul(S.store + 1) + '</b></span>' +
-    '<span class="' + (ok ? 'go' : '') + '">' + (ok ? 'Ready to move.' : 'Reach ' + g + ' stars to move.') + (r > g ? ' +' + (r - g) + ' extra' : '') + '</span></div>';
-  $('sell-rep').innerHTML = icon('medal', 'big') + '<div><b>+' + repGain() + '</b><span>rep for moving now</span></div><small>You have <i>' + S.rep + ' rep</i>. One for each star and each open department, more for a bigger store.</small>';
+    '" transform="rotate(-90 44 44)"/></svg><div><b>' + got + '/' + g + '</b><span>' + tl('sell.stars') + '</span></div></div><div class="srows">' +
+    '<span>' + tl('sell.open_depts', { a: opened(), b: BIZ.length }) + '</span><span>' + tl('sell.income', { a: storeMul(S.store), b: storeMul(S.store + 1) }) + '</span>' +
+    '<span class="' + (ok ? 'go' : '') + '">' + (ok ? tl('sell.ready') : tl('sell.reach', { n: g })) + (r > g ? ' ' + tl('sell.extra', { n: r - g }) : '') + '</span></div>';
+  $('sell-rep').innerHTML = icon('medal', 'big') + '<div><b>+' + repGain() + '</b><span>' + tl('sell.rep_for_move') + '</span></div><small>' + tl('sell.rep_have', { n: S.rep }) + '</small>';
   $('sell-ok').classList.toggle('ready', ok);
 }
 
@@ -1873,15 +1893,15 @@ function openSell() {
   var ok = canMove();
   paintSell();
   paintPerks();
-  var keep = [['ui_gem', plural(S.gems, 'gem')], ['ui_star', 'Reputation and perks'], ['ui_goal', 'Goals and regulars'], ['ui_bolt', 'Boosts']];
-  var lose = [['coin', 'Cash'], ['@open', 'Departments'], ['@cheap', 'Every place, Checkouts to Head Office'], ['ui_star', 'Stars (they pay gems again)']];
+  var keep = [['ui_gem', tl('common.gems', { n: short(S.gems) })], ['ui_star', tl('sell.keep.rep')], ['ui_goal', tl('sell.keep.goals')], ['ui_bolt', tl('sell.keep.boosts')]];
+  var lose = [['coin', tl('sell.lose.cash')], ['@open', tl('sell.lose.depts')], ['@cheap', tl('sell.lose.places')], ['ui_star', tl('sell.lose.stars')]];
   var list = function (a) {
     return a.map(function (x) {
       return '<li>' + (x[0][0] === '@' ? icon(x[0].slice(1), 'mini') : '<img src="assets/' + x[0] + '.png" alt="">') + x[1] + '</li>';
     }).join('');
   };
-  $('sell-keep').innerHTML = '<div class="keep"><h4>You keep</h4><ul>' + list(keep) + '</ul></div><div class="lose"><h4>Starts again</h4><ul>' + list(lose) + '</ul></div>';
-  $('sell-ok').textContent = ok ? 'Move to store ' + (S.store + 1) : 'See departments';
+  $('sell-keep').innerHTML = '<div class="keep"><h4>' + tl('sell.you_keep') + '</h4><ul>' + list(keep) + '</ul></div><div class="lose"><h4>' + tl('sell.starts_again') + '</h4><ul>' + list(lose) + '</ul></div>';
+  $('sell-ok').textContent = ok ? tl('sell.move', { n: S.store + 1 }) : tl('sell.see');
   $('sell-ok').classList.toggle('alt', !ok);
   $('sell').hidden = false;
 }
@@ -1893,9 +1913,9 @@ function checkRegs() {
   var all = regOwned() === REGS.length;
   sfx('card');
   buzz('success');
-  banner(got.length === 1 ? '<b>New regular: ' + got[0].name + '</b><small>Sales +' + Math.round(REGC.sales * 100) + '% · see Boosts</small>' :
-    '<b>' + got.length + ' new regulars</b><small>' + got.slice(0, 2).map(function (r) { return r.name; }).join(', ') + (got.length > 2 ? ' and ' + (got.length - 2) + ' more' : '') + '</small>', 0);
-  if (all) banner('<b>Every regular is here!</b><small>Sales +' + Math.round(REGC.set * 100) + '% more</small>', 0, true);
+  banner(got.length === 1 ? '<b>' + tl('regs.new', { name: got[0].name }) + '</b><small>' + tl('regs.new.line', { n: Math.round(REGC.sales * 100) }) + '</small>' :
+    '<b>' + tl('regs.new_many', { n: got.length }) + '</b><small>' + tl(got.length > 2 ? 'regs.names_more' : 'regs.names2', { a: got[0].name, b: got[1].name, n: got.length - 2 }) + '</small>', 0);
+  if (all) banner('<b>' + tl('regs.all') + '</b><small>' + tl('regs.all.line', { n: Math.round(REGC.set * 100) }) + '</small>', 0, true);
   if (!$('regs').hidden) paintRegs();
   save();
 }
@@ -1903,17 +1923,17 @@ function checkRegs() {
 // how far a feat has got: a count for a small goal, else a share
 function regProg(r) {
   var v = Math.min(r.n, REGV[r.id]());
-  return r.n === 1 ? '' : r.n <= 20 ? ' (' + Math.floor(v) + '/' + r.n + ')' : ' (' + Math.floor(v / r.n * 100) + '%)';
+  return r.n === 1 ? '' : r.n <= 20 ? Math.floor(v) + '/' + r.n : tl('common.pct', { n: Math.floor(v / r.n * 100) });
 }
 
 // the regulars met, with a portrait and the feat for each one still to come
 function paintRegs() {
   var n = regOwned();
-  $('regs-txt').textContent = n + ' of ' + REGS.length + ' met, sales +' + Math.round((regMul() - 1) * 100) + '%. Each adds ' + Math.round(REGC.sales * 100) + '%, the whole set ' + Math.round(REGC.set * 100) + '% more. Once met they come in now and then: tap one for a tip.';
+  $('regs-txt').textContent = tl('regs.intro', { a: n, b: REGS.length, pct: Math.round((regMul() - 1) * 100), each: Math.round(REGC.sales * 100), set: Math.round(REGC.set * 100) });
   $('reg-list').innerHTML = REGS.map(function (r, i) {
     var met = S.rg.o[r.id];
-    return '<div class="offer reg' + (met ? '' : ' lock') + '"><img src="' + View.regIcon(i) + '" alt=""><div><b>' + (met ? r.name : '???') + '</b>' +
-      '<span>' + (met ? r.line : r.feat + regProg(r)) + '</span></div></div>';
+    return '<div class="offer reg' + (met ? '' : ' lock') + '"><img src="' + View.regIcon(i) + '" alt=""><div><b>' + (met ? r.name : tl('regs.unknown')) + '</b>' +
+      '<span>' + (met ? r.line : regProg(r) ? tl('regs.feat_prog', { feat: r.feat, v: regProg(r) }) : r.feat) + '</span></div></div>';
   }).join('');
 }
 
@@ -1926,8 +1946,8 @@ function checkAch() {
   var a = got[0];
   sfx('card');
   buzz('success');
-  banner(got.length === 1 ? '<b>' + a.name + '</b><small>' + ACH_TIER[a.t].name + ' badge, +' + plural(gems, 'gem') + (ACH_TIER[a.t].sales ? ', sales +' + ACH_TIER[a.t].sales * 100 + '%' : '') + '</small>' :
-    '<b>' + got.length + ' achievements</b><small>+' + plural(gems, 'gem') + ' · see the menu</small>', 0, got.some(function (g) { return g.t === 2; }));
+  banner(got.length === 1 ? '<b>' + a.name + '</b><small>' + tl(ACH_TIER[a.t].sales ? 'ach.badge_sales' : 'ach.badge', { tier: ACH_TIER[a.t].name, n: gems, pct: ACH_TIER[a.t].sales * 100 }) + '</small>' :
+    '<b>' + tl('ach.many', { n: got.length }) + '</b><small>' + tl('ach.many.line', { n: gems }) + '</small>', 0, got.some(function (g) { return g.t === 2; }));
   if (!$('ach').hidden) paintAch();
   if (!$('look').hidden) paintLook();
   save();
@@ -1936,33 +1956,33 @@ function checkAch() {
 function paintAch() {
   var n = 0;
   ACHS.forEach(function (a) { if (S.ac.o[a.id]) n++; });
-  $('ach-txt').textContent = n + ' of ' + ACHS.length + ' earned. Gold ones add sales for good, now +' + Math.round((achMul() - 1) * 100) + '% and at most ' + Math.round(ACH_CAP * 100) + '%.';
+  $('ach-txt').textContent = tl('ach.intro', { a: n, b: ACHS.length, now: Math.round((achMul() - 1) * 100), max: Math.round(ACH_CAP * 100) });
   $('ach-list').innerHTML = ACHS.map(function (a) {
     var done = S.ac.o[a.id];
     var t = ACH_TIER[a.t];
     var v = Math.min(a.n, achVal(a));
     return '<div class="offer ach t' + a.t + (done ? '' : ' lock') + '"><u class="badge"><img src="assets/ui_star.png" alt=""></u><div><b>' + a.name + ' <i>' + t.name + '</i></b>' +
       '<span>' + a.text + '</span><em class="bar"><u style="width:' + v / a.n * 100 + '%"></u></em>' +
-      '<span>' + (done ? 'Earned' : a.n <= 100 ? Math.floor(v) + ' of ' + a.n : Math.floor(v / a.n * 100) + '%') + ' · ' + plural(t.gems, 'gem') + (t.sales ? ', sales +' + t.sales * 100 + '%' : '') + '</span></div></div>';
+      '<span>' + tl(t.sales ? 'ach.reward_sales' : 'ach.reward', { prog: done ? tl('ach.earned') : a.n <= 100 ? tl('common.x_of_y', { a: Math.floor(v), b: a.n }) : tl('common.pct', { n: Math.floor(v / a.n * 100) }), n: t.gems, pct: t.sales * 100 }) + '</span></div></div>';
   }).join('');
 }
 
 function paintLook() {
-  $('look-txt').textContent = 'You have ' + plural(S.gems, 'gem') + '. A look only changes how the store is painted, and every new store keeps it.';
+  $('look-txt').textContent = tl('look.intro', { n: short(S.gems) });
   $('look-list').innerHTML = LOOKS.map(function (l) {
     var st = lookState(l.id);
-    var need = l.store ? 'Reach store ' + l.store : l.ach ? 'Earn ' + ACHS.filter(function (a) { return a.id === l.ach; })[0].name : '';
-    var btn = st === 'on' ? '<button type="button" class="btn" disabled>In use</button>' :
-      st === 'lock' ? '<button type="button" class="btn" disabled>Locked</button>' :
-      '<button type="button" class="btn" data-l="' + l.id + '"' + (st === 'buy' && S.gems < l.gems ? ' disabled' : '') + '>' + (st === 'buy' ? '<img src="assets/ui_gem.png" alt="">' + l.gems : 'Use') + '</button>';
+    var need = l.store ? tl('look.need_store', { n: l.store }) : l.ach ? tl('look.need_ach', { name: ACHS.filter(function (a) { return a.id === l.ach; })[0].name }) : '';
+    var btn = st === 'on' ? '<button type="button" class="btn" disabled>' + tl('look.in_use') + '</button>' :
+      st === 'lock' ? '<button type="button" class="btn" disabled>' + tl('common.locked') + '</button>' :
+      '<button type="button" class="btn" data-l="' + l.id + '"' + (st === 'buy' && S.gems < l.gems ? ' disabled' : '') + '>' + (st === 'buy' ? '<img src="assets/ui_gem.png" alt="">' + l.gems : tl('look.use')) + '</button>';
     return '<div class="offer look' + (st === 'lock' ? ' lock' : '') + '"><u class="sw" style="background:linear-gradient(135deg,' + l.sign.bg[0] + ' 50%,' + l.sign.edge + ' 50%)"></u><div><b>' + l.name + '</b><span>' + l.text + '</span>' +
       (st === 'lock' ? '<span class="need">' + need + '</span>' : '') + '</div>' + btn + '</div>';
   }).join('');
 }
 
 function setSound() {
-  $('m-snd').textContent = 'Sound: ' + (snd ? 'on' : 'off');
-  $('m-buzz').textContent = 'Vibration: ' + (vib ? 'on' : 'off');
+  $('m-snd').textContent = tl(snd ? 'menu.sound_on' : 'menu.sound_off');
+  $('m-buzz').textContent = tl(vib ? 'menu.vibration_on' : 'menu.vibration_off');
 }
 
 function codeOk(code) {
@@ -2045,7 +2065,7 @@ function wire() {
   $('b-x2').addEventListener('click', function () {
     if (!buyX2()) return;
     sfx('done');
-    banner('<b>Double income</b><small>Active for ' + clock2(S.x2) + '</small>', 0);
+    banner('<b>' + tl('banner.double_income') + '</b><small>' + tl('banner.double_income.line', { t: clock2(S.x2) }) + '</small>', 0);
     nudge();
   });
   $('b-warp').addEventListener('click', function () {
@@ -2109,7 +2129,7 @@ function wire() {
     }
     if (!b.dataset.armed) {
       b.dataset.armed = '1';
-      b.textContent = 'Tap again to move';
+      b.textContent = tl('sell.tap_again');
       setTimeout(function () {
         b.dataset.armed = '';
         if (!$('sell').hidden) openSell();
@@ -2159,7 +2179,7 @@ function wire() {
     $('m-code').value = code;
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(code).then(function () {
-        flash('m-copy', 'Copied', 'Copy code');
+        flash('m-copy', tl('menu.copied'), tl('menu.copy_code'));
       }, function () {
         $('m-code').select();
       });
@@ -2172,23 +2192,23 @@ function wire() {
   $('m-load').addEventListener('click', function () {
     if (!codeOk($('m-code').value)) {
       loadArmed = false;
-      flash('m-load', 'Not a code', 'Load code');
+      flash('m-load', tl('menu.not_code'), tl('menu.load_code'));
       return;
     }
     if (!loadArmed) {
       loadArmed = true;
-      $('m-load').textContent = 'Tap again';
-      $('m-help').textContent = 'Loading replaces this game with the one in the code.';
+      $('m-load').textContent = tl('menu.tap_again');
+      $('m-help').textContent = tl('menu.load_warn');
       setTimeout(function () {
         loadArmed = false;
-        $('m-load').textContent = 'Load code';
+        $('m-load').textContent = tl('menu.load_code');
         $('m-help').textContent = help;
       }, 3000);
       return;
     }
     loadArmed = false;
     importCode($('m-code').value);
-    $('m-load').textContent = 'Load code';
+    $('m-load').textContent = tl('menu.load_code');
     $('m-help').textContent = help;
     afterLoad();
     $('menu').hidden = true;
@@ -2197,10 +2217,10 @@ function wire() {
   $('m-reset').addEventListener('click', function () {
     if (!armed) {
       armed = true;
-      $('m-reset').textContent = 'Tap again: erases gems, stores and streak';
+      $('m-reset').textContent = tl('menu.erase_armed');
       setTimeout(function () {
         armed = false;
-        $('m-reset').textContent = 'Erase all progress';
+        $('m-reset').textContent = tl('menu.erase');
       }, 3000);
       return;
     }
@@ -2209,7 +2229,7 @@ function wire() {
     speed = 1;
     dailyAsked = -1;
     afterLoad();
-    $('m-reset').textContent = 'Erase all progress';
+    $('m-reset').textContent = tl('menu.erase');
     $('menu').hidden = true;
   });
   // the test menu: five taps on the title
@@ -2274,6 +2294,7 @@ function wire() {
   });
 }
 
+// dev only
 function paintFree() {
   $('t-free').textContent = 'Unlimited money: ' + (free ? 'on' : 'off');
 }
@@ -2289,10 +2310,10 @@ function collectGift() {
   var at = View.giftTaken() || { x: innerWidth / 2, y: innerHeight / 2 };
   ring(at.x, at.y);
   if (r.x2) {
-    popAt('x2 for ' + (r.x2 < 60 ? r.x2 + ' s' : r.x2 / 60 + ' min'), at.x, at.y - 20, 'big');
+    popAt(r.x2 < 60 ? tl('common.x2_s', { n: r.x2 }) : tl('common.x2_min', { n: r.x2 / 60 }), at.x, at.y - 20, 'big');
     bumpEl('x2');
   } else if (r.gems) {
-    popAt('+' + plural(r.gems, 'gem'), at.x, at.y - 20, 'big gem');
+    popAt(tl('common.gems_plus', { n: r.gems }), at.x, at.y - 20, 'big gem');
     flyGems(at.x, at.y, r.gems);
   } else {
     popAt('+' + money(r.cash), at.x, at.y - 20, 'big');
@@ -2301,7 +2322,7 @@ function collectGift() {
   sfx('gift');
   if (r.jack) {
     sfx('gems');
-    banner('<b>Jackpot!</b><small>' + (r.x2 ? 'Income x2 for ' + r.x2 / 60 + ' min' : '+' + money(r.cash)) + '</small>', 0, true);
+    banner('<b>' + tl('banner.jackpot') + '</b><small>' + (r.x2 ? tl('common.income_x2_min', { n: r.x2 / 60 }) : '+' + money(r.cash)) + '</small>', 0, true);
   }
   buzz('success');
   nudge();
@@ -2325,7 +2346,7 @@ function tapTill(i) {
   if (at) ring(at.x, at.y);
   if (n < 2) {
     el.hidden = true;
-    if (at) popAt('Faster!', at.x, at.y - 24, 'small');
+    if (at) popAt(tl('hud.faster'), at.x, at.y - 24, 'small');
   } else if (at) {
     el.textContent = 'x' + n;
     el.style.left = at.x + 'px';
@@ -2347,19 +2368,18 @@ function onPerkEvent(ev, o) {
   else if (ev === 'giftgone') View.giftLeaves();
   else if (ev === 'rush') {
     View.rush(o.kind);
-    banner(o.kind === 'bus' ? '<b>Tour bus!</b><small>A crowd is coming in. Tap the checkouts to serve faster</small>' :
-      '<b>Flash sale!</b><small>Sale signs are up and shoppers are running in. Tap the checkouts to serve faster</small>', 0);
+    banner('<b>' + tl(o.kind === 'bus' ? 'banner.bus' : 'banner.flash') + '</b><small>' + tl(o.kind === 'bus' ? 'banner.bus.line' : 'banner.flash.line') + '</small>', 0);
     sfx(buf.rush ? 'rush' : 'done');
     buzz('medium');
   } else if (ev === 'rushend') {
     View.rushEnd();
-    banner('<b>Rush over: +' + money(o.extra) + '</b>', 0.3);
+    banner('<b>' + tl('banner.rush_over', { v: money(o.extra) }) + '</b>', 0.3);
     sfx('done');
   } else if (ev === 'close') {
-    banner('<b>Closing time</b><small>Open again at ' + SHUT[1] + ' AM. The stockers keep working</small>', 0);
+    banner('<b>' + tl('banner.close') + '</b><small>' + tl('banner.close.line', { t: fmtClock(SHUT[1] * 60) }) + '</small>', 0);
     sfx('done');
   } else if (ev === 'open') {
-    banner('<b>Open!</b><small>Shoppers are coming in</small>', 0);
+    banner('<b>' + tl('banner.open') + '</b><small>' + tl('banner.open.line') + '</small>', 0);
     sfx('done');
   } else {
     View.giftOff();
@@ -2373,7 +2393,7 @@ function tapReg(h) {
   if (!v) return;
   ring(h.x, h.y);
   var vip = h.c.reg === 'vip';
-  popAt(vip ? 'VIP tip!' : RG[h.c.reg].name, h.x, h.y - 46, 'small');
+  popAt(vip ? tl('hud.vip_tip') : RG[h.c.reg].name, h.x, h.y - 46, 'small');
   popAt('+' + money(v), h.x, h.y - 20, 'big');
   flyCoins(h.x, h.y, vip ? 14 : 5);
   if (h.c.gems) flyGems(h.x, h.y, h.c.gems);
@@ -2547,6 +2567,7 @@ function wireClose() {
 }
 
 function start() {
+  applyText();
   try {
     snd = localStorage.getItem(SND_KEY) !== '0';
     vib = localStorage.getItem(BUZZ_KEY) !== '0';
@@ -2567,6 +2588,7 @@ function start() {
   wire();
   wireShop();
   wireRadio();
+  wireLangs();
   wireSound();
   wireClose();
   buildStats();
@@ -2581,10 +2603,10 @@ function start() {
   onShopper = onSale;
   onPerk = onPerkEvent;
   onYesterday = function (g, x) {
-    banner('<b>Yesterday: +' + plural(g, 'gem') + '</b>' + (x ? '<small>Income x2 for ' + x / 60 + ' min</small>' : ''), 0);
+    banner('<b>' + tl('banner.yesterday', { n: g }) + '</b>' + (x ? '<small>' + tl('common.income_x2_min', { n: x / 60 }) + '</small>' : ''), 0);
   };
   onMission = function (m) {
-    banner('<b>Mission done</b><small>' + missionText(m) + '</small>', 0);
+    banner('<b>' + tl('banner.mission_done') + '</b><small>' + missionText(m) + '</small>', 0);
     sfx('done');
   };
   var wait = setInterval(function () {
