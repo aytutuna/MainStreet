@@ -1276,13 +1276,15 @@ function oil(y) {
 // kind to scatter per 100 square units (trees from the species named in tr). Spots in clear are left bare
 export var NATURE = {
   tree: {
-    oak: ['flora/kk-tree-1-a*0.62', 'flora/kk-tree-1-b*0.53', 'flora/kk-tree-3-a*0.75', 'flora/kk-tree-3-b*0.6'],
-    col: ['flora/kk-tree-1-a*0.62', 'flora/kk-tree-4-a*0.5', 'flora/kk-tree-1-b%forest=b9d8a2*0.5'],
-    pine: ['flora/kk-tree-4-a%forest=9cc79a*0.5', 'flora/kk-tree-4-b%forest=9cc79a*0.4'],
-    lol: ['flora/kk-tree-1-b%forest=b9d8a2*0.6', 'flora/kk-tree-3-b*0.66'],
-    maple: ['flora/kk-tree-1-b%forest=ffb48a*0.53']
+    oak: ['flora/mk-common-1-lo*0.37', 'flora/mk-common-2-lo*0.35', 'flora/mk-common-5-lo*0.38'],
+    col: ['flora/mk-common-3-lo*0.28', 'flora/mk-common-4-lo*0.28', 'flora/mk-pine-3-lo*0.4'],
+    pine: ['flora/mk-pine-1-lo*0.4', 'flora/mk-pine-2-lo*0.4', 'flora/mk-pine-3-lo*0.4', 'flora/mk-pine-4-lo*0.29'],
+    lol: ['flora/mk-common-2-lo*0.35', 'flora/mk-common-5-lo*0.38'],
+    maple: ['flora/mk-common-1-lo%Leaves_NormalTree=ffb060*0.37'],
+    // the street trees are seen closest, so they keep the fuller model
+    street: ['flora/mk-common-1*0.37', 'flora/mk-common-5*0.38']
   },
-  bush: ['flora/kk-bush-1-b*1', 'flora/kk-bush-3-a*1', 'flora/kk-bush-3-b*0.62', 'flora/kk-bush-4-e*0.4', 'flora/bush-flowers%Bush_Leaves=b8cc98*0.48'],
+  bush: ['flora/mk-bush*0.42', 'flora/mk-bush*0.35', 'flora/mk-bush-flowers*0.4'],
   grass: ['flora/fern-1*0.15', 'flora/fern-1*0.12'],
   flower: ['flora/flower-2-clump*0.7', 'flora/flower-3-clump*0.7', 'flora/flower-4-clump*0.7', 'flora/flower-5-clump*0.7'],
   fern: ['flora/fern-1*0.15'],
@@ -1324,5 +1326,5 @@ export var NATURE = {
     return a.concat([[l.x - 2.5, l.x + 2.5, l.z - 2.5, l.z + 2.5], [l.dx - 0.8, l.dx + 0.8, Math.min(l.z, l.walk) - 0.2, Math.max(l.z, l.walk) + 0.2]]);
   }, [])),
   // street trees where two lots meet away from their drives
-  singles: [-21, -7, 7, 21].reduce(function (a, x) { return a.concat([['oak', x, 14.85], ['oak', x, 30.2], ['oak', x, 35.8]]); }, [])
+  singles: [-21, -7, 7, 21].reduce(function (a, x) { return a.concat([['street', x, 14.85], ['street', x, 30.2], ['street', x, 35.8]]); }, [])
 };

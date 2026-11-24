@@ -220,13 +220,13 @@ export function meadow(x, z) {
   return smooth(0.5, 0.66, noise(x / 11 + 40, z / 11 + 2));
 }
 
-// the same toon trees and plants as the yards, a size up out here
-var CONIFER = ['flora/kk-tree-4-a%forest=9cc79a*0.7', 'flora/kk-tree-4-b%forest=9cc79a*0.56', 'flora/kk-tree-4-a*0.62'];
-var BROAD = ['flora/kk-tree-1-a*0.87', 'flora/kk-tree-1-b*0.74', 'flora/kk-tree-3-a*1.05', 'flora/kk-tree-3-b*0.84',
-  'flora/kk-tree-1-a%forest=b9d8a2*0.87', 'flora/kk-tree-1-b%forest=b9d8a2*0.74', 'flora/kk-tree-3-a%forest=b9d8a2*1.05'];
-var FALL = ['flora/kk-tree-1-a%forest=ffb48a*0.87', 'flora/kk-tree-3-b%forest=ffc47a*0.84'];
-var LONE = ['flora/kk-tree-3-b*1', 'flora/kk-tree-1-b*0.9', 'flora/kk-tree-3-a*1.2'];
-var BUSH = ['flora/kk-bush-1-b*1.4', 'flora/kk-bush-3-a*1.4', 'flora/kk-bush-3-b*0.9', 'flora/kk-bush-3-c*0.6', 'flora/kk-bush-4-e*0.55', 'flora/bush-flowers%Bush_Leaves=b8cc98*0.75'];
+// the same trees and plants as the yards, a size up out here. The trees are Quaternius' MegaKit trees cut down to
+// about 850 triangles each out here
+var CONIFER = ['flora/mk-pine-1-lo*0.63', 'flora/mk-pine-2-lo*0.62', 'flora/mk-pine-3-lo*0.62', 'flora/mk-pine-4-lo*0.46', 'flora/mk-pine-5-lo*0.53'];
+var BROAD = ['flora/mk-common-1-lo*0.58', 'flora/mk-common-2-lo*0.55', 'flora/mk-common-3-lo*0.44', 'flora/mk-common-4-lo*0.44', 'flora/mk-common-5-lo*0.59'];
+var FALL = ['flora/mk-common-1-lo%Leaves_NormalTree=ffb060*0.58', 'flora/mk-common-5-lo%Leaves_NormalTree=ffc070*0.59'];
+var LONE = ['flora/mk-common-1-lo*0.66', 'flora/mk-common-2-lo*0.62', 'flora/mk-common-5-lo*0.66'];
+var BUSH = ['flora/mk-bush*0.55', 'flora/mk-bush*0.45', 'flora/mk-bush-flowers*0.5'];
 var CLIFF = ['flora/kk-rock-3-a*1.6', 'flora/kk-rock-3-e*1.3', 'flora/kk-rock-1-e*1.3'];
 var STONE = ['flora/kk-rock-1-a*0.9', 'flora/kk-rock-1-e*0.6', 'flora/kk-rock-3-a*0.7'];
 var FLOWER = ['flora/flower-2-clump*0.8', 'flora/flower-3-clump*0.8', 'flora/flower-4-clump*0.8', 'flora/flower-5-clump*0.8'];
@@ -284,9 +284,9 @@ export function scenery(blocked) {
         var high = h > 8 || rand() < 0.2 + 0.4 * smooth(-60, -120, z);
         var ref = high || (f > 0.6 && rand() < 0.3) ? pick(CONIFER) : rand() < 0.05 ? pick(FALL) : pick(BROAD);
         out.trees.push([ref, x, z, turn, k * (1 + h * 0.012) * (0.75 + 0.35 * wood) * (1 + 0.35 * far), 1]);
-        for (var bn = rand() < 0.75 - 0.4 * far ? 1 + Math.floor(rand() * 2) : 0; bn > 0; bn--) out.low.push([pick(BUSH), x + (rand() - 0.5) * 3, z + (rand() - 0.5) * 3, turn, 0.9 + rand() * 0.8]);
+        for (var bn = rand() < 0.3 - 0.2 * far ? 1 : 0; bn > 0; bn--) out.low.push([pick(BUSH), x + (rand() - 0.5) * 3, z + (rand() - 0.5) * 3, turn, 0.9 + rand() * 0.8]);
       } else if (f > 0.15 && f < 0.45 && rand() < 0.55) {
-        for (var en = 1 + Math.floor(rand() * 3); en > 0; en--) out.low.push([pick(BUSH), x + (rand() - 0.5) * 2.4, z + (rand() - 0.5) * 2.4, turn, 0.8 + rand() * 0.9]);
+        for (var en = 1 + Math.floor(rand() * 2); en > 0; en--) out.low.push([pick(BUSH), x + (rand() - 0.5) * 2.4, z + (rand() - 0.5) * 2.4, turn, 0.8 + rand() * 0.9]);
       } else if (f < 0.3 && rand() < 0.03 && d > 8) {
         out.trees.push([pick(LONE), x, z, turn, 1 + rand() * 0.35, 1]);
       } else if (f < 0.6 && rand() < 0.12) {

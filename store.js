@@ -304,7 +304,7 @@ function loadModels(list, progress, done) {
     }
     var c = tint ? new THREE.Color(parseInt(tint, 16)) : src.map && kit !== 'flora' ? new THREE.Color(1, 1, 1) : src.color;
     // the scenery's leaves a touch warmer and greener, to sit with the bright grass
-    if (kit === 'flora' && src.map && /lea|bush|pine|grass/i.test(src.name)) c = c.clone().multiply(new THREE.Color(1.02, 1.1, 0.82));
+    if (kit === 'flora' && src.map && !tint && !/^flora\/mk-/.test(file) && /lea|bush|pine|grass/i.test(src.name)) c = c.clone().multiply(new THREE.Color(1.02, 1.1, 0.82));
     var opt = src.map ? { map: src.map, color: c } : { color: c };
     if (src.alphaTest) {
       opt.alphaTest = src.alphaTest;
@@ -318,6 +318,7 @@ function loadModels(list, progress, done) {
     mats[key] = new THREE.MeshLambertMaterial(opt);
     mats[key].name = src.name;
     if (GROUND.test(file)) mats[key].userData.noShadow = true;
+    if (/^flora\/mk-/.test(file)) mats[key].userData.flora = true;
     return mats[key];
   }
   var missing = { parts: [], box: { x0: -0.3, x1: 0.3, z0: -0.3, z1: 0.3, y0: 0, h: 0.3 }, gltf: null };
@@ -894,6 +895,8 @@ function mesh(ref, x, z, rot, y) {
 var LOD_DIST = 40;
 var GOODS_CELL = 0.04;
 var FIX_CELL = 0.02;
+// trees and bushes are big enough that their far copies can be much coarser
+var FLORA_CELL = 0.25;
 var lodFar = false;
 var noLow = false;
 var lowCache = new WeakMap();
@@ -993,7 +996,7 @@ function Batch() {
     mtx.compose(new THREE.Vector3(x, y, z), q, k ? new THREE.Vector3(k, k, k) : one);
     sets[key].list.push(geom.clone().applyMatrix4(mtx));
     if (goods) sets[key].rank.push(rank);
-    if (sets[key].low) sets[key].low.push(lowOf(geom, goods ? GOODS_CELL : FIX_CELL).clone().applyMatrix4(mtx));
+    if (sets[key].low) sets[key].low.push(lowOf(geom, goods ? GOODS_CELL : mat.userData.flora ? FLORA_CELL : FIX_CELL).clone().applyMatrix4(mtx));
   }
   this.sets = sets;
   // where each model stands and the way it faces, kept so an icon can be framed on and turned to the piece itself

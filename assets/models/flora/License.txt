@@ -1,6 +1,7 @@
 Vegetation and rocks used for the scenery.
 
 kk-*: Forest Nature Pack by Kay Lousberg (KayKit, www.kaylousberg.com), CC0 (public domain).
+mk-*: Stylized Nature MegaKit by Quaternius, CC0 (public domain), simplified to a few hundred triangles each.
 sn-*: Stylised Nature by Elijah Cobden (no licence file shipped with the pack).
 fern-1: Stylized Nature MegaKit by Quaternius, CC0 (public domain).
 flower-*-clump, bush-flowers: Ultimate Stylized Nature by Quaternius, CC0 (public domain).
