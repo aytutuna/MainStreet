@@ -44,6 +44,8 @@ targets:
         buildPhase: resources
       - path: ../style.css
         buildPhase: resources
+      - path: ../i18n.js
+        buildPhase: resources
       - path: ../data.js
         buildPhase: resources
       - path: ../sim.js
@@ -63,6 +65,8 @@ targets:
       - path: ../vendor
         type: folder
       - path: ../assets
+        type: folder
+      - path: ../lang
         type: folder
     dependencies:
       - package: RevenueCat
