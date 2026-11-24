@@ -5,6 +5,7 @@
 // starts and nothing flashes in English. Changing the language in the menu saves the game and reloads the page.
 
 var LANG = {};
+LANG.en = {};
 
 // code, name in its own language, locale for Intl, right to left. Files are named after the code.
 var LANGS = [
@@ -56,12 +57,16 @@ var LANGS = [
   ['zh-Hans', '简体中文', 'zh-Hans'],
   ['zh-Hant', '繁體中文', 'zh-Hant']
 ];
+// The languages that have translations. Only these are picked from the phone's language and offered in the menu; the
+// rest of LANGS are empty files waiting for translators. scripts/gen_native.mjs rewrites this line.
+var LANG_READY = ['en'];
 var LANG_KEY = 'mainstreet.lang';
 
 // Lilita One only has Latin letters. Everything else falls to the phone's own fonts, listed per script because the
 // system fallback is not always the nicest one (Urdu wants Nastaliq, Japanese and Chinese need their own forms).
-var FONT_BASE = 'ui-rounded, "SF Pro Rounded", system-ui, -apple-system, "Segoe UI", Roboto';
-var FONT_TAIL = '"Noto Sans", "Helvetica Neue", Arial, sans-serif';
+// They come before the generic families, which would otherwise answer first.
+var FONT_BASE = 'ui-rounded, "SF Pro Rounded"';
+var FONT_TAIL = 'system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", "Helvetica Neue", Arial, sans-serif';
 var FONT_SCRIPT = {
   ja: '"Hiragino Maru Gothic ProN", "Hiragino Sans", "Noto Sans CJK JP", "Noto Sans JP", "Yu Gothic"',
   ko: '"Apple SD Gothic Neo", "Noto Sans CJK KR", "Noto Sans KR", "Malgun Gothic"',
@@ -83,14 +88,15 @@ var FONT_SCRIPT = {
   te: '"Kohinoor Telugu", "Telugu Sangam MN", "Noto Sans Telugu"'
 };
 
-var I18N = { code: 'en', locale: 'en', rtl: false };
+var I18N = { code: 'en', locale: 'en', rtl: false, script: '' };
 
 function langEntry(code) {
   for (var i = 0; i < LANGS.length; i++) if (LANGS[i][0] === code) return LANGS[i];
   return null;
 }
 
-// the best of our languages for one tag from navigator.languages
+// the best of our languages for one tag from navigator.languages. Regions we have no file for share the nearest one:
+// any Spanish but Spain's is Latin American, any French but Canada's is France's, any Portuguese but Brazil's is Portugal's
 function langFor(tag) {
   var p = String(tag).replace(/_/g, '-').split('-');
   var l = p[0].toLowerCase();
@@ -110,38 +116,52 @@ function langFor(tag) {
   return langEntry(l) ? l : '';
 }
 
+function ready(code) {
+  return LANG_READY.indexOf(code) >= 0;
+}
+
 function pickLang() {
   var q = /[?&]lang=([\w-]+)/.exec(location.search);
   var saved = '';
   try {
     saved = localStorage.getItem(LANG_KEY) || '';
   } catch (e) {}
+  // ?lang= takes any language, so a translator can look at a file that is not released yet
   if (q && langEntry(q[1])) return q[1];
-  if (langEntry(saved)) return saved;
+  if (ready(saved)) return saved;
   var all = navigator.languages && navigator.languages.length ? navigator.languages : [navigator.language || 'en'];
   for (var i = 0; i < all.length; i++) {
     var c = langFor(all[i]);
-    if (c) return c;
+    if (ready(c)) return c;
   }
   return 'en';
 }
 
-(function () {
-  var code = pickLang();
-  var e = langEntry(code) || langEntry('en');
-  I18N.code = e[0];
+// runs once the language file is in: a language whose file turned out empty is not used at all, so numbers, clock,
+// plurals and direction stay English too
+function setupLang(code) {
+  var t = LANG[code];
+  if (code !== 'en' && !(t && Object.keys(t).length)) code = 'en';
+  var e = langEntry(code);
+  I18N.code = code;
   I18N.locale = e[2];
   I18N.rtl = !!e[3];
+  I18N.script = FONT_SCRIPT[code] || '';
   var h = document.documentElement;
   h.lang = e[2];
   h.dir = I18N.rtl ? 'rtl' : 'ltr';
-  if (FONT_SCRIPT[e[0]] && !/^(ja|ko|zh)/.test(e[0])) h.className = 'cx';
+  if (I18N.script && !/^(ja|ko|zh)/.test(code)) h.className = 'cx';
   // the stack for the page (CSS var --sys) and for text drawn on canvases
-  I18N.font = [FONT_BASE, FONT_SCRIPT[e[0]], FONT_TAIL].filter(Boolean).join(', ');
+  I18N.font = [FONT_BASE, I18N.script, FONT_TAIL].filter(Boolean).join(', ');
   h.style.setProperty('--sys', I18N.font);
   h.style.setProperty('--head', '"Lilita One", ' + I18N.font);
+}
+
+(function () {
+  var code = pickLang();
   document.write('<script src="lang/en.js"><\/script>');
-  if (e[0] !== 'en') document.write('<script src="lang/' + e[0] + '.js"><\/script>');
+  if (code !== 'en') document.write('<script src="lang/' + code + '.js"><\/script>');
+  document.write('<script>setupLang("' + code + '")<\/script>');
 })();
 
 // digits stay Latin in every language: the short money style puts Latin letters (K, M) behind the number
@@ -157,26 +177,32 @@ function numFmt(max) {
   return NF[max];
 }
 
-var PR = null;
-function pluralCat(n) {
-  if (!PR) {
+// plural rules for the language, or for English when the text itself fell back to English
+var PR = {};
+function pluralCat(n, locale) {
+  locale = locale || I18N.locale;
+  if (!PR[locale]) {
     try {
-      PR = new Intl.PluralRules(I18N.locale);
+      PR[locale] = new Intl.PluralRules(locale);
     } catch (e) {
-      PR = { select: function (x) { return x === 1 ? 'one' : 'other'; } };
+      PR[locale] = { select: function (x) { return x === 1 ? 'one' : 'other'; } };
     }
   }
-  return PR.select(n);
+  return PR[locale].select(n);
 }
 
 // minutes after midnight as the language writes the time of day (12 or 24 hours)
+var CLOCK_FMT = null;
 function fmtClock(min) {
   var d = new Date(2000, 0, 1, 0, Math.floor(min));
-  try {
-    return new Intl.DateTimeFormat(I18N.locale + '-u-nu-latn', { hour: 'numeric', minute: '2-digit' }).format(d).replace(/\u202f/g, ' ');
-  } catch (e) {
-    return d.getHours() + ':' + ('0' + d.getMinutes()).slice(-2);
+  if (!CLOCK_FMT) {
+    try {
+      CLOCK_FMT = new Intl.DateTimeFormat(I18N.locale + '-u-nu-latn', { hour: 'numeric', minute: '2-digit' });
+    } catch (e) {
+      CLOCK_FMT = { format: function (x) { return x.getHours() + ':' + ('0' + x.getMinutes()).slice(-2); } };
+    }
   }
+  return CLOCK_FMT.format(d).replace(/ /g, ' ');
 }
 
 // a number for the text: grouped like the language does it, up to two decimals
@@ -184,19 +210,25 @@ function fmtn(v) {
   return numFmt(2).format(v);
 }
 
+// the text for key and the locale whose plural rules apply to it; plural objects fall back to 'other'
+function lookup(table, key, v, locale) {
+  var s = table && table[key];
+  if (typeof s === 'object' && s) s = s[pluralCat(v && v.n, locale)] || s.other;
+  return typeof s === 'string' && s ? s : undefined;
+}
+
 // tl('goal.serve', { n: 1000 }): {name} marks are filled from vars, numbers are formatted. A table value that is an
 // object holds one text per plural category (one, other, few, ...), picked by vars.n
 function tl(key, v) {
-  var s = LANG[I18N.code] && LANG[I18N.code][key];
-  if (s === undefined || s === '') s = LANG.en[key];
+  var s = lookup(LANG[I18N.code], key, v);
+  if (s === undefined) s = lookup(LANG.en, key, v, 'en');
   if (s === undefined) return key;
-  if (typeof s === 'object') s = s[pluralCat(v && v.n)] || s.other;
   if (!v) return s;
   return s.replace(/\{(\w+)\}/g, function (m, k) {
     if (!(k in v)) return m;
     var x = typeof v[k] === 'number' ? fmtn(v[k]) : v[k];
-    // numbers and money keep their own left to right order inside right to left text
-    return I18N.rtl && /\d/.test(x) ? '\u2066' + x + '\u2069' : x;
+    // a number or money amount keeps its own left to right order inside right to left text
+    return I18N.rtl && /^\S*\d\S*$/.test(x) ? '⁦' + x + '⁩' : x;
   });
 }
 
@@ -215,7 +247,7 @@ function applyText(root) {
 }
 
 function setLang(code) {
-  if (!langEntry(code) || code === I18N.code) return;
+  if (!ready(code) || code === I18N.code) return;
   try {
     localStorage.setItem(LANG_KEY, code);
   } catch (e) {}

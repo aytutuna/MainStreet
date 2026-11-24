@@ -513,6 +513,7 @@ function pickRadio(id) {
 function openLangs() {
   var h = '';
   LANGS.forEach(function (l) {
+    if (!ready(l[0])) return;
     h += '<button type="button" class="btn' + (l[0] === I18N.code ? '' : ' alt') + '" data-l="' + l[0] + '" lang="' + l[2] + '" dir="auto">' + l[1] + '</button>';
   });
   $('lang-list').innerHTML = h;
@@ -522,6 +523,8 @@ function openLangs() {
 }
 
 function wireLangs() {
+  // one language is no choice
+  $('m-lang').hidden = LANG_READY.length < 2;
   $('m-lang').textContent = tl('menu.language', { name: langEntry(I18N.code)[1] });
   $('m-lang').addEventListener('click', openLangs);
   $('langs-x').addEventListener('click', function () { $('langs').hidden = true; });
@@ -1761,6 +1764,7 @@ function openDaily() {
     var c = document.createElement('div');
     c.className = 'day' + (i < done ? ' done' : '') + (info.can && i === info.idx ? ' today' : '') + (i === 6 ? ' last' : '');
     var ic = d.gems && d.x2 ? 'ui_gift' : d.gems ? 'ui_gem' : d.x2 ? 'ui_bolt' : 'coin';
+    c.dataset.ok = tl('daily.done_mark');
     c.innerHTML = '<b>' + tl('daily.day', { n: i + 1 }) + '</b><img src="assets/' + ic + '.png" alt=""><span>' + dayText(d) + '</span>';
     box.appendChild(c);
   });
@@ -1787,7 +1791,7 @@ function updateHint() {
 }
 
 function gemsLeft(cost) {
-  return S.gems < cost ? tl('common.need_gems', { n: cost - S.gems }) : '';
+  return S.gems < cost ? tl('common.need_gems', { n: short(cost - S.gems) }) : '';
 }
 
 function paintBoost() {

@@ -172,6 +172,8 @@ LANG['en'] = {
   'common.gems_plus': { one: '+{n} gem', other: '+{n} gems' },
   // {n} is the number of gems still missing for a purchase.
   'common.need_gems': { one: 'Need {n} more gem.', other: 'Need {n} more gems.' },
+  // Small mark on a day of the daily reward calendar that was already claimed. Max about 4 characters.
+  'daily.done_mark': 'ok',
   // Seconds, minutes and hours, written short.
   'common.sec': '{n} s',
   'common.min': '{n} min',

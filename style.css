@@ -1689,7 +1689,7 @@ button.pill:active,
 }
 
 .day.done::after {
-  content: "ok";
+  content: attr(data-ok);
   position: absolute;
   inset-inline-end: 4px;
   top: 3px;
