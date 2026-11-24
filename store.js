@@ -897,8 +897,14 @@ function mesh(ref, x, z, rot, y) {
 var LOD_DIST = 40;
 var GOODS_CELL = 0.04;
 var FIX_CELL = 0.02;
-// trees and bushes are big enough that their far copies can be much coarser
+// trees are big enough that their far copies can be much coarser. Bushes share the leaf material, so the grid follows
+// the model's size, or a whole bush falls into a few cells and is gone
 var FLORA_CELL = 0.25;
+function floraCell(geom) {
+  if (!geom.boundingBox) geom.computeBoundingBox();
+  var b = geom.boundingBox;
+  return Math.min(FLORA_CELL, Math.max(b.max.x - b.min.x, b.max.y - b.min.y, b.max.z - b.min.z) / 18);
+}
 var lodFar = false;
 var noLow = false;
 var lowCache = new WeakMap();
@@ -998,7 +1004,7 @@ function Batch() {
     mtx.compose(new THREE.Vector3(x, y, z), q, k ? new THREE.Vector3(k, k, k) : one);
     sets[key].list.push(geom.clone().applyMatrix4(mtx));
     if (goods) sets[key].rank.push(rank);
-    if (sets[key].low) sets[key].low.push(lowOf(geom, goods ? GOODS_CELL : mat.userData.flora ? FLORA_CELL : FIX_CELL).clone().applyMatrix4(mtx));
+    if (sets[key].low) sets[key].low.push(lowOf(geom, goods ? GOODS_CELL : mat.userData.flora ? floraCell(geom) : FIX_CELL).clone().applyMatrix4(mtx));
   }
   this.sets = sets;
   // where each model stands and the way it faces, kept so an icon can be framed on and turned to the piece itself
