@@ -42,7 +42,7 @@ private final class NotifyHandler: NSObject, WKScriptMessageHandler {
             for item in msg["list"] as? [[String: Any]] ?? [] {
                 guard let id = item["id"] as? String, let text = item["body"] as? String, let at = item["at"] as? Double else { continue }
                 let content = UNMutableNotificationContent()
-                content.title = "Main Street"
+                content.title = NSLocalizedString("notification_title", comment: "")
                 content.body = text
                 content.sound = .default
                 let wait = max(1, at / 1000 - Date().timeIntervalSince1970)
@@ -164,15 +164,15 @@ final class GameViewController: UIViewController, WKNavigationDelegate, WKUIDele
 
     func webView(_ webView: WKWebView, runJavaScriptAlertPanelWithMessage message: String, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping () -> Void) {
         let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: "OK", style: .default) { _ in completionHandler() })
+        alert.addAction(UIAlertAction(title: NSLocalizedString("ok", comment: ""), style: .default) { _ in completionHandler() })
         present(alert, animated: true)
     }
 
     func webView(_ webView: WKWebView, runJavaScriptTextInputPanelWithPrompt prompt: String, defaultText: String?, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping (String?) -> Void) {
         let alert = UIAlertController(title: nil, message: prompt, preferredStyle: .alert)
         alert.addTextField { field in field.text = defaultText }
-        alert.addAction(UIAlertAction(title: "Cancel", style: .cancel) { _ in completionHandler(nil) })
-        alert.addAction(UIAlertAction(title: "OK", style: .default) { _ in
+        alert.addAction(UIAlertAction(title: NSLocalizedString("cancel", comment: ""), style: .cancel) { _ in completionHandler(nil) })
+        alert.addAction(UIAlertAction(title: NSLocalizedString("ok", comment: ""), style: .default) { _ in
             completionHandler(alert.textFields?.first?.text ?? "")
         })
         present(alert, animated: true)
