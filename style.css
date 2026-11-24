@@ -1,6 +1,7 @@
 @font-face {
   font-family: "Lilita One";
   src: url(assets/lilita-one.woff2) format("woff2");
+  font-weight: 400 700;
   font-display: swap;
   unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
 }
@@ -9,6 +10,7 @@
 @font-face {
   font-family: "Lilita One";
   src: url(assets/lilita-one-ext.woff2) format("woff2");
+  font-weight: 400 700;
   font-display: swap;
   unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
@@ -100,6 +102,11 @@ small {
 #call em {
   font-family: var(--head);
   font-weight: 400;
+}
+
+/* the system fonts that stand in for Lilita One have a real bold; Lilita keeps its one weight (see the faces above) */
+html.fb :is(.btn, .btns button, #tabs button, .chip span, .chip em, .box h2, .box h3, .rib, .hero h3, #hint, #banner, #combo, #away-amt, #deals em, #deals u, #call em) {
+  font-weight: 700;
 }
 
 #app {
@@ -221,10 +228,6 @@ button.pill:active,
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-}
-
-#cash.long b {
-  font-size: 15px;
 }
 
 @media (max-width: 380px) {
@@ -1832,7 +1835,9 @@ button.pill:active,
 }
 
 .offer .btn {
-  white-space: nowrap;
+  white-space: normal;
+  text-align: center;
+  line-height: 1.15;
   min-height: 44px;
   padding: 8px 10px;
   font-size: 16px;
@@ -2803,4 +2808,32 @@ html.cx body * {
 
 html.cx :is(.box, #hint, #banner, #combo, #tabs, #bar, #goals, #deals, #side, #mtoast, #card, #sheet-head, #list, .tag, .say) :is(span, b, em, small, p, h2, h3, button, label, i, u, bdi, div) {
   line-height: 1.5;
+}
+
+/* a box scrolls when it is taller than the screen, its buttons and lines keep their height */
+.box > :is(.btn, .row, p, h2) {
+  flex-shrink: 0;
+}
+
+#tabs button span {
+  max-width: 100%;
+  padding: 0 2px;
+  white-space: nowrap;
+}
+
+body {
+  overflow-wrap: break-word;
+  hyphens: auto;
+  text-wrap: pretty;
+}
+
+/* two lines of Thai, Malayalam or Tamil do not fit a 44 px pill: a smaller rate line with room for the marks */
+html.cx #cash b {
+  font-size: 22px;
+  line-height: 1;
+}
+
+html.cx #rate {
+  font-size: 12px;
+  line-height: 1.35;
 }

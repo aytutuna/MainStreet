@@ -151,6 +151,8 @@ function setupLang(code) {
   h.lang = e[2];
   h.dir = I18N.rtl ? 'rtl' : 'ltr';
   if (I18N.script && !/^(ja|ko|zh)/.test(code)) h.classList.add('cx');
+  // Lilita One only draws Latin, so these languages fall to a system font, which needs its own bold
+  if (I18N.script || /^(ru|uk|el|vi)$/.test(code)) h.classList.add('fb');
   // the stack for the page (CSS var --sys) and for text drawn on canvases
   I18N.font = [FONT_BASE, I18N.script, FONT_TAIL].filter(Boolean).join(', ');
   h.style.setProperty('--sys', I18N.font);

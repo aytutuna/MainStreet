@@ -603,6 +603,47 @@ function flag(c, key, el, name, on) {
   el.classList.toggle(name, on);
 }
 
+// labels that must stay on one line shrink until they fit, so a long translation loses size instead of letters
+var FIT = '#cash b, #rate, .chip span, #tabs button span, #st-grid b, .l1 b, .pr em, .btn, .offer b';
+var fitEpoch = 0;
+
+function fitOne(el) {
+  var key = fitEpoch + el.clientWidth + el.textContent;
+  if (el.fit === key || !el.offsetParent) return;
+  el.fit = key;
+  el.style.fontSize = '';
+  var px = parseFloat(getComputedStyle(el).fontSize);
+  var min = px * 0.65;
+  while (el.scrollWidth > el.clientWidth && px > min) el.style.fontSize = (px -= 0.5) + 'px';
+}
+
+function fitAll() {
+  var all = document.querySelectorAll(FIT);
+  for (var i = 0; i < all.length; i++) fitOne(all[i]);
+}
+
+function fitWire() {
+  var queued = false;
+  function ask() {
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(function () {
+      queued = false;
+      fitAll();
+    });
+  }
+  new MutationObserver(ask).observe($('app'), { childList: true, characterData: true, subtree: true, attributes: true, attributeFilter: ['hidden'] });
+  window.addEventListener('resize', function () {
+    fitEpoch++;
+    ask();
+  });
+  if (document.fonts) document.fonts.ready.then(function () {
+    fitEpoch++;
+    ask();
+  });
+  ask();
+}
+
 function popAt(text, x, y, cls) {
   var d = document.createElement('div');
   d.className = 'pop ' + (cls || '');
@@ -1259,7 +1300,6 @@ function updateHud() {
   // dev only: unlimited money is a test option
   var cash = free ? 'Unlimited' : money(S.cash);
   set(shown, 'cash', $('cash-n'), 'textContent', cash);
-  flag(shown, 'cl', $('cash'), 'long', cash.length > 6);
   set(shown, 'rate', $('rate'), 'textContent', shut() ? tl('hud.closed') : tl('hud.rate', { v: money(rate()) }));
   set(shown, 'clk', $('clk'), 'textContent', shut() ? tl('hud.closed_at', { t: stamp() }) : stamp());
   flag(shown, 'clc', $('clk'), 'shut', shut());
@@ -2595,6 +2635,7 @@ function start() {
   wireShop();
   wireRadio();
   wireLangs();
+  fitWire();
   wireSound();
   wireClose();
   buildStats();
