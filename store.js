@@ -1631,8 +1631,8 @@ function patch(pts, holes) {
 }
 
 var FONT = 'ui-rounded, "SF Pro Rounded", "Arial Rounded MT Bold", ' + I18N.font;
-var FONT_BLACK = '"Arial Black", Impact, ' + I18N.font;
-var FONT_PLAIN = 'sans-serif, ' + I18N.font;
+var FONT_BLACK = '"Arial Black", Impact, ' + (I18N.script ? I18N.script + ', ' : '') + I18N.font;
+var FONT_PLAIN = (I18N.script ? I18N.script + ', ' : '') + 'sans-serif, ' + I18N.font;
 function font(px) {
   return '800 ' + px + 'px ' + FONT;
 }
@@ -1677,12 +1677,11 @@ function rr(g, x, y, w, h, r) {
   g.roundRect(x, y, w, h, r);
 }
 
-// the largest size at or under fs that fits every line in w, down to a floor; leaves the font set. Text still wider than w at
-// the floor is squeezed by the maxWidth argument of fillText
+// the largest size at or under fs that fits every line in w, down to 8; leaves the font set. Text still wider than w at
+// that size is squeezed by the maxWidth argument of fillText
 function fitFont(g, lines, w, fs) {
-  var min = Math.max(8, Math.round(fs * 0.4));
   g.font = font(fs);
-  while (fs > min && lines.some(function (l) { return g.measureText(l).width > w; })) g.font = font(fs -= 2);
+  while (fs > 8 && lines.some(function (l) { return g.measureText(l).width > w; })) g.font = font(fs -= 2);
   return fs;
 }
 
