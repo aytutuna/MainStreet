@@ -2,6 +2,15 @@
   font-family: "Lilita One";
   src: url(assets/lilita-one.woff2) format("woff2");
   font-display: swap;
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+/* Latin Extended: Polish, Czech, Turkish, Romanian, Hungarian and the like */
+@font-face {
+  font-family: "Lilita One";
+  src: url(assets/lilita-one-ext.woff2) format("woff2");
+  font-display: swap;
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
 }
 
 :root {
@@ -21,7 +30,8 @@
   --gloss-gold: linear-gradient(#fff4b0, #ffd85a 48%, #f0b92e 52%, #f5c845);
   --gloss-green: linear-gradient(#86d474, #5db04b 48%, #3d8a31 52%, #4a9a3c);
   --gloss-red: linear-gradient(#ee826b, #d4523a 48%, #b23722 52%, #c4432f);
-  --head: "Lilita One", ui-rounded, "SF Pro Rounded", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --sys: ui-rounded, "SF Pro Rounded", system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif;
+  --head: "Lilita One", var(--sys);
   --st: env(safe-area-inset-top);
   --sb: env(safe-area-inset-bottom);
 }
@@ -38,7 +48,7 @@ body {
   overscroll-behavior: none;
   background: #2b2b3d;
   color: var(--ink);
-  font: 16px/1.25 ui-rounded, "SF Pro Rounded", system-ui, -apple-system, "Segoe UI", sans-serif;
+  font: 16px/1.25 var(--sys);
   user-select: none;
   -webkit-user-select: none;
   -webkit-tap-highlight-color: transparent;
@@ -150,7 +160,7 @@ button.pill:active,
 }
 
 #stars {
-  text-align: left;
+  text-align: start;
 }
 
 #stars div {
@@ -355,7 +365,7 @@ button.pill:active,
   grid-template-rows: auto auto;
   gap: 6px 8px;
   align-items: center;
-  text-align: left;
+  text-align: start;
   position: relative;
   overflow: hidden;
 }
@@ -457,7 +467,7 @@ button.pill:active,
   grid-template-columns: 1fr auto;
   gap: 8px;
   align-items: center;
-  text-align: left;
+  text-align: start;
   padding: 6px 8px;
 }
 
@@ -544,7 +554,7 @@ button.pill:active,
   padding: 4px 8px;
   border: 2px solid var(--paper2);
   border-radius: 10px;
-  text-align: left;
+  text-align: start;
 }
 
 #st-grid span {
@@ -569,7 +579,7 @@ button.pill:active,
   display: grid;
   grid-template-columns: 1fr auto;
   gap: 2px 8px;
-  text-align: left;
+  text-align: start;
   font-size: 13px;
 }
 
@@ -598,7 +608,7 @@ button.pill:active,
 
 #side {
   position: absolute;
-  left: 10px;
+  inset-inline-start: 10px;
   top: 100%;
   margin-top: 6px;
   display: flex;
@@ -894,7 +904,7 @@ button.pill:active,
 #tabs u {
   position: absolute;
   top: 2px;
-  right: 8px;
+  inset-inline-end: 8px;
   width: 16px;
   height: 16px;
   border-radius: 8px;
@@ -944,14 +954,14 @@ button.pill:active,
 
 #card-x {
   position: absolute;
-  right: 6px;
+  inset-inline-end: 6px;
   top: -30px;
   z-index: 3;
 }
 
 #sheet-x {
   position: absolute;
-  right: 10px;
+  inset-inline-end: 10px;
   top: 8px;
 }
 
@@ -1515,7 +1525,7 @@ button.pill:active,
 .box h3 {
   margin: 2px 0 -3px;
   font-size: 17px;
-  text-align: left;
+  text-align: start;
 }
 
 .box p {
@@ -1608,7 +1618,7 @@ button.pill:active,
   align-items: center;
   gap: 4px 8px;
   padding: 7px 8px;
-  text-align: left;
+  text-align: start;
   font-size: 15px;
   font-weight: 700;
 }
@@ -1681,7 +1691,7 @@ button.pill:active,
 .day.done::after {
   content: "ok";
   position: absolute;
-  right: 4px;
+  inset-inline-end: 4px;
   top: 3px;
   font-weight: 800;
   color: var(--green2);
@@ -1696,7 +1706,7 @@ button.pill:active,
   display: flex;
   align-items: center;
   gap: 10px;
-  text-align: left;
+  text-align: start;
   padding: 8px;
 }
 
@@ -1724,6 +1734,12 @@ button.pill:active,
   line-height: 1.2;
 }
 
+/* a long translation wraps in the button instead of squeezing the text beside it */
+.offer > .btn {
+  max-width: 45%;
+  white-space: normal;
+}
+
 #perks,
 #shop-list,
 #ads {
@@ -1744,6 +1760,12 @@ button.pill:active,
   align-items: center;
 }
 
+#lang-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
 #r-list .rg i {
   font-style: normal;
 }
@@ -1762,7 +1784,7 @@ button.pill:active,
   display: flex;
   flex-direction: column;
   gap: 4px;
-  text-align: left;
+  text-align: start;
   font-size: 13px;
   color: var(--muted);
 }
@@ -2177,7 +2199,7 @@ button.pill:active,
 
 #deals {
   position: absolute;
-  right: 8px;
+  inset-inline-end: 8px;
   top: 100%;
   margin-top: 12px;
   display: flex;
@@ -2221,7 +2243,7 @@ button.pill:active,
 #deals u {
   position: absolute;
   top: -8px;
-  right: -6px;
+  inset-inline-end: -6px;
   padding: 1px 5px;
   border: 2px solid var(--ink);
   border-radius: 9px;
@@ -2252,7 +2274,7 @@ button.pill:active,
 
 #shop-list {
   gap: 12px;
-  text-align: left;
+  text-align: start;
 }
 
 .hero {
@@ -2444,7 +2466,7 @@ button.pill:active,
 .tile em {
   position: absolute;
   top: 32px;
-  right: 6px;
+  inset-inline-end: 6px;
   padding: 1px 6px;
   border-radius: 9px;
   background: var(--gloss-green);
@@ -2518,7 +2540,7 @@ button.pill:active,
   display: flex;
   align-items: center;
   gap: 12px;
-  text-align: left;
+  text-align: start;
 }
 
 #sell-txt .sring {
@@ -2606,7 +2628,7 @@ button.pill:active,
 #sell-keep {
   display: flex;
   gap: 8px;
-  text-align: left;
+  text-align: start;
 }
 
 #sell-keep > div {
@@ -2679,7 +2701,7 @@ button.pill:active,
   display: flex;
   flex-direction: column;
   gap: 6px;
-  text-align: left;
+  text-align: start;
   font-size: 12px;
   color: var(--muted);
 }
@@ -2759,7 +2781,7 @@ svg.pk {
   display: inline-block;
   width: 0.8em;
   height: 0.8em;
-  margin-right: 6px;
+  margin-inline-end: 6px;
   vertical-align: -0.1em;
   border: 2px solid currentColor;
   border-right-color: transparent;
@@ -2771,4 +2793,14 @@ svg.pk {
   to {
     transform: rotate(360deg);
   }
+}
+
+/* Scripts with joined or stacked letters (Arabic, Urdu, Thai, the Indic scripts): no letter spacing, and room for tall marks */
+html.cx body * {
+  letter-spacing: 0 !important;
+  text-transform: none !important;
+}
+
+html.cx :is(.box, #hint, #banner, #combo, #tabs, #bar, #goals, #deals, #side, #mtoast, #card, #sheet-head, #list, .tag, .say) :is(span, b, em, small, p, h2, h3, button, label, i, u, bdi, div) {
+  line-height: 1.5;
 }
