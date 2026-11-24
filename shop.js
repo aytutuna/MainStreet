@@ -396,7 +396,7 @@ function adGive(k, from) {
     if (callRush(true)) $('boost').hidden = true;
   } else if (k === 'warp') {
     var v = warp(true);
-    popAt('+' + money(v), c.x, c.y, 'big');
+    popAt(plus(money(v)), c.x, c.y, 'big');
     flyCoins(c.x, c.y, 8);
   } else {
     S.gems += AD_GEMS;
@@ -440,7 +440,7 @@ function updateDeals() {
     if (k === 'start') {
       var left = starterLeft(true);
       set(shown, 'dt' + k, b.lastChild, 'textContent', left < 0 ? '' : hms(left));
-    } else if (k === 'deal') set(shown, 'db' + k, b.children[1], 'textContent', '+' + Math.round(DEAL.bonus * 100) + '%');
+    } else if (k === 'deal') set(shown, 'db' + k, b.children[1], 'textContent', plus(Math.round(DEAL.bonus * 100) + '%'));
   });
 }
 

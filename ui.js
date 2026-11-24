@@ -1264,7 +1264,7 @@ function onSale(ev, c, v, t) {
     r = saleAvg ? u / saleAvg : 1;
     saleAvg = saleAvg ? saleAvg + (u - saleAvg) * 0.05 : u;
   }
-  if (at) popAt('+' + money(v), at.x, at.y, r >= 1.8 ? 'small max' : r >= 1.25 ? 'small hot' : r < 0.6 ? 'small dim' : 'small');
+  if (at) popAt(plus(money(v)), at.x, at.y, r >= 1.8 ? 'small max' : r >= 1.25 ? 'small hot' : r < 0.6 ? 'small dim' : 'small');
 }
 
 // two or more upgrades within two seconds of each other make a combo, and each one's sound goes up a semitone
@@ -1649,7 +1649,7 @@ function updateGoals() {
     set(c.k, 't', c.t, 'textContent', g.t);
     flag(c.k, 'd', c.el, 'done', g.done);
     c.bar.style.width = (g.v / g.n * 100) + '%';
-    set(c.k, 'g', c.tag, 'textContent', g.done ? tl('goal.claim', { n: g.gems }) : '+' + g.gems);
+    set(c.k, 'g', c.tag, 'textContent', g.done ? tl('goal.claim', { n: g.gems }) : plus(g.gems));
   });
   if (!$('daily').hidden) {
     if (missSig !== missionSig()) paintMissions();
@@ -1718,7 +1718,7 @@ function takeAway(dbl, from, free) {
   var v = claimAway(dbl, free);
   if (!v) return;
   $('away').hidden = true;
-  popAt('+' + money(v), c.x, c.y, 'big');
+  popAt(plus(money(v)), c.x, c.y, 'big');
   flyCoins(c.x, c.y, dbl ? 16 : 10);
   sfx('mile');
   if (dbl) buzz('success');
@@ -1790,7 +1790,7 @@ function paintMissions() {
   }
   missions().forEach(function (m, i) {
     var done = m.p >= m.n;
-    row(missLine(m), m.p / m.n, m.c ? tl('common.done') : '+' + m.g, done && !m.c, function () { return claimMission(i); });
+    row(missLine(m), m.p / m.n, m.c ? tl('common.done') : plus(m.g), done && !m.c, function () { return claimMission(i); });
   });
   var all = missions().every(function (m) { return m.c; });
   row(tl('daily.all_three', { gems: MISS_BONUS.gems, min: MISS_BONUS.x2 }), all ? 1 : missions().filter(function (m) { return m.c; }).length / 3, S.mi.b ? tl('common.done') : tl('daily.bonus'), bonusReady(), claimBonus);
@@ -2118,7 +2118,7 @@ function wire() {
     var v = warp();
     if (!v) return;
     var c = centerOf($('b-warp'));
-    popAt('+' + money(v), c.x, c.y, 'big');
+    popAt(plus(money(v)), c.x, c.y, 'big');
     flyCoins(c.x, c.y, 8);
     sfx('mile');
     nudge();
@@ -2141,7 +2141,7 @@ function wire() {
     var r = claimDaily();
     if (!r) return;
     if (r.cash) {
-      popAt('+' + money(r.cash), c.x, c.y, 'big');
+      popAt(plus(money(r.cash)), c.x, c.y, 'big');
       flyCoins(c.x, c.y, 8);
     }
     if (r.gems) flyGems(c.x, c.y, Math.min(8, r.gems));
@@ -2362,13 +2362,13 @@ function collectGift() {
     popAt(tl('common.gems_plus', { n: r.gems }), at.x, at.y - 20, 'big gem');
     flyGems(at.x, at.y, r.gems);
   } else {
-    popAt('+' + money(r.cash), at.x, at.y - 20, 'big');
+    popAt(plus(money(r.cash)), at.x, at.y - 20, 'big');
     flyCoins(at.x, at.y, r.jack ? 16 : 8);
   }
   sfx('gift');
   if (r.jack) {
     sfx('gems');
-    banner('<b>' + tl('banner.jackpot') + '</b><small>' + (r.x2 ? tl('common.income_x2_min', { n: r.x2 / 60 }) : '+' + money(r.cash)) + '</small>', 0, true);
+    banner('<b>' + tl('banner.jackpot') + '</b><small>' + (r.x2 ? tl('common.income_x2_min', { n: r.x2 / 60 }) : plus(money(r.cash))) + '</small>', 0, true);
   }
   buzz('success');
   nudge();
@@ -2440,7 +2440,7 @@ function tapReg(h) {
   ring(h.x, h.y);
   var vip = h.c.reg === 'vip';
   popAt(vip ? tl('hud.vip_tip') : RG[h.c.reg].name, h.x, h.y - 46, 'small');
-  popAt('+' + money(v), h.x, h.y - 20, 'big');
+  popAt(plus(money(v)), h.x, h.y - 20, 'big');
   flyCoins(h.x, h.y, vip ? 14 : 5);
   if (h.c.gems) flyGems(h.x, h.y, h.c.gems);
   sfx('gift', 1.25, 0.7);

@@ -226,8 +226,10 @@ function tl(key, v) {
   if (s === undefined) s = lookup(LANG.en, key, v, 'en');
   if (s === undefined) return key;
   if (!v) return s;
-  // 24/30, 3:45 and x1.5 are one left to right run, not pieces a right to left line would put in the wrong order
-  if (I18N.rtl) s = s.replace(/[A-Za-z]+\{\w+\}|\{\w+\}(?:[\/:]\{\w+\})+/g, '⁦$&⁩');
+  // a placeholder with a sign, a % or a letter stuck to it, or two joined by / or :, is one left to right run
+  if (I18N.rtl) s = s.replace(/[+\-−]?[A-Za-z]*\{\w+\}(?:[\/:]\{\w+\})*%?/g, function (m) {
+    return /^\{\w+\}$/.test(m) ? m : '⁦' + m + '⁩';
+  });
   s = s.replace(/\{(\w+)\}/g, function (m, k) {
     if (!(k in v)) return m;
     var x = typeof v[k] === 'number' ? fmtn(v[k]) : v[k];
@@ -238,6 +240,11 @@ function tl(key, v) {
 }
 
 // a text with Latin letters or digits and no Arabic or Hebrew letters (Urdu's +$638/s) reads left to right as a whole
+// a sign, a number and the text beside it that must keep their order in right to left text: +$5K, +3, +12%
+function plus(t) {
+  return I18N.rtl ? '⁦+' + t + '⁩' : '+' + t;
+}
+
 function isolate(s) {
   return I18N.rtl && !/[֐-ࣿ]/.test(s) && /[A-Za-z0-9]/.test(s) ? '⁦' + s + '⁩' : s;
 }
