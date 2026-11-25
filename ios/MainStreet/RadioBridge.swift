@@ -10,6 +10,7 @@ final class RadioBridge: NSObject, AVPlayerItemMetadataOutputPushDelegate {
     private var watching: [NSKeyValueObservation] = []
     private var titles: AVPlayerItemMetadataOutput?
     private var held = false
+    private var wanted = false
     private let emit: ([String: Any]) -> Void
 
     init(emit: @escaping ([String: Any]) -> Void) {
@@ -22,6 +23,7 @@ final class RadioBridge: NSObject, AVPlayerItemMetadataOutputPushDelegate {
         center.addObserver(self, selector: #selector(stop), name: UIApplication.didEnterBackgroundNotification, object: nil)
         center.addObserver(self, selector: #selector(routeChanged), name: AVAudioSession.routeChangeNotification, object: nil)
         center.addObserver(self, selector: #selector(interrupted), name: AVAudioSession.interruptionNotification, object: nil)
+        center.addObserver(self, selector: #selector(rateChanged), name: AVPlayer.rateDidChangeNotification, object: nil)
         center.addObserver(self, selector: #selector(dropped), name: .AVPlayerItemFailedToPlayToEndTime, object: nil)
         center.addObserver(self, selector: #selector(dropped), name: .AVPlayerItemDidPlayToEndTime, object: nil)
     }
@@ -42,6 +44,7 @@ final class RadioBridge: NSObject, AVPlayerItemMetadataOutputPushDelegate {
         stop()
         url = address.absoluteString
         held = false
+        wanted = true
         let item = AVPlayerItem(url: address)
         // a live station starts on a couple of seconds of sound instead of the long buffer AVPlayer waits for by default
         item.preferredForwardBufferDuration = 2
@@ -61,7 +64,8 @@ final class RadioBridge: NSObject, AVPlayerItemMetadataOutputPushDelegate {
                 case .waitingToPlayAtSpecifiedRate: self?.event("buffering")
                 case .playing: self?.event("playing")
                 // it only pauses by itself when the stream gives out or the system interrupts it
-                case .paused: self?.event(self?.held == true ? "paused" : "error")
+                // the interruption and rate notifications can land after this, so the choice waits a turn
+                case .paused: DispatchQueue.main.async { self?.event(self?.held == true ? "paused" : "error") }
                 @unknown default: break
                 }
             },
@@ -71,6 +75,7 @@ final class RadioBridge: NSObject, AVPlayerItemMetadataOutputPushDelegate {
     }
 
     @objc private func stop() {
+        wanted = false
         watching.forEach { $0.invalidate() }
         watching = []
         player?.pause()
@@ -88,17 +93,27 @@ final class RadioBridge: NSObject, AVPlayerItemMetadataOutputPushDelegate {
         let why = (note.userInfo?[AVAudioSessionRouteChangeReasonKey] as? UInt).flatMap(AVAudioSession.RouteChangeReason.init)
         if why == .oldDeviceUnavailable, player != nil {
             held = true
+            wanted = false
             player?.pause()
         }
     }
 
-    // a call or Siri pauses the stream; it picks up again when the system says it may
+    // the system pausing the player is not a dropped stream
+    @objc private func rateChanged(_ note: Notification) {
+        guard note.object as AnyObject? === player, wanted,
+              note.userInfo?[AVPlayer.rateDidChangeReasonKey] as? AVPlayer.RateDidChangeReason == .audioSessionInterrupted else { return }
+        held = true
+    }
+
+    // a call or Siri pauses the stream; it picks up again when the system says it may, unless the listener paused it first
     @objc private func interrupted(_ note: Notification) {
         guard player != nil, let raw = note.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
               let type = AVAudioSession.InterruptionType(rawValue: raw) else { return }
         if type == .began {
-            held = true
-        } else if let flags = note.userInfo?[AVAudioSessionInterruptionOptionKey] as? UInt,
+            if let why = note.userInfo?[AVAudioSessionInterruptionReasonKey] as? UInt,
+               AVAudioSession.InterruptionReason(rawValue: why) == .appWasSuspended { return }
+            if wanted { held = true }
+        } else if wanted, held, let flags = note.userInfo?[AVAudioSessionInterruptionOptionKey] as? UInt,
                   AVAudioSession.InterruptionOptions(rawValue: flags).contains(.shouldResume) {
             held = false
             player?.play()
