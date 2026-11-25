@@ -195,7 +195,11 @@ function cloudLook(done) {
   setInterval(cloudRetry, CLOUD_RETRY);
   post({ cmd: 'cloudState' });
   post({ cmd: 'cloudGet' });
-  if (hasSave()) return done(false);
+  if (hasSave()) {
+    // the game stands still until the cloud has answered, as on return, so nothing is changed on top of an older copy
+    cloudRet = { got: false, run: null, t: setTimeout(cloudGot, CLOUD_BACK) };
+    return done(false);
+  }
   cloudFind = done;
   $('find').hidden = false;
   cloudLate = setTimeout(cloudEnd, CLOUD_WAIT);
@@ -295,7 +299,8 @@ function cloudEvent(ev) {
       else if (!cloudPend || stampOf(ev.json) >= stampOf(cloudPend)) cloudPend = ev.json;
     }
   }
-  if (ev.t === 'cloud') cloudGot();
+  // the cache answer of a return can lack the other device's write, so only a fresh one ends the wait
+  if (ev.t === 'cloud' && ev.fresh !== false) cloudGot();
   if (cloudFind && (cloudFound || (cloudSeen && cloudState && cloudState !== 'pending'))) cloudEnd();
 }
 

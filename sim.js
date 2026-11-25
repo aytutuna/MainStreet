@@ -1712,6 +1712,8 @@ function load() {
       cloudMine = 0;
       var sec = (clock() - o.ts) / 1000;
       if (sec > 60) back = away(sec);
+      // what the away pay unlocks is not a change of the player's, so it must not outrank a newer copy
+      cloudLast = cloudSig(S);
       if (old) save();
     }
   } catch (e) {}
@@ -1835,12 +1837,12 @@ function takeCloud(raw) {
   S = o;
   cloudTs = o.ts;
   cloudSent = merged ? '' : cloudSig(S);
-  cloudLast = cloudSig(S);
   cloudMine = 0;
   clearShoppers();
   // the copy was saved when the other device last ran: the time since is time away
   var sec = (clock() - o.ts) / 1000;
   cloudAway = sec > 60 ? away(sec) : null;
+  cloudLast = cloudSig(S);
   cloudTook = true;
   try {
     localStorage.setItem(KEY, saved());

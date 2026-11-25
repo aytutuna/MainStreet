@@ -253,6 +253,32 @@ run('cloudPut()');
 if (puts().length !== 1) fail('the waiting change was not put');
 now = T17;
 
+// 11. launch with a local save: play waits for the cloud, a cache answer does not end the wait, the fresh copy is taken
+device(T9);
+store['mainstreet.v11'] = copy(T9);
+run('cloudRet = null; cloudSeen = false; cloudLook(function () {})');
+if (!run('cloudHeld()')) fail('a launch with a local save did not wait for the cloud');
+nativeEv({ t: 'cloud', json: copy(T9 - H), at: 0, dev: 'ipad', fresh: false });
+if (!run('cloudHeld()')) fail('the cache answer ended the wait');
+nativeEv(ipad(T12));
+if (run('cloudHeld()')) fail('the fresh answer did not end the wait');
+if (run('S.ts') !== T12) fail('the newer copy was refused at launch (S.ts ' + run('S.ts') + ')');
+
+// 11b. the same on return: the cache answer keeps the hold, so nothing is changed before the fresh copy
+device(T9);
+run('cloudBack()');
+nativeEv({ t: 'cloud', json: copy(T9 - H), at: 0, dev: 'ipad', fresh: false });
+if (!run('cloudHeld()')) fail('the return was released by a cache answer');
+
+// 11c. what the away pay unlocks is not a change of the player's: the newer copy still wins
+device(T9);
+store['mainstreet.v11'] = copy(T9);
+run('cloudSent = cloudLast = ""; cloudMine = 0; load()');
+if (run('cloudLast !== cloudSig(S)')) fail('load left the away pay to count as a change of the player\'s');
+run('save()');
+nativeEv(ipad(T12));
+if (run('S.ts') !== T12) fail('the away pay made the old game win over a newer copy (S.ts ' + run('S.ts') + ')');
+
 // a copy older than what this device read is still refused
 device(T12);
 run('S.iap.tx = ["a"]');
