@@ -1,2 +1,2 @@
 The ui_*.png icons were drawn for this game.
-coin.png: source not recorded, nothing draws it. TODO: remove it, or Aytu names the source.
+coin.png (14x14): source not recorded. It is the cash pill icon and the coin in the coin flights, so it is in use and stays. It came in with edb1fc1 as the replacement for ico_coin.png, part of a 14x14 ico_*.png set added on the same day as the first town sprites. No byte-identical file exists in packs/, so it is not an unmodified copy from a pack we hold. Origin unproven; probably drawn in-house like the ui_ icons.
