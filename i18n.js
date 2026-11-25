@@ -266,7 +266,11 @@ function applyText(root) {
 var langWait = '';
 
 function setLang(code) {
-  if (!ready(code) || code === I18N.code) return;
+  if (!ready(code)) return;
+  if (code === I18N.code) {
+    langWait = '';
+    return;
+  }
   // a purchase in flight finishes first, since its answer would reach the page that is going away; the last pick wins
   if (typeof buying === 'string' && buying) {
     if (!langWait) setTimeout(function () {

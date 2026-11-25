@@ -25,6 +25,7 @@ class AdsBridge(private val activity: MainActivity) {
     // the page asks for this unless the player owns Skip ads
     fun start() {
         stopped = false
+        if (started && reward == null) loadReward()
         val consent = UserMessagingPlatform.getConsentInformation(activity)
         consent.requestConsentInfoUpdate(activity, ConsentRequestParameters.Builder().build(), {
             if (stopped) return@requestConsentInfoUpdate
