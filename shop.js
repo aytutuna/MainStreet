@@ -1,7 +1,7 @@
 // Purchases and ads. The native app takes {cmd: 'products', ids}, {cmd: 'buy', id}, {cmd: 'restore'}, {cmd: 'adStart'}, {cmd: 'adStop'},
 // {cmd: 'adReady'}, {cmd: 'ad', kind}, {cmd: 'privacy'} and {cmd: 'radio', ...} on window.webkit.messageHandlers.store and
 // answers through window.nativeStore(ev), ev being one of
-//   {t: 'products', list: [{id, price}]}   the products the store knows, price already in the player's currency
+//   {t: 'products', list: [{id, price, amount, currency}]}   the products the store knows, price already in the player's currency
 //   {t: 'owned', ids, tx, restore}         one-time products the player owns, and tx: [{id, tx, at}] for the gem packs
 //                                          the store knows (at is ms since 1970); answers 'products' and 'restore'
 //   {t: 'bought', id, tx, at}              a purchase went through; tx is the store's transaction id, at its time
@@ -240,12 +240,22 @@ function featCard(p) {
   return '<div class="feat" data-k="' + p.id + '"><u><img src="assets/' + p.ic + '.png" alt=""></u><div><b>' + p.name + '</b><span>' + p.line + '</span></div>' + shopBtn(p) + '</div>';
 }
 
-function gemTile(p, i, first, deal) {
+function bestPack(gems) {
+  var best = null, top = 0;
+  gems.forEach(function (p) {
+    var a = amounts[PID + p.id];
+    if (a && p.gems / a > top) { top = p.gems / a; best = p; }
+  });
+  var a1 = amounts[PID + gems[0].id];
+  return best && a1 && top > gems[0].gems / a1 ? best.id : null;
+}
+
+function gemTile(p, i, first, deal, best) {
   var on = deal && deal.id === p.id;
   var a = amounts[PID + p.id];
   var a1 = amounts[PID + first.id];
   var more = a && a1 ? Math.round((p.gems / a / (first.gems / a1) - 1) * 100) : 0;
-  var tag = p.id === 'gems4' ? tl('shop.best_value') : '';
+  var tag = p.id === best ? tl('shop.best_value') : '';
   var badge = on ? tl('shop.badge_bonus', { n: Math.round(DEAL.bonus * 100) }) : more > 0 ? tl('shop.badge_more', { n: more }) : '';
   return '<div class="tile' + (on ? ' deal' : '') + '" data-k="' + p.id + '">' + (tag ? '<i class="rib">' + tag + '</i>' : '') +
     (badge ? '<em>' + badge + '</em>' : '') + pile(i) + '<b>' + tl('shop.gems', { n: p.gems }) + '</b>' +
@@ -258,7 +268,8 @@ function paintShop() {
   var deal = dealNow();
   var html = S.iap.starter || starterLeft(true) < 0 ? '' : heroCard(starter);
   html += '<div class="feats">' + featCard(product('noads')) + featCard(product('x2')) + '</div>';
-  html += '<h3 class="sec">' + tl('shop.gems_heading') + '</h3><div class="tiles">' + gems.map(function (p, i) { return gemTile(p, i, gems[0], deal); }).join('') + '</div>';
+  var best = bestPack(gems);
+  html += '<h3 class="sec">' + tl('shop.gems_heading') + '</h3><div class="tiles">' + gems.map(function (p, i) { return gemTile(p, i, gems[0], deal, best); }).join('') + '</div>';
   $('shop-list').innerHTML = html;
   $('shop-txt').textContent = tl(storeUp ? 'shop.intro' : 'shop.unavailable');
   $('shop-restore').disabled = !storeUp || !!buying;

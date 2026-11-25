@@ -202,13 +202,13 @@ var PRODUCTS = [
   { id: 'starter1', ic: 'ui_gift', name: tl('product.starter.name'), text: tl('product.starter.text') },
   { id: 'noads', once: 1, ic: 'ui_star', name: tl('product.noads.name'), line: tl('product.noads.line') },
   { id: 'x2', once: 1, ic: 'ui_bolt', name: tl('product.x2.name'), line: tl('product.x2.line') },
-  { id: 'gems1', gems: 80, usd: 0.99, ic: 'ui_gem', name: tl('shop.gems', { n: 80 }) },
-  { id: 'gems2', gems: 500, usd: 4.99, ic: 'ui_gem', name: tl('shop.gems', { n: 500 }) },
-  { id: 'gems3', gems: 1200, usd: 9.99, ic: 'ui_gem', name: tl('shop.gems', { n: 1200 }) },
-  { id: 'gems4', gems: 2800, usd: 19.99, ic: 'ui_gem', name: tl('shop.gems', { n: 2800 }) }
+  { id: 'gems1', gems: 80, ic: 'ui_gem', name: tl('shop.gems', { n: 80 }) },
+  { id: 'gems2', gems: 500, ic: 'ui_gem', name: tl('shop.gems', { n: 500 }) },
+  { id: 'gems3', gems: 1200, ic: 'ui_gem', name: tl('shop.gems', { n: 1200 }) },
+  { id: 'gems4', gems: 2800, ic: 'ui_gem', name: tl('shop.gems', { n: 2800 }) }
 ];
 var STARTER = { gems: 150, x2: 7200, rep: 10 };
-// usd is the pack's price tier, only for the bonus shown against the smallest pack. The starter pack is offered in a
+// The starter pack is offered in a
 // window of hours that starts when its button is first shown and never comes back. The deal of the day is one of these
 // packs, a day each in turn, with bonus extra gems; no pack follows itself, also where the list starts again
 var STARTER_HOURS = 24;
