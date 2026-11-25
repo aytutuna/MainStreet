@@ -18,7 +18,8 @@
 //                                          when nothing answered. It skips the queue, since the game waits for it
 //   {t: 'cloud', json, at, dev}            the save the other devices share (json is null when there is none), kept at server time
 //                                          at by device dev; answers {cmd: 'cloudGet'} and comes again when another device changes it.
-//                                          Like 'time' it skips the queue
+//                                          Like 'time' it skips the queue. fresh: false marks an answer from a cache that has not
+//                                          synced yet (iPhone): the page may take it but does not write until a fresh one comes
 //   {t: 'cloudState', state}               'available', 'signedOut', 'pending' (signed in, first sync not done) or 'unavailable';
 //                                          answers {cmd: 'cloudState'}, skips the queue. The page sends {cmd: 'cloudPut', json, at, dev}
 //   {t: 'notify', state}                   'granted' or 'denied', answering the notify handler's {cmd: 'ask'}; the page does not use it
@@ -56,6 +57,7 @@ var loaded = false;
 var CLOUD_EVERY = 30000;
 var CLOUD_WAIT = 10000;
 var CLOUD_BACK = 4000;
+var CLOUD_RETRY = 10000;
 var cloudState = '';
 var cloudSeen = false;
 var cloudFind = null;
@@ -119,6 +121,7 @@ function gotTime(ev) {
   var d = timeDone;
   timeDone = null;
   if (d) d();
+  else cloudApply();
 }
 
 // the game stands still until the next answer, then runs done. The card shows after TIME_CARD ms without one
@@ -170,6 +173,9 @@ function cloudPut(erase) {
   cloudTimer = 0;
   // a copy that waits for the time answer has not been judged yet, so it is not written over
   if (!native() || !loaded || blocked || !(erase === true || (cloudReady() && !cloudPend && !timeHeld))) return;
+  var sig = cloudSig(S);
+  if (erase !== true && sig === cloudSent) return;
+  cloudSent = sig;
   cloudAt = performance.now();
   if (erase === true) cloudTs = S.ts;
   post({ cmd: 'cloudPut', json: saved(), at: Math.round(clock()), dev: devId() });
@@ -186,12 +192,18 @@ function cloudMenu() {
 // runs done(true) when the cloud's save became this device's first one. With a save here nothing waits
 function cloudLook(done) {
   if (!native()) return done(false);
+  setInterval(cloudRetry, CLOUD_RETRY);
   post({ cmd: 'cloudState' });
   post({ cmd: 'cloudGet' });
   if (hasSave()) return done(false);
   cloudFind = done;
   $('find').hidden = false;
   cloudLate = setTimeout(cloudEnd, CLOUD_WAIT);
+}
+
+// a read that got no answer (a snapshot that would not open) is asked again until it has one; nothing is put meanwhile
+function cloudRetry() {
+  if (loaded && !cloudSeen && !document.hidden) post({ cmd: 'cloudGet' });
 }
 
 function cloudEnd() {
@@ -271,7 +283,8 @@ function cloudEvent(ev) {
     cloudState = ev.state;
     cloudMenu();
   } else {
-    cloudSeen = true;
+    // an answer from a cache that iCloud has not refreshed yet (fresh false) can be taken but does not open the puts
+    if (ev.fresh !== false) cloudSeen = true;
     if (cloudFind) cloudFound = ev.json || cloudFound;
     else if (ev.json && loaded && ev.dev !== devId()) {
       // a copy is judged by its own time whenever it comes; only while the server time is unknown does it wait

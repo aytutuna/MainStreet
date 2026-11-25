@@ -1730,6 +1730,7 @@ function cloudSeed(raw) {
     var j = JSON.parse(raw);
     if (!j || typeof j.v !== 'number' || (j.v <= SAVE_V && !validate(j))) return false;
     localStorage.setItem(KEY, raw);
+    if (j.v <= SAVE_V) cloudSent = cloudSig(validate(JSON.parse(raw)));
     return true;
   } catch (e) {
     return false;
@@ -1751,6 +1752,13 @@ var cloudTook = false;
 // copy counts as newer only against this, not against the autosave and not against what this device itself put, since a put
 // can have overwritten a copy that had not reached it yet
 var cloudTs = 0;
+// what this device last wrote to the cloud or read from it, so an open game that only earns income does not write over
+// the other device's play with a copy that merely has a later time
+var cloudSent = '';
+
+function cloudSig(o) {
+  return JSON.stringify([o.gems, o.rep, o.store, o.b, o.pl, o.pi, o.ms, o.goal, o.gn, o.gd, o.lk, o.ac, o.pk, o.iap, o.ads && o.ads.n]);
+}
 
 // the save of another device meets this game: the newer one is kept, a young game always gives way. True when it replaced this game
 function takeCloud(raw) {
@@ -1771,9 +1779,14 @@ function takeCloud(raw) {
     });
     return false;
   }
+  // what the merge adds to or takes from the copy kept is not in the cloud yet
+  var merged = tx.length > p.tx.length || rf.length > p.rf.length;
   // a refund listed in either copy takes the purchase away from the copy kept
   ['noads', 'x2'].forEach(function (f) {
-    if (p[f] && rf.indexOf(p[f + 'Tx']) >= 0) p[f] = 0;
+    if (p[f] && rf.indexOf(p[f + 'Tx']) >= 0) {
+      p[f] = 0;
+      merged = true;
+    }
   });
   // ad counts of the day and play time never go back
   var a = S.ads;
@@ -1790,6 +1803,7 @@ function takeCloud(raw) {
   ['noads', 'x2'].forEach(function (f) {
     if (i[f] && !p[f] && rf.indexOf(i[f + 'Tx']) < 0) {
       p[f] = 1;
+      merged = true;
       p[f + 'Tx'] = i[f + 'Tx'];
       p[f + 'User'] = i[f + 'User'];
     }
@@ -1803,6 +1817,7 @@ function takeCloud(raw) {
   p.rf = rf;
   S = o;
   cloudTs = o.ts;
+  cloudSent = merged ? '' : cloudSig(S);
   clearShoppers();
   // the copy was saved when the other device last ran: the time since is time away
   var sec = (clock() - o.ts) / 1000;
