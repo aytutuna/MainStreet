@@ -69,8 +69,6 @@ targets:
         type: folder
       - path: ../lang
         type: folder
-        excludes:
-          - GLOSSARY.md
     entitlements:
       path: MainStreet/MainStreet.entitlements
       properties:

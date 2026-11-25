@@ -1,4 +1,4 @@
-// English text of Main Street Idle, the source for every translation. See GLOSSARY.md next to this file for terms and tone.
+// English text of Main Street Idle, the source for every translation. See scripts/GLOSSARY.md for terms and tone.
 //
 // Format. A language file lang/<code>.js is a plain script that sets LANG["<code>"] to an object of key: text. Copy this file,
 // keep every key exactly as it is, and translate only the text on the right. The codes are in LANGS in i18n.js.
