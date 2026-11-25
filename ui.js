@@ -1375,11 +1375,21 @@ function updateHud() {
   duckRadio();
 }
 
+// whether an unmaxed item is left that the meter's fix button would send the player to
+function drawLeft() {
+  var open = BIZ.some(function (z) {
+    return has(z.id) && z.items.some(function (x, j) { return x.stat === 'draw' && nextPiece(z.id, j) >= 0; });
+  });
+  return open || firstLeft('serv') >= 0 || firstLeft('lot') >= 0 || firstLeft('taxi') >= 0;
+}
+
 // the three meters live in the Stats sheet; the main screen only warns when one is red
 var METERS = [
-  { id: 'st-in', h: 'w-in', warn: 'hud.warn.in', go: function () { openDraw(); } },
-  { id: 'st-tills', h: 'w-tills', warn: 'hud.warn.tills', go: function () { tapMeter('hall', capacity); } },
-  { id: 'st-shelf', h: 'w-shelf', warn: 'hud.warn.shelves', go: function () { tapMeter('dock', stockCap); } }
+  { id: 'st-in', h: 'w-in', warn: 'hud.warn.in', left: drawLeft, go: function () { openDraw(); } },
+  { id: 'st-tills', h: 'w-tills', warn: 'hud.warn.tills', left: function () { return firstLeft('hall') >= 0 || firstLeft('lounge') >= 0; },
+    go: function () { tapMeter('hall', capacity); } },
+  { id: 'st-shelf', h: 'w-shelf', warn: 'hud.warn.shelves', left: function () { return firstLeft('dock') >= 0 || firstLeft('lounge') >= 0; },
+    go: function () { tapMeter('dock', stockCap); } }
 ];
 
 // a row shows its rate a minute, why it is where it is, and a button for the fix
@@ -1439,7 +1449,7 @@ function updateMeters() {
   var srv = served();
   var v = [inr / cap, cap / inr, st / srv];
   var bad = -1;
-  for (var i = 0; i < 3; i++) if (v[i] < 0.5 && (bad < 0 || v[i] < v[bad])) bad = i;
+  for (var i = 0; i < 3; i++) if (v[i] < 0.5 && (bad < 0 || v[i] < v[bad]) && METERS[i].left()) bad = i;
   set(k, 'wh', $('warn'), 'hidden', bad < 0);
   if (bad >= 0) {
     set(k, 'wt', $('warn'), 'textContent', tl('hud.warn', { t: tl(METERS[bad].warn) }));
@@ -1597,8 +1607,9 @@ function firstLeft(id) {
 
 // what f() gains for the price from one more level of an item of a place
 function perCoin(id, j, f) {
+  if (j < 0) return 0;
   var c = placeCost(id, j);
-  if (!c || j < 0 || placePiece(id, j) < 0) return 0;
+  if (!c || placePiece(id, j) < 0) return 0;
   var was = f();
   S.pi[id][j]++;
   S.pl[id]++;
@@ -1866,10 +1877,10 @@ function openDaily() {
   $('daily').hidden = false;
 }
 
-// the reward opens by itself once a day, after the first purchase and never over another box
+// the reward opens by itself once a day, after the first purchase and never over a card, the list or another box
 function autoDaily() {
   var day = dayNum(clock());
-  if (dailyAsked === day || !started() || !daily().can || veilUp()) return;
+  if (dailyAsked === day || !started() || !daily().can || veilUp() || cardId || sheetOpen) return;
   dailyAsked = day;
   openDaily();
 }
@@ -2784,7 +2795,7 @@ function launch() {
     showAway(gone);
     lastTick = performance.now();
     requestAnimationFrame(loop);
-    setInterval(function () { if (!timeHeld) save(); }, 5000);
+    setInterval(function () { if (!timeHeld && !document.hidden) save(); }, 5000);
     if (location.protocol !== 'file:') {
       // file:// blocks the manifest fetch and logs an error
       var man = document.createElement('link');

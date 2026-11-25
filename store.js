@@ -861,17 +861,20 @@ function hit(sx, sy) {
   // in a rush a tap close to a busy till, or on the checkouts, serves faster; with a card or the list open it is a plain tap
   if (rush && !cardId && !sheetOpen) {
     var best = -1;
-    var bd = h.length && h[0].object.userData.id === 'hall' ? HALL_R : TILL_R;
+    var onHall = h.length && h[0].object.userData.id === 'hall';
+    var bd = onHall ? HALL_R : TILL_R;
+    var near = onHall;
     places.hall.tills.forEach(function (t, i) {
-      if (!tills[i] || !tills[i].q.length || (tills[i].q[0].v && !tills[i].q[0].here)) return;
       toScreen(t.till[0], t.till[1] + 0.3, t.till[2], sp);
       var d = Math.hypot(sp.x - sx, sp.y - sy);
-      if (d < bd) {
-        bd = d;
-        best = i;
-      }
+      if (d >= bd) return;
+      near = true;
+      if (!tills[i] || !tills[i].q.length || (tills[i].q[0].v && !tills[i].q[0].here)) return;
+      bd = d;
+      best = i;
     });
-    if (best >= 0) return { kind: 'till', i: best };
+    // a tap at the checkouts with nobody to serve does nothing, rather than opening the card
+    if (best >= 0 || near) return { kind: 'till', i: best };
   }
   if (h.length) return { kind: 'biz', id: h[0].object.userData.id };
   return { kind: 'none' };
@@ -6590,7 +6593,7 @@ function init(canvas, tap) {
   try {
     sceneUp();
   } catch (e) {
-    fail(tl('scene.no_webgl'));
+    loadFail(tl('scene.no_webgl'));
     return;
   }
   resize();
@@ -6603,15 +6606,10 @@ function init(canvas, tap) {
         build();
       } catch (e) {
         console.error(e);
-        fail(tl('scene.build_failed'));
+        loadFail(tl('scene.build_failed'));
       }
     }, 30);
   });
-}
-
-function fail(msg) {
-  loadingEl.firstChild.innerHTML = '<b>Main Street</b><p></p>';
-  loadingEl.firstChild.lastChild.textContent = msg;
 }
 
 function build() {
