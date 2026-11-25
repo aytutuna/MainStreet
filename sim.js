@@ -94,7 +94,7 @@ PLACES.forEach(function (p) {
 var S = fresh();
 
 function fresh() {
-  var s = { v: 11, cash: START_CASH, gems: 0, rep: 0, pk: {}, store: 1, run: 0, all: 0, pend: 0, x2: 0, call: 0, b: {}, ms: {},
+  var s = { v: 11, cash: START_CASH, gems: 0, rep: 0, pk: {}, store: 1, run: 0, all: 0, pend: 0, x2: 0, call: 0, vt: rnd(VIP.first), b: {}, ms: {},
     st: { srv: 0, lost: 0, sr: 0, t: 0 }, goal: [0, 1, 2], gn: 3, gd: {}, day: { n: 0, d: -1, t: 0 }, tz: { o: zone(), at: clock() }, mi: { d: -1, m: [], b: 0 }, rg: { o: {}, days: 0, gifts: 0, combo: 0 }, lk: { on: 'classic', own: {} }, ac: { o: {}, m: {} },
     ask: 0, clk: START_H * CLOCK / 24, iap: { noads: 0, x2: 0, starter: 0, noadsTx: '', x2Tx: '', noadsUser: '', x2User: '', wait: {}, tx: [] }, ads: { d: -1, n: {}, pt: 0, li: 0, sd: 0 }, ts: clock() };
   noPlaces(s);
@@ -359,8 +359,8 @@ function stockCap() {
   return crewAt()[0] / t;
 }
 
-// the departments with goods to sell, best first by what a stocker's second there earns, so a new department only
-// takes what the stockers have left over
+// the departments with goods to sell, best first by what a stocker's second there earns. The stockers serve them in
+// that order, so when they cannot carry everything the departments that earn least per stocker second run short
 function ranked() {
   var out = BIZ.filter(function (b) { return spendAt(b.id) > 0; });
   var v = {};
@@ -527,7 +527,6 @@ var gift = null;
 var giftT = 0;
 var rush = null;
 var rushT = 0;
-var vipT = 0;
 // the rush's extra arrivals still owed, and how many of them the view has a figure for
 var xdue = { walk: 0, car: 0, taxi: 0 };
 var extraRoom = 1e9;
@@ -565,9 +564,9 @@ function come(by) {
     at: null, done: false, reg: null, tipped: false };
   // now and then the shopper is one of the regulars
   if (by !== 'garden' && speed === 1) {
-    if (vipT <= 0 && !hold && !vipIn()) {
+    if (S.vt <= 0 && !hold && !vipIn()) {
       c.reg = 'vip';
-      vipT = rnd(VIP.gap);
+      S.vt = rnd(VIP.gap);
     } else if (Math.random() < REGC.odds) c.reg = pickReg();
   }
   shoppers.push(c);
@@ -800,12 +799,11 @@ function perkOff() {
   inc = incRate = 0;
   giftT = rnd(GIFT.gap);
   rushT = rnd(RUSH.gap);
-  vipT = rnd(VIP.first);
   if (was && onPerk) onPerk('off');
 }
 
 function perkStep(dt) {
-  if (!hold && vipT > 0) vipT -= dt;
+  if (!hold && S.vt > 0) S.vt -= dt;
   if (gift) {
     gift.left -= dt;
     if (gift.left <= 0) {
@@ -1018,14 +1016,15 @@ function tipReg(c) {
 // time away: the store runs at its steady rate; the pay is held until claimAway
 function away(sec) {
   var s = Math.max(0, Math.min(sec, maxAway()));
-  var xs = Math.min(s, S.x2);
-  // the night closing is not played out: the away rate just takes the open share of the day
+  // the night closing is not played out: the away rate just takes the open share of the day, and the x2 boost only
+  // runs down while the store is open, as it does when played
   var up = openShare();
-  var gain = baseRate() * (s + xs) * up * (S.iap.x2 ? 2 : 1) * (1 + HEAD * S.pl.head);
+  var xs = Math.min(s * up, S.x2);
+  var gain = baseRate() * (s * up + xs) * (S.iap.x2 ? 2 : 1) * (1 + HEAD * S.pl.head);
   var n = Math.floor((served() + gardenServed()) * s * up);
-  S.clk = (S.clk + sec) % CLOCK;
+  if (started()) S.clk = (S.clk + sec) % CLOCK;
   shutNow = shut();
-  S.x2 = Math.max(0, S.x2 - s);
+  S.x2 -= xs;
   S.call = Math.max(0, S.call - s);
   perkOff();
   S.pend += gain;
@@ -1046,9 +1045,10 @@ function reminders() {
   return out;
 }
 
-// AWAY_X2 gems for each hour of income it doubles, so a long absence costs more than a short one
+// AWAY_X2 gems for each hour away, worked out with the multipliers the pay used so owning x2 does not double the price
 function awayCost() {
-  return Math.max(AWAY_X2, Math.ceil(S.pend / Math.max(baseRate() * 3600, 1)) * AWAY_X2);
+  var hour = baseRate() * openShare() * (S.iap.x2 ? 2 : 1) * (1 + HEAD * S.pl.head) * 3600;
+  return Math.max(AWAY_X2, Math.ceil(S.pend / Math.max(hour, 1)) * AWAY_X2);
 }
 
 // free: the doubling was paid for by an ad
@@ -1531,6 +1531,7 @@ function validate(o) {
   s.pend = num(o.pend, 0);
   s.x2 = num(o.x2, 0);
   s.call = Math.min(CALL.cool, num(o.call, 0));
+  s.vt = Math.min(VIP.gap[1], num(o.vt, s.vt));
   s.ask = o.ask ? 1 : 0;
   s.clk = num(o.clk, s.clk) % CLOCK;
   var ip = o.iap || {};
