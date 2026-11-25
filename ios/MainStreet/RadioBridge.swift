@@ -21,6 +21,7 @@ final class RadioBridge: NSObject, AVPlayerItemMetadataOutputPushDelegate {
         // streams only play while the game is in front
         center.addObserver(self, selector: #selector(stop), name: UIApplication.didEnterBackgroundNotification, object: nil)
         center.addObserver(self, selector: #selector(routeChanged), name: AVAudioSession.routeChangeNotification, object: nil)
+        center.addObserver(self, selector: #selector(interrupted), name: AVAudioSession.interruptionNotification, object: nil)
         center.addObserver(self, selector: #selector(dropped), name: .AVPlayerItemFailedToPlayToEndTime, object: nil)
         center.addObserver(self, selector: #selector(dropped), name: .AVPlayerItemDidPlayToEndTime, object: nil)
     }
@@ -88,6 +89,19 @@ final class RadioBridge: NSObject, AVPlayerItemMetadataOutputPushDelegate {
         if why == .oldDeviceUnavailable, player != nil {
             held = true
             player?.pause()
+        }
+    }
+
+    // a call or Siri pauses the stream; it picks up again when the system says it may
+    @objc private func interrupted(_ note: Notification) {
+        guard player != nil, let raw = note.userInfo?[AVAudioSessionInterruptionTypeKey] as? UInt,
+              let type = AVAudioSession.InterruptionType(rawValue: raw) else { return }
+        if type == .began {
+            held = true
+        } else if let flags = note.userInfo?[AVAudioSessionInterruptionOptionKey] as? UInt,
+                  AVAudioSession.InterruptionOptions(rawValue: flags).contains(.shouldResume) {
+            held = false
+            player?.play()
         }
     }
 
