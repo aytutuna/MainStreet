@@ -50,7 +50,9 @@ object Reminders {
                 arm(context, item, item.getLong("at"))
                 left.put(item)
             } else {
-                show(context, item.getString("id").hashCode(), item.getString("body"))
+                val code = item.getString("id").hashCode()
+                cancel(context, code)
+                show(context, code, item.getString("body"))
             }
         }
         prefs(context).edit().putString(LIST, left.toString()).apply()
