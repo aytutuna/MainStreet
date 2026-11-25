@@ -356,7 +356,7 @@ LANG['de'] = {
   'menu.vibration_on': 'Vibration: an',
   'menu.vibration_off': 'Vibration: aus',
   'menu.erase_title': 'Gesamten Fortschritt löschen?',
-  'menu.erase_text': 'Das löscht deine Edelsteine, Läden und die tägliche Serie. Gekaufte Artikel bleiben erhalten.',
+  'menu.erase_text': 'Das löscht deine Edelsteine, Märkte und die tägliche Serie. Gekaufte Artikel bleiben erhalten.',
   'menu.erase_yes': 'Löschen',
   'menu.erase_no': 'Abbrechen',
   'save.newer': 'Aktualisiere die App, um fortzufahren.',
@@ -391,7 +391,7 @@ LANG['de'] = {
   'mission.star': 'Einen Stern in {dept} holen',
   'notify.full': 'Dein Markt ist voll. Hol dir, was er verdient hat.',
   'notify.daily': 'Deine Tagesbelohnung ist bereit.',
-  'notify.ask': 'Möchtest du erinnert werden, wenn dein Laden voll ist oder deine Tagesbelohnung bereitliegt?',
+  'notify.ask': 'Möchtest du erinnert werden, wenn dein Markt voll ist oder deine Tagesbelohnung bereitliegt?',
   'notify.ask.yes': 'Erinnere mich',
 
   'shop.owned': 'Gekauft',

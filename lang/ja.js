@@ -350,7 +350,7 @@ LANG['ja'] = {
   'menu.vibration_on': '振動: オン',
   'menu.vibration_off': '振動: オフ',
   'menu.erase_title': 'すべての進行状況を消去しますか？',
-  'menu.erase_text': 'ジェム、ストア、デイリーの連続記録が消去されます。購入済みのものは残ります。',
+  'menu.erase_text': 'ジェム、お店、デイリーの連続記録が消去されます。購入済みのものは残ります。',
   'menu.erase_yes': '消去',
   'menu.erase_no': 'キャンセル',
   'save.newer': '続けるにはアプリを更新してください。',
@@ -385,7 +385,7 @@ LANG['ja'] = {
   'mission.star': '{dept}で星を獲得',
   'notify.full': 'お店がいっぱいだよ。稼いだお金を受け取りにきて。',
   'notify.daily': 'デイリー報酬が準備できたよ。',
-  'notify.ask': 'ストアがいっぱいになったときやデイリー報酬の準備ができたときに通知しますか？',
+  'notify.ask': 'お店がいっぱいになったときやデイリー報酬の準備ができたときに通知しますか？',
   'notify.ask.yes': '通知する',
 
   'shop.owned': '購入済み',
