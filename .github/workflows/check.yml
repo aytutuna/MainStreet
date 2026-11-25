@@ -30,6 +30,8 @@ jobs:
         run: node scripts/check_sim.mjs
       - name: Cloud save rules
         run: node scripts/check_cloud.mjs
+      - name: Audio context held while asking
+        run: node scripts/check_audio.mjs
       - name: No interstitials
         run: |
           if git grep -n -i -E 'interstitial|5084191623|6205701600' -- . ':!.github/workflows/check.yml' ':!vendor'; then
