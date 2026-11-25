@@ -1741,7 +1741,8 @@ function cloudSeed(raw) {
   }
 }
 
-// the purchases of both copies are listed in whichever one is kept, so a restore never pays a pack twice
+// refunds of both copies are listed in whichever one is kept. Purchase ids are not: the ids of a copy say what that copy
+// has paid, so the copy kept keeps its own and the rest are paid again by recover()
 function joinTx(a, b) {
   var seen = {};
   return a.concat(b).filter(function (t) { return seen[t] ? false : (seen[t] = 1); }).slice(-100);
@@ -1785,13 +1786,11 @@ function takeCloud(raw) {
   cloudNote();
   var i = S.iap;
   var p = o.iap;
-  var tx = joinTx(i.tx, p.tx);
   var rf = joinTx(i.rf, p.rf);
   var mine = o.ts < cloudMine;
   if (S.ads.pt >= YOUNG && (!(o.ts > cloudTs) || mine)) {
     // this game is newer than the copy, so the cloud gets it again
     if (mine) cloudSent = '';
-    i.tx = tx;
     i.rf = rf;
     ['noads', 'x2'].forEach(function (f) {
       if (i[f] && rf.indexOf(i[f + 'Tx']) >= 0) i[f] = 0;
@@ -1799,7 +1798,7 @@ function takeCloud(raw) {
     return false;
   }
   // what the merge adds to or takes from the copy kept is not in the cloud yet
-  var merged = tx.length > p.tx.length || rf.length > p.rf.length;
+  var merged = rf.length > p.rf.length;
   // a refund listed in either copy takes the purchase away from the copy kept
   ['noads', 'x2'].forEach(function (f) {
     if (p[f] && rf.indexOf(p[f + 'Tx']) >= 0) {
@@ -1832,7 +1831,6 @@ function takeCloud(raw) {
   p.deal = p.deal || i.deal;
   p.held = p.held || i.held;
   for (var w in i.wait) p.wait[w] = Math.max(p.wait[w] || 0, i.wait[w]);
-  p.tx = tx;
   p.rf = rf;
   S = o;
   cloudTs = o.ts;

@@ -216,14 +216,14 @@ if (run('S.vt') !== 0) fail('a due VIP timer came back as ' + run('S.vt'));
   run('S.iap.tx = ["a", "b"]; S.ads.pt = 30; S.ads.d = 9; S.ads.n.gems = 2');
   if (!run('takeCloud(' + JSON.stringify(raw) + ')')) fail('a young game did not give way to the cloud save');
   if (run('S.cash') !== other.cash) fail('the cloud save was not taken on');
-  if (run('S.iap.tx.join()') !== 'a,b,c') fail('purchases of both copies were not joined: ' + run('S.iap.tx.join()'));
+  if (run('S.iap.tx.join()') !== 'b,c') fail('the copy taken lost its own purchase ids: ' + run('S.iap.tx.join()'));
   if (run('S.ads.d') !== 9 || run('S.ads.n.gems') !== 2 || run('S.ads.pt') !== 100) fail('ad counts of the day went back');
   const stored = JSON.parse(store[key]);
   if (stored.ts !== other.ts) fail('taking the cloud save moved its time');
   // a played game keeps itself against an older copy and takes a newer one
   run('S.ads.pt = 700; cloudTs = ' + (other.ts + 1000) + '; S.iap.tx = ["a"]');
   if (run('takeCloud(' + JSON.stringify(raw) + ')')) fail('an older cloud save replaced a played game');
-  if (run('S.iap.tx.join()') !== 'a,b,c') fail('purchases were not joined into the kept game');
+  if (run('S.iap.tx.join()') !== 'a') fail('the game kept took purchase ids it had not paid');
   // the autosave moves S.ts, but a copy is judged against the time this device was last in step with the cloud
   run('S.ts = ' + (other.ts + 60000) + '; cloudTs = ' + (other.ts - 1000));
   if (!run('takeCloud(' + JSON.stringify(raw) + ')')) fail('a newer cloud save did not replace a played game');

@@ -259,5 +259,22 @@ run('S.iap.tx = ["a"]');
 nativeEv(ipad(T9));
 if (run('S.ts') !== T12) fail('an older copy replaced a newer game');
 
+// a pack bought on the side that loses is paid again by the store's list, whichever copy is kept
+{
+  const id = 'com.aytutuna.mainstreet.gems2';
+  const list = () => [{ id, tx: 'T', at: now }];
+  device(T12);
+  run('S.gems = 0; grant("gems2", "T")');
+  const paid = run('S.gems');
+  run('takeCloud(' + JSON.stringify(copy(T17 + 1000)) + ')');
+  run('recover(' + JSON.stringify(list()) + ')');
+  if (run('S.gems') !== base.gems + paid) fail('a pack bought before a cloud copy was taken was not paid again: ' + run('S.gems'));
+  device(T12);
+  run('S.gems = 0');
+  run('takeCloud(' + JSON.stringify(copy(T9, { tx: ['T'] })) + ')');
+  run('recover(' + JSON.stringify(list()) + ')');
+  if (run('S.gems') !== paid) fail('a pack in a refused copy was not paid to this game: ' + run('S.gems'));
+}
+
 if (failed) process.exit(1);
 console.log('cloud ok');
