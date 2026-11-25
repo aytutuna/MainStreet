@@ -528,7 +528,9 @@ function openShop(at) {
   if (el) box.scrollTop = el.getBoundingClientRect().top - box.getBoundingClientRect().top - (box.clientHeight - el.offsetHeight) / 2;
 }
 
-function buyDone() {
+// an answer for a product that is not the one in flight leaves that purchase alone
+function buyDone(id) {
+  if (id && buying && buying !== id) return;
   buying = '';
   clearTimeout(buyTimer);
 }
@@ -547,8 +549,9 @@ function buyProduct(id) {
   if (buying || waitOn(id) || !prices[PID + id] || (id === 'starter1' && (S.iap.starter || starterLeft(false) < 0))) return;
   buying = id;
   var d = dealNow();
-  // the deal is fixed when the player taps, so a day change during the purchase does not lose it
-  S.iap.deal = d && d.id === id ? { id: id, bonus: d.bonus, until: clock() + 3600000 } : null;
+  // the deal is fixed when the player taps, so a day change during the purchase does not lose it. Tapping another
+  // pack keeps an earlier deal whose answer is still to come
+  if (d && d.id === id) S.iap.deal = { id: id, bonus: d.bonus, until: clock() + 3600000 };
   paintShop();
   post({ cmd: 'buy', id: PID + id });
   buyTimer = setTimeout(function () {
@@ -613,15 +616,15 @@ function handle(ev) {
     if (ev.restore) banner('<b>' + tl(S.iap.noads + S.iap.x2 + S.iap.starter > restoreWas ? 'shop.restored' : 'shop.nothing_to_restore') + '</b>', 0);
     save();
   } else if (ev.t === 'bought') {
-    buyDone();
     var bid = ev.id.slice(PID.length);
+    buyDone(bid);
     var extra = grant(bid, ev.tx) && product(bid).gems ? dealBonus(bid, ev.at) : 0;
     sfx('done');
     buzz('success');
     banner('<b>' + tl('shop.thanks') + '</b><small>' + (extra ? tl('shop.thanks_bonus', { name: product(bid).name, n: extra }) : product(bid).name) + '</small>', 0, true);
   } else if (ev.t === 'pending') {
-    buyDone();
     var wid = ev.id.slice(PID.length);
+    buyDone(wid);
     S.iap.wait[wid] = clock() + ASK_WAIT * 1000;
     // a held deal is kept apart, so the deal of another day can still be tapped meanwhile
     if (S.iap.deal && S.iap.deal.id === wid) {
@@ -634,7 +637,7 @@ function handle(ev) {
   } else if (ev.t === 'restoreFailed') {
     banner('<b>' + tl('shop.restore_failed') + '</b>', 0);
   } else if (ev.t === 'failed') {
-    buyDone();
+    buyDone(ev.id.slice(PID.length));
     if (ev.why !== 'late' && S.iap.deal && S.iap.deal.id === ev.id.slice(PID.length)) S.iap.deal = null;
     if (ev.why === 'late') banner('<b>' + tl('shop.late') + '</b><small>' + tl('shop.late_note') + '</small>', 0);
     else if (ev.why !== 'cancel') banner('<b>' + tl('shop.failed') + '</b>', 0);
