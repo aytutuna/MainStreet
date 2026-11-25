@@ -1,0 +1,1 @@
+coin.png and ui_*.png: sources not recorded yet.

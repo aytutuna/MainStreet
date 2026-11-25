@@ -42,7 +42,8 @@ jobs:
           fi
       - name: Licence files
         run: |
-          for d in assets/models/*/ assets/sounds/ assets/music/; do
+          for d in assets/ assets/*/ assets/models/*/; do
+            [ "$d" = assets/models/ ] && continue
             test -f "${d}License.txt" || { echo "no License.txt in $d"; exit 1; }
           done
       - name: Privacy manifest
