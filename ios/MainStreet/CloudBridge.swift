@@ -35,9 +35,18 @@ final class CloudBridge: NSObject {
         store.synchronize()
     }
 
+    // The local copy answers at once, marked fresh: false because iCloud may not have delivered the other devices' writes yet;
+    // the page can take it but does not write over the cloud on it. The same copy is sent again as fresh once iCloud has had a
+    // few seconds, and a change from another device is always sent as fresh.
     func get() {
+        store.synchronize()
+        send(fresh: false)
+        DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in self?.send(fresh: true) }
+    }
+
+    private func send(fresh: Bool) {
         let saved = store.dictionary(forKey: key)
-        emit(["t": "cloud", "json": saved?["json"] ?? NSNull(), "at": saved?["at"] ?? 0, "dev": saved?["dev"] ?? ""])
+        emit(["t": "cloud", "json": saved?["json"] ?? NSNull(), "at": saved?["at"] ?? 0, "dev": saved?["dev"] ?? "", "fresh": fresh])
     }
 
     func state() {
@@ -55,7 +64,7 @@ final class CloudBridge: NSObject {
         DispatchQueue.main.async {
             self.synced = true
             self.state()
-            if keys.contains(self.key) { self.get() }
+            if keys.contains(self.key) { self.send(fresh: true) }
         }
     }
 }
