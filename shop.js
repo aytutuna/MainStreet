@@ -218,11 +218,12 @@ function cloudEnd() {
 
 // a copy replaces this game and the screen shows it, or waits for the launch reveal while the models load
 function cloudTake(raw) {
-  if (!takeCloud(raw)) return;
+  var took = takeCloud(raw);
+  // a pack bought on either side that the game kept does not hold is paid again from the store's list
+  if (native()) askProducts();
+  if (!took) return;
   $('away').hidden = true;
   if (S.iap.noads) post({ cmd: 'adStop' });
-  // a pack bought here that the copy does not hold is paid again from the store's list
-  if (native()) askProducts();
   if (View.ready()) {
     cloudShown = true;
     afterLoad();

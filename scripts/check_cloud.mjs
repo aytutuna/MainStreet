@@ -278,6 +278,11 @@ if (run('S.ts') !== T12) fail('an older copy replaced a newer game');
   device(T12);
   nativeEv(ipad(T17 + 1000));
   if (!posts.some(m => m.cmd === 'products')) fail('the store was not asked for its list after a copy was taken');
+  // and when the copy is refused, since a pack bought on the other device may be missing here
+  device(T12);
+  posts.length = 0;
+  nativeEv(ipad(T9));
+  if (!posts.some(m => m.cmd === 'products')) fail('the store was not asked for its list after a copy was refused');
 }
 
 if (failed) process.exit(1);
