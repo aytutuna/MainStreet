@@ -361,6 +361,8 @@ LANG['ar'] = {
   "mission.star": "احصل على نجمة في {dept}",
   "notify.full": "فرعك ممتلئ. تعال واجمع أرباحه.",
   "notify.daily": "مكافأتك اليومية جاهزة.",
+  "notify.ask": "Get a reminder when your store is full or your daily reward is ready?",
+  "notify.ask.yes": "Remind me",
   "shop.owned": "مملوك",
   "shop.chip_gems": "جواهر",
   "shop.chip_hours": "{n} س",

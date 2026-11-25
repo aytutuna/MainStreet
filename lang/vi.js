@@ -385,6 +385,8 @@ LANG['vi'] = {
   'mission.star': 'Đạt một sao ở {dept}',
   'notify.full': 'Siêu thị của bạn đã đầy. Vào thu tiền thôi.',
   'notify.daily': 'Thưởng hằng ngày của bạn đã sẵn sàng.',
+  'notify.ask': 'Get a reminder when your store is full or your daily reward is ready?',
+  'notify.ask.yes': 'Remind me',
 
   'shop.owned': 'Đã sở hữu',
   'shop.chip_gems': 'ngọc',

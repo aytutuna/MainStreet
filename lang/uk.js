@@ -391,6 +391,8 @@ LANG['uk'] = {
   'mission.star': 'Здобудь зірку у відділі «{dept}»',
   'notify.full': 'Магазин повний. Заходь забрати виручку.',
   'notify.daily': 'Щоденна нагорода чекає.',
+  'notify.ask': 'Get a reminder when your store is full or your daily reward is ready?',
+  'notify.ask.yes': 'Remind me',
 
   'shop.owned': 'Куплено',
   'shop.chip_gems': 'самоцвітів',

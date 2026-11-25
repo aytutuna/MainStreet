@@ -385,6 +385,8 @@ LANG['ms'] = {
   'mission.star': 'Dapatkan bintang dalam {dept}',
   'notify.full': 'Kedai anda sudah penuh. Datang kutip pendapatannya.',
   'notify.daily': 'Ganjaran harian anda sudah sedia.',
+  'notify.ask': 'Get a reminder when your store is full or your daily reward is ready?',
+  'notify.ask.yes': 'Remind me',
 
   'shop.owned': 'Dimiliki',
   'shop.chip_gems': 'permata',

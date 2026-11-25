@@ -476,6 +476,8 @@ LANG['pl'] = {
   'mission.star': 'Zdobądź gwiazdkę: {dept}',
   'notify.full': 'Twój sklep jest pełny. Wpadnij odebrać zarobek.',
   'notify.daily': 'Twoja nagroda dzienna czeka.',
+  'notify.ask': 'Get a reminder when your store is full or your daily reward is ready?',
+  'notify.ask.yes': 'Remind me',
 
   'shop.owned': 'Kupione',
   'shop.chip_gems': 'klejnoty',

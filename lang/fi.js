@@ -387,6 +387,8 @@ LANG['fi'] = {
   'mission.star': 'Hanki tähti: {dept}',
   'notify.full': 'Kauppasi on täynnä. Tule hakemaan tulot.',
   'notify.daily': 'Päivän palkintosi odottaa.',
+  'notify.ask': 'Get a reminder when your store is full or your daily reward is ready?',
+  'notify.ask.yes': 'Remind me',
 
   'shop.owned': 'Omistat',
   'shop.chip_gems': 'jalokiveä',

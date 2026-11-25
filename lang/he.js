@@ -389,6 +389,8 @@ LANG['he'] = {
   'mission.star': 'השיגו כוכב במחלקת {dept}',
   'notify.full': 'החנות שלכם מלאה. בואו לאסוף את מה שהיא הרוויחה.',
   'notify.daily': 'הפרס היומי שלכם מוכן.',
+  'notify.ask': 'Get a reminder when your store is full or your daily reward is ready?',
+  'notify.ask.yes': 'Remind me',
 
   'shop.owned': 'ברשותכם',
   'shop.chip_gems': 'אבני חן',

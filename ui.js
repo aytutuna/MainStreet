@@ -68,7 +68,7 @@ var MIXER_KEY = 'mainstreet.mixer';
 var lvl = { amb: 1 / 3, fx: 0.8 };
 var humG = null;
 // the button that closes each panel a tap outside or a swipe can dismiss; the away box is left out since it pays out
-var CLOSE = { pack: 'pack-x', shop: 'shop-x', daily: 'daily-x', sell: 'sell-x', regs: 'regs-x', boost: 'boost-x', radio: 'radio-x', langs: 'langs-x',
+var CLOSE = { remind: 'remind-x', pack: 'pack-x', shop: 'shop-x', daily: 'daily-x', sell: 'sell-x', regs: 'regs-x', boost: 'boost-x', radio: 'radio-x', langs: 'langs-x',
   sound: 'sound-x', erase: 'erase-x', stats: 'stats-x', menu: 'm-ok', ach: 'ach-x', look: 'look-x' };
 var dragging = false;
 var IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
@@ -156,11 +156,18 @@ function tell(msg) {
   if (h) h.postMessage(msg);
 }
 
-// the system asks once, the first time the player has something to be told about
+// the system asks once, the first time the player has something to be told about, and only after a card says why
+var askWant = false;
+
 function askNotify() {
-  if (S.ask) return;
+  if (!S.ask) askWant = true;
+}
+
+function autoAsk() {
+  if (!askWant || S.ask || !started() || veilUp() || cardId || sheetOpen) return;
+  askWant = false;
   S.ask = 1;
-  tell({ cmd: 'ask' });
+  $('remind').hidden = false;
 }
 
 // the shopping mall murmur, looped under everything while sound is on and no other music plays
@@ -2185,6 +2192,11 @@ function wire() {
   });
   $('t-daily').addEventListener('click', openDaily);
   $('daily-x').addEventListener('click', function () { $('daily').hidden = true; });
+  $('remind-x').addEventListener('click', function () { $('remind').hidden = true; });
+  $('remind-ok').addEventListener('click', function () {
+    $('remind').hidden = true;
+    tell({ cmd: 'ask' });
+  });
   $('daily-ok').addEventListener('click', function () {
     var c = centerOf($('daily-ok'));
     var r = claimDaily();
@@ -2603,6 +2615,7 @@ function loop(t) {
     checkRegs();
     checkAch();
     autoDaily();
+    autoAsk();
     updateMeters();
     if (!$('stats').hidden) paintStats();
     updateHint();

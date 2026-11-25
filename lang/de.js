@@ -387,6 +387,8 @@ LANG['de'] = {
   'mission.star': 'Einen Stern in {dept} holen',
   'notify.full': 'Dein Markt ist voll. Hol dir, was er verdient hat.',
   'notify.daily': 'Deine Tagesbelohnung ist bereit.',
+  'notify.ask': 'Get a reminder when your store is full or your daily reward is ready?',
+  'notify.ask.yes': 'Remind me',
 
   'shop.owned': 'Gekauft',
   'shop.chip_gems': 'Edelsteine',

@@ -387,6 +387,8 @@ LANG['ta'] = {
   'mission.star': '{dept}-ல் நட்சத்திரம் பெறு',
   'notify.full': 'உங்கள் கடை நிறைந்துவிட்டது. வந்து வருமானத்தை எடுங்கள்.',
   'notify.daily': 'உங்கள் தினசரி பரிசு தயார்.',
+  'notify.ask': 'Get a reminder when your store is full or your daily reward is ready?',
+  'notify.ask.yes': 'Remind me',
 
   'shop.owned': 'வாங்கியது',
   'shop.chip_gems': 'ரத்தினம்',

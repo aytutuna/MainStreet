@@ -1040,15 +1040,20 @@ function away(sec) {
   return { secs: s, real: sec, gain: gain, n: n };
 }
 
-// what to tell the player while the app is closed: when the store fills up and when the next daily reward unlocks
+// what to tell the player while the app is closed: when the store fills up and when the daily reward is there to take.
+// Nothing before the first purchase, when the store has not started and the daily reward is still locked. The times are
+// worked out on server time and handed over as the phone's clock, which is what the system schedules by
 function reminders() {
   var now = clock();
-  var out = [{ id: 'full', at: now + maxAway() * 1000, body: tl('notify.full') }];
-  if (!daily().can) {
-    var d = new Date(now);
-    var at = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1, 10).getTime();
-    out.push({ id: 'daily', at: Math.max(at, S.day.t + DAILY_GAP), body: tl('notify.daily') });
-  }
+  var out = [];
+  if (!started()) return out;
+  var phone = Date.now() - now;
+  out.push({ id: 'full', at: now + maxAway() * 1000 + phone, body: tl('notify.full') });
+  var d = new Date(now);
+  var at = daily().can ? new Date(d.getFullYear(), d.getMonth(), d.getDate(), 10).getTime() : Math.max(new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1, 10).getTime(), S.day.t + DAILY_GAP);
+  // a reward already waiting is mentioned at the next 10:00, not at once
+  if (at <= now) at = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1, 10).getTime();
+  out.push({ id: 'daily', at: at + phone, body: tl('notify.daily') });
   return out;
 }
 

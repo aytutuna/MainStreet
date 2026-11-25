@@ -387,6 +387,8 @@ LANG['bn'] = {
   'mission.star': '{dept}-এ একটি তারা পান',
   'notify.full': 'আপনার স্টোর ভরে গেছে। এসে আয় তুলে নিন।',
   'notify.daily': 'আপনার দৈনিক পুরস্কার অপেক্ষা করছে।',
+  'notify.ask': 'Get a reminder when your store is full or your daily reward is ready?',
+  'notify.ask.yes': 'Remind me',
 
   'shop.owned': 'কেনা আছে',
   'shop.chip_gems': 'জেম',

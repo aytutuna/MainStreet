@@ -387,6 +387,8 @@ LANG['or'] = {
   'mission.star': '{dept} ରେ ତାରା ପାଅ',
   'notify.full': 'ତୁମ ଦୋକାନ ଭରିଗଲା। ଆସି ଆୟ ନିଅ।',
   'notify.daily': 'ତୁମ ଦୈନିକ ପୁରସ୍କାର ପ୍ରସ୍ତୁତ।',
+  'notify.ask': 'Get a reminder when your store is full or your daily reward is ready?',
+  'notify.ask.yes': 'Remind me',
 
   'shop.owned': 'କିଣାଗଲା',
   'shop.chip_gems': 'ରତ୍ନ',

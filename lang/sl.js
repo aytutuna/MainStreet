@@ -476,6 +476,8 @@ LANG['sl'] = {
   'mission.star': 'Pridobi zvezdico: {dept}',
   'notify.full': 'Tvoja trgovina je polna. Pridi po zaslužek.',
   'notify.daily': 'Tvoja dnevna nagrada je pripravljena.',
+  'notify.ask': 'Get a reminder when your store is full or your daily reward is ready?',
+  'notify.ask.yes': 'Remind me',
 
   'shop.owned': 'Kupljeno',
   'shop.chip_gems': 'dragulji',

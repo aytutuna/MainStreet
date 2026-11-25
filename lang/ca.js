@@ -389,6 +389,8 @@ LANG['ca'] = {
   'mission.star': 'Aconsegueix una estrella a {dept}',
   'notify.full': 'La teva botiga és plena. Vine a recollir el que ha guanyat.',
   'notify.daily': 'El teu premi diari és a punt.',
+  'notify.ask': 'Get a reminder when your store is full or your daily reward is ready?',
+  'notify.ask.yes': 'Remind me',
 
   'shop.owned': 'Comprat',
   'shop.chip_gems': 'gemmes',

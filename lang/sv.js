@@ -387,6 +387,8 @@ LANG['sv'] = {
   'mission.star': 'Få en stjärna i {dept}',
   'notify.full': 'Din butik är full. Kom och hämta det den tjänat.',
   'notify.daily': 'Din dagliga belöning är redo.',
+  'notify.ask': 'Get a reminder when your store is full or your daily reward is ready?',
+  'notify.ask.yes': 'Remind me',
 
   'shop.owned': 'Köpt',
   'shop.chip_gems': 'juveler',

@@ -387,6 +387,8 @@ LANG['el'] = {
   'mission.star': 'Κέρδισε αστέρι στο τμήμα {dept}',
   'notify.full': 'Το μαγαζί σου γέμισε. Έλα να πάρεις τα κέρδη.',
   'notify.daily': 'Το ημερήσιο δώρο σου είναι έτοιμο.',
+  'notify.ask': 'Get a reminder when your store is full or your daily reward is ready?',
+  'notify.ask.yes': 'Remind me',
 
   'shop.owned': 'Το έχεις',
   'shop.chip_gems': 'πετράδια',

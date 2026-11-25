@@ -389,6 +389,8 @@ LANG['ro'] = {
   'mission.star': 'Câștigă o stea la {dept}',
   'notify.full': 'Magazinul tău e plin. Vino să iei ce a câștigat.',
   'notify.daily': 'Recompensa ta zilnică te așteaptă.',
+  'notify.ask': 'Get a reminder when your store is full or your daily reward is ready?',
+  'notify.ask.yes': 'Remind me',
 
   'shop.owned': 'Cumpărat',
   'shop.chip_gems': 'nestemate',

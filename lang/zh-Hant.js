@@ -381,6 +381,8 @@ LANG['zh-Hant'] = {
   'mission.star': '在「{dept}」拿到一顆星',
   'notify.full': '你的賣場滿了，快來領取收入。',
   'notify.daily': '每日獎勵可以領了。',
+  'notify.ask': 'Get a reminder when your store is full or your daily reward is ready?',
+  'notify.ask.yes': 'Remind me',
 
   'shop.owned': '已擁有',
   'shop.chip_gems': '寶石',

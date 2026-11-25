@@ -369,6 +369,8 @@ LANG['fr-FR'] = {
   'mission.star': 'Gagne une étoile : {dept}',
   'notify.full': 'Ton magasin est plein. Viens encaisser ses gains.',
   'notify.daily': 'Ta récompense du jour est prête.',
+  'notify.ask': 'Get a reminder when your store is full or your daily reward is ready?',
+  'notify.ask.yes': 'Remind me',
   'shop.owned': 'Acheté',
   'shop.chip_gems': 'gemmes',
   'shop.chip_hours': '{n} h',

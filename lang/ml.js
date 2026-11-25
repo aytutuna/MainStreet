@@ -387,6 +387,8 @@ LANG['ml'] = {
   'mission.star': '{dept}-ൽ ഒരു നക്ഷത്രം നേടൂ',
   'notify.full': 'നിങ്ങളുടെ കട നിറഞ്ഞു. വന്ന് വരുമാനം എടുക്കൂ.',
   'notify.daily': 'ദിവസേനയുള്ള സമ്മാനം തയ്യാർ.',
+  'notify.ask': 'Get a reminder when your store is full or your daily reward is ready?',
+  'notify.ask.yes': 'Remind me',
 
   'shop.owned': 'സ്വന്തം',
   'shop.chip_gems': 'രത്നം',

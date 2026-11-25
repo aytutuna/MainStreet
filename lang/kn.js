@@ -367,6 +367,8 @@ LANG['kn'] = {
   'mission.star': '{dept} ನಲ್ಲಿ ನಕ್ಷತ್ರ ಗಳಿಸಿ',
   'notify.full': 'ನಿಮ್ಮ ಅಂಗಡಿ ತುಂಬಿದೆ. ಬಂದು ಗಳಿಕೆ ಸಂಗ್ರಹಿಸಿ.',
   'notify.daily': 'ನಿಮ್ಮ ದೈನಂದಿನ ಬಹುಮಾನ ಸಿದ್ಧವಾಗಿದೆ.',
+  'notify.ask': 'Get a reminder when your store is full or your daily reward is ready?',
+  'notify.ask.yes': 'Remind me',
   'shop.owned': 'ಇದೆ',
   'shop.chip_gems': 'ರತ್ನಗಳು',
   'shop.chip_hours': '{n} ಗಂ',

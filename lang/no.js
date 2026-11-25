@@ -365,6 +365,8 @@ LANG['no'] = {
   'mission.star': 'Få en stjerne i {dept}',
   'notify.full': 'Butikken din er full. Kom og hent det den har tjent.',
   'notify.daily': 'Den daglige belønningen din er klar.',
+  'notify.ask': 'Get a reminder when your store is full or your daily reward is ready?',
+  'notify.ask.yes': 'Remind me',
   'shop.owned': 'Eid',
   'shop.chip_gems': 'juveler',
   'shop.chip_hours': '{n} t',

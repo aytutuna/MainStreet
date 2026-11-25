@@ -387,6 +387,8 @@ LANG['gu'] = {
   'mission.star': '{dept} માં તારો મેળવો',
   'notify.full': 'તમારો સ્ટોર ભરાઈ ગયો છે. આવીને કમાણી લઈ લો.',
   'notify.daily': 'તમારું રોજનું ઇનામ તૈયાર છે.',
+  'notify.ask': 'Get a reminder when your store is full or your daily reward is ready?',
+  'notify.ask.yes': 'Remind me',
 
   'shop.owned': 'ખરીદેલું',
   'shop.chip_gems': 'રત્નો',

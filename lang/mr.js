@@ -387,6 +387,8 @@ LANG['mr'] = {
   'mission.star': '{dept} मध्ये तारा मिळवा',
   'notify.full': 'तुमचे स्टोअर भरले आहे. या आणि कमाई गोळा करा.',
   'notify.daily': 'तुमचे रोजचे बक्षीस तयार आहे.',
+  'notify.ask': 'Get a reminder when your store is full or your daily reward is ready?',
+  'notify.ask.yes': 'Remind me',
 
   'shop.owned': 'घेतलेले',
   'shop.chip_gems': 'रत्ने',

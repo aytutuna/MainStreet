@@ -387,6 +387,8 @@ LANG['te'] = {
   'mission.star': '{dept} లో స్టార్ సాధించండి',
   'notify.full': 'మీ స్టోర్ నిండింది. వచ్చి సంపాదన తీసుకోండి.',
   'notify.daily': 'మీ రోజువారీ బహుమతి సిద్ధంగా ఉంది.',
+  'notify.ask': 'Get a reminder when your store is full or your daily reward is ready?',
+  'notify.ask.yes': 'Remind me',
 
   'shop.owned': 'మీ వద్ద ఉంది',
   'shop.chip_gems': 'రత్నాలు',

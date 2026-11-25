@@ -385,6 +385,8 @@ LANG['zh-Hans'] = {
   'mission.star': '在{dept}获得一颗星',
   'notify.full': '你的店已经满了，快来收下收入吧。',
   'notify.daily': '你的每日奖励已就绪。',
+  'notify.ask': 'Get a reminder when your store is full or your daily reward is ready?',
+  'notify.ask.yes': 'Remind me',
 
   'shop.owned': '已拥有',
   'shop.chip_gems': '钻石',

@@ -387,6 +387,8 @@ LANG['tr'] = {
   'mission.star': '{dept} bölümünde yıldız kazan',
   'notify.full': 'Mağazan doldu. Gel ve kazancını topla.',
   'notify.daily': 'Günlük ödülün hazır.',
+  'notify.ask': 'Get a reminder when your store is full or your daily reward is ready?',
+  'notify.ask.yes': 'Remind me',
 
   'shop.owned': 'Alındı',
   'shop.chip_gems': 'elmas',

@@ -361,6 +361,8 @@ LANG['ko'] = {
   'mission.star': '{dept}에서 별 얻기',
   'notify.full': '매장이 가득 찼어요. 와서 수입을 받아가세요.',
   'notify.daily': '출석 보상이 준비됐어요.',
+  'notify.ask': 'Get a reminder when your store is full or your daily reward is ready?',
+  'notify.ask.yes': 'Remind me',
   'shop.owned': '보유 중',
   'shop.chip_gems': '보석',
   'shop.chip_hours': '{n}시간',

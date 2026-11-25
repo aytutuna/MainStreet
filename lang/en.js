@@ -603,6 +603,9 @@ LANG['en'] = {
   // Phone notification text shown while the app is closed.
   'notify.full': 'Your store is full. Come and collect what it earned.',
   'notify.daily': 'Your daily reward is ready.',
+  // Card shown before the phone asks for permission to send notifications, and its yes button.
+  'notify.ask':'Get a reminder when your store is full or your daily reward is ready?',
+  'notify.ask.yes': 'Remind me',
 
   // Label on a shop button for a one-time product the player already bought.
   'shop.owned': 'Owned',

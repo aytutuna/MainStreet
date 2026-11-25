@@ -387,6 +387,8 @@ LANG['hu'] = {
   'mission.star': 'Szerezz csillagot: {dept}',
   'notify.full': 'Megtelt az áruházad. Gyere, és vedd át a bevételt.',
   'notify.daily': 'Vár a napi jutalmad.',
+  'notify.ask': 'Get a reminder when your store is full or your daily reward is ready?',
+  'notify.ask.yes': 'Remind me',
 
   'shop.owned': 'Megvan',
   'shop.chip_gems': 'drágakő',

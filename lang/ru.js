@@ -391,6 +391,8 @@ LANG['ru'] = {
   'mission.star': 'Получи звезду в отделе «{dept}»',
   'notify.full': 'Твой магазин полон. Заходи и забирай заработок.',
   'notify.daily': 'Ежедневная награда ждёт тебя.',
+  'notify.ask': 'Get a reminder when your store is full or your daily reward is ready?',
+  'notify.ask.yes': 'Remind me',
 
   'shop.owned': 'Куплено',
   'shop.chip_gems': 'кристаллов',

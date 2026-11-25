@@ -387,6 +387,8 @@ LANG['nl'] = {
   'mission.star': 'Verdien een ster in {dept}',
   'notify.full': 'Je winkel zit vol. Kom ophalen wat hij verdiend heeft.',
   'notify.daily': 'Je dagelijkse beloning ligt klaar.',
+  'notify.ask': 'Get a reminder when your store is full or your daily reward is ready?',
+  'notify.ask.yes': 'Remind me',
 
   'shop.owned': 'Gekocht',
   'shop.chip_gems': 'edelstenen',

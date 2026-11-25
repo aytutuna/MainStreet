@@ -381,6 +381,8 @@ LANG['ja'] = {
   'mission.star': '{dept}で星を獲得',
   'notify.full': 'お店がいっぱいだよ。稼いだお金を受け取りにきて。',
   'notify.daily': 'デイリー報酬が準備できたよ。',
+  'notify.ask': 'Get a reminder when your store is full or your daily reward is ready?',
+  'notify.ask.yes': 'Remind me',
 
   'shop.owned': '購入済み',
   'shop.chip_gems': 'ジェム',

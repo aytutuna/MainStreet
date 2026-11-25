@@ -389,6 +389,8 @@ LANG['hr'] = {
   'mission.star': 'Osvoji zvjezdicu: {dept}',
   'notify.full': 'Tvoja trgovina je puna. Dođi i preuzmi zaradu.',
   'notify.daily': 'Dnevna nagrada te čeka.',
+  'notify.ask': 'Get a reminder when your store is full or your daily reward is ready?',
+  'notify.ask.yes': 'Remind me',
 
   'shop.owned': 'Kupljeno',
   'shop.chip_gems': 'dragulja',

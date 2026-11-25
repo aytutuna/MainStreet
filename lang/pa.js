@@ -387,6 +387,8 @@ LANG['pa'] = {
   'mission.star': '{dept} ਵਿੱਚ ਤਾਰਾ ਕਮਾਓ',
   'notify.full': 'ਤੁਹਾਡਾ ਸਟੋਰ ਭਰ ਗਿਆ ਹੈ। ਆ ਕੇ ਕਮਾਈ ਲੈ ਲਓ।',
   'notify.daily': 'ਤੁਹਾਡਾ ਰੋਜ਼ਾਨਾ ਇਨਾਮ ਤਿਆਰ ਹੈ।',
+  'notify.ask': 'Get a reminder when your store is full or your daily reward is ready?',
+  'notify.ask.yes': 'Remind me',
 
   'shop.owned': 'ਖਰੀਦਿਆ',
   'shop.chip_gems': 'ਜੈਮ',

@@ -391,6 +391,8 @@ LANG['sk'] = {
   'mission.star': 'Získaj hviezdu v oddelení: {dept}',
   'notify.full': 'Tvoj obchod je plný. Príď si vybrať, čo zarobil.',
   'notify.daily': 'Tvoja denná odmena je pripravená.',
+  'notify.ask': 'Get a reminder when your store is full or your daily reward is ready?',
+  'notify.ask.yes': 'Remind me',
 
   'shop.owned': 'Vlastníš',
   'shop.chip_gems': 'drahokamov',

@@ -387,6 +387,8 @@ LANG['da'] = {
   'mission.star': 'Optjen en stjerne i {dept}',
   'notify.full': 'Din butik er fuld. Kom og hent det, den har tjent.',
   'notify.daily': 'Din daglige belønning er klar.',
+  'notify.ask': 'Get a reminder when your store is full or your daily reward is ready?',
+  'notify.ask.yes': 'Remind me',
 
   'shop.owned': 'Ejet',
   'shop.chip_gems': 'diamanter',

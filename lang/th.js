@@ -385,6 +385,8 @@ LANG['th'] = {
   'mission.star': 'รับดาวในแผนก{dept}',
   'notify.full': 'ร้านของคุณเต็มแล้ว มาเก็บเงินที่หามาได้เลย',
   'notify.daily': 'รางวัลรายวันของคุณพร้อมแล้ว',
+  'notify.ask': 'Get a reminder when your store is full or your daily reward is ready?',
+  'notify.ask.yes': 'Remind me',
 
   'shop.owned': 'ซื้อแล้ว',
   'shop.chip_gems': 'เพชร',
