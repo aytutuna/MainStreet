@@ -69,7 +69,7 @@ var lvl = { amb: 1 / 3, fx: 0.8 };
 var humG = null;
 // the button that closes each panel a tap outside or a swipe can dismiss; the away box is left out since it pays out
 var CLOSE = { remind: 'remind-x', pack: 'pack-x', shop: 'shop-x', daily: 'daily-x', sell: 'sell-x', regs: 'regs-x', boost: 'boost-x', radio: 'radio-x', langs: 'langs-x',
-  sound: 'sound-x', erase: 'erase-x', stats: 'stats-x', menu: 'm-ok', ach: 'ach-x', look: 'look-x' };
+  sound: 'sound-x', erase: 'erase-x', stats: 'stats-x', menu: 'm-ok', ach: 'ach-x', look: 'look-x', notices: 'notices-x' };
 var dragging = false;
 var IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
 
@@ -2139,6 +2139,11 @@ function wire() {
   });
   $('regs-x').addEventListener('click', function () { $('regs').hidden = true; });
   $('ach-x').addEventListener('click', function () { $('ach').hidden = true; });
+  $('notices-x').addEventListener('click', function () { $('notices').hidden = true; });
+  $('m-notices').addEventListener('click', function () {
+    $('menu').hidden = true;
+    $('notices').hidden = false;
+  });
   $('look-x').addEventListener('click', function () { $('look').hidden = true; });
   $('look-list').addEventListener('click', function (e) {
     var b = e.target.closest('button');

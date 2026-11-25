@@ -1582,6 +1582,19 @@ a.btn {
   font-size: 12px;
 }
 
+#notices-list {
+  text-align: left;
+  font-size: 12px;
+}
+
+#notices-list pre {
+  font-size: 9px;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  user-select: text;
+  -webkit-user-select: text;
+}
+
 #test {
   display: flex;
   flex-direction: column;
