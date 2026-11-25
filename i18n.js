@@ -273,10 +273,12 @@ function setLang(code) {
   }
   // a purchase in flight finishes first, since its answer would reach the page that is going away; the last pick wins
   if (typeof buying === 'string' && buying) {
+    // a pick whose panel was closed is dropped, so the page never reloads under a card the player has since opened
     if (!langWait) setTimeout(function () {
       var c = langWait;
       langWait = '';
-      setLang(c);
+      var panel = document.getElementById('langs');
+      if (!panel || !panel.hidden) setLang(c);
     }, 500);
     langWait = code;
     return;

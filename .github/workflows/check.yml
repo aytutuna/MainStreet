@@ -36,6 +36,8 @@ jobs:
         run: node scripts/check_deal.mjs
       - name: Audio context held while asking
         run: node scripts/check_audio.mjs
+      - name: Language pick dropped when its panel closes
+        run: node scripts/check_lang_wait.mjs
       - name: No interstitials
         run: |
           if git grep -n -i -E 'interstitial|5084191623|6205701600' -- . ':!.github/workflows/check.yml' ':!vendor'; then
