@@ -11,7 +11,6 @@ final class CloudBridge: NSObject {
     // set once iCloud has delivered a change, or after a wait for the first sync of a new install
     private var synced = false
     // a change from iCloud arrived since the last get(); read counts the get() calls so only the latest one's wait answers
-    private var heard = false
     private var read = 0
 
     init(emit: @escaping ([String: Any]) -> Void) {
@@ -39,17 +38,13 @@ final class CloudBridge: NSObject {
     }
 
     // The local copy answers at once, marked fresh: false because iCloud may not have delivered the other devices' writes yet;
-    // the page can take it but does not write over the cloud on it. It becomes fresh when iCloud has reported a change since
-    // the last read, or, since iCloud says nothing when nothing differs, after a wait that is only a guess at "synced".
+    // the page can take it but does not write over the cloud on it. It becomes fresh when iCloud reports a change while the
+    // read is waiting, or, since iCloud says nothing when nothing differs, after a wait that is only a guess at "synced".
+    // A change heard earlier never counts: the cache may be behind again by the time of a later read.
     func get() {
         store.synchronize()
         read += 1
         let mine = read
-        if heard {
-            heard = false
-            send(fresh: true)
-            return
-        }
         send(fresh: false)
         DispatchQueue.main.asyncAfter(deadline: .now() + 8) { [weak self] in
             if let self = self, self.read == mine { self.send(fresh: true) }
@@ -75,9 +70,11 @@ final class CloudBridge: NSObject {
         let keys = note.userInfo?[NSUbiquitousKeyValueStoreChangedKeysKey] as? [String] ?? []
         DispatchQueue.main.async {
             self.synced = true
-            self.heard = true
             self.state()
-            if keys.contains(self.key) { self.send(fresh: true) }
+            if keys.contains(self.key) {
+                self.read += 1
+                self.send(fresh: true)
+            }
         }
     }
 }
