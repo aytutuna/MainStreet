@@ -446,7 +446,7 @@ function wireAds() {
   $('away-ad').addEventListener('click', function () { watch('away', function () { takeAway(true, 'away-ad', true); }); });
   $('pack-buy').addEventListener('click', function () {
     $('pack').hidden = true;
-    buyProduct('starter');
+    buyProduct('starter1');
   });
   $('pack-x').addEventListener('click', function () { $('pack').hidden = true; });
 }
