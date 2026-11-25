@@ -95,7 +95,7 @@ function wake() {
     mus.connect(ac.destination);
     Object.keys(VOL).forEach(loadSound);
   }
-  if (ac && ac.state !== 'running') ac.resume();
+  if (ac && ac.state !== 'running' && !unsure) ac.resume();
   ambience();
   radioSync();
 }
@@ -117,7 +117,7 @@ function loadSound(name) {
 // rate shifts the pitch, vol scales the loudness
 function sfx(name, rate, vol) {
   if (!ac || !snd || document.hidden) return;
-  if (ac.state === 'suspended' && otherOn && !adOpen) ac.resume();
+  if (ac.state === 'suspended' && otherOn && !adOpen && !unsure) ac.resume();
   else if (ac.state !== 'running') return;
   rest();
   if (VARY[name]) rate = (rate || 1) * (0.95 + Math.random() * 0.1);
@@ -412,7 +412,7 @@ function radioSync() {
   ambience();
   radioPaint();
   if (otherOn) rest();
-  else if (ac && ac.state === 'suspended' && snd && !adOpen && !document.hidden) ac.resume();
+  else if (ac && ac.state === 'suspended' && snd && !unsure && !adOpen && !document.hidden) ac.resume();
   if (mix && cur && !radio.tip && langGroup()) {
     radio.tip = 1;
     saveRadio();
