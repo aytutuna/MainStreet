@@ -42,6 +42,7 @@ class MainActivity : ComponentActivity() {
         private set
     lateinit var radio: RadioBridge
         private set
+    private val held = ArrayList<JSONObject>()
 
     private lateinit var notice: LinearLayout
     private var loaded = false
@@ -141,7 +142,20 @@ class MainActivity : ComponentActivity() {
 
     // the page's single entry point for the store and the ads, see shop.js
     fun emit(msg: JSONObject) {
-        runOnUiThread { if (!isDestroyed) webView.evaluateJavascript("window.nativeStore && window.nativeStore($msg)", null) }
+        runOnUiThread {
+            if (!isDestroyed) {
+                webView.evaluateJavascript("window.nativeStore ? (window.nativeStore($msg), 1) : 0") {
+                    if (it != "1" && msg.optString("t") != "time" && held.size < 50) held.add(msg)
+                }
+            }
+        }
+    }
+
+    // events the page was not there to take (it was reloading); replayed when it asks for the products again
+    fun replay() {
+        val list = ArrayList(held)
+        held.clear()
+        list.forEach { emit(it) }
     }
 
     fun askNotifications() {

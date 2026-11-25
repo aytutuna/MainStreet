@@ -5,6 +5,7 @@ import com.revenuecat.purchases.PurchaseParams
 import com.revenuecat.purchases.Purchases
 import com.revenuecat.purchases.PurchasesConfiguration
 import com.revenuecat.purchases.PurchasesError
+import com.revenuecat.purchases.PurchasesErrorCode
 import com.revenuecat.purchases.interfaces.GetStoreProductsCallback
 import com.revenuecat.purchases.interfaces.PurchaseCallback
 import com.revenuecat.purchases.interfaces.UpdatedCustomerInfoListener
@@ -20,16 +21,21 @@ import java.net.URL
 class StoreBridge(private val activity: MainActivity) {
     private val found = HashMap<String, StoreProduct>()
 
+    // a purchase finished while the page was gone shows up here; the page credits it if it has not yet
+    private val listener = UpdatedCustomerInfoListener { send(it, false) }
+
     init {
         if (!Purchases.isConfigured) {
             Purchases.configure(PurchasesConfiguration.Builder(activity.applicationContext, BuildConfig.RC_KEY).build())
         }
-        // a purchase finished while the page was gone shows up here; the page credits it if it has not yet
-        Purchases.sharedInstance.updatedCustomerInfoListener = UpdatedCustomerInfoListener { send(it, false) }
+        Purchases.sharedInstance.updatedCustomerInfoListener = listener
     }
 
+    // the listener is shared, and a new activity may already have taken it over
     fun stop() {
-        Purchases.sharedInstance.updatedCustomerInfoListener = null
+        if (Purchases.sharedInstance.updatedCustomerInfoListener === listener) {
+            Purchases.sharedInstance.updatedCustomerInfoListener = null
+        }
     }
 
     // server time for the page: alazy.app, else the Date header of a RevenueCat answer. sent and recv are the phone's
@@ -89,13 +95,21 @@ class StoreBridge(private val activity: MainActivity) {
             override fun onCompleted(storeTransaction: StoreTransaction, customerInfo: CustomerInfo) {
                 // the id the store list uses for it, so the page counts the purchase once
                 val listed = customerInfo.nonSubscriptionTransactions.filter { it.productIdentifier == id }.maxByOrNull { it.purchaseDate }
-                val tx = listed?.transactionIdentifier ?: storeTransaction.orderId ?: storeTransaction.purchaseToken
-                val at = listed?.purchaseDate?.time ?: storeTransaction.purchaseTime
-                activity.emit(JSONObject().put("t", "bought").put("id", id).put("tx", tx).put("at", at))
+                if (listed == null) {
+                    // charged, but RevenueCat has no id for it yet; the page credits it from the list
+                    failed(id, "late")
+                    owned()
+                    return
+                }
+                activity.emit(JSONObject().put("t", "bought").put("id", id).put("tx", listed.transactionIdentifier).put("at", listed.purchaseDate.time))
             }
 
             override fun onError(error: PurchasesError, userCancelled: Boolean) {
-                failed(id, if (userCancelled) "cancel" else "error")
+                when {
+                    userCancelled -> failed(id, "cancel")
+                    error.code == PurchasesErrorCode.PaymentPendingError -> activity.emit(JSONObject().put("t", "pending").put("id", id))
+                    else -> failed(id, "error")
+                }
             }
         })
     }
@@ -109,7 +123,7 @@ class StoreBridge(private val activity: MainActivity) {
             override fun onReceived(customerInfo: CustomerInfo) = send(customerInfo, restored)
 
             override fun onError(error: PurchasesError) {
-                if (restored) activity.emit(JSONObject().put("t", "owned").put("ids", JSONArray()).put("restore", true))
+                if (restored) activity.emit(JSONObject().put("t", "restoreFailed"))
             }
         }
         if (restored) Purchases.sharedInstance.restorePurchases(done) else Purchases.sharedInstance.getCustomerInfo(done)
@@ -122,7 +136,7 @@ class StoreBridge(private val activity: MainActivity) {
         info.nonSubscriptionTransactions.forEach {
             tx.put(JSONObject().put("id", it.productIdentifier).put("tx", it.transactionIdentifier).put("at", it.purchaseDate.time))
         }
-        activity.emit(JSONObject().put("t", "owned").put("ids", ids).put("tx", tx).put("restore", restored))
+        activity.emit(JSONObject().put("t", "owned").put("ids", ids).put("tx", tx).put("user", Purchases.sharedInstance.appUserID).put("restore", restored))
     }
 
     private fun failed(id: String, why: String) {

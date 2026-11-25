@@ -31,7 +31,10 @@ class Bridge(private val activity: MainActivity) {
         val msg = JSONObject(json)
         activity.runOnUiThread {
             when (msg.optString("cmd")) {
-                "products" -> activity.store.products(msg.optJSONArray("ids"))
+                "products" -> {
+                    activity.replay()
+                    activity.store.products(msg.optJSONArray("ids"))
+                }
                 "buy" -> activity.store.buy(msg.optString("id"))
                 "restore" -> activity.store.restore()
                 "adStart" -> activity.ads.start()
