@@ -37,7 +37,7 @@ var buying = '';
 var adOk = { reward: false };
 var watching = null;
 var restoreWas = 0;
-var waiting = {};
+var lastUser = '';
 var buyTimer = 0;
 var productsAt = 0;
 // a purchase the store has not answered in this long frees the buttons
@@ -134,10 +134,14 @@ function product(id) {
 function own(id, tx) {
   var p = product(id);
   if (!p || !p.once) return false;
-  if (tx && !S.iap[id + 'Tx']) S.iap[id + 'Tx'] = tx;
+  // the newest transaction listed wins, kept with the RevenueCat user that listed it
+  if (tx && lastUser) {
+    S.iap[id + 'Tx'] = tx;
+    S.iap[id + 'User'] = lastUser;
+  }
   if (S.iap[id]) return false;
   S.iap[id] = 1;
-  delete waiting[id];
+  delete S.iap.wait[id];
   if (id === 'noads') post({ cmd: 'adStop' });
   return true;
 }
@@ -155,7 +159,7 @@ function note(tx) {
 function credit(p, tx) {
   if (seen(tx)) return false;
   note(tx);
-  delete waiting[p.id];
+  delete S.iap.wait[p.id];
   if (p.id === 'starter1') {
     S.iap.starter = 1;
     S.gems += STARTER.gems;
@@ -197,18 +201,15 @@ function txOf(list, id) {
 }
 
 // a Skip ads or x2 whose transaction the store no longer lists was refunded, so its flag goes; gems stay. Only an answer
-// for the same RevenueCat user counts, since a new user has a different list
+// from the RevenueCat user that listed the transaction counts, since another user has a different list
 function refunds(ev) {
   if (!Array.isArray(ev.tx) || !ev.user) return;
-  if (S.iap.user !== ev.user) {
-    S.iap.user = ev.user;
-    return;
-  }
   ['noads', 'x2'].forEach(function (id) {
     var t = S.iap[id + 'Tx'];
-    if (!S.iap[id] || !t || ev.tx.some(function (x) { return x.tx === t; })) return;
+    if (!S.iap[id] || !t || S.iap[id + 'User'] !== ev.user || (ev.ids || []).indexOf(PID + id) >= 0 || ev.tx.some(function (x) { return x.tx === t; })) return;
     S.iap[id] = 0;
     S.iap[id + 'Tx'] = '';
+    S.iap[id + 'User'] = '';
     if (id === 'noads') {
       adOn = false;
       if (S.ads.pt >= AD_START) adBegin();
@@ -230,10 +231,15 @@ function priceOf(p) {
   return prices[PID + p.id];
 }
 
+// a purchase the store holds for approval blocks a second one of the same product, also after a relaunch
+function waitOn(id) {
+  return S.iap.wait[id] > clock();
+}
+
 function shopBtn(p) {
   var done = p.once && S.iap[p.id];
   var price = priceOf(p);
-  var off = done || !price || !!buying || !!waiting[p.id];
+  var off = done || !price || !!buying || waitOn(p.id);
   return '<button type="button" class="btn' + (done ? ' alt' : '') + '" data-p="' + p.id + '"' + (off ? ' disabled' : '') + '>' + (done ? tl('shop.owned') : price || '-') + '</button>';
 }
 
@@ -344,11 +350,12 @@ function askAgain() {
 }
 
 function buyProduct(id) {
-  if (buying || waiting[id] || !prices[PID + id] || (id === 'starter1' && (S.iap.starter || starterLeft(false) < 0))) return;
+  if (buying || waitOn(id) || !prices[PID + id] || (id === 'starter1' && (S.iap.starter || starterLeft(false) < 0))) return;
   buying = id;
   var d = dealNow();
   // the deal is fixed when the player taps, so a day change during the purchase does not lose it
-  S.iap.deal = d && d.id === id ? { id: id, bonus: d.bonus, until: clock() + 3600000 } : null;
+  var held = S.iap.deal && waitOn(S.iap.deal.id);
+  if (!held) S.iap.deal = d && d.id === id ? { id: id, bonus: d.bonus, until: clock() + 3600000 } : null;
   paintShop();
   post({ cmd: 'buy', id: PID + id });
   buyTimer = setTimeout(function () {
@@ -403,6 +410,7 @@ function handle(ev) {
     });
     storeUp = !!(ev.list && ev.list.length);
   } else if (ev.t === 'owned') {
+    lastUser = ev.user || '';
     (ev.ids || []).forEach(function (id) { own(id.slice(PID.length), txOf(ev.tx, id)); });
     refunds(ev);
     var back = recover(ev.tx);
@@ -418,13 +426,17 @@ function handle(ev) {
     banner('<b>' + tl('shop.thanks') + '</b><small>' + (extra ? tl('shop.thanks_bonus', { name: product(bid).name, n: extra }) : product(bid).name) + '</small>', 0, true);
   } else if (ev.t === 'pending') {
     buyDone();
-    waiting[ev.id.slice(PID.length)] = 1;
+    var wid = ev.id.slice(PID.length);
+    S.iap.wait[wid] = clock() + RECOVER * 1000;
+    if (S.iap.deal && S.iap.deal.id === wid) S.iap.deal.until = S.iap.wait[wid];
+    save();
     banner('<b>' + tl('shop.pending') + '</b><small>' + tl('shop.pending_note') + '</small>', 0);
   } else if (ev.t === 'restoreFailed') banner('<b>' + tl('shop.restore_failed') + '</b>', 0);
   else if (ev.t === 'failed') {
     buyDone();
-    if (ev.why !== 'late') S.iap.deal = null;
-    if (ev.why !== 'cancel' && ev.why !== 'late') banner('<b>' + tl('shop.failed') + '</b>', 0);
+    if (ev.why !== 'late' && S.iap.deal && S.iap.deal.id === ev.id.slice(PID.length) && !waitOn(S.iap.deal.id)) S.iap.deal = null;
+    if (ev.why === 'late') banner('<b>' + tl('shop.late') + '</b><small>' + tl('shop.late_note') + '</small>', 0);
+    else if (ev.why !== 'cancel') banner('<b>' + tl('shop.failed') + '</b>', 0);
   } else if (ev.t === 'adId') testAdId(ev.id);
   else if (ev.t === 'privacy') $('m-priv').hidden = !ev.required;
   else if (ev.t === 'ad') adEvent(ev);

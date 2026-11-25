@@ -411,6 +411,8 @@ LANG['uk'] = {
   'shop.failed': 'Покупку не завершено.',
   'shop.pending': 'Waiting for approval',
   'shop.pending_note': 'It arrives once the purchase is approved.',
+  'shop.late': 'Payment received',
+  'shop.late_note': 'Your purchase will arrive shortly.',
   'shop.restore_failed': 'Restore failed. Try again later.',
   'ads.no_reward': 'Без нагороди',
   'ads.unavailable': 'Реклами зараз немає.',

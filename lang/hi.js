@@ -407,6 +407,8 @@ LANG['hi'] = {
   'shop.failed': 'खरीदारी पूरी नहीं हुई।',
   'shop.pending': 'Waiting for approval',
   'shop.pending_note': 'It arrives once the purchase is approved.',
+  'shop.late': 'Payment received',
+  'shop.late_note': 'Your purchase will arrive shortly.',
   'shop.restore_failed': 'Restore failed. Try again later.',
   'ads.no_reward': 'कोई इनाम नहीं',
   'ads.unavailable': 'कोई विज्ञापन उपलब्ध नहीं था।',

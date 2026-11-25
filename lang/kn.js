@@ -386,6 +386,8 @@ LANG['kn'] = {
   'shop.failed': 'ಖರೀದಿ ಪೂರ್ಣವಾಗಲಿಲ್ಲ.',
   'shop.pending': 'Waiting for approval',
   'shop.pending_note': 'It arrives once the purchase is approved.',
+  'shop.late': 'Payment received',
+  'shop.late_note': 'Your purchase will arrive shortly.',
   'shop.restore_failed': 'Restore failed. Try again later.',
   'ads.no_reward': 'ಬಹುಮಾನ ಇಲ್ಲ',
   'ads.unavailable': 'ಯಾವುದೇ ಜಾಹೀರಾತು ಲಭ್ಯವಿರಲಿಲ್ಲ.',

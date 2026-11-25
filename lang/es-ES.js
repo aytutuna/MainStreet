@@ -409,6 +409,8 @@ LANG['es-ES'] = {
   'shop.failed': 'No se completó la compra.',
   'shop.pending': 'Waiting for approval',
   'shop.pending_note': 'It arrives once the purchase is approved.',
+  'shop.late': 'Payment received',
+  'shop.late_note': 'Your purchase will arrive shortly.',
   'shop.restore_failed': 'Restore failed. Try again later.',
   'ads.no_reward': 'Sin premio',
   'ads.unavailable': 'No había ningún anuncio disponible.',

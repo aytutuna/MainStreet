@@ -409,6 +409,8 @@ LANG['he'] = {
   'shop.failed': 'הרכישה לא הושלמה.',
   'shop.pending': 'Waiting for approval',
   'shop.pending_note': 'It arrives once the purchase is approved.',
+  'shop.late': 'Payment received',
+  'shop.late_note': 'Your purchase will arrive shortly.',
   'shop.restore_failed': 'Restore failed. Try again later.',
   'ads.no_reward': 'אין פרס',
   'ads.unavailable': 'אין מודעה זמינה.',

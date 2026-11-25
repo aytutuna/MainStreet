@@ -407,6 +407,8 @@ LANG['ml'] = {
   'shop.failed': 'പർച്ചേസ് പൂർത്തിയായില്ല.',
   'shop.pending': 'Waiting for approval',
   'shop.pending_note': 'It arrives once the purchase is approved.',
+  'shop.late': 'Payment received',
+  'shop.late_note': 'Your purchase will arrive shortly.',
   'shop.restore_failed': 'Restore failed. Try again later.',
   'ads.no_reward': 'സമ്മാനമില്ല',
   'ads.unavailable': 'പരസ്യം ലഭ്യമായില്ല.',

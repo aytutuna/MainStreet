@@ -411,6 +411,8 @@ LANG['sk'] = {
   'shop.failed': 'Nákup sa nedokončil.',
   'shop.pending': 'Waiting for approval',
   'shop.pending_note': 'It arrives once the purchase is approved.',
+  'shop.late': 'Payment received',
+  'shop.late_note': 'Your purchase will arrive shortly.',
   'shop.restore_failed': 'Restore failed. Try again later.',
   'ads.no_reward': 'Bez odmeny',
   'ads.unavailable': 'Reklama nebola dostupná.',

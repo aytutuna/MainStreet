@@ -407,6 +407,8 @@ LANG['bn'] = {
   'shop.failed': 'কেনা সম্পূর্ণ হয়নি।',
   'shop.pending': 'Waiting for approval',
   'shop.pending_note': 'It arrives once the purchase is approved.',
+  'shop.late': 'Payment received',
+  'shop.late_note': 'Your purchase will arrive shortly.',
   'shop.restore_failed': 'Restore failed. Try again later.',
   'ads.no_reward': 'পুরস্কার নেই',
   'ads.unavailable': 'কোনো বিজ্ঞাপন পাওয়া যায়নি।',

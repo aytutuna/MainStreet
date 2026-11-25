@@ -409,6 +409,8 @@ LANG['ro'] = {
   'shop.failed': 'Achiziția nu a fost finalizată.',
   'shop.pending': 'Waiting for approval',
   'shop.pending_note': 'It arrives once the purchase is approved.',
+  'shop.late': 'Payment received',
+  'shop.late_note': 'Your purchase will arrive shortly.',
   'shop.restore_failed': 'Restore failed. Try again later.',
   'ads.no_reward': 'Fără recompensă',
   'ads.unavailable': 'Nu era nicio reclamă disponibilă.',

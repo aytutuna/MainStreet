@@ -401,6 +401,8 @@ LANG['ja'] = {
   'shop.failed': '購入できませんでした。',
   'shop.pending': 'Waiting for approval',
   'shop.pending_note': 'It arrives once the purchase is approved.',
+  'shop.late': 'Payment received',
+  'shop.late_note': 'Your purchase will arrive shortly.',
   'shop.restore_failed': 'Restore failed. Try again later.',
   'ads.no_reward': '報酬なし',
   'ads.unavailable': '広告がありませんでした。',

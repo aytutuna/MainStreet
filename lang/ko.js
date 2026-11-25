@@ -380,6 +380,8 @@ LANG['ko'] = {
   'shop.failed': '구매가 완료되지 않았어요.',
   'shop.pending': 'Waiting for approval',
   'shop.pending_note': 'It arrives once the purchase is approved.',
+  'shop.late': 'Payment received',
+  'shop.late_note': 'Your purchase will arrive shortly.',
   'shop.restore_failed': 'Restore failed. Try again later.',
   'ads.no_reward': '보상 없음',
   'ads.unavailable': '볼 수 있는 광고가 없어요.',

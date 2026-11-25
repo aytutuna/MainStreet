@@ -409,6 +409,8 @@ LANG['ca'] = {
   'shop.failed': 'La compra no s’ha completat.',
   'shop.pending': 'Waiting for approval',
   'shop.pending_note': 'It arrives once the purchase is approved.',
+  'shop.late': 'Payment received',
+  'shop.late_note': 'Your purchase will arrive shortly.',
   'shop.restore_failed': 'Restore failed. Try again later.',
   'ads.no_reward': 'Sense premi',
   'ads.unavailable': 'No hi havia cap anunci disponible.',

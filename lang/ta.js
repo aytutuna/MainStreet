@@ -407,6 +407,8 @@ LANG['ta'] = {
   'shop.failed': 'வாங்குதல் முடியவில்லை.',
   'shop.pending': 'Waiting for approval',
   'shop.pending_note': 'It arrives once the purchase is approved.',
+  'shop.late': 'Payment received',
+  'shop.late_note': 'Your purchase will arrive shortly.',
   'shop.restore_failed': 'Restore failed. Try again later.',
   'ads.no_reward': 'பரிசு இல்லை',
   'ads.unavailable': 'விளம்பரம் கிடைக்கவில்லை.',

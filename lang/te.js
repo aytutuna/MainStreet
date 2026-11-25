@@ -407,6 +407,8 @@ LANG['te'] = {
   'shop.failed': 'కొనుగోలు పూర్తి కాలేదు.',
   'shop.pending': 'Waiting for approval',
   'shop.pending_note': 'It arrives once the purchase is approved.',
+  'shop.late': 'Payment received',
+  'shop.late_note': 'Your purchase will arrive shortly.',
   'shop.restore_failed': 'Restore failed. Try again later.',
   'ads.no_reward': 'బహుమతి లేదు',
   'ads.unavailable': 'ప్రకటన అందుబాటులో లేదు.',

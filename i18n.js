@@ -263,10 +263,21 @@ function applyText(root) {
   document.title = tl('app.title');
 }
 
+var langWait = '';
+
 function setLang(code) {
   if (!ready(code) || code === I18N.code) return;
-  // a purchase in flight finishes first, since its answer would reach the page that is going away
-  if (typeof buying === 'string' && buying) return void setTimeout(function () { setLang(code); }, 500);
+  // a purchase in flight finishes first, since its answer would reach the page that is going away; the last pick wins
+  if (typeof buying === 'string' && buying) {
+    if (!langWait) setTimeout(function () {
+      var c = langWait;
+      langWait = '';
+      setLang(c);
+    }, 500);
+    langWait = code;
+    return;
+  }
+  langWait = '';
   try {
     localStorage.setItem(LANG_KEY, code);
   } catch (e) {}

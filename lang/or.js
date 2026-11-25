@@ -407,6 +407,8 @@ LANG['or'] = {
   'shop.failed': 'କିଣା ସମ୍ପୂର୍ଣ୍ଣ ହେଲା ନାହିଁ।',
   'shop.pending': 'Waiting for approval',
   'shop.pending_note': 'It arrives once the purchase is approved.',
+  'shop.late': 'Payment received',
+  'shop.late_note': 'Your purchase will arrive shortly.',
   'shop.restore_failed': 'Restore failed. Try again later.',
   'ads.no_reward': 'ପୁରସ୍କାର ନାହିଁ',
   'ads.unavailable': 'କୌଣସି ବିଜ୍ଞାପନ ମିଳିଲା ନାହିଁ।',
