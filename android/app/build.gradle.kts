@@ -94,6 +94,7 @@ androidComponents {
             files.from(game.asFileTree.matching {
                 include("index.html", "style.css", "i18n.js", "data.js", "sim.js", "store.js", "plan.js", "land.js", "walls.js", "shop.js", "ui.js")
                 include("vendor/**", "assets/**", "lang/**")
+                exclude("lang/GLOSSARY.md")
             })
         }
         variant.sources.assets?.addGeneratedSourceDirectory(copy, CopyGame::out)

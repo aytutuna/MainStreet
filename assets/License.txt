@@ -1,2 +1,2 @@
 The ui_*.png icons were drawn for this game.
-coin.png: source not recorded, nothing draws it. TODO: remove it with sw.js, or Aytu names the source.
+coin.png: source not recorded, nothing draws it. TODO: remove it, or Aytu names the source.

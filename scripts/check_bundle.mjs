@@ -1,5 +1,5 @@
 // Checks that the files the page loads from the repository root are in the iPhone bundle (ios/project.yml), in the
-// Android copy list (android/app/build.gradle.kts) and in the service worker's list (sw.js, while there is one).
+// Android copy list (android/app/build.gradle.kts).
 // The page's own scripts and stylesheets come from index.html, and from there the imports of every module.
 import fs from 'node:fs';
 import path from 'node:path';
@@ -28,12 +28,10 @@ const rootFiles = [...needed].filter(f => !f.includes('/'));
 const ios = new Set([...read('ios/project.yml').matchAll(/- path: \.\.\/([\w.-]+)\s*\n\s+buildPhase: resources/g)].map(m => m[1]));
 const gradle = read('android/app/build.gradle.kts').match(/include\(("[^"]+"(?:,\s*"[^"]+")*)\)/);
 const android = new Set(gradle ? [...gradle[1].matchAll(/"([^"]+)"/g)].map(m => m[1]) : []);
-const sw = fs.existsSync(path.join(root, 'sw.js')) ? new Set([...read('sw.js').matchAll(/^\s*'([^']+)',?$/gm)].map(m => m[1])) : null;
 
 for (const f of rootFiles) {
   if (!ios.has(f)) fail(f + ' is loaded by the page but not in ios/project.yml');
   if (!android.has(f)) fail(f + ' is loaded by the page but not in the copy list in android/app/build.gradle.kts');
-  if (sw && !sw.has(f)) fail(f + ' is loaded by the page but not in sw.js');
 }
 for (const f of ios) if (!rootFiles.includes(f)) fail(f + ' is in ios/project.yml but the page does not load it');
 for (const f of android) if (!f.includes('*') && !rootFiles.includes(f)) fail(f + ' is in the Android copy list but the page does not load it');

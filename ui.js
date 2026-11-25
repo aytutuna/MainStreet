@@ -2837,14 +2837,6 @@ function begin(fromCloud) {
     lastTick = performance.now();
     requestAnimationFrame(loop);
     setInterval(function () { if (!timeHeld && !cloudHeld() && !document.hidden) save(); }, 5000);
-    if (location.protocol !== 'file:') {
-      // file:// blocks the manifest fetch and logs an error
-      var man = document.createElement('link');
-      man.rel = 'manifest';
-      man.href = 'manifest.webmanifest';
-      document.head.appendChild(man);
-      if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
-    }
   }, 50);
 }
 
