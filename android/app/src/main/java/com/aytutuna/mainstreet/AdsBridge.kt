@@ -63,19 +63,21 @@ class AdsBridge(private val activity: MainActivity) {
         if (waiting != null || stopped) return
         val cm = activity.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
         // the default callback reports a network that is already up, which would retry in a tight loop
-        var up = cm.activeNetwork != null
+        // a switch to another network counts too: the old one may have had no internet
+        var current = cm.activeNetwork
         val cb = object : ConnectivityManager.NetworkCallback() {
             override fun onAvailable(network: Network) {
-                if (up) return
-                up = true
+                if (network == current) return
+                current = network
                 retry.post {
+                    if (waiting !== this || stopped) return@post
                     unwait()
                     start(muted)
                 }
             }
 
             override fun onLost(network: Network) {
-                up = false
+                if (network == current) current = null
             }
         }
         waiting = cb
@@ -133,6 +135,7 @@ class AdsBridge(private val activity: MainActivity) {
                 if (stopped) return
                 reward = ad
                 loadedAt = System.currentTimeMillis()
+                retry.postDelayed({ resume() }, STALE)
                 state("reward", "ready")
             }
 

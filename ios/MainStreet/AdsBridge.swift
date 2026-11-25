@@ -68,13 +68,18 @@ final class AdsBridge: NSObject, FullScreenContentDelegate {
         monitor = m
         // the monitor reports the current path first; retrying on that would loop when the update fails with a network up
         online = nil
+        var seen: String?
         m.pathUpdateHandler = { [weak self] path in
             let now = path.status == .satisfied
+            let ifaces = path.availableInterfaces.map { $0.name }.joined(separator: ",")
             DispatchQueue.main.async {
                 guard let self = self, self.monitor === m else { return }
                 let was = self.online
+                let before = seen
                 self.online = now
-                guard now, was == false else { return }
+                seen = ifaces
+                // moving to other interfaces counts too: the old network may have had no internet
+                guard now, was == false || (before != nil && before != ifaces) else { return }
                 m.cancel()
                 self.monitor = nil
                 self.start(mute: self.muted)
@@ -150,6 +155,7 @@ final class AdsBridge: NSObject, FullScreenContentDelegate {
                 self?.reward = ad
                 if ad != nil {
                     self?.loadedAt = Date()
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 50 * 60) { [weak self] in self?.resume() }
                     self?.send("reward", "ready")
                 } else {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 60) { self?.loadReward() }
