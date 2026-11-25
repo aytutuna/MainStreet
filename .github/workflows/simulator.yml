@@ -117,3 +117,8 @@ jobs:
         with:
           name: simulator
           path: out
+      # Earlier runs finished every step and then sat in "Complete job" until the time limit, with the
+      # simulator still running.
+      - name: Shut the simulator down
+        if: always()
+        run: xcrun simctl shutdown "$UDID" || true
