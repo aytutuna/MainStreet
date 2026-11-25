@@ -16,7 +16,7 @@ permissions:
 jobs:
   run:
     runs-on: xcode-27
-    timeout-minutes: 30
+    timeout-minutes: 60
     env:
       TESTER_CONDITIONS: ${{ inputs.tester && '$(inherited) TESTER' || '$(inherited)' }}
     steps:
@@ -117,8 +117,7 @@ jobs:
         with:
           name: simulator
           path: out
-      # Earlier runs finished every step and then sat in "Complete job" until the time limit, with the
-      # simulator still running.
+      # The hosted runner is slow (a single simctl call can take minutes), so the limit is generous.
       - name: Shut the simulator down
         if: always()
         run: xcrun simctl shutdown "$UDID" || true
