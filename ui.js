@@ -2644,10 +2644,12 @@ function closeVeil(v) {
 // The away box only answers true: it has to be collected, and closing it would drop the double offer.
 // The needs-internet and cloud lookup cards go away by themselves, so Back must not quit under them
 function closeTop() {
+  // they sit on top by z-index, not by order in the page, so they are checked before the last veil
+  if (!$('net').hidden || !$('find').hidden) return true;
   var v = document.querySelectorAll('.veil:not([hidden])');
   if (v.length) {
     v = v[v.length - 1];
-    if (v.id === 'away' || v.id === 'net' || v.id === 'find') return true;
+    if (v.id === 'away') return true;
     if (!CLOSE[v.id]) return false;
     closeVeil(v);
     return true;

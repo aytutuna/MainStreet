@@ -30,6 +30,8 @@ jobs:
         run: node scripts/check_sim.mjs
       - name: Cloud save rules
         run: node scripts/check_cloud.mjs
+      - name: Back under the net and find cards
+        run: node scripts/check_back.mjs
       - name: Deal kept while another pack is tapped
         run: node scripts/check_deal.mjs
       - name: Audio context held while asking
