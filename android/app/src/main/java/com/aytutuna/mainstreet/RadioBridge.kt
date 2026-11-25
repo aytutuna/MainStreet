@@ -1,6 +1,7 @@
 package com.aytutuna.mainstreet
 
 import android.media.AudioManager
+import android.media.AudioPlaybackConfiguration
 import android.os.Handler
 import android.os.Looper
 import androidx.annotation.OptIn
@@ -26,9 +27,18 @@ class RadioBridge(private val activity: MainActivity) {
     private var other = false
     private val handler = Handler(Looper.getMainLooper())
 
-    // Apps cannot see each other's players, only ask whether any music is playing, and the game's own audio counts. The
-    // page keeps its audio context idle while another app plays, so this is asked again until the answer is no.
-    private val poll = Runnable { check(false) }
+    // Apps cannot see each other's players, but the system reports when any playback starts or stops. While the page is
+    // idle for other music (ui.js rest()) the only audio left is that music, so the change that ends it is trusted here;
+    // while the game plays, its own web view audio would look like another app, so only an explicit ask looks.
+    private val callback = object : AudioManager.AudioPlaybackCallback() {
+        override fun onPlaybackConfigChanged(configs: MutableList<AudioPlaybackConfiguration>) {
+            if (other) check(false)
+        }
+    }
+
+    init {
+        audio.registerAudioPlaybackCallback(callback, handler)
+    }
 
     fun command(msg: JSONObject) {
         when {
@@ -81,15 +91,20 @@ class RadioBridge(private val activity: MainActivity) {
 
     // the page waits for an answer to a question of its own, so those are always sent
     fun check(asked: Boolean = true) {
-        val on = audio.isMusicActive
-        handler.removeCallbacks(poll)
-        if (on) handler.postDelayed(poll, POLL)
+        val on = audio.activePlaybackConfigurations.any { music(it) }
         if (asked || on != other) activity.emit(JSONObject().put("t", "other").put("on", on))
         other = on
     }
 
+    // the web view's sounds play as USAGE_GAME as well, so only media and unknown usages count as another app's music
+    private fun music(c: AudioPlaybackConfiguration): Boolean {
+        val usage = c.audioAttributes.usage
+        return usage == android.media.AudioAttributes.USAGE_MEDIA || usage == android.media.AudioAttributes.USAGE_UNKNOWN
+    }
+
     fun release() {
         stop()
+        audio.unregisterAudioPlaybackCallback(callback)
         handler.removeCallbacksAndMessages(null)
     }
 
@@ -97,9 +112,5 @@ class RadioBridge(private val activity: MainActivity) {
         val msg = JSONObject().put("t", "radio").put("state", state).put("url", url)
         if (title != null) msg.put("title", title)
         activity.emit(msg)
-    }
-
-    private companion object {
-        const val POLL = 3000L
     }
 }
