@@ -1747,8 +1747,9 @@ var YOUNG = 600;
 // the away summary of the last copy taken, and whether one was taken since the app went to the background
 var cloudAway = null;
 var cloudTook = false;
-// the time of the save this device last had in step with the cloud: the one on disk at launch, then the last copy put or
-// taken. A copy counts as newer only against this, not against the autosave
+// the time of the newest save this device has read from the cloud: the one on disk at launch, then the last copy taken. A
+// copy counts as newer only against this, not against the autosave and not against what this device itself put, since a put
+// can have overwritten a copy that had not reached it yet
 var cloudTs = 0;
 
 // the save of another device meets this game: the newer one is kept, a young game always gives way. True when it replaced this game
@@ -1770,6 +1771,10 @@ function takeCloud(raw) {
     });
     return false;
   }
+  // a refund listed in either copy takes the purchase away from the copy kept
+  ['noads', 'x2'].forEach(function (f) {
+    if (p[f] && rf.indexOf(p[f + 'Tx']) >= 0) p[f] = 0;
+  });
   // ad counts of the day and play time never go back
   var a = S.ads;
   var c = o.ads;

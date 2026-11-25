@@ -28,6 +28,8 @@ jobs:
         run: node scripts/check_lang.mjs --all
       - name: Simulation and saves
         run: node scripts/check_sim.mjs
+      - name: Cloud save rules
+        run: node scripts/check_cloud.mjs
       - name: No interstitials
         run: |
           if git grep -n -i -E 'interstitial|5084191623|6205701600' -- . ':!.github/workflows/check.yml' ':!vendor'; then

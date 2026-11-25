@@ -65,9 +65,7 @@ var cloudLate = 0;
 var cloudTaken = false;
 var cloudShown = false;
 var cloudPend = null;
-var cloudMet = false;
 var cloudRet = null;
-var cloudOut = false;   // a return's cloudGet is unanswered: nothing is written, even after the wait timed out
 var cloudAt = -CLOUD_EVERY;
 var devKey = '';
 
@@ -161,7 +159,8 @@ function devId() {
   return devKey || 'x';
 }
 
-// nothing is written before the cloud has answered, and a game this young waits for a signed-in cloud's first sync
+// nothing is written before the cloud has answered since the launch or the last return (cloudSeen), and a game this young
+// waits for a signed-in cloud's first sync
 function cloudReady() {
   return cloudSeen && (cloudState !== 'pending' || S.ads.pt >= YOUNG);
 }
@@ -169,10 +168,10 @@ function cloudReady() {
 function cloudPut(erase) {
   clearTimeout(cloudTimer);
   cloudTimer = 0;
-  if (!native() || !loaded || blocked || !(erase === true || (cloudReady() && !cloudOut))) return;
+  // a copy that waits for the time answer has not been judged yet, so it is not written over
+  if (!native() || !loaded || blocked || !(erase === true || (cloudReady() && !cloudPend && !timeHeld))) return;
   cloudAt = performance.now();
-  cloudMet = true;
-  cloudTs = S.ts;
+  if (erase === true) cloudTs = S.ts;
   post({ cmd: 'cloudPut', json: saved(), at: Math.round(clock()), dev: devId() });
 }
 
@@ -224,7 +223,7 @@ function cloudBack() {
   if (!native()) return;
   if (cloudRet) clearTimeout(cloudRet.t);
   cloudRet = { got: false, run: null, t: setTimeout(cloudGot, CLOUD_BACK) };
-  cloudOut = true;
+  cloudSeen = false;
   post({ cmd: 'cloudGet' });
 }
 
@@ -256,8 +255,15 @@ function cloudAfter(fn) {
 function cloudApply() {
   var raw = cloudPend;
   cloudPend = null;
-  cloudMet = true;
   if (raw) cloudTake(raw);
+}
+
+function stampOf(raw) {
+  try {
+    return JSON.parse(raw).ts || 0;
+  } catch (e) {
+    return 0;
+  }
 }
 
 function cloudEvent(ev) {
@@ -268,19 +274,12 @@ function cloudEvent(ev) {
     cloudSeen = true;
     if (cloudFind) cloudFound = ev.json || cloudFound;
     else if (ev.json && loaded && ev.dev !== devId()) {
-      // once this device has met the cloud, copies are taken only on return, not in the middle of play, where two open
-      // devices would keep replacing each other's progress; a copy that comes while the time is unknown waits as well
-      if ((cloudMet && View.ready()) || timeHeld) cloudPend = ev.json;
-      else {
-        cloudMet = true;
-        cloudTake(ev.json);
-      }
+      // a copy is judged by its own time whenever it comes; only while the server time is unknown does it wait
+      if (!timeHeld) cloudTake(ev.json);
+      else if (!cloudPend || stampOf(ev.json) >= stampOf(cloudPend)) cloudPend = ev.json;
     }
   }
-  if (ev.t === 'cloud') {
-    cloudOut = false;
-    cloudGot();
-  }
+  if (ev.t === 'cloud') cloudGot();
   if (cloudFind && (cloudFound || (cloudSeen && cloudState && cloudState !== 'pending'))) cloudEnd();
 }
 
