@@ -1,3 +1,4 @@
-Pizza and cafe props by Vira Voloshyn (no licence file shipped with the pack).
+Pizza and cafe props from the free PizzaCafe pack by Vira Voloshyn (https://viravoloshyn.itch.io/). The pack's page says it is free
+to use in personal and commercial projects. It ships no licence file.
 
 The models were exported as flat-colour GLBs for use in this game.

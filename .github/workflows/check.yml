@@ -40,6 +40,11 @@ jobs:
           if git grep -n -i -E 'tagForChildDirected|tagForUnderAgeOfConsent|TagForChildDirectedTreatment' -- ios android; then
             exit 1
           fi
+      - name: Licence files
+        run: |
+          for d in assets/models/*/ assets/sounds/ assets/music/; do
+            test -f "${d}License.txt" || { echo "no License.txt in $d"; exit 1; }
+          done
       - name: Privacy manifest
         run: |
           python3 - <<'PY'
