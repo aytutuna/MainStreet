@@ -740,7 +740,6 @@ LANG['it'] = {
   'product.starter.text': '150 gemme, 2 ore di doppio guadagno e 10 rep.',
   'product.noads.name': 'Senza pubblicità',
   'product.noads.line': 'Mai più pubblicità. I premi arrivano gratis.',
-  'product.noads.text': 'Niente pubblicità tra un negozio e l\'altro. I premi degli annunci arrivano senza guardarli.',
   'product.x2.name': 'x2 per sempre',
   'product.x2.line': 'Guadagno doppio per sempre.',
   'product.x2.text': 'Tutto il guadagno raddoppiato per sempre, oltre al boost a tempo.',

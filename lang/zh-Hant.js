@@ -765,7 +765,6 @@ LANG['zh-Hant'] = {
   'product.starter.text': '150 顆寶石、2 小時收入加倍和 10 聲望。',
   'product.noads.name': '免廣告',
   'product.noads.line': '永遠沒有廣告，獎勵免費領。',
-  'product.noads.text': '換店時不再有廣告，廣告獎勵不用看廣告就能拿。',
   'product.x2.name': '永久 x2',
   'product.x2.line': '收入永遠加倍。',
   'product.x2.text': '所有收入永久加倍，還能和限時增益疊加。',

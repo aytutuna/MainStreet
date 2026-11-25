@@ -875,7 +875,6 @@ LANG['sl'] = {
   'product.starter.text': '150 draguljev, 2 uri dvojnega dohodka in 10 ugleda.',
   'product.noads.name': 'Brez oglasov',
   'product.noads.line': 'Nikoli oglasov. Nagrade so zastonj.',
-  'product.noads.text': 'Brez oglasov med trgovinami. Nagrade za oglase dobiš brez ogleda.',
   'product.x2.name': 'Trajni x2',
   'product.x2.line': 'Dvojni dohodek za vedno.',
   'product.x2.text': 'Ves dohodek podvojen za vedno, povrhu časovnega pospeška.',

@@ -771,7 +771,6 @@ LANG['fi'] = {
   'product.starter.text': '150 jalokiveä, 2 tuntia tuplatuloja ja 10 mainetta.',
   'product.noads.name': 'Ei mainoksia',
   'product.noads.line': 'Ei mainoksia koskaan. Palkinnot ilmaiseksi.',
-  'product.noads.text': 'Ei mainoksia kauppojen välillä. Mainospalkinnot tulevat ilman katsomista.',
   'product.x2.name': 'Pysyvä x2',
   'product.x2.line': 'Tuplatulot pysyvästi.',
   'product.x2.text': 'Kaikki tulot kaksinkertaisina pysyvästi, ajastetun tehosteen lisäksi.',

@@ -740,7 +740,6 @@ LANG['pt-PT'] = {
   'product.starter.text': '150 gemas, 2 horas de rendimento a dobrar e 10 rep.',
   'product.noads.name': 'Sem anúncios',
   'product.noads.line': 'Sem anúncios, nunca. Prémios grátis.',
-  'product.noads.text': 'Sem anúncios entre lojas. Os prémios dos anúncios chegam sem os veres.',
   'product.x2.name': 'x2 permanente',
   'product.x2.line': 'Rendimento a dobrar para sempre.',
   'product.x2.text': 'Todo o rendimento a dobrar para sempre, além do reforço temporário.',

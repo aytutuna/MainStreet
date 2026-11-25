@@ -771,7 +771,6 @@ LANG['sv'] = {
   'product.starter.text': '150 juveler, 2 timmars dubbel inkomst och 10 rykte.',
   'product.noads.name': 'Inga annonser',
   'product.noads.line': 'Inga annonser, någonsin. Belöningar får du gratis.',
-  'product.noads.text': 'Inga annonser mellan butiker. Annonsbelöningar får du utan att titta.',
   'product.x2.name': 'Permanent x2',
   'product.x2.line': 'Dubbel inkomst för alltid.',
   'product.x2.text': 'All inkomst dubblas för alltid, utöver den tidsbegränsade boosten.',

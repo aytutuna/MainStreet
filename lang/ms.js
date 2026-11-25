@@ -769,7 +769,6 @@ LANG['ms'] = {
   'product.starter.text': '150 permata, 2 jam pendapatan berganda dan 10 rep.',
   'product.noads.name': 'Tanpa iklan',
   'product.noads.line': 'Tiada iklan selamanya. Ganjaran percuma.',
-  'product.noads.text': 'Tiada iklan antara kedai. Ganjaran iklan diterima tanpa menonton.',
   'product.x2.name': 'x2 kekal',
   'product.x2.line': 'Pendapatan berganda selamanya.',
   'product.x2.text': 'Semua pendapatan digandakan selamanya, selain boost bermasa.',

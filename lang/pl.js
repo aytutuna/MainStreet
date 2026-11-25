@@ -875,7 +875,6 @@ LANG['pl'] = {
   'product.starter.text': '150 klejnotów, 2 godziny podwójnego przychodu i 10 rep.',
   'product.noads.name': 'Bez reklam',
   'product.noads.line': 'Bez reklam na zawsze. Nagrody za darmo.',
-  'product.noads.text': 'Bez reklam między sklepami. Nagrody za reklamy dostajesz bez oglądania.',
   'product.x2.name': 'Stałe x2',
   'product.x2.line': 'Podwójny przychód na zawsze.',
   'product.x2.text': 'Cały przychód podwojony na stałe, oprócz czasowego wzmocnienia.',

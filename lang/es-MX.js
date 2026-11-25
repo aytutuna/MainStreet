@@ -740,7 +740,6 @@ LANG['es-MX'] = {
   'product.starter.text': '150 gemas, 2 horas de ingresos dobles y 10 rep.',
   'product.noads.name': 'Sin anuncios',
   'product.noads.line': 'Sin anuncios, nunca. Los premios son gratis.',
-  'product.noads.text': 'Sin anuncios entre tiendas. Los premios de anuncios llegan sin verlos.',
   'product.x2.name': 'x2 permanente',
   'product.x2.line': 'Ingresos dobles para siempre.',
   'product.x2.text': 'Todos los ingresos se duplican para siempre, además del impulso por tiempo.',

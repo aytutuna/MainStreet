@@ -1064,7 +1064,6 @@ LANG['en'] = {
   'product.noads.name': 'No ads',
   // One short line on the product button.
   'product.noads.line': 'No ads, ever. Rewards come free.',
-  'product.noads.text': 'No ads between stores. Ad rewards come without watching.',
   'product.x2.name': 'Permanent x2',
   'product.x2.line': 'Double income for good.',
   'product.x2.text': 'All income doubled for good, on top of the timed boost.',

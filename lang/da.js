@@ -771,7 +771,6 @@ LANG['da'] = {
   'product.starter.text': '150 diamanter, 2 timers dobbelt indtjening og 10 ry.',
   'product.noads.name': 'Ingen reklamer',
   'product.noads.line': 'Aldrig reklamer. Belønninger er gratis.',
-  'product.noads.text': 'Ingen reklamer mellem butikker. Reklamebelønninger får du uden at se reklamer.',
   'product.x2.name': 'Permanent x2',
   'product.x2.line': 'Dobbelt indtjening for altid.',
   'product.x2.text': 'Al indtjening fordoblet for altid, oven i den tidsbegrænsede boost.',

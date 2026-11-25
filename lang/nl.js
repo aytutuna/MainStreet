@@ -771,7 +771,6 @@ LANG['nl'] = {
   'product.starter.text': '150 edelstenen, 2 uur dubbel inkomen en 10 rep.',
   'product.noads.name': 'Geen ads',
   'product.noads.line': 'Nooit meer ads. Beloningen zijn gratis.',
-  'product.noads.text': 'Geen ads tussen winkels. Beloningen voor ads krijg je zonder kijken.',
   'product.x2.name': 'Altijd x2',
   'product.x2.line': 'Voorgoed dubbel inkomen.',
   'product.x2.text': 'Al je inkomen voorgoed verdubbeld, bovenop de tijdelijke boost.',

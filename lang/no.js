@@ -736,7 +736,6 @@ LANG['no'] = {
   'product.starter.text': '150 juveler, 2 timer med dobbel inntekt og 10 omdømme.',
   'product.noads.name': 'Ingen annonser',
   'product.noads.line': 'Aldri annonser. Belønninger er gratis.',
-  'product.noads.text': 'Ingen annonser mellom butikkene. Annonsebelønninger kommer uten å se noe.',
   'product.x2.name': 'Fast x2',
   'product.x2.line': 'Dobbel inntekt for godt.',
   'product.x2.text': 'All inntekt doblet for godt, i tillegg til den tidsbegrensede boosteren.',

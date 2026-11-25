@@ -775,7 +775,6 @@ LANG['sk'] = {
   'product.starter.text': '150 drahokamov, 2 hodiny dvojnásobného príjmu a 10 rep.',
   'product.noads.name': 'Bez reklám',
   'product.noads.line': 'Navždy bez reklám. Odmeny dostaneš zadarmo.',
-  'product.noads.text': 'Žiadne reklamy medzi obchodmi. Odmeny za reklamy dostaneš bez pozerania.',
   'product.x2.name': 'Trvalé x2',
   'product.x2.line': 'Dvojnásobný príjem navždy.',
   'product.x2.text': 'Všetok príjem navždy dvojnásobný, navyše k časovanému boostu.',

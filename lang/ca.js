@@ -773,7 +773,6 @@ LANG['ca'] = {
   'product.starter.text': '150 gemmes, 2 hores d’ingressos dobles i 10 rep.',
   'product.noads.name': 'Sense anuncis',
   'product.noads.line': 'Mai més anuncis. Els premis, gratis.',
-  'product.noads.text': 'Sense anuncis entre botigues. Els premis dels anuncis arriben sense mirar-los.',
   'product.x2.name': 'x2 permanent',
   'product.x2.line': 'Ingressos dobles per sempre.',
   'product.x2.text': 'Tots els ingressos es dupliquen per sempre, a més de l’impuls temporal.',

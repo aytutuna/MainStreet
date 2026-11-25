@@ -773,7 +773,6 @@ LANG['ro'] = {
   'product.starter.text': '150 de nestemate, 2 ore de venit dublu și 10 rep.',
   'product.noads.name': 'Fără reclame',
   'product.noads.line': 'Fără reclame, niciodată. Recompensele vin gratis.',
-  'product.noads.text': 'Fără reclame între magazine. Recompensele din reclame vin fără să le vezi.',
   'product.x2.name': 'x2 permanent',
   'product.x2.line': 'Venit dublu pentru totdeauna.',
   'product.x2.text': 'Tot venitul dublat pentru totdeauna, pe lângă boostul cu timp limitat.',

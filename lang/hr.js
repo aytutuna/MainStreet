@@ -773,7 +773,6 @@ LANG['hr'] = {
   'product.starter.text': '150 dragulja, 2 sata dvostruke zarade i 10 ugleda.',
   'product.noads.name': 'Bez reklama',
   'product.noads.line': 'Nikad reklame. Nagrade stižu besplatno.',
-  'product.noads.text': 'Nema reklama između trgovina. Nagrade za reklame dobivaš bez gledanja.',
   'product.x2.name': 'Trajno x2',
   'product.x2.line': 'Dvostruka zarada zauvijek.',
   'product.x2.text': 'Sva zarada trajno udvostručena, povrh vremenskog pojačanja.',

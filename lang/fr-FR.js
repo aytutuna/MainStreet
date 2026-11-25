@@ -740,7 +740,6 @@ LANG['fr-FR'] = {
   'product.starter.text': '150 gemmes, 2 heures de revenus doublés et 10 rép.',
   'product.noads.name': 'Sans pub',
   'product.noads.line': 'Plus jamais de pub. Les récompenses sont offertes.',
-  'product.noads.text': 'Pas de pub entre les magasins. Les récompenses de pub arrivent sans rien regarder.',
   'product.x2.name': 'x2 permanent',
   'product.x2.line': 'Revenus doublés pour toujours.',
   'product.x2.text': 'Tous les revenus doublés pour toujours, en plus du boost temporaire.',

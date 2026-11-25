@@ -732,7 +732,6 @@ LANG['ko'] = {
   'product.starter.text': '보석 150개, 수입 2배 2시간, 평판 10.',
   'product.noads.name': '광고 제거',
   'product.noads.line': '광고가 영원히 사라져요. 보상은 그냥 받아요.',
-  'product.noads.text': '매장 사이에 광고가 없어요. 광고 보상은 보지 않고 받아요.',
   'product.x2.name': '영구 x2',
   'product.x2.line': '수입이 영구히 2배.',
   'product.x2.text': '모든 수입이 영구히 2배, 시간제 부스트와 별개로.',

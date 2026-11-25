@@ -773,7 +773,6 @@ LANG['fr-CA'] = {
   'product.starter.text': '150 gemmes, 2 heures de revenus doublés et 10 rép.',
   'product.noads.name': 'Sans pub',
   'product.noads.line': 'Zéro pub, pour toujours. Récompenses gratuites.',
-  'product.noads.text': 'Aucune pub entre les magasins. Les récompenses des pubs arrivent sans rien regarder.',
   'product.x2.name': 'x2 permanent',
   'product.x2.line': 'Revenus doublés pour de bon.',
   'product.x2.text': 'Tous les revenus doublés pour de bon, en plus du boost temporaire.',

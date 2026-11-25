@@ -771,7 +771,6 @@ LANG['hu'] = {
   'product.starter.text': '150 drágakő, 2 óra dupla bevétel és 10 hírnév.',
   'product.noads.name': 'Reklámmentes',
   'product.noads.line': 'Soha több hirdetés. A jutalmak ingyen jönnek.',
-  'product.noads.text': 'Nincs hirdetés az áruházak között. A hirdetésért járó jutalmak nézés nélkül járnak.',
   'product.x2.name': 'Végleges x2',
   'product.x2.line': 'Dupla bevétel örökre.',
   'product.x2.text': 'Minden bevétel végleg duplázódik, az időzített fokozón felül.',

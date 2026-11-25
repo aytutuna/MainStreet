@@ -765,7 +765,6 @@ LANG['ja'] = {
   'product.starter.text': '150ジェム、2時間の収入2倍、評判10。',
   'product.noads.name': '広告なし',
   'product.noads.line': '広告なし。報酬は無料でもらえる。',
-  'product.noads.text': '店舗の合間の広告がなくなる。広告の報酬は見なくてももらえる。',
   'product.x2.name': '永久x2',
   'product.x2.line': 'ずっと収入2倍。',
   'product.x2.text': 'すべての収入がずっと2倍。時間制ブーストとも重なる。',
