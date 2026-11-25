@@ -1475,7 +1475,8 @@ a.btn {
   padding: calc(var(--st) + 12px) 12px calc(var(--sb) + 12px);
 }
 
-#net {
+#net,
+#find {
   z-index: 60;
   background: rgba(20, 16, 30, 0.92);
 }

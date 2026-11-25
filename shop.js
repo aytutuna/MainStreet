@@ -16,6 +16,11 @@
 //   {t: 'time', n, ms, sent, recv}         the server time, answering {cmd: 'time', n}: ms is the server's clock, sent and recv
 //                                          the device's Date.now() when the request left and the answer came; ms is null
 //                                          when nothing answered. It skips the queue, since the game waits for it
+//   {t: 'cloud', json, at, dev}            the save the other devices share (json is null when there is none), kept at server time
+//                                          at by device dev; answers {cmd: 'cloudGet'} and comes again when another device changes it.
+//                                          Like 'time' it skips the queue
+//   {t: 'cloudState', state}               'available', 'signedOut', 'pending' (signed in, first sync not done) or 'unavailable';
+//                                          answers {cmd: 'cloudState'}, skips the queue. The page sends {cmd: 'cloudPut', json, at, dev}
 //   {t: 'radio', state, url, title?}       the stream being played: state is 'buffering', 'playing', 'paused' (headphones
 //                                          unplugged) or 'error' (it gave out), url the one
 //                                          the page asked for, title what the station says is on (ICY metadata)
@@ -44,6 +49,19 @@ var productsAt = 0;
 var BUY_WAIT = 60000;
 var queued = [];
 var loaded = false;
+
+// the save is handed to the cloud at most this often (and when the game goes to the background); with no save on this device
+// the launch waits this long for the cloud's copy
+var CLOUD_EVERY = 30000;
+var CLOUD_WAIT = 10000;
+var cloudState = '';
+var cloudSeen = false;
+var cloudFind = null;
+var cloudFound = null;
+var cloudTimer = 0;
+var cloudLate = 0;
+var cloudAt = -CLOUD_EVERY;
+var devKey = '';
 
 // the time comes from the server (the native apps ask alazy.app, a plain browser asks it itself); the game starts and
 // resumes only on an answer, and asks again every ten minutes
@@ -123,6 +141,72 @@ function timeWatch() {
     if (now - synced.at >= TIME_GRACE) timeWait(null, true);
     else if (now - synced.at >= TIME_EVERY && now - timeAsked >= 60000) askTime();
   }
+}
+
+function devId() {
+  if (devKey) return devKey;
+  try {
+    devKey = localStorage.getItem('mainstreet.dev');
+    if (!devKey) localStorage.setItem('mainstreet.dev', devKey = Math.random().toString(36).slice(2) + Date.now().toString(36));
+  } catch (e) {}
+  return devKey || 'x';
+}
+
+// what a game this young would write must not replace a save the cloud has not told us about yet
+function cloudReady() {
+  return S.ads.pt >= YOUNG || (cloudSeen && cloudState !== 'pending');
+}
+
+function cloudPut(erase) {
+  clearTimeout(cloudTimer);
+  cloudTimer = 0;
+  if (!native() || !loaded || blocked || !(erase === true || cloudReady())) return;
+  cloudAt = performance.now();
+  post({ cmd: 'cloudPut', json: saved(), at: Math.round(clock()), dev: devId() });
+}
+
+function cloudSoon() {
+  if (!cloudTimer && native() && loaded) cloudTimer = setTimeout(cloudPut, Math.max(0, cloudAt + CLOUD_EVERY - performance.now()));
+}
+
+function cloudMenu() {
+  $('m-cloud').hidden = !(/Android/i.test(navigator.userAgent) && (cloudState === 'signedOut' || cloudState === 'unavailable'));
+}
+
+// runs done(true) when the cloud's save became this device's first one. With a save here nothing waits
+function cloudLook(done) {
+  if (!native()) return done(false);
+  post({ cmd: 'cloudState' });
+  post({ cmd: 'cloudGet' });
+  if (hasSave()) return done(false);
+  cloudFind = done;
+  $('find').hidden = false;
+  cloudLate = setTimeout(cloudEnd, CLOUD_WAIT);
+}
+
+function cloudEnd() {
+  if (!cloudFind) return;
+  clearTimeout(cloudLate);
+  $('find').hidden = true;
+  var done = cloudFind;
+  var raw = cloudFound;
+  cloudFind = cloudFound = null;
+  done(!!raw && cloudSeed(raw));
+}
+
+function cloudEvent(ev) {
+  if (ev.t === 'cloudState') {
+    cloudState = ev.state;
+    cloudMenu();
+  } else {
+    cloudSeen = true;
+    if (cloudFind) cloudFound = ev.json || cloudFound;
+    else if (ev.json && loaded && ev.dev !== devId() && takeCloud(ev.json)) {
+      afterLoad();
+      banner('<b>' + tl('cloud.loaded') + '</b><small>' + tl('cloud.loaded_note') + '</small>', 0);
+    }
+  }
+  if (cloudFind && (cloudFound || (cloudSeen && cloudState && cloudState !== 'pending'))) cloudEnd();
 }
 
 function product(id) {
@@ -371,6 +455,7 @@ var adOn = false;
 function shopStart() {
   if (!native()) return;
   loaded = true;
+  onSaved = cloudSoon;
   queued.splice(0).forEach(handle);
   askOther();
   askProducts();
@@ -396,6 +481,7 @@ function adBegin() {
 
 window.nativeStore = function (ev) {
   if (ev.t === 'time') gotTime(ev);
+  else if (ev.t === 'cloud' || ev.t === 'cloudState') cloudEvent(ev);
   else if (loaded) handle(ev);
   else queued.push(ev);
 };

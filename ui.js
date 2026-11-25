@@ -2285,6 +2285,7 @@ function wire() {
     speed = 1;
     dailyAsked = -1;
     afterLoad();
+    cloudPut(true);
     $('erase').hidden = true;
     $('menu').hidden = true;
   });
@@ -2303,6 +2304,7 @@ function wire() {
       if (sweep) sweep.redo = true;
       radioSync();
       save();
+      cloudPut();
       tell({ cmd: 'set', list: reminders() });
       if (!hiddenAt) hiddenAt = clock();
       return;
@@ -2753,6 +2755,10 @@ function start() {
 
 // runs on the first server time answer: no save is made or read before it
 function launch() {
+  cloudLook(begin);
+}
+
+function begin(fromCloud) {
   var gone = load();
   if (blocked) {
     loadFail(tl('save.newer'));
@@ -2796,6 +2802,7 @@ function launch() {
     View.focusNow();
     updateGoals();
     showAway(gone);
+    if (fromCloud) banner('<b>' + tl('cloud.loaded') + '</b><small>' + tl('cloud.loaded_note') + '</small>', 0);
     lastTick = performance.now();
     requestAnimationFrame(loop);
     setInterval(function () { if (!timeHeld && !document.hidden) save(); }, 5000);

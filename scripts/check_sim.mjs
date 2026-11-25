@@ -201,5 +201,36 @@ run('S = fresh()');
 run('load()');
 if (run('S.vt') !== 0) fail('a due VIP timer came back as ' + run('S.vt'));
 
+// a save kept by another device: a young game gives way, an older copy does not replace a played one, purchases are joined
+{
+  const other = JSON.parse(good);
+  other.ts = run('clock()') + 5000;
+  other.iap = { ...(other.iap || {}), tx: ['b', 'c'] };
+  other.ads = { d: 5, n: { gems: 1 }, pt: 100, li: 0, sd: 0 };
+  const raw = JSON.stringify(other);
+  delete store[key];
+  if (run('hasSave()')) fail('an empty store has a save');
+  if (!run('cloudSeed(' + JSON.stringify(raw) + ')') || !run('hasSave()')) fail('the cloud save was not stored as the first save');
+  if (run('cloudSeed("{")') || run('cloudSeed(' + JSON.stringify(JSON.stringify({ v: 'x' })) + ')')) fail('a broken cloud save was stored');
+  run('S = fresh()');
+  run('S.iap.tx = ["a", "b"]; S.ads.pt = 30; S.ads.d = 9; S.ads.n.gems = 2');
+  if (!run('takeCloud(' + JSON.stringify(raw) + ')')) fail('a young game did not give way to the cloud save');
+  if (run('S.cash') !== other.cash) fail('the cloud save was not taken on');
+  if (run('S.iap.tx.join()') !== 'a,b,c') fail('purchases of both copies were not joined: ' + run('S.iap.tx.join()'));
+  if (run('S.ads.d') !== 9 || run('S.ads.n.gems') !== 2 || run('S.ads.pt') !== 100) fail('ad counts of the day went back');
+  const stored = JSON.parse(store[key]);
+  if (stored.ts !== other.ts) fail('taking the cloud save moved its time');
+  // a played game keeps itself against an older copy and takes a newer one
+  run('S.ads.pt = 700; S.ts = ' + (other.ts + 1000) + '; S.iap.tx = ["a"]');
+  if (run('takeCloud(' + JSON.stringify(raw) + ')')) fail('an older cloud save replaced a played game');
+  if (run('S.iap.tx.join()') !== 'a,b,c') fail('purchases were not joined into the kept game');
+  run('S.ts = ' + (other.ts - 1000));
+  if (!run('takeCloud(' + JSON.stringify(raw) + ')')) fail('a newer cloud save did not replace a played game');
+  if (run('takeCloud(' + JSON.stringify(JSON.stringify({ ...other, v: 12 })) + ')')) fail('a cloud save from a newer build was read');
+  run('S.ads.pt = 700');
+  run('save()');
+  if (store[key].length > 1000000) fail('the save is ' + store[key].length + ' bytes, over the 1 MB the cloud allows');
+}
+
 if (failed) process.exit(1);
 console.log('sim ok: earned ' + Math.round(earned) + ', ' + Object.keys(got.b).length + ' departments in the sample');

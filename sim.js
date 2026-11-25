@@ -71,6 +71,7 @@ var onMission = null;
 var onYesterday = null;
 var SAVE_V = 11;
 var onSaveFail = null;
+var onSaved = null;
 var saveFailed = false;
 // a save from a newer build is left alone
 var blocked = false;
@@ -1500,6 +1501,7 @@ function save() {
   S.ts = clock();
   try {
     localStorage.setItem(KEY, saved());
+    if (onSaved) onSaved();
   } catch (e) {
     if (!saveFailed && onSaveFail) {
       onSaveFail();
@@ -1702,6 +1704,66 @@ function load() {
     }
   } catch (e) {}
   return back;
+}
+
+function hasSave() {
+  try {
+    return [KEY].concat(OLD_KEYS.slice(0, 5)).some(function (k) { return localStorage.getItem(k) !== null; });
+  } catch (e) {
+    return false;
+  }
+}
+
+// the save another device kept, as the first save of this one. A newer one than this build reads is stored as it is,
+// so load() blocks on it and nothing overwrites it
+function cloudSeed(raw) {
+  try {
+    var j = JSON.parse(raw);
+    if (!j || typeof j.v !== 'number' || (j.v <= SAVE_V && !validate(j))) return false;
+    localStorage.setItem(KEY, raw);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+// the purchases of both copies are listed in whichever one is kept, so a restore never pays a pack twice
+function joinTx(a, b) {
+  var seen = {};
+  return a.concat(b).filter(function (t) { return seen[t] ? false : (seen[t] = 1); }).slice(-100);
+}
+
+// a game under this many seconds of play is replaced by any save from the cloud
+var YOUNG = 600;
+
+// the save of another device meets this game: the newer one is kept, a young game always gives way. True when it replaced this game
+function takeCloud(raw) {
+  var o = null;
+  try {
+    o = validate(JSON.parse(raw));
+  } catch (e) {}
+  if (!o) return false;
+  var tx = joinTx(S.iap.tx, o.iap.tx);
+  if (S.ads.pt >= YOUNG && !(o.ts > S.ts)) {
+    S.iap.tx = tx;
+    return false;
+  }
+  // ad counts of the day and play time never go back
+  var a = S.ads;
+  var c = o.ads;
+  if (c.d === a.d) for (var k in c.n) c.n[k] = Math.max(c.n[k], a.n[k] || 0);
+  else if (a.d > c.d) {
+    c.d = a.d;
+    c.n = a.n;
+  }
+  c.pt = Math.max(c.pt, a.pt);
+  o.iap.tx = tx;
+  S = o;
+  clearShoppers();
+  try {
+    localStorage.setItem(KEY, saved());
+  } catch (e) {}
+  return true;
 }
 
 function saved() {
