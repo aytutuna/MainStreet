@@ -1782,6 +1782,25 @@ function cloudSig(o) {
   return JSON.stringify([o.gems, o.rep, o.store, o.b, o.pl, o.pi, o.ms, o.goal, o.gn, o.gd, o.lk, o.ac, o.pk, o.iap, o.ads && o.ads.n]);
 }
 
+// what was bought on one copy stays bought on the other, unless it was refunded. True when Skip ads or x2 was added
+function boughtIn(from, to, rf) {
+  var added = false;
+  ['noads', 'x2'].forEach(function (f) {
+    if (from[f] && !to[f] && rf.indexOf(from[f + 'Tx']) < 0) {
+      to[f] = 1;
+      added = true;
+      to[f + 'Tx'] = from[f + 'Tx'];
+      to[f + 'User'] = from[f + 'User'];
+    }
+  });
+  to.starter = Math.max(to.starter, from.starter);
+  to.offered = to.offered || from.offered;
+  to.deal = to.deal || from.deal;
+  to.held = to.held || from.held;
+  for (var w in from.wait) to.wait[w] = Math.max(to.wait[w] || 0, from.wait[w]);
+  return added;
+}
+
 // the save of another device meets this game: the newer one is kept, a young game always gives way. True when it replaced this game
 function takeCloud(raw) {
   var o = null;
@@ -1804,6 +1823,8 @@ function takeCloud(raw) {
     ['noads', 'x2'].forEach(function (f) {
       if (i[f] && rf.indexOf(i[f + 'Tx']) >= 0) i[f] = 0;
     });
+    // what the other device bought stays bought here too, and is written back
+    if (boughtIn(p, i, rf)) cloudSent = '';
     return false;
   }
   // what the merge adds to or takes from the copy kept is not in the cloud yet
@@ -1826,20 +1847,7 @@ function takeCloud(raw) {
   c.pt = Math.max(c.pt, a.pt);
   // a started starter window is not restarted
   c.sd = c.sd && a.sd ? Math.min(c.sd, a.sd) : c.sd || a.sd;
-  // what was bought on either device stays bought, unless it was refunded
-  ['noads', 'x2'].forEach(function (f) {
-    if (i[f] && !p[f] && rf.indexOf(i[f + 'Tx']) < 0) {
-      p[f] = 1;
-      merged = true;
-      p[f + 'Tx'] = i[f + 'Tx'];
-      p[f + 'User'] = i[f + 'User'];
-    }
-  });
-  p.starter = Math.max(p.starter, i.starter);
-  p.offered = p.offered || i.offered;
-  p.deal = p.deal || i.deal;
-  p.held = p.held || i.held;
-  for (var w in i.wait) p.wait[w] = Math.max(p.wait[w] || 0, i.wait[w]);
+  if (boughtIn(i, p, rf)) merged = true;
   p.rf = rf;
   S = o;
   cloudTs = o.ts;

@@ -249,6 +249,12 @@ if (run('S.vt') !== 0) fail('a due VIP timer came back as ' + run('S.vt'));
   run('S.ads.pt = 700; cloudTs = ' + (other.ts + 9999) + '; S.iap.noads = 1; S.iap.noadsTx = "n1"');
   if (run('takeCloud(' + copy({ noads: 0, rf: ["n1"] }, {}) + ')')) fail('an older copy replaced a played game');
   if (run('S.iap.noads') !== 0) fail('a refund in an older copy was not applied');
+  // what the other device bought reaches a device that keeps its own game
+  run('S.ads.pt = 700; cloudTs = ' + (other.ts + 9999) + '; S.iap.noads = 0; S.iap.starter = 0; S.iap.rf = []; cloudSent = "x"');
+  if (run('takeCloud(' + copy({ noads: 1, noadsTx: 'n2', starter: 1, rf: [] }, {}) + ')')) fail('an older copy replaced a played game');
+  if (run('S.iap.noads') !== 1 || run('S.iap.noadsTx') !== 'n2') fail('Skip ads bought on the other device did not reach the game kept');
+  if (run('S.iap.starter') !== 1) fail('the starter bought on the other device did not reach the game kept');
+  if (run('cloudSent') !== '') fail('the game kept with the other purchases was not marked to be written back');
   if (run('takeCloud(' + JSON.stringify(JSON.stringify({ ...other, v: 12 })) + ')')) fail('a cloud save from a newer build was read');
   if (run('blocked') !== true) fail('a cloud save from a newer build did not stop this build from saving');
   run('blocked = false');
