@@ -49,7 +49,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var notice: LinearLayout
     private var loaded = false
 
-    private val permission = registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
+    private val permission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { notified(it) }
 
     // Closes the topmost panel; the answer says whether there was one. The away box collects instead of closing.
     private val closePanel = """
@@ -166,8 +166,13 @@ class MainActivity : ComponentActivity() {
             checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
         ) {
             permission.launch(Manifest.permission.POST_NOTIFICATIONS)
+        } else {
+            notified(true)
         }
     }
+
+    private fun notified(granted: Boolean) =
+        emit(JSONObject().put("t", "notify").put("state", if (granted) "granted" else "denied"))
 
     // ES modules with import maps need Chromium 89
     private fun startIfCurrent() {

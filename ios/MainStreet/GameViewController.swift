@@ -18,9 +18,10 @@ private final class BuzzHandler: NSObject, WKScriptMessageHandler {
 }
 
 // The game sends {cmd: "ask"} or {cmd: "set", list: [{id, at (ms since 1970), body}]}. Coming to the foreground drops
-// every reminder, pending or delivered.
+// every reminder, pending or delivered. The answer to "ask" goes to the page as {t: "notify", state}.
 private final class NotifyHandler: NSObject, WKScriptMessageHandler {
     private let center = UNUserNotificationCenter.current()
+    weak var web: WKWebView?
 
     override init() {
         super.init()
@@ -36,7 +37,11 @@ private final class NotifyHandler: NSObject, WKScriptMessageHandler {
         guard let msg = message.body as? [String: Any] else { return }
         switch msg["cmd"] as? String {
         case "ask":
-            center.requestAuthorization(options: [.alert, .sound]) { _, _ in }
+            center.requestAuthorization(options: [.alert, .sound]) { [weak self] granted, _ in
+                DispatchQueue.main.async {
+                    self?.web?.evaluateJavaScript("window.nativeStore && window.nativeStore({t: 'notify', state: '\(granted ? "granted" : "denied")'})")
+                }
+            }
         case "set":
             center.removeAllPendingNotificationRequests()
             for item in msg["list"] as? [[String: Any]] ?? [] {
@@ -108,6 +113,7 @@ final class GameViewController: UIViewController, WKNavigationDelegate, WKUIDele
 
     private var webView: WKWebView!
     private lazy var store = StoreBridge(presenter: { [weak self] in self })
+    private let notify = NotifyHandler()
 
     override var preferredStatusBarStyle: UIStatusBarStyle { .lightContent }
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask { .portrait }
@@ -121,7 +127,7 @@ final class GameViewController: UIViewController, WKNavigationDelegate, WKUIDele
         config.allowsInlineMediaPlayback = true
         config.mediaTypesRequiringUserActionForPlayback = []
         config.userContentController.add(BuzzHandler(), name: "buzz")
-        config.userContentController.add(NotifyHandler(), name: "notify")
+        config.userContentController.add(notify, name: "notify")
         config.userContentController.add(store, name: "store")
         let info = Bundle.main.infoDictionary
         let ver = "window.APPVER = {v: \"\(info?["CFBundleShortVersionString"] as? String ?? "")\", b: \"\(info?["CFBundleVersion"] as? String ?? "")\"};"
@@ -142,6 +148,7 @@ final class GameViewController: UIViewController, WKNavigationDelegate, WKUIDele
         web.navigationDelegate = self
         web.uiDelegate = self
         store.web = web
+        notify.web = web
         webView = web
         view = web
     }
