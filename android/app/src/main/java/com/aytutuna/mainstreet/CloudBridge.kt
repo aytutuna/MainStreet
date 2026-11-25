@@ -92,7 +92,7 @@ class CloudBridge(private val activity: MainActivity) {
         }
         writing = true
         signedIn { ok ->
-            if (ok != true) return@signedIn done(false)
+            if (ok != true) return@signedIn done()
             open({ done(false) }) { snap ->
                 val body = JSONObject().put("json", msg.optString("json")).put("at", msg.optLong("at")).put("dev", msg.optString("dev"))
                 snap.snapshotContents.writeBytes(body.toString().toByteArray())
@@ -102,7 +102,7 @@ class CloudBridge(private val activity: MainActivity) {
         }
     }
 
-    // a write that did not land is reported so the page sends the save again
+    // a write that was tried and did not land is reported so the page sends the save again
     private fun done(ok: Boolean = true) {
         if (!ok) activity.emit(JSONObject().put("t", "cloudPut").put("ok", false))
         writing = false
