@@ -37,7 +37,7 @@ LANG['ja'] = {
   'shop.restore': '購入を復元',
   'pack.title': 'スターターパック',
   'common.not_now': '今はいい',
-  'pack.note': 'ショップに残るよ。',
+  'pack.limit': 'Only offered for the first {n} hours.',
   'sell.look': '店のデザイン',
   'sell.perks': '特典',
   'stats.title': '統計',

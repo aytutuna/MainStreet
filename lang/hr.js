@@ -37,7 +37,7 @@ LANG['hr'] = {
   'shop.restore': 'Vrati kupnje',
   'pack.title': 'Startni paket',
   'common.not_now': 'Ne sad',
-  'pack.note': 'Ostaje u dućanu.',
+  'pack.limit': 'Only offered for the first {n} hours.',
   'sell.look': 'Izgled trgovine',
   'sell.perks': 'Pogodnosti',
   'stats.title': 'Podaci',

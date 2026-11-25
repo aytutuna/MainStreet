@@ -37,7 +37,7 @@ LANG['da'] = {
   'shop.restore': 'Gendan køb',
   'pack.title': 'Startpakke',
   'common.not_now': 'Ikke nu',
-  'pack.note': 'Den bliver i shoppen.',
+  'pack.limit': 'Only offered for the first {n} hours.',
   'sell.look': 'Butiksstil',
   'sell.perks': 'Fordele',
   'stats.title': 'Tal',

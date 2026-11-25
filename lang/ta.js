@@ -37,7 +37,7 @@ LANG['ta'] = {
   'shop.restore': 'வாங்கியதை மீட்டெடு',
   'pack.title': 'தொடக்கப் பேக்',
   'common.not_now': 'இப்போது வேண்டாம்',
-  'pack.note': 'இது ஷாப்பிலேயே இருக்கும்.',
+  'pack.limit': 'Only offered for the first {n} hours.',
   'sell.look': 'கடை தோற்றம்',
   'sell.perks': 'சலுகைகள்',
   'stats.title': 'புள்ளிவிவரம்',

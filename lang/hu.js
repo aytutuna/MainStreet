@@ -37,7 +37,7 @@ LANG['hu'] = {
   'shop.restore': 'Vásárlások visszaállítása',
   'pack.title': 'Kezdőcsomag',
   'common.not_now': 'Most nem',
-  'pack.note': 'A boltban megmarad.',
+  'pack.limit': 'Only offered for the first {n} hours.',
   'sell.look': 'Áruház arculata',
   'sell.perks': 'Előnyök',
   'stats.title': 'Statisztika',

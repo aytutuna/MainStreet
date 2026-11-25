@@ -37,7 +37,7 @@ LANG['hi'] = {
   'shop.restore': 'खरीदारी वापस पाएँ',
   'pack.title': 'स्टार्टर पैक',
   'common.not_now': 'अभी नहीं',
-  'pack.note': 'यह शॉप में बना रहेगा।',
+  'pack.limit': 'Only offered for the first {n} hours.',
   'sell.look': 'स्टोर लुक',
   'sell.perks': 'पर्क',
   'stats.title': 'आँकड़े',

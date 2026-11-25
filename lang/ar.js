@@ -37,7 +37,7 @@ LANG['ar'] = {
   "shop.restore": "استعادة المشتريات",
   "pack.title": "حزمة البداية",
   "common.not_now": "ليس الآن",
-  "pack.note": "ستبقى في المتجر.",
+  "pack.limit": "Only offered for the first {n} hours.",
   "sell.look": "شكل الفرع",
   "sell.perks": "الميزات",
   "stats.title": "الإحصاءات",

@@ -37,7 +37,7 @@ LANG['te'] = {
   'shop.restore': 'కొనుగోళ్లను పునరుద్ధరించండి',
   'pack.title': 'స్టార్టర్ ప్యాక్',
   'common.not_now': 'ఇప్పుడు వద్దు',
-  'pack.note': 'ఇది షాప్‌లో ఉంటుంది.',
+  'pack.limit': 'Only offered for the first {n} hours.',
   'sell.look': 'స్టోర్ లుక్',
   'sell.perks': 'ప్రయోజనాలు',
   'stats.title': 'గణాంకాలు',

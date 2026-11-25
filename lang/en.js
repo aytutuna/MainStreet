@@ -84,8 +84,8 @@ LANG['en'] = {
   'pack.title': 'Starter pack',
   // Button that dismisses an offer without buying.
   'common.not_now': 'Not now',
-  // Small note: the offer can still be bought later from the shop.
-  'pack.note': 'It stays in the shop.',
+  // Small note under the starter offer. {n} is the number of hours it lasts.
+  'pack.limit': 'Only offered for the first {n} hours.',
   // Button that opens the choice of how the store looks (colours, signs). Max about 14 characters.
   'sell.look': 'Store look',
   // Heading of the list of perks: permanent bonuses bought with reputation.

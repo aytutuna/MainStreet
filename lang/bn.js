@@ -37,7 +37,7 @@ LANG['bn'] = {
   'shop.restore': 'কেনা ফিরিয়ে আনুন',
   'pack.title': 'স্টার্টার প্যাক',
   'common.not_now': 'এখন না',
-  'pack.note': 'এটা শপে থেকে যাবে।',
+  'pack.limit': 'Only offered for the first {n} hours.',
   'sell.look': 'স্টোরের সাজ',
   'sell.perks': 'সুবিধা',
   'stats.title': 'পরিসংখ্যান',

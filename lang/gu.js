@@ -37,7 +37,7 @@ LANG['gu'] = {
   'shop.restore': 'ખરીદી પાછી મેળવો',
   'pack.title': 'સ્ટાર્ટર પેક',
   'common.not_now': 'હમણાં નહીં',
-  'pack.note': 'તે દુકાનમાં રહેશે.',
+  'pack.limit': 'Only offered for the first {n} hours.',
   'sell.look': 'સ્ટોરનો દેખાવ',
   'sell.perks': 'લાભ',
   'stats.title': 'આંકડા',

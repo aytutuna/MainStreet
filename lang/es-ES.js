@@ -37,7 +37,7 @@ LANG['es-ES'] = {
   'shop.restore': 'Restaurar compras',
   'pack.title': 'Pack inicial',
   'common.not_now': 'Ahora no',
-  'pack.note': 'Seguirá en la tienda.',
+  'pack.limit': 'Only offered for the first {n} hours.',
   'sell.look': 'Aspecto',
   'sell.perks': 'Ventajas',
   'stats.title': 'Datos',

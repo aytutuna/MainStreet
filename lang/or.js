@@ -37,7 +37,7 @@ LANG['or'] = {
   'shop.restore': 'କିଣା ଫେରାଅ',
   'pack.title': 'ଆରମ୍ଭ ପ୍ୟାକ୍',
   'common.not_now': 'ଏବେ ନୁହେଁ',
-  'pack.note': 'ଏହା ଦୋକାନରେ ରହିବ।',
+  'pack.limit': 'Only offered for the first {n} hours.',
   'sell.look': 'ଦୋକାନ ରୂପ',
   'sell.perks': 'ସୁବିଧା',
   'stats.title': 'ହିସାବ',

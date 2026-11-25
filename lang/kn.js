@@ -37,7 +37,7 @@ LANG['kn'] = {
   'shop.restore': 'ಖರೀದಿಗಳನ್ನು ಮರುಸ್ಥಾಪಿಸಿ',
   'pack.title': 'ಸ್ಟಾರ್ಟರ್ ಪ್ಯಾಕ್',
   'common.not_now': 'ಈಗ ಬೇಡ',
-  'pack.note': 'ಇದು ಶಾಪ್‌ನಲ್ಲಿ ಉಳಿಯುತ್ತದೆ.',
+  'pack.limit': 'Only offered for the first {n} hours.',
   'sell.look': 'ಅಂಗಡಿ ನೋಟ',
   'sell.perks': 'ಪರ್ಕ್‌ಗಳು',
   'stats.title': 'ಅಂಕಿಅಂಶ',

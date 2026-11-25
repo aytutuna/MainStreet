@@ -37,7 +37,7 @@ LANG['sk'] = {
   'shop.restore': 'Obnoviť nákupy',
   'pack.title': 'Štartovací balíček',
   'common.not_now': 'Teraz nie',
-  'pack.note': 'Nájdeš ho v ponuke Shop.',
+  'pack.limit': 'Only offered for the first {n} hours.',
   'sell.look': 'Vzhľad obchodu',
   'sell.perks': 'Výhody',
   'stats.title': 'Štatistiky',

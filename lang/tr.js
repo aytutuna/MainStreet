@@ -37,7 +37,7 @@ LANG['tr'] = {
   'shop.restore': 'Satın alımları geri yükle',
   'pack.title': 'Başlangıç paketi',
   'common.not_now': 'Şimdi değil',
-  'pack.note': 'Dükkânda kalır.',
+  'pack.limit': 'Only offered for the first {n} hours.',
   'sell.look': 'Mağaza stili',
   'sell.perks': 'Avantajlar',
   'stats.title': 'İstatistikler',

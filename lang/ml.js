@@ -37,7 +37,7 @@ LANG['ml'] = {
   'shop.restore': 'വാങ്ങിയവ തിരിച്ചെടുക്കൂ',
   'pack.title': 'സ്റ്റാർട്ടർ പായ്ക്ക്',
   'common.not_now': 'ഇപ്പോൾ വേണ്ട',
-  'pack.note': 'ഇത് ഷോപ്പിൽ തന്നെ ഉണ്ടാകും.',
+  'pack.limit': 'Only offered for the first {n} hours.',
   'sell.look': 'കടയുടെ ലുക്ക്',
   'sell.perks': 'ആനുകൂല്യങ്ങൾ',
   'stats.title': 'കണക്ക്',

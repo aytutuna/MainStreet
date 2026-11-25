@@ -37,7 +37,7 @@ LANG['nl'] = {
   'shop.restore': 'Aankopen herstellen',
   'pack.title': 'Startpakket',
   'common.not_now': 'Nu niet',
-  'pack.note': 'Het blijft in de winkel staan.',
+  'pack.limit': 'Only offered for the first {n} hours.',
   'sell.look': 'Winkelstijl',
   'sell.perks': 'Voordelen',
   'stats.title': 'Cijfers',

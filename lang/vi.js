@@ -37,7 +37,7 @@ LANG['vi'] = {
   'shop.restore': 'Khôi phục giao dịch mua',
   'pack.title': 'Gói khởi đầu',
   'common.not_now': 'Chưa cần',
-  'pack.note': 'Gói này vẫn có trong cửa hàng.',
+  'pack.limit': 'Only offered for the first {n} hours.',
   'sell.look': 'Diện mạo',
   'sell.perks': 'Đặc quyền',
   'stats.title': 'Thống kê',

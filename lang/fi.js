@@ -37,7 +37,7 @@ LANG['fi'] = {
   'shop.restore': 'Palauta ostokset',
   'pack.title': 'Aloituspaketti',
   'common.not_now': 'Ei nyt',
-  'pack.note': 'Se pysyy Pelikaupassa.',
+  'pack.limit': 'Only offered for the first {n} hours.',
   'sell.look': 'Kaupan ilme',
   'sell.perks': 'Edut',
   'stats.title': 'Tilastot',

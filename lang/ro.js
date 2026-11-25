@@ -37,7 +37,7 @@ LANG['ro'] = {
   'shop.restore': 'Restaurează achizițiile',
   'pack.title': 'Pachet de start',
   'common.not_now': 'Nu acum',
-  'pack.note': 'Rămâne în magazin.',
+  'pack.limit': 'Only offered for the first {n} hours.',
   'sell.look': 'Aspect magazin',
   'sell.perks': 'Avantaje',
   'stats.title': 'Statistici',

@@ -254,7 +254,7 @@ function paintShop() {
   var gems = PRODUCTS.filter(function (p) { return p.gems; });
   var base = gems[0].gems / gems[0].usd;
   var deal = dealNow();
-  var html = S.iap.starter ? '' : heroCard(starter);
+  var html = S.iap.starter || starterLeft(true) < 0 ? '' : heroCard(starter);
   html += '<div class="feats">' + featCard(product('noads')) + featCard(product('x2')) + '</div>';
   html += '<h3 class="sec">' + tl('shop.gems_heading') + '</h3><div class="tiles">' + gems.map(function (p, i) { return gemTile(p, i, base, deal); }).join('') + '</div>';
   $('shop-list').innerHTML = html;
@@ -274,7 +274,7 @@ function openShop(at) {
 }
 
 function buyProduct(id) {
-  if (buying || !prices[PID + id] || (id === 'starter1' && S.iap.starter)) return;
+  if (buying || !prices[PID + id] || (id === 'starter1' && (S.iap.starter || starterLeft(false) < 0))) return;
   buying = id;
   var d = dealNow();
   // the deal is fixed when the player taps, so a day change during the purchase does not lose it
@@ -505,10 +505,11 @@ function paintAwayAd() {
   set(shown, 'awad', $('away-ad'), 'disabled', !S.iap.noads && !adOk.reward);
 }
 
-// the starter pack is offered once, after the first store move
+// the starter pack is offered once, after the first store move, and only inside its window
 function offerStarter() {
-  if (!native() || S.iap.starter || S.iap.offered || S.store < 2 || !priceOf(product('starter1'))) return;
+  if (!native() || S.iap.starter || S.iap.offered || S.store < 2 || !priceOf(product('starter1')) || starterLeft(true) < 0) return;
   S.iap.offered = 1;
+  $('pack-note').textContent = tl('pack.limit', { n: STARTER_HOURS });
   $('pack-txt').textContent = tl('pack.once', { text: product('starter1').text });
   $('pack-buy').textContent = tl('pack.get', { price: priceOf(product('starter1')) });
   $('pack').hidden = false;

@@ -37,7 +37,7 @@ LANG['el'] = {
   'shop.restore': 'Επαναφορά αγορών',
   'pack.title': 'Πακέτο εκκίνησης',
   'common.not_now': 'Όχι τώρα',
-  'pack.note': 'Μένει στις Αγορές.',
+  'pack.limit': 'Only offered for the first {n} hours.',
   'sell.look': 'Όψη μαγαζιού',
   'sell.perks': 'Προνόμια',
   'stats.title': 'Στατιστικά',

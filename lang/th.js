@@ -37,7 +37,7 @@ LANG['th'] = {
   'shop.restore': 'กู้คืนการซื้อ',
   'pack.title': 'แพ็กเริ่มต้น',
   'common.not_now': 'ไว้ก่อน',
-  'pack.note': 'ยังซื้อได้ในร้านค้า',
+  'pack.limit': 'Only offered for the first {n} hours.',
   'sell.look': 'หน้าตาร้าน',
   'sell.perks': 'สิทธิพิเศษ',
   'stats.title': 'สถิติ',

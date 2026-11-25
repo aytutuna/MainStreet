@@ -37,7 +37,7 @@ LANG['id'] = {
   'shop.restore': 'Pulihkan pembelian',
   'pack.title': 'Paket pemula',
   'common.not_now': 'Nanti saja',
-  'pack.note': 'Tetap ada di toko.',
+  'pack.limit': 'Only offered for the first {n} hours.',
   'sell.look': 'Tampilan toko',
   'sell.perks': 'Bonus',
   'stats.title': 'Statistik',

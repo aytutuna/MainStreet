@@ -35,7 +35,7 @@ LANG['no'] = {
   'shop.restore': 'Gjenopprett kjøp',
   'pack.title': 'Startpakke',
   'common.not_now': 'Ikke nå',
-  'pack.note': 'Den blir liggende i butikken.',
+  'pack.limit': 'Only offered for the first {n} hours.',
   'sell.look': 'Butikkstil',
   'sell.perks': 'Bonuser',
   'stats.title': 'Statistikk',
