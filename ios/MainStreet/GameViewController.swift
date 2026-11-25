@@ -176,7 +176,9 @@ final class GameViewController: UIViewController, WKNavigationDelegate, WKUIDele
         let message = NSLocalizedString("reload_failed", value: "The game stopped. Close Main Street and open it again.", comment: "")
         let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: NSLocalizedString("ok", comment: ""), style: .default))
-        present(alert, animated: true)
+        var top: UIViewController = self
+        while let next = top.presentedViewController { top = next }
+        top.present(alert, animated: true)
     }
 
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {

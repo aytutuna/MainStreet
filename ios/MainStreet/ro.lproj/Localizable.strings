@@ -1,3 +1,4 @@
 "notification_title" = "Main Street";
 "ok" = "OK";
 "cancel" = "Anulează";
+"reload_failed" = "The game stopped. Close Main Street and open it again.";

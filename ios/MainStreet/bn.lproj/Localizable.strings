@@ -1,3 +1,4 @@
 "notification_title" = "Main Street";
 "ok" = "ঠিক আছে";
 "cancel" = "বাতিল";
+"reload_failed" = "The game stopped. Close Main Street and open it again.";

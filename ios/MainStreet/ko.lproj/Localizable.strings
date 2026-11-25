@@ -1,3 +1,4 @@
 "notification_title" = "Main Street";
 "ok" = "확인";
 "cancel" = "취소";
+"reload_failed" = "The game stopped. Close Main Street and open it again.";
