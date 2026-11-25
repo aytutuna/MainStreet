@@ -3,7 +3,7 @@ import UIKit
 import WebKit
 
 // The page sends {cmd: "products", ids}, {cmd: "buy", id}, {cmd: "restore"}, {cmd: "adReady"}, {cmd: "ad", kind} and
-// {cmd: "time", n} and {cmd: "radio", ...} to the "store" handler and gets its answers through window.nativeStore(event); shop.js lists the
+// {cmd: "time", n}, {cmd: "cloudPut" | "cloudGet" | "cloudState"} and {cmd: "radio", ...} to the "store" handler and gets its answers through window.nativeStore(event); shop.js lists the
 // events. Purchases go through RevenueCat, ads through AdsBridge, radio streams through RadioBridge. The web view is held
 // weakly, since it holds this handler.
 final class StoreBridge: NSObject, WKScriptMessageHandler, PurchasesDelegate {
@@ -13,6 +13,7 @@ final class StoreBridge: NSObject, WKScriptMessageHandler, PurchasesDelegate {
     private var held: [[String: Any]] = []
     private lazy var ads = AdsBridge(presenter: presenter, emit: { [weak self] in self?.emit($0) })
     private lazy var radio = RadioBridge(emit: { [weak self] in self?.emit($0) })
+    private lazy var cloud = CloudBridge(emit: { [weak self] in self?.emit($0) })
     private let presenter: () -> UIViewController?
 
     init(presenter: @escaping () -> UIViewController?) {
@@ -51,6 +52,12 @@ final class StoreBridge: NSObject, WKScriptMessageHandler, PurchasesDelegate {
             ads.adId()
         case "time":
             if let n = msg["n"] as? Int { time(n) }
+        case "cloudPut":
+            cloud.put(msg)
+        case "cloudGet":
+            cloud.get()
+        case "cloudState":
+            cloud.state()
         case "ad":
             ads.show(msg["kind"] as? String ?? "", mute: msg["mute"] as? Bool ?? false)
         case "radio":
@@ -64,7 +71,7 @@ final class StoreBridge: NSObject, WKScriptMessageHandler, PurchasesDelegate {
         guard let data = try? JSONSerialization.data(withJSONObject: event), let json = String(data: data, encoding: .utf8) else { return }
         DispatchQueue.main.async { [weak self] in
             self?.web?.evaluateJavaScript("window.nativeStore ? (window.nativeStore(\(json)), 1) : 0") { result, _ in
-                if (result as? Int) != 1 && event["t"] as? String != "time" && (self?.held.count ?? 50) < 50 { self?.held.append(event) }
+                if (result as? Int) != 1 && !["time", "cloud", "cloudState"].contains(event["t"] as? String ?? "") && (self?.held.count ?? 50) < 50 { self?.held.append(event) }
             }
         }
     }

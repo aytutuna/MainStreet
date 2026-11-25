@@ -38,6 +38,7 @@ targets:
         excludes:
           - Info.plist
           - PrivacyInfo.xcprivacy
+          - MainStreet.entitlements
       - path: MainStreet/PrivacyInfo.xcprivacy
         buildPhase: resources
       - path: ../index.html
@@ -68,6 +69,10 @@ targets:
         type: folder
       - path: ../lang
         type: folder
+    entitlements:
+      path: MainStreet/MainStreet.entitlements
+      properties:
+        com.apple.developer.ubiquity-kvstore-identifier: $(TeamIdentifierPrefix)$(CFBundleIdentifier)
     dependencies:
       - package: RevenueCat
         product: RevenueCat
