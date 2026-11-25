@@ -37,13 +37,13 @@ class Bridge(private val activity: MainActivity) {
                 }
                 "buy" -> activity.store.buy(msg.optString("id"))
                 "restore" -> activity.store.restore()
-                "adStart" -> activity.ads.start()
+                "adStart" -> activity.ads.start(msg.optBoolean("mute"))
                 "adStop" -> activity.ads.stop()
                 "adReady" -> activity.ads.report()
                 "privacy" -> activity.ads.options()
                 "adId" -> activity.ads.adId()
                 "time" -> activity.store.time(msg.optInt("n"))
-                "ad" -> activity.ads.show(msg.optString("kind"))
+                "ad" -> activity.ads.show(msg.optString("kind"), msg.optBoolean("mute"))
                 "radio" -> activity.radio.command(msg)
             }
         }

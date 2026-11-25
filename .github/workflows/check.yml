@@ -33,3 +33,10 @@ jobs:
           if git grep -n -i -E 'interstitial|5084191623|6205701600' -- . ':!.github/workflows/check.yml' ':!vendor'; then
             exit 1
           fi
+      - name: Ads capped at G, no child tag
+        run: |
+          grep -q 'maxAdContentRating = .general' ios/MainStreet/AdsBridge.swift
+          grep -q 'MAX_AD_CONTENT_RATING_G' android/app/src/main/java/com/aytutuna/mainstreet/AdsBridge.kt
+          if git grep -n -i -E 'tagForChildDirected|tagForUnderAgeOfConsent|TagForChildDirectedTreatment' -- ios android; then
+            exit 1
+          fi

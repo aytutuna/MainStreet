@@ -40,7 +40,7 @@ final class StoreBridge: NSObject, WKScriptMessageHandler, PurchasesDelegate {
         case "restore":
             Task { @MainActor in await owned(restored: true) }
         case "adStart":
-            ads.start()
+            ads.start(mute: msg["mute"] as? Bool ?? false)
         case "adStop":
             ads.stop()
         case "adReady":
@@ -52,7 +52,7 @@ final class StoreBridge: NSObject, WKScriptMessageHandler, PurchasesDelegate {
         case "time":
             if let n = msg["n"] as? Int { time(n) }
         case "ad":
-            ads.show(msg["kind"] as? String ?? "")
+            ads.show(msg["kind"] as? String ?? "", mute: msg["mute"] as? Bool ?? false)
         case "radio":
             radio.command(msg)
         default:

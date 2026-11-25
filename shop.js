@@ -22,8 +22,8 @@
 //   {t: 'other', on}                       whether another app is playing music (answers 'radio' check, and comes by itself
 //                                          when it starts or stops); the page keeps its radio and the store murmur quiet
 //                                          while it is, and waits for the answer after coming to the front
-// 'adStart' runs the consent step and starts the ads SDK (not sent after Skip ads; 'adStop' ends them), 'adReady' is answered
-// with a 'ready' or 'none' for each kind, 'ad' shows one and 'privacy' opens the consent SDK's options form.
+// 'adStart' ({mute}) runs the consent step and starts the ads SDK (not sent after Skip ads; 'adStop' ends them), 'adReady' is answered
+// with a 'ready' or 'none' for each kind, 'ad' ({kind, mute}) shows one, muted when the game's sound is off, and 'privacy' opens the consent SDK's options form.
 // 'radio' is {url, vol} to play a live stream (vol 0 to 1, replacing any other), {vol} to change the volume, {stop: true}
 // to end it and {check: true} to ask for an 'other' answer.
 // The page tries the next url after an 'error'. The apps stop streams on their own when the game leaves the front.
@@ -390,7 +390,7 @@ function shopStart() {
 function adBegin() {
   if (adOn || S.iap.noads) return;
   adOn = true;
-  post({ cmd: 'adStart' });
+  post({ cmd: 'adStart', mute: !snd });
   post({ cmd: 'adReady' });
 }
 
@@ -510,7 +510,7 @@ function watch(k, give) {
     return;
   }
   watching = { k: k, give: give };
-  post({ cmd: 'ad', kind: 'reward' });
+  post({ cmd: 'ad', kind: 'reward', mute: !snd });
 }
 
 function adEvent(ev) {
@@ -536,7 +536,7 @@ function adEvent(ev) {
       if (watching !== w) return;
       watching = null;
       banner('<b>' + tl('ads.no_reward') + '</b><small>' + tl(ev.state === 'failed' ? 'ads.unavailable' : 'ads.unfinished') + '</small>', 0);
-    }, ev.state === 'failed' ? 0 : 1500);
+    }, ev.state === 'failed' ? 0 : 5000);
   }
 }
 

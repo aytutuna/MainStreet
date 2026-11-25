@@ -1,5 +1,8 @@
 package com.aytutuna.mainstreet
 
+import android.content.Context
+import android.net.ConnectivityManager
+import android.net.Network
 import android.os.Handler
 import android.os.Looper
 import com.google.android.gms.ads.AdError
@@ -8,6 +11,7 @@ import com.google.android.gms.ads.identifier.AdvertisingIdClient
 import com.google.android.gms.ads.FullScreenContentCallback
 import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.MobileAds
+import com.google.android.gms.ads.RequestConfiguration
 import com.google.android.gms.ads.rewarded.RewardedAd
 import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
 import com.google.android.ump.ConsentInformation
@@ -20,11 +24,16 @@ class AdsBridge(private val activity: MainActivity) {
     private var reward: RewardedAd? = null
     private var started = false
     private var stopped = false
+    private var loadedAt = 0L
+    private var muted = false
+    private var waiting: ConnectivityManager.NetworkCallback? = null
     private val retry = Handler(Looper.getMainLooper())
 
     // the page asks for this unless the player owns Skip ads
-    fun start() {
+    fun start(mute: Boolean) {
         stopped = false
+        muted = mute
+        MobileAds.setAppMuted(mute)
         if (started && reward == null) loadReward()
         val consent = UserMessagingPlatform.getConsentInformation(activity)
         consent.requestConsentInfoUpdate(activity, ConsentRequestParameters.Builder().build(), {
@@ -33,7 +42,7 @@ class AdsBridge(private val activity: MainActivity) {
                 init()
                 privacy()
             }
-        }, { init() })
+        }, { init(); retryOnNetwork() })
         // a choice made on an earlier launch already allows requests
         init()
     }
@@ -41,10 +50,41 @@ class AdsBridge(private val activity: MainActivity) {
     fun stop() {
         stopped = true
         retry.removeCallbacksAndMessages(null)
+        unwait()
         reward = null
         // the menu still needs to know whether "Privacy choices" is required; this shows no form
         UserMessagingPlatform.getConsentInformation(activity)
             .requestConsentInfoUpdate(activity, ConsentRequestParameters.Builder().build(), { privacy() }, { })
+    }
+
+    // a consent update that failed offline is tried again when a network comes back
+    private fun retryOnNetwork() {
+        if (waiting != null || stopped) return
+        val cm = activity.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        val cb = object : ConnectivityManager.NetworkCallback() {
+            override fun onAvailable(network: Network) {
+                retry.post {
+                    unwait()
+                    start(muted)
+                }
+            }
+        }
+        waiting = cb
+        cm.registerDefaultNetworkCallback(cb)
+    }
+
+    private fun unwait() {
+        val cb = waiting ?: return
+        waiting = null
+        (activity.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager).unregisterNetworkCallback(cb)
+    }
+
+    // a rewarded ad expires about an hour after it loads, so one held longer is replaced before the player taps it
+    fun resume() {
+        if (stopped || reward == null || System.currentTimeMillis() - loadedAt < STALE) return
+        reward = null
+        state("reward", "none")
+        loadReward()
     }
 
     private fun privacy() {
@@ -67,6 +107,9 @@ class AdsBridge(private val activity: MainActivity) {
     private fun init() {
         if (started || stopped || !UserMessagingPlatform.getConsentInformation(activity).canRequestAds()) return
         started = true
+        MobileAds.setRequestConfiguration(
+            RequestConfiguration.Builder().setMaxAdContentRating(RequestConfiguration.MAX_AD_CONTENT_RATING_G).build()
+        )
         MobileAds.initialize(activity) {
             loadReward()
         }
@@ -78,6 +121,7 @@ class AdsBridge(private val activity: MainActivity) {
             override fun onAdLoaded(ad: RewardedAd) {
                 if (stopped) return
                 reward = ad
+                loadedAt = System.currentTimeMillis()
                 state("reward", "ready")
             }
 
@@ -92,8 +136,9 @@ class AdsBridge(private val activity: MainActivity) {
         state("reward", if (reward != null) "ready" else "none")
     }
 
-    fun show(kind: String) {
+    fun show(kind: String, mute: Boolean) {
         if (kind != "reward") return
+        MobileAds.setAppMuted(mute)
         val ad = reward ?: return state(kind, "failed")
         reward = null
         state(kind, "none")
@@ -123,5 +168,6 @@ class AdsBridge(private val activity: MainActivity) {
 
     private companion object {
         const val RETRY = 60_000L
+        const val STALE = 50 * 60_000L
     }
 }

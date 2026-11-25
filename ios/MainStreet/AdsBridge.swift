@@ -1,6 +1,7 @@
 import AdSupport
 import AppTrackingTransparency
 import GoogleMobileAds
+import Network
 import UIKit
 import UserMessagingPlatform
 
@@ -16,19 +17,27 @@ final class AdsBridge: NSObject, FullScreenContentDelegate {
     private var reward: RewardedAd?
     private var started = false
     private var stopped = false
+    private var loadedAt = Date.distantPast
+    private var muted = false
+    private var monitor: NWPathMonitor?
     private let presenter: () -> UIViewController?
     private let emit: ([String: Any]) -> Void
 
     init(presenter: @escaping () -> UIViewController?, emit: @escaping ([String: Any]) -> Void) {
         self.presenter = presenter
         self.emit = emit
+        super.init()
+        NotificationCenter.default.addObserver(self, selector: #selector(resume), name: UIApplication.didBecomeActiveNotification, object: nil)
     }
 
-    func start() {
+    func start(mute: Bool) {
         stopped = false
+        muted = mute
+        MobileAds.shared.isApplicationMuted = mute
         if started && reward == nil { loadReward() }
-        ConsentInformation.shared.requestConsentInfoUpdate(with: RequestParameters()) { [weak self] _ in
+        ConsentInformation.shared.requestConsentInfoUpdate(with: RequestParameters()) { [weak self] error in
             guard let self = self, !self.stopped else { return }
+            if error != nil { return self.retryOnNetwork() }
             guard let vc = self.presenter() else { return self.begin() }
             ConsentForm.loadAndPresentIfRequired(from: vc) { [weak self] _ in
                 self?.begin()
@@ -41,8 +50,35 @@ final class AdsBridge: NSObject, FullScreenContentDelegate {
     // whether "Privacy choices" is required, which the SDK answers without showing anything.
     func stop() {
         stopped = true
+        monitor?.cancel()
+        monitor = nil
         reward = nil
         ConsentInformation.shared.requestConsentInfoUpdate(with: RequestParameters()) { [weak self] _ in self?.privacy() }
+    }
+
+    // a consent update that failed offline is tried again when a network comes back
+    private func retryOnNetwork() {
+        guard monitor == nil else { return }
+        let m = NWPathMonitor()
+        monitor = m
+        m.pathUpdateHandler = { [weak self] path in
+            guard path.status == .satisfied else { return }
+            DispatchQueue.main.async {
+                guard let self = self, self.monitor === m else { return }
+                m.cancel()
+                self.monitor = nil
+                self.start(mute: self.muted)
+            }
+        }
+        m.start(queue: .global())
+    }
+
+    // a rewarded ad expires about an hour after it loads, so one held longer is replaced before the player taps it
+    @objc private func resume() {
+        guard !stopped, reward != nil, Date().timeIntervalSince(loadedAt) >= 50 * 60 else { return }
+        reward = nil
+        send("reward", "none")
+        loadReward()
     }
 
     // the menu shows "Privacy choices" only where the consent SDK says the player must be able to reopen the form
@@ -71,11 +107,21 @@ final class AdsBridge: NSObject, FullScreenContentDelegate {
                 self?.loadReward()
             }
         }
-        if ATTrackingManager.trackingAuthorizationStatus == .notDetermined {
+        MobileAds.shared.requestConfiguration.maxAdContentRating = .general
+        if ATTrackingManager.trackingAuthorizationStatus == .notDetermined && personalised() {
             ATTrackingManager.requestTrackingAuthorization { _ in DispatchQueue.main.async(execute: go) }
         } else {
             go()
         }
+    }
+
+    // IABTCF values the consent form leaves in UserDefaults: where GDPR applies, the tracking prompt is for players who
+    // agreed to storing information (purpose 1) and to personalised ads (purpose 4)
+    private func personalised() -> Bool {
+        let d = UserDefaults.standard
+        guard d.integer(forKey: "IABTCF_gdprApplies") == 1 else { return true }
+        let p = Array(d.string(forKey: "IABTCF_PurposeConsents") ?? "")
+        return p.count > 3 && p[0] == "1" && p[3] == "1"
     }
 
     private func loadReward() {
@@ -85,6 +131,7 @@ final class AdsBridge: NSObject, FullScreenContentDelegate {
                 guard self?.stopped == false else { return }
                 self?.reward = ad
                 if ad != nil {
+                    self?.loadedAt = Date()
                     self?.send("reward", "ready")
                 } else {
                     DispatchQueue.main.asyncAfter(deadline: .now() + 60) { self?.loadReward() }
@@ -97,8 +144,9 @@ final class AdsBridge: NSObject, FullScreenContentDelegate {
         send("reward", reward != nil ? "ready" : "none")
     }
 
-    func show(_ kind: String) {
+    func show(_ kind: String, mute: Bool) {
         guard kind == "reward" else { return }
+        MobileAds.shared.isApplicationMuted = mute
         guard let vc = presenter(), let ad = reward else { return send(kind, "failed") }
         reward = nil
         send(kind, "none")

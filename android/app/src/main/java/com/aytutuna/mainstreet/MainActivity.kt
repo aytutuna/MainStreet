@@ -205,6 +205,7 @@ class MainActivity : ComponentActivity() {
         super.onResume()
         radio.check()
         startIfCurrent()
+        ads.resume()
         webView.onResume()
         Reminders.clear(this)
     }
