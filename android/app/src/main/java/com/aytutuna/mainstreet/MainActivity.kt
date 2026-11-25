@@ -48,6 +48,7 @@ class MainActivity : ComponentActivity() {
 
     private lateinit var notice: LinearLayout
     private var loaded = false
+    private var webviewPackage = WEBVIEW_PACKAGE
 
     private val permission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { notified(it) }
 
@@ -86,6 +87,7 @@ class MainActivity : ComponentActivity() {
             settings.allowFileAccess = false
             settings.allowContentAccess = false
             settings.blockNetworkLoads = true
+            settings.textZoom = 100
             addJavascriptInterface(Bridge(this@MainActivity), Bridge.NAME)
             webViewClient = client(loader)
         }
@@ -176,7 +178,9 @@ class MainActivity : ComponentActivity() {
 
     // ES modules with import maps need Chromium 89
     private fun startIfCurrent() {
-        val major = WebViewCompat.getCurrentWebViewPackage(this)?.versionName?.substringBefore('.')?.toIntOrNull() ?: 0
+        val pkg = WebViewCompat.getCurrentWebViewPackage(this)
+        webviewPackage = pkg?.packageName ?: WEBVIEW_PACKAGE
+        val major = pkg?.versionName?.substringBefore('.')?.toIntOrNull() ?: 0
         val current = major >= MIN_WEBVIEW
         notice.visibility = if (current) View.GONE else View.VISIBLE
         webView.visibility = if (current) View.VISIBLE else View.GONE
@@ -201,9 +205,9 @@ class MainActivity : ComponentActivity() {
             setText(R.string.update)
             setOnClickListener {
                 try {
-                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$WEBVIEW_PACKAGE")))
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("market://details?id=$webviewPackage")))
                 } catch (_: ActivityNotFoundException) {
-                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=$WEBVIEW_PACKAGE")))
+                    startActivity(Intent(Intent.ACTION_VIEW, Uri.parse("https://play.google.com/store/apps/details?id=$webviewPackage")))
                 }
             }
         })

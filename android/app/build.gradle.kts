@@ -37,7 +37,8 @@ android {
         applicationId = "com.aytutuna.mainstreet"
         minSdk = 26
         targetSdk = 37
-        versionCode = 1
+        // each Play upload needs a higher code: pass -PversionCode=N, counting from the last uploaded one
+        versionCode = (findProperty("versionCode") as String?)?.toInt() ?: 1
         versionName = "1.0"
         buildConfigField("String", "RC_KEY", "\"goog_nHCOIYdmsGqpubsJiIwMEGqMvYI\"")
         buildConfigField("boolean", "TESTER", "false")
@@ -100,6 +101,7 @@ androidComponents {
 }
 
 dependencies {
+    implementation(libs.fragment.ktx)
     implementation(libs.core.ktx)
     implementation(libs.activity.ktx)
     implementation(libs.webkit)
@@ -109,4 +111,12 @@ dependencies {
     implementation(libs.play.games)
     implementation(libs.media3.exoplayer)
     implementation(libs.media3.hls)
+}
+
+// a release or qa bundle without the upload key would be rejected by Play; stop early
+gradle.taskGraph.whenReady {
+    val unsigned = allTasks.any { it.project == project && Regex("(bundle|assemble|package)(Release|Qa)").containsMatchIn(it.name) }
+    if (unsigned && android.signingConfigs.findByName("release") == null) {
+        throw GradleException("No signing key: set mainstreetSigning in ~/.gradle/gradle.properties or MAINSTREET_KEYSTORE")
+    }
 }

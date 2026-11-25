@@ -3,12 +3,14 @@ package com.aytutuna.mainstreet
 import android.media.AudioManager
 import android.os.Handler
 import android.os.Looper
+import androidx.annotation.OptIn
 import androidx.media3.common.AudioAttributes
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
+import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.DefaultLoadControl
 import androidx.media3.exoplayer.ExoPlayer
 import org.json.JSONObject
@@ -16,6 +18,7 @@ import org.json.JSONObject
 // Live radio streams, played here since the web view may not open network connections, and the check for other music.
 // The page sends {cmd: 'radio', url, vol}, {cmd: 'radio', vol}, {cmd: 'radio', stop: true} and {cmd: 'radio', check: true};
 // shop.js lists the answers.
+@OptIn(UnstableApi::class)
 class RadioBridge(private val activity: MainActivity) {
     private val audio = activity.getSystemService(AudioManager::class.java)
     private var player: ExoPlayer? = null
