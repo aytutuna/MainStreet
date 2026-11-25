@@ -1768,6 +1768,7 @@ function takeAway(dbl, from, free) {
   var c = centerOf($(from));
   var v = claimAway(dbl, free);
   if (!v) return;
+  if (sweep) sweep.redo = true;
   $('away').hidden = true;
   popAt(plus(money(v)), c.x, c.y, 'big');
   flyCoins(c.x, c.y, dbl ? 16 : 10);
@@ -2451,8 +2452,11 @@ function sweepStart(t) {
   View.pool(SWEEP[sweep.i]);
   sweep.t = t;
   sweep.frames = 0;
+  sweep.open = 0;
   sweep.srv = S.st.srv;
   sweep.all = S.all;
+  sweep.earned = 0;
+  sweep.served = 0;
   sweep.shown = 0;
   sweep.last = t;
   sweep.said = -1;
@@ -2461,10 +2465,18 @@ function sweepStart(t) {
 
 function sweepFrame(t) {
   if (sweep.redo) return sweepStart(t);
-  sweep.frames++;
-  sweep.shown += rate() * (t - sweep.last) / 1000;
+  // closed time is left out of every figure, so each pool size is measured over open time only
+  if (!shut()) {
+    sweep.frames++;
+    sweep.open += (t - sweep.last) / 1000;
+    sweep.shown += rate() * (t - sweep.last) / 1000;
+    sweep.earned += S.all - sweep.all;
+    sweep.served += S.st.srv - sweep.srv;
+  }
+  sweep.all = S.all;
+  sweep.srv = S.st.srv;
   sweep.last = t;
-  var secs = (t - sweep.t) / 1000;
+  var secs = sweep.open;
   if (secs < SWEEP_SECS) {
     var left = Math.ceil(SWEEP_SECS - secs);
     if (left !== sweep.said) {
@@ -2473,11 +2485,11 @@ function sweepFrame(t) {
     }
     return;
   }
-  var earned = S.all - sweep.all;
+  var earned = sweep.earned;
   sweep.rows.push(SWEEP[sweep.i] + ' figures: ' + (sweep.frames / secs).toFixed(1) + ' fps, ' +
     short(sweep.shown * 60 / secs) + ' shown/min, ' + short(earned * 60 / secs) + ' earned/min, ' +
     (sweep.shown > 0 ? (earned / sweep.shown).toFixed(2) : '-') + ' earned/shown, ' +
-    ((S.st.srv - sweep.srv) * 60 / secs).toFixed(1) + ' served/min');
+    (sweep.served * 60 / secs).toFixed(1) + ' served/min');
   if (++sweep.i < SWEEP.length) return sweepStart(t);
   testOut(sweep.rows.join('\n'));
   View.pool(64);
