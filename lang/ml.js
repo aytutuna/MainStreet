@@ -64,7 +64,7 @@ LANG['ml'] = {
   'menu.policy': 'സ്വകാര്യതാ നയം',
   'menu.support': 'പിന്തുണ',
   'menu.notices': 'ഓപ്പൺ സോഴ്‌സ് അറിയിപ്പുകൾ',
-  'menu.notices_rc': 'പർച്ചേസ് SDK, MIT ലൈസൻസ്.',
+  'menu.notices_rc': 'Purchases SDK, MIT ലൈസൻസ്.',
   'menu.notices_google': 'Google Mobile Ads SDK, User Messaging Platform എന്നിവ AdMob നിബന്ധനകൾ പ്രകാരം ഉപയോഗിക്കുന്നു (https://developers.google.com/admob/terms). Google Play Games Services, Google APIs സേവന നിബന്ധനകൾ പ്രകാരം ഉപയോഗിക്കുന്നു (https://developers.google.com/terms).',
   'menu.notices_android': 'പകർപ്പവകാശം The Android Open Source Project, JetBrains s.r.o. Apache License 2.0.',
   'menu.version': 'പതിപ്പ് {v} ({b})',

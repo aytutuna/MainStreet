@@ -64,7 +64,7 @@ LANG['id'] = {
   'menu.policy': 'Kebijakan privasi',
   'menu.support': 'Dukungan',
   'menu.notices': 'Pemberitahuan sumber terbuka',
-  'menu.notices_rc': 'SDK pembelian, lisensi MIT.',
+  'menu.notices_rc': 'Purchases SDK, lisensi MIT.',
   'menu.notices_google': 'Google Mobile Ads SDK dan User Messaging Platform, digunakan sesuai ketentuan AdMob (https://developers.google.com/admob/terms). Google Play Games Services, digunakan sesuai Persyaratan Layanan Google API (https://developers.google.com/terms).',
   'menu.notices_android': 'Hak cipta The Android Open Source Project dan JetBrains s.r.o. Apache License 2.0.',
   'menu.version': 'Versi {v} ({b})',

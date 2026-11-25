@@ -64,7 +64,7 @@ LANG['ca'] = {
   'menu.policy': 'Política de privadesa',
   'menu.support': 'Assistència',
   'menu.notices': 'Avisos de codi obert',
-  'menu.notices_rc': 'SDK de compres, llicència MIT.',
+  'menu.notices_rc': 'Purchases SDK, llicència MIT.',
   'menu.notices_google': 'Google Mobile Ads SDK i User Messaging Platform, utilitzats sota les condicions d\'AdMob (https://developers.google.com/admob/terms). Google Play Games Services, utilitzats sota les Condicions del servei de les API de Google (https://developers.google.com/terms).',
   'menu.notices_android': 'Copyright The Android Open Source Project i JetBrains s.r.o. Llicència Apache 2.0.',
   'menu.version': 'Versió {v} ({b})',

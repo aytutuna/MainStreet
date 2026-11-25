@@ -64,7 +64,7 @@ LANG['te'] = {
   'menu.policy': 'గోప్యతా విధానం',
   'menu.support': 'సహాయం',
   'menu.notices': 'ఓపెన్-సోర్స్ నోటీసులు',
-  'menu.notices_rc': 'కొనుగోళ్ల SDK, MIT లైసెన్స్.',
+  'menu.notices_rc': 'Purchases SDK, MIT లైసెన్స్.',
   'menu.notices_google': 'Google Mobile Ads SDK మరియు User Messaging Platform, AdMob నిబంధనల ప్రకారం ఉపయోగించబడ్డాయి (https://developers.google.com/admob/terms). Google Play Games Services, Google APIs సేవా నిబంధనల ప్రకారం ఉపయోగించబడింది (https://developers.google.com/terms).',
   'menu.notices_android': 'కాపీరైట్ The Android Open Source Project మరియు JetBrains s.r.o. Apache License 2.0.',
   'menu.version': 'వెర్షన్ {v} ({b})',

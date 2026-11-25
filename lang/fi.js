@@ -64,7 +64,7 @@ LANG['fi'] = {
   'menu.policy': 'Tietosuojakäytäntö',
   'menu.support': 'Tuki',
   'menu.notices': 'Avoimen lähdekoodin ilmoitukset',
-  'menu.notices_rc': 'Ostojen SDK, MIT-lisenssi.',
+  'menu.notices_rc': 'Purchases SDK, MIT-lisenssi.',
   'menu.notices_google': 'Google Mobile Ads SDK ja User Messaging Platform, käytössä AdMobin ehtojen mukaan (https://developers.google.com/admob/terms). Google Play Games Services, käytössä Google API -palveluiden käyttöehtojen mukaan (https://developers.google.com/terms).',
   'menu.notices_android': 'Tekijänoikeus The Android Open Source Project ja JetBrains s.r.o. Apache License 2.0.',
   'menu.version': 'Versio {v} ({b})',

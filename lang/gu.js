@@ -64,7 +64,7 @@ LANG['gu'] = {
   'menu.policy': 'ગોપનીયતા નીતિ',
   'menu.support': 'સપોર્ટ',
   'menu.notices': 'ઓપન-સોર્સ સૂચનાઓ',
-  'menu.notices_rc': 'ખરીદી SDK, MIT લાઇસન્સ.',
+  'menu.notices_rc': 'Purchases SDK, MIT લાઇસન્સ.',
   'menu.notices_google': 'Google Mobile Ads SDK અને User Messaging Platform, AdMob ની શરતો હેઠળ વપરાયેલ (https://developers.google.com/admob/terms). Google Play Games Services, Google APIs સેવાની શરતો હેઠળ વપરાયેલ (https://developers.google.com/terms).',
   'menu.notices_android': 'કૉપિરાઇટ The Android Open Source Project અને JetBrains s.r.o. Apache License 2.0.',
   'menu.version': 'વર્ઝન {v} ({b})',

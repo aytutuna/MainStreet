@@ -64,7 +64,7 @@ LANG['or'] = {
   'menu.policy': 'ଗୋପନୀୟତା ନୀତି',
   'menu.support': 'ସହାୟତା',
   'menu.notices': 'ଓପନ-ସୋର୍ସ ସୂଚନା',
-  'menu.notices_rc': 'କ୍ରୟ SDK, MIT ଲାଇସେନ୍ସ।',
+  'menu.notices_rc': 'Purchases SDK, MIT ଲାଇସେନ୍ସ।',
   'menu.notices_google': 'Google Mobile Ads SDK ଓ User Messaging Platform, AdMob ସର୍ତ୍ତାବଳୀ ଅନୁସାରେ ବ୍ୟବହୃତ (https://developers.google.com/admob/terms). Google Play Games Services, Google APIs ସେବା ସର୍ତ୍ତାବଳୀ ଅନୁସାରେ ବ୍ୟବହୃତ (https://developers.google.com/terms).',
   'menu.notices_android': 'କପିରାଇଟ୍ The Android Open Source Project ଓ JetBrains s.r.o. Apache License 2.0।',
   'menu.version': 'ସଂସ୍କରଣ {v} ({b})',

@@ -64,7 +64,7 @@ LANG['he'] = {
   'menu.policy': 'מדיניות פרטיות',
   'menu.support': 'תמיכה',
   'menu.notices': 'הודעות קוד פתוח',
-  'menu.notices_rc': 'ערכת SDK לרכישות, רישיון MIT.',
+  'menu.notices_rc': 'Purchases SDK, רישיון MIT.',
   'menu.notices_google': 'Google Mobile Ads SDK ו-User Messaging Platform, בשימוש לפי תנאי AdMob (https://developers.google.com/admob/terms). Google Play Games Services, בשימוש לפי תנאי השירות של Google APIs (https://developers.google.com/terms).',
   'menu.notices_android': 'זכויות יוצרים The Android Open Source Project ו-JetBrains s.r.o. רישיון Apache 2.0.',
   'menu.version': 'גרסה {v} ({b})',

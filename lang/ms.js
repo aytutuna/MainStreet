@@ -64,7 +64,7 @@ LANG['ms'] = {
   'menu.policy': 'Dasar privasi',
   'menu.support': 'Sokongan',
   'menu.notices': 'Notis sumber terbuka',
-  'menu.notices_rc': 'SDK pembelian, lesen MIT.',
+  'menu.notices_rc': 'Purchases SDK, lesen MIT.',
   'menu.notices_google': 'Google Mobile Ads SDK dan User Messaging Platform, digunakan di bawah terma AdMob (https://developers.google.com/admob/terms). Google Play Games Services, digunakan di bawah Syarat Perkhidmatan Google API (https://developers.google.com/terms).',
   'menu.notices_android': 'Hak cipta The Android Open Source Project dan JetBrains s.r.o. Apache License 2.0.',
   'menu.version': 'Versi {v} ({b})',

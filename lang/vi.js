@@ -64,7 +64,7 @@ LANG['vi'] = {
   'menu.policy': 'Chính sách quyền riêng tư',
   'menu.support': 'Hỗ trợ',
   'menu.notices': 'Thông báo mã nguồn mở',
-  'menu.notices_rc': 'SDK mua hàng, giấy phép MIT.',
+  'menu.notices_rc': 'Purchases SDK, giấy phép MIT.',
   'menu.notices_google': 'Google Mobile Ads SDK và User Messaging Platform, được dùng theo điều khoản AdMob (https://developers.google.com/admob/terms). Google Play Games Services, được dùng theo Điều khoản dịch vụ của Google APIs (https://developers.google.com/terms).',
   'menu.notices_android': 'Bản quyền The Android Open Source Project và JetBrains s.r.o. Giấy phép Apache 2.0.',
   'menu.version': 'Phiên bản {v} ({b})',

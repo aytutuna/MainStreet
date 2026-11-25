@@ -64,7 +64,7 @@ LANG['ro'] = {
   'menu.policy': 'Politica de confidențialitate',
   'menu.support': 'Asistență',
   'menu.notices': 'Notificări open source',
-  'menu.notices_rc': 'SDK pentru achiziții, licență MIT.',
+  'menu.notices_rc': 'Purchases SDK, licență MIT.',
   'menu.notices_google': 'Google Mobile Ads SDK și User Messaging Platform, folosite conform termenilor AdMob (https://developers.google.com/admob/terms). Google Play Games Services, folosite conform Termenilor de utilizare a API-urilor Google (https://developers.google.com/terms).',
   'menu.notices_android': 'Drepturi de autor The Android Open Source Project și JetBrains s.r.o. Licență Apache 2.0.',
   'menu.version': 'Versiunea {v} ({b})',

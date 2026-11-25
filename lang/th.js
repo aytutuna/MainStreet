@@ -64,7 +64,7 @@ LANG['th'] = {
   'menu.policy': 'นโยบายความเป็นส่วนตัว',
   'menu.support': 'ฝ่ายสนับสนุน',
   'menu.notices': 'ประกาศโอเพนซอร์ส',
-  'menu.notices_rc': 'SDK การซื้อ ใบอนุญาต MIT',
+  'menu.notices_rc': 'Purchases SDK ใบอนุญาต MIT',
   'menu.notices_google': 'Google Mobile Ads SDK และ User Messaging Platform ใช้ภายใต้ข้อกำหนดของ AdMob (https://developers.google.com/admob/terms). Google Play Games Services ใช้ภายใต้ข้อกำหนดในการให้บริการของ Google APIs (https://developers.google.com/terms).',
   'menu.notices_android': 'ลิขสิทธิ์ The Android Open Source Project และ JetBrains s.r.o. Apache License 2.0',
   'menu.version': 'เวอร์ชัน {v} ({b})',

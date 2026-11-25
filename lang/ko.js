@@ -64,7 +64,7 @@ LANG['ko'] = {
   'menu.policy': '개인정보 처리방침',
   'menu.support': '지원',
   'menu.notices': '오픈소스 고지',
-  'menu.notices_rc': '구매 SDK, MIT 라이선스.',
+  'menu.notices_rc': 'Purchases SDK, MIT 라이선스.',
   'menu.notices_google': 'Google Mobile Ads SDK와 User Messaging Platform은 AdMob 약관에 따라 사용 (https://developers.google.com/admob/terms). Google Play Games Services는 Google API 서비스 약관에 따라 사용 (https://developers.google.com/terms).',
   'menu.notices_android': 'Copyright The Android Open Source Project 및 JetBrains s.r.o. Apache License 2.0.',
   'menu.version': '버전 {v} ({b})',

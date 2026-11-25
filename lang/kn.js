@@ -64,7 +64,7 @@ LANG['kn'] = {
   'menu.policy': 'ಗೌಪ್ಯತಾ ನೀತಿ',
   'menu.support': 'ಬೆಂಬಲ',
   'menu.notices': 'ಓಪನ್-ಸೋರ್ಸ್ ಸೂಚನೆಗಳು',
-  'menu.notices_rc': 'ಖರೀದಿ SDK, MIT ಪರವಾನಗಿ.',
+  'menu.notices_rc': 'Purchases SDK, MIT ಪರವಾನಗಿ.',
   'menu.notices_google': 'Google Mobile Ads SDK ಮತ್ತು User Messaging Platform, AdMob ನಿಯಮಗಳ ಅಡಿಯಲ್ಲಿ ಬಳಕೆ (https://developers.google.com/admob/terms). Google Play Games Services, Google APIs ಸೇವಾ ನಿಯಮಗಳ ಅಡಿಯಲ್ಲಿ ಬಳಕೆ (https://developers.google.com/terms).',
   'menu.notices_android': 'ಕೃತಿಸ್ವಾಮ್ಯ The Android Open Source Project ಮತ್ತು JetBrains s.r.o. Apache License 2.0.',
   'menu.version': 'ಆವೃತ್ತಿ {v} ({b})',

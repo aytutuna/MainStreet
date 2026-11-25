@@ -64,7 +64,7 @@ LANG['cs'] = {
   'menu.policy': 'Zásady ochrany osobních údajů',
   'menu.support': 'Podpora',
   'menu.notices': 'Oznámení o open source',
-  'menu.notices_rc': 'SDK pro nákupy, licence MIT.',
+  'menu.notices_rc': 'Purchases SDK, licence MIT.',
   'menu.notices_google': 'Google Mobile Ads SDK a User Messaging Platform, používané podle podmínek AdMob (https://developers.google.com/admob/terms). Google Play Games Services, používané podle Smluvních podmínek služeb Google API (https://developers.google.com/terms).',
   'menu.notices_android': 'Copyright The Android Open Source Project a JetBrains s.r.o. Licence Apache 2.0.',
   'menu.version': 'Verze {v} ({b})',

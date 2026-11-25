@@ -64,7 +64,7 @@ LANG['sv'] = {
   'menu.policy': 'Integritetspolicy',
   'menu.support': 'Support',
   'menu.notices': 'Meddelanden om öppen källkod',
-  'menu.notices_rc': 'SDK för köp, MIT-licens.',
+  'menu.notices_rc': 'Purchases SDK, MIT-licens.',
   'menu.notices_google': 'Google Mobile Ads SDK och User Messaging Platform, används enligt AdMobs villkor (https://developers.google.com/admob/terms). Google Play Games Services, används enligt användarvillkoren för Googles API:er (https://developers.google.com/terms).',
   'menu.notices_android': 'Upphovsrätt The Android Open Source Project och JetBrains s.r.o. Apache License 2.0.',
   'menu.version': 'Version {v} ({b})',

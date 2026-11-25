@@ -64,7 +64,7 @@ LANG['ar'] = {
   "menu.policy": "سياسة الخصوصية",
   "menu.support": "الدعم",
   "menu.notices": "إشعارات المصادر المفتوحة",
-  "menu.notices_rc": "حزمة المشتريات، رخصة MIT.",
+  "menu.notices_rc": "Purchases SDK، رخصة MIT.",
   "menu.notices_google": "حزمة Google Mobile Ads وUser Messaging Platform، المستخدمة بموجب شروط AdMob (https://developers.google.com/admob/terms). خدمات Google Play Games، المستخدمة بموجب شروط خدمة Google APIs (https://developers.google.com/terms).",
   "menu.notices_android": "حقوق النشر لـ The Android Open Source Project وJetBrains s.r.o. رخصة Apache 2.0.",
   "menu.version": "الإصدار {v} ({b})",

@@ -64,7 +64,7 @@ LANG['hr'] = {
   'menu.policy': 'Pravila privatnosti',
   'menu.support': 'Podrška',
   'menu.notices': 'Obavijesti o otvorenom kodu',
-  'menu.notices_rc': 'SDK za kupnje, MIT licenca.',
+  'menu.notices_rc': 'Purchases SDK, MIT licenca.',
   'menu.notices_google': 'Google Mobile Ads SDK i User Messaging Platform, korišteni prema uvjetima AdMoba (https://developers.google.com/admob/terms). Google Play Games Services, korišteni prema Uvjetima pružanja usluge Google API-ja (https://developers.google.com/terms).',
   'menu.notices_android': 'Autorska prava The Android Open Source Project i JetBrains s.r.o. Apache License 2.0.',
   'menu.version': 'Verzija {v} ({b})',

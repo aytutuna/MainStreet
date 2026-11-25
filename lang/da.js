@@ -64,7 +64,7 @@ LANG['da'] = {
   'menu.policy': 'Privatlivspolitik',
   'menu.support': 'Support',
   'menu.notices': 'Open source-meddelelser',
-  'menu.notices_rc': 'SDK til køb, MIT-licens.',
+  'menu.notices_rc': 'Purchases SDK, MIT-licens.',
   'menu.notices_google': 'Google Mobile Ads SDK og User Messaging Platform, brugt under AdMob-vilkårene (https://developers.google.com/admob/terms). Google Play Games Services, brugt under Google API\'ernes servicevilkår (https://developers.google.com/terms).',
   'menu.notices_android': 'Ophavsret The Android Open Source Project og JetBrains s.r.o. Apache License 2.0.',
   'menu.version': 'Version {v} ({b})',

@@ -64,7 +64,7 @@ LANG['ru'] = {
   'menu.policy': 'Политика конфиденциальности',
   'menu.support': 'Поддержка',
   'menu.notices': 'Уведомления об открытом коде',
-  'menu.notices_rc': 'SDK покупок, лицензия MIT.',
+  'menu.notices_rc': 'Purchases SDK, лицензия MIT.',
   'menu.notices_google': 'Google Mobile Ads SDK и User Messaging Platform используются на условиях AdMob (https://developers.google.com/admob/terms). Google Play Games Services используются на условиях Условий использования API Google (https://developers.google.com/terms).',
   'menu.notices_android': 'Copyright The Android Open Source Project и JetBrains s.r.o. Лицензия Apache 2.0.',
   'menu.version': 'Версия {v} ({b})',

@@ -64,7 +64,7 @@ LANG['pa'] = {
   'menu.policy': 'ਪਰਦੇਦਾਰੀ ਨੀਤੀ',
   'menu.support': 'ਸਹਾਇਤਾ',
   'menu.notices': 'ਓਪਨ-ਸੋਰਸ ਸੂਚਨਾਵਾਂ',
-  'menu.notices_rc': 'ਖਰੀਦਦਾਰੀ SDK, MIT ਲਾਇਸੰਸ।',
+  'menu.notices_rc': 'Purchases SDK, MIT ਲਾਇਸੰਸ।',
   'menu.notices_google': 'Google Mobile Ads SDK ਅਤੇ User Messaging Platform, AdMob ਦੀਆਂ ਸ਼ਰਤਾਂ ਅਧੀਨ ਵਰਤੇ ਗਏ (https://developers.google.com/admob/terms). Google Play Games Services, Google APIs ਦੀਆਂ ਸੇਵਾ ਸ਼ਰਤਾਂ ਅਧੀਨ ਵਰਤੇ ਗਏ (https://developers.google.com/terms).',
   'menu.notices_android': 'ਕਾਪੀਰਾਈਟ The Android Open Source Project ਅਤੇ JetBrains s.r.o. Apache License 2.0।',
   'menu.version': 'ਵਰਜਨ {v} ({b})',

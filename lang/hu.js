@@ -64,7 +64,7 @@ LANG['hu'] = {
   'menu.policy': 'Adatvédelmi irányelvek',
   'menu.support': 'Támogatás',
   'menu.notices': 'Nyílt forráskódú közlemények',
-  'menu.notices_rc': 'Vásárlási SDK, MIT licenc.',
+  'menu.notices_rc': 'Purchases SDK, MIT licenc.',
   'menu.notices_google': 'Google Mobile Ads SDK és User Messaging Platform, az AdMob feltételei szerint használva (https://developers.google.com/admob/terms). Google Play Games Services, a Google API-k szolgáltatási feltételei szerint használva (https://developers.google.com/terms).',
   'menu.notices_android': 'Copyright The Android Open Source Project és JetBrains s.r.o. Apache License 2.0.',
   'menu.version': '{v} verzió ({b})',

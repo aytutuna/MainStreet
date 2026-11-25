@@ -64,7 +64,7 @@ LANG['tr'] = {
   'menu.policy': 'Gizlilik politikası',
   'menu.support': 'Destek',
   'menu.notices': 'Açık kaynak bildirimleri',
-  'menu.notices_rc': 'Satın alma SDK\'sı, MIT lisansı.',
+  'menu.notices_rc': 'Purchases SDK, MIT lisansı.',
   'menu.notices_google': 'Google Mobile Ads SDK ve User Messaging Platform, AdMob şartları kapsamında kullanılır (https://developers.google.com/admob/terms). Google Play Games Services, Google API Hizmet Şartları kapsamında kullanılır (https://developers.google.com/terms).',
   'menu.notices_android': 'Telif hakkı The Android Open Source Project ve JetBrains s.r.o. Apache License 2.0.',
   'menu.version': 'Sürüm {v} ({b})',

@@ -64,7 +64,7 @@ LANG['ur'] = {
   'menu.policy': 'رازداری کی پالیسی',
   'menu.support': 'معاونت',
   'menu.notices': 'اوپن سورس نوٹسز',
-  'menu.notices_rc': 'خریداری SDK، MIT لائسنس۔',
+  'menu.notices_rc': 'Purchases SDK، MIT لائسنس۔',
   'menu.notices_google': 'Google Mobile Ads SDK اور User Messaging Platform، AdMob کی شرائط کے تحت استعمال شدہ (https://developers.google.com/admob/terms). Google Play Games Services، Google APIs کی سروس کی شرائط کے تحت استعمال شدہ (https://developers.google.com/terms).',
   'menu.notices_android': 'کاپی رائٹ The Android Open Source Project اور JetBrains s.r.o. Apache License 2.0۔',
   'menu.version': 'ورژن {v} ({b})',

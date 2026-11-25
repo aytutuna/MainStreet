@@ -64,7 +64,7 @@ LANG['ja'] = {
   'menu.policy': 'プライバシーポリシー',
   'menu.support': 'サポート',
   'menu.notices': 'オープンソースについて',
-  'menu.notices_rc': '購入用SDK、MITライセンス。',
+  'menu.notices_rc': 'Purchases SDK、MITライセンス。',
   'menu.notices_google': 'Google Mobile Ads SDKとUser Messaging Platformは、AdMobの利用規約に基づいて使用 (https://developers.google.com/admob/terms). Google Play Games Servicesは、Google APIs利用規約に基づいて使用 (https://developers.google.com/terms).',
   'menu.notices_android': 'Copyright The Android Open Source Project and JetBrains s.r.o. Apache License 2.0。',
   'menu.version': 'バージョン {v} ({b})',

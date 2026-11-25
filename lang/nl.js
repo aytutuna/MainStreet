@@ -64,7 +64,7 @@ LANG['nl'] = {
   'menu.policy': 'Privacybeleid',
   'menu.support': 'Support',
   'menu.notices': 'Open-sourcemeldingen',
-  'menu.notices_rc': 'SDK voor aankopen, MIT-licentie.',
+  'menu.notices_rc': 'Purchases SDK, MIT-licentie.',
   'menu.notices_google': 'Google Mobile Ads SDK en User Messaging Platform, gebruikt onder de voorwaarden van AdMob (https://developers.google.com/admob/terms). Google Play Games Services, gebruikt onder de Servicevoorwaarden van de Google API\'s (https://developers.google.com/terms).',
   'menu.notices_android': 'Copyright The Android Open Source Project en JetBrains s.r.o. Apache License 2.0.',
   'menu.version': 'Versie {v} ({b})',

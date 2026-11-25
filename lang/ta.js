@@ -64,7 +64,7 @@ LANG['ta'] = {
   'menu.policy': 'தனியுரிமைக் கொள்கை',
   'menu.support': 'ஆதரவு',
   'menu.notices': 'திறந்த மூல அறிவிப்புகள்',
-  'menu.notices_rc': 'வாங்குதல் SDK, MIT உரிமம்.',
+  'menu.notices_rc': 'Purchases SDK, MIT உரிமம்.',
   'menu.notices_google': 'Google Mobile Ads SDK மற்றும் User Messaging Platform, AdMob விதிமுறைகளின் கீழ் பயன்படுத்தப்படுகின்றன (https://developers.google.com/admob/terms). Google Play Games Services, Google APIs சேவை விதிமுறைகளின் கீழ் பயன்படுத்தப்படுகிறது (https://developers.google.com/terms).',
   'menu.notices_android': 'பதிப்புரிமை The Android Open Source Project மற்றும் JetBrains s.r.o. Apache License 2.0.',
   'menu.version': 'பதிப்பு {v} ({b})',

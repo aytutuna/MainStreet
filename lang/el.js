@@ -64,7 +64,7 @@ LANG['el'] = {
   'menu.policy': 'Πολιτική απορρήτου',
   'menu.support': 'Υποστήριξη',
   'menu.notices': 'Ειδοποιήσεις ανοιχτού κώδικα',
-  'menu.notices_rc': 'SDK αγορών, άδεια MIT.',
+  'menu.notices_rc': 'Purchases SDK, άδεια MIT.',
   'menu.notices_google': 'Google Mobile Ads SDK και User Messaging Platform, με χρήση βάσει των όρων του AdMob (https://developers.google.com/admob/terms). Google Play Games Services, με χρήση βάσει των Όρων Παροχής Υπηρεσιών των Google APIs (https://developers.google.com/terms).',
   'menu.notices_android': 'Πνευματικά δικαιώματα The Android Open Source Project και JetBrains s.r.o. Άδεια Apache 2.0.',
   'menu.version': 'Έκδοση {v} ({b})',

@@ -64,7 +64,7 @@ LANG['zh-Hans'] = {
   'menu.policy': '隐私政策',
   'menu.support': '支持',
   'menu.notices': '开源声明',
-  'menu.notices_rc': '购买 SDK，MIT 许可证。',
+  'menu.notices_rc': 'Purchases SDK，MIT 许可证。',
   'menu.notices_google': 'Google Mobile Ads SDK 和 User Messaging Platform 依据 AdMob 条款使用 (https://developers.google.com/admob/terms). Google Play Games Services 依据 Google API 服务条款使用 (https://developers.google.com/terms).',
   'menu.notices_android': '版权所有 The Android Open Source Project 和 JetBrains s.r.o. Apache License 2.0。',
   'menu.version': '版本 {v} ({b})',

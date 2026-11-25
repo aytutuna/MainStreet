@@ -64,7 +64,7 @@ LANG['zh-Hant'] = {
   'menu.policy': '隱私權政策',
   'menu.support': '支援',
   'menu.notices': '開放原始碼聲明',
-  'menu.notices_rc': '購買 SDK，MIT 授權。',
+  'menu.notices_rc': 'Purchases SDK，MIT 授權。',
   'menu.notices_google': 'Google Mobile Ads SDK 和 User Messaging Platform 依據 AdMob 條款使用 (https://developers.google.com/admob/terms). Google Play Games Services 依據 Google API 服務條款使用 (https://developers.google.com/terms).',
   'menu.notices_android': '版權所有 The Android Open Source Project 和 JetBrains s.r.o. Apache License 2.0。',
   'menu.version': '版本 {v} ({b})',

@@ -64,7 +64,7 @@ LANG['uk'] = {
   'menu.policy': 'Політика конфіденційності',
   'menu.support': 'Підтримка',
   'menu.notices': 'Повідомлення про відкритий код',
-  'menu.notices_rc': 'SDK покупок, ліцензія MIT.',
+  'menu.notices_rc': 'Purchases SDK, ліцензія MIT.',
   'menu.notices_google': 'Google Mobile Ads SDK і User Messaging Platform використовуються на умовах AdMob (https://developers.google.com/admob/terms). Google Play Games Services використовуються на умовах Умов використання API Google (https://developers.google.com/terms).',
   'menu.notices_android': 'Copyright The Android Open Source Project і JetBrains s.r.o. Ліцензія Apache 2.0.',
   'menu.version': 'Версія {v} ({b})',
