@@ -47,9 +47,13 @@ jobs:
           m = plistlib.load(open('ios/MainStreet/PrivacyInfo.xcprivacy', 'rb'))
           if m.get('NSPrivacyTracking') and not m.get('NSPrivacyTrackingDomains'):
               sys.exit('NSPrivacyTracking is true with no tracking domains')
-          for d in m.get('NSPrivacyTrackingDomains', []):
-              if 'doubleclick.net' in d or 'googlesyndication.com' in d:
-                  sys.exit('ad serving host listed as tracking domain: ' + d)
-          if 'NSPrivacyAccessedAPITypes' in m and not m['NSPrivacyAccessedAPITypes']:
-              sys.exit('NSPrivacyAccessedAPITypes is an empty array')
+          if m.get('NSPrivacyTrackingDomains'):
+              sys.exit('tracking domains listed: ad hosts in the list would be blocked without ATT')
+          cats = [t.get('NSPrivacyAccessedAPIType') for t in m.get('NSPrivacyAccessedAPITypes', [])]
+          if not cats:
+              sys.exit('NSPrivacyAccessedAPITypes is missing or empty')
+          if 'NSPrivacyAccessedAPICategoryUserDefaults' not in cats:
+              import subprocess
+              if subprocess.run(['git', 'grep', '-q', 'UserDefaults', '--', 'ios/*.swift']).returncode == 0:
+                  sys.exit('UserDefaults used in ios code but not declared in the manifest')
           PY
