@@ -221,6 +221,8 @@ function cloudTake(raw) {
   if (!takeCloud(raw)) return;
   $('away').hidden = true;
   if (S.iap.noads) post({ cmd: 'adStop' });
+  // a pack bought here that the copy does not hold is paid again from the store's list
+  if (native()) askProducts();
   if (View.ready()) {
     cloudShown = true;
     afterLoad();

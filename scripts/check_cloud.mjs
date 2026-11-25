@@ -274,6 +274,10 @@ if (run('S.ts') !== T12) fail('an older copy replaced a newer game');
   run('takeCloud(' + JSON.stringify(copy(T9, { tx: ['T'] })) + ')');
   run('recover(' + JSON.stringify(list()) + ')');
   if (run('S.gems') !== paid) fail('a pack in a refused copy was not paid to this game: ' + run('S.gems'));
+  // in a running session the store is asked again when a copy is taken, since recover() runs on its answer
+  device(T12);
+  nativeEv(ipad(T17 + 1000));
+  if (!posts.some(m => m.cmd === 'products')) fail('the store was not asked for its list after a copy was taken');
 }
 
 if (failed) process.exit(1);
