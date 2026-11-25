@@ -101,13 +101,16 @@ jobs:
           if [ "${{ inputs.tester }}" = "true" ]; then [ "$stamp" = "1" ]; else [ -z "$stamp" ]; fi
       # An unsigned archive leaves the ads frameworks it embeds without a valid signature, and the export only
       # re-signs code that is signed already, so they get an ad hoc signature first and the export signs them for real.
+      # The app also keeps its entitlements this way; codesign does not expand $(TeamIdentifierPrefix), so the team id goes in by hand.
       - name: Sign the embedded frameworks ad hoc
         run: |
           app="$RUNNER_TEMP/MainStreet.xcarchive/Products/Applications/MainStreet.app"
           for f in "$app"/Frameworks/*.framework; do
             [ -e "$f" ] && codesign --force --sign - "$f"
           done
-          codesign --force --sign - "$app"
+          sed 's/$(TeamIdentifierPrefix)$(CFBundleIdentifier)/'"$APPLE_TEAM_ID"'.com.aytutuna.mainstreet/'             ios/MainStreet/MainStreet.entitlements > "$RUNNER_TEMP/MainStreet.entitlements"
+          codesign --force --sign - --entitlements "$RUNNER_TEMP/MainStreet.entitlements" "$app"
+          codesign -d --entitlements - "$app" 2>&1 | grep -q ubiquity-kvstore-identifier
       - name: Sign and export
         run: |
           set -o pipefail

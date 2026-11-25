@@ -2,9 +2,9 @@ import Foundation
 
 // The save the page shares between devices: {cmd: "cloudPut", json, at, dev} writes it to iCloud's key-value store and
 // {cmd: "cloudGet"} / {cmd: "cloudState"} ask for it. Answers and changes made by another device go back as
-// {t: "cloud", json, at, dev} and {t: "cloudState", state}. The store has no account in the unsigned Simulator build,
-// where the state reads signedOut.
-final class CloudBridge {
+// {t: "cloud", json, at, dev} and {t: "cloudState", state}. The state is a best guess from the iCloud identity: with no
+// iCloud account (the usual Simulator case) it reads signedOut, even though the store may still sync with iCloud Drive off.
+final class CloudBridge: NSObject {
     private let key = "save"
     private let store = NSUbiquitousKeyValueStore.default
     private let emit: ([String: Any]) -> Void
@@ -13,6 +13,7 @@ final class CloudBridge {
 
     init(emit: @escaping ([String: Any]) -> Void) {
         self.emit = emit
+        super.init()
         let center = NotificationCenter.default
         center.addObserver(self, selector: #selector(changed(_:)), name: NSUbiquitousKeyValueStore.didChangeExternallyNotification, object: store)
         center.addObserver(self, selector: #selector(account), name: NSNotification.Name.NSUbiquityIdentityDidChange, object: nil)
@@ -45,14 +46,16 @@ final class CloudBridge {
     }
 
     @objc private func account() {
-        state()
+        DispatchQueue.main.async { self.state() }
     }
 
     // an initial sync after a reinstall, a change from another device, or a server change all end up here
     @objc private func changed(_ note: Notification) {
-        synced = true
-        state()
         let keys = note.userInfo?[NSUbiquitousKeyValueStoreChangedKeysKey] as? [String] ?? []
-        if keys.contains(key) { get() }
+        DispatchQueue.main.async {
+            self.synced = true
+            self.state()
+            if keys.contains(self.key) { self.get() }
+        }
     }
 }
