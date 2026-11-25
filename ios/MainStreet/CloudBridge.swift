@@ -6,6 +6,9 @@ import Foundation
 // otherwise the copy held is sent back with refused: true for the page to judge. Answers and changes made by another device
 // go back as {t: "cloud", json, at, dev, stamp, refused}, writes as {t: "cloudPut", ok, stamp}, and the state as
 // {t: "cloudState", state}. A read answers from the local store at once; whatever iCloud brings later comes as a change.
+// The store cannot refuse a write, and its local copy can be older than iCloud's, so a put that passes the base check may still
+// land over a newer copy; the page judges every copy that comes back (it knows what it wrote on what). A put is not written, and
+// is answered ok false, while the account is known to be signed out: the page then keeps the game as changed.
 // Until the first sync is in the state reads pending whatever the iCloud identity says, since the identity token is also nil
 // with iCloud Drive off, where the store still syncs. After that, no token reads signedOut.
 final class CloudBridge: NSObject {
@@ -37,6 +40,10 @@ final class CloudBridge: NSObject {
         guard let json = msg["json"] as? String else { return }
         let stamp = msg["stamp"] as? String ?? ""
         let base = msg["base"] as? String ?? ""
+        if synced && FileManager.default.ubiquityIdentityToken == nil {
+            emit(["t": "cloudPut", "ok": false, "stamp": stamp])
+            return
+        }
         if let held = store.dictionary(forKey: key), msg["force"] as? Bool != true, (held["stamp"] as? String ?? "") != base {
             send(refused: true)
             return

@@ -15,7 +15,8 @@ import org.json.JSONObject
 // page to judge. Answers go back as {t: "cloud", json, at, dev, stamp, refused}, writes as {t: "cloudPut", ok, stamp} and the
 // state as {t: "cloudState", state}.
 // Play Games signs the player in by itself at launch; the sign-in screen is opened by this class once per install and after
-// that only from the menu's Sign in button, and a player who is not in keeps the local save. Nothing tells this device that
+// that only from the menu's Sign in button, and a player who is not in keeps the local save. A read or write that comes while
+// the sign-in screen is up waits for its result. Nothing tells this device that
 // another one wrote, so the page asks again when it comes back and every few minutes.
 // When Play Games cannot be reached at all the answer is the state "unavailable" and no copy, never a null copy, which the
 // page would read as "no save".
@@ -44,19 +45,18 @@ class CloudBridge(private val activity: MainActivity) {
                 when {
                     !check.isSuccessful -> then(null)
                     check.result.isAuthenticated -> then(true)
+                    signing -> waiters.add(then)
                     !ask && prefs.getBoolean("asked", false) -> then(false)
                     else -> {
                         prefs.edit().putBoolean("asked", true).apply()
                         waiters.add(then)
-                        if (!signing) {
-                            signing = true
-                            games.signIn().addOnCompleteListener {
-                                val ok = it.isSuccessful && it.result.isAuthenticated
-                                signing = false
-                                val list = ArrayList(waiters)
-                                waiters.clear()
-                                list.forEach { w -> w(ok) }
-                            }
+                        signing = true
+                        games.signIn().addOnCompleteListener {
+                            val ok = it.isSuccessful && it.result.isAuthenticated
+                            signing = false
+                            val list = ArrayList(waiters)
+                            waiters.clear()
+                            list.forEach { w -> w(ok) }
                         }
                     }
                 }
