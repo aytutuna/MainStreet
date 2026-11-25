@@ -266,7 +266,8 @@ function handle(ev) {
     buying = '';
     S.iap.deal = null;
     if (ev.why !== 'cancel') banner('<b>' + tl('shop.failed') + '</b>', 0);
-  } else if (ev.t === 'privacy') $('m-priv').hidden = !ev.required;
+  } else if (ev.t === 'adId') testAdId(ev.id);
+  else if (ev.t === 'privacy') $('m-priv').hidden = !ev.required;
   else if (ev.t === 'ad') adEvent(ev);
   else if (ev.t === 'radio' || ev.t === 'other') radioEvent(ev);
   if (!$('shop').hidden) paintShop();

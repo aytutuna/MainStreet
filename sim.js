@@ -1682,3 +1682,12 @@ function reset() {
 function testIncome(hours) {
   earn(rate() * 3600 * hours);
 }
+
+// every department and place at its last level
+function fillStore() {
+  BIZ.forEach(function (z) { S.b[z.id] = atLevel(z.id, ITEMS[z.id].of.length); });
+  PLACES.forEach(function (p) {
+    S.pi[p.id] = atPlace(p.id, p.of.length);
+    S.pl[p.id] = p.of.length;
+  });
+}

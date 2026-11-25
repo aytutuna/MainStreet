@@ -2329,37 +2329,7 @@ function wire() {
     $('m-reset').textContent = tl('menu.erase');
     $('menu').hidden = true;
   });
-  // the test menu: five taps on the title
-  $('m-title').addEventListener('click', function () {
-    if (++testTaps >= 5) $('test').hidden = false;
-  });
-  [].forEach.call(document.querySelectorAll('#t-speed button'), function (b) {
-    b.addEventListener('click', function () {
-      speed = +b.dataset.s;
-      paintSpeed();
-    });
-  });
-  $('t-hour').addEventListener('click', function () {
-    testIncome(1);
-    nudge();
-  });
-  $('t-gems').addEventListener('click', function () {
-    S.gems += 100;
-    nudge();
-  });
-  $('t-free').addEventListener('click', function () {
-    free = !free;
-    setFree(free);
-    try {
-      localStorage.setItem(FREE_KEY, free ? '1' : '0');
-    } catch (e) {}
-    paintFree();
-    nudge();
-  });
-  $('t-goals').addEventListener('click', function () {
-    finishGoals();
-    updateGoals();
-  });
+  if (window.TESTER) wireTest();
   $('away-ok').addEventListener('click', function () { takeAway(false, 'away-ok'); });
   $('away-x2').addEventListener('click', function () { takeAway(true, 'away-x2'); });
   // WebKit only lets audio start from some events, so listen to all of them
@@ -2391,7 +2361,113 @@ function wire() {
   });
 }
 
-// dev only
+// the test menu exists only in tester builds: five taps on the menu title show it
+var SWEEP = [64, 128, 256, 400];
+var SWEEP_SECS = 600;
+var sweep = null;
+
+function wireTest() {
+  var box = document.createElement('div');
+  box.id = 'test';
+  box.hidden = true;
+  box.innerHTML =
+    '<div class="row" id="t-speed"><button type="button" data-s="1" class="btn alt">x1</button><button type="button" data-s="10" class="btn alt">x10</button><button type="button" data-s="100" class="btn alt">x100</button></div>' +
+    '<div class="row"><button type="button" id="t-hour" class="btn alt">+1 h income</button><button type="button" id="t-gems" class="btn alt">+100 gems</button></div>' +
+    '<button type="button" id="t-free" class="btn alt"></button>' +
+    '<button type="button" id="t-goals" class="btn alt">Finish goals</button>' +
+    '<button type="button" id="t-fill" class="btn alt">Fill store</button>' +
+    '<button type="button" id="t-sweep" class="btn alt">Figure pool sweep</button>' +
+    '<button type="button" id="t-adid" class="btn alt">Ad test id</button>' +
+    '<pre id="t-out" class="small" hidden></pre>';
+  $('m-reset').parentNode.insertBefore(box, $('m-reset'));
+  $('m-title').addEventListener('click', function () {
+    if (++testTaps >= 5) box.hidden = false;
+  });
+  [].forEach.call(box.querySelectorAll('#t-speed button'), function (b) {
+    b.addEventListener('click', function () {
+      speed = +b.dataset.s;
+      paintSpeed();
+    });
+  });
+  $('t-hour').addEventListener('click', function () {
+    testIncome(1);
+    nudge();
+  });
+  $('t-gems').addEventListener('click', function () {
+    S.gems += 100;
+    nudge();
+  });
+  $('t-free').addEventListener('click', function () {
+    free = !free;
+    setFree(free);
+    try {
+      localStorage.setItem(FREE_KEY, free ? '1' : '0');
+    } catch (e) {}
+    paintFree();
+    nudge();
+  });
+  $('t-goals').addEventListener('click', function () {
+    finishGoals();
+    updateGoals();
+  });
+  $('t-fill').addEventListener('click', function () {
+    fillStore();
+    View.refresh();
+    nudge();
+  });
+  $('t-sweep').addEventListener('click', startSweep);
+  $('t-adid').addEventListener('click', function () {
+    if (native()) post({ cmd: 'adId' });
+    else testAdId('');
+  });
+  paintFree();
+  paintSpeed();
+}
+
+function testOut(text) {
+  var o = $('t-out');
+  if (!o) return;
+  o.hidden = false;
+  o.textContent = text;
+}
+
+function testAdId(id) {
+  testOut('Ad test id: ' + (id || 'none'));
+}
+
+// each pool size runs for ten minutes at normal speed; the table shows frames per second and what the store served and
+// earned per minute
+function startSweep() {
+  if (sweep) return;
+  speed = 1;
+  paintSpeed();
+  sweep = { i: 0, rows: [] };
+  sweepStart(performance.now());
+}
+
+function sweepStart(t) {
+  View.pool(SWEEP[sweep.i]);
+  sweep.t = t;
+  sweep.frames = 0;
+  sweep.srv = S.st.srv;
+  sweep.all = S.all;
+}
+
+function sweepFrame(t) {
+  sweep.frames++;
+  var secs = (t - sweep.t) / 1000;
+  if (secs < SWEEP_SECS) {
+    testOut('Pool ' + SWEEP[sweep.i] + ': ' + Math.ceil(SWEEP_SECS - secs) + ' s left\n' + sweep.rows.join('\n'));
+    return;
+  }
+  sweep.rows.push(SWEEP[sweep.i] + ' figures: ' + (sweep.frames / secs).toFixed(1) + ' fps, ' +
+    ((S.st.srv - sweep.srv) * 60 / secs).toFixed(1) + ' shown/min, ' + short((S.all - sweep.all) * 60 / secs) + ' earned/min');
+  if (++sweep.i < SWEEP.length) return sweepStart(t);
+  testOut(sweep.rows.join('\n'));
+  View.pool(64);
+  sweep = null;
+}
+
 function paintFree() {
   $('t-free').textContent = 'Unlimited money: ' + (free ? 'on' : 'off');
 }
@@ -2513,6 +2589,7 @@ function onTap(h) {
 function loop(t) {
   requestAnimationFrame(loop);
   var dt = Math.min(1, (t - lastTick) / 1000);
+  if (sweep) sweepFrame(t);
   tick(dt);
   S.st.t += dt;
   topUp();
@@ -2668,7 +2745,8 @@ function start() {
   try {
     snd = localStorage.getItem(SND_KEY) !== '0';
     vib = localStorage.getItem(BUZZ_KEY) !== '0';
-    free = localStorage.getItem(FREE_KEY) === '1';
+    if (window.TESTER) free = localStorage.getItem(FREE_KEY) === '1';
+    else localStorage.removeItem(FREE_KEY);
     hinted = JSON.parse(localStorage.getItem(HINT_KEY)) || {};
     radio = JSON.parse(localStorage.getItem(RADIO_KEY)) || radio;
     var mx = JSON.parse(localStorage.getItem(MIXER_KEY)) || {};
@@ -2692,7 +2770,6 @@ function start() {
   buildStats();
   shopStart();
   setFree(free);
-  paintFree();
   $('stars').addEventListener('click', openSell);
   $('mtoast').addEventListener('click', hideToast);
   $('warn').addEventListener('click', openStats);

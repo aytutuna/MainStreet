@@ -5036,15 +5036,18 @@ function busy(p) {
   return p.path || p.lane || p.hold;
 }
 
+// how many figures the idle pool hands out; the tester menu's sweep changes it
+var pool = 64;
+
 function spare() {
   var n = 0;
   people.forEach(function (p) { if (busy(p)) n++; });
-  return 64 - n;
+  return pool - n;
 }
 
 function idlePerson() {
   for (var i = 0; i < people.length; i++) if (!busy(people[i]) && !people[i].reg) return people[i];
-  if (people.length >= 64 + regList.length) return null;
+  if (people.length >= pool + regList.length) return null;
   var p = person(people.length * 7 + 3);
   people.push(p);
   return p;
@@ -7478,6 +7481,7 @@ window.View = {
     if (cam) resize();
   },
   ready: function () { return ready; },
+  pool: function (n) { pool = n; },
   event: event,
   refresh: refresh,
   look: applyLook,
