@@ -69,7 +69,7 @@ LANG['zh-Hant'] = {
   'menu.notices_android': '版權所有 The Android Open Source Project 和 JetBrains s.r.o. Apache License 2.0。',
   'menu.version': '版本 {v} ({b})',
   'menu.credits': '模型：Kenney (www.kenney.nl)<br>音效：Kenney；錄音由 Membrans、G4F SFX、The Chris Alan、Gamemaster Audio、SoundBits、3maze、Mechanical Wave、Shapeforms、Airborne Sound、Soundrangers、SmartSoundFX、Kpow Sounds 和 Creative Audio Pool 提供，來自 Sonniss GameAudioGDC 合輯<br>賣場模型：Pipework packs<br>披薩道具：Vira Voloshyn<br>工具：mekmeesk<br>自然：Kay Lousberg (KayKit, www.kaylousberg.com)、Quaternius、Stylised Nature by Elijah Cobden (elijahcobden.itch.io, CC BY 4.0, https://creativecommons.org/licenses/by/4.0/)<br>App 圖示：LimeZu (https://limezu.itch.io/)<br>字型：Lilita One，作者 Juan Montoreano (SIL Open Font License)<br>3D：three.js (threejs.org)',
-  'menu.credits_music': '音樂，來自 Pixabay：Positive Easy Listening by 331music; Feel Good - Feel Good Music by STAROSTIN; Upbeat - Upbeat Music by ViacheslavStarostin; Happy - Happy Music by kulishov; Pop Light by 331music; Shopping - Shopping Music by iepmusic; Summer Pop by Caldena; Ukulele Circus Funk by 51604229; Cheerful - Cheerful Music by JonasBlakewood; Indie Pop by AtlasAudio; Fun Jazz Background by 51604229; Country Pop by Music_for_Creators<br>電台串流由各電台提供，電台名稱屬於其所有者。',
+  'menu.credits_music': '音樂，來自 Pixabay：Positive Easy Listening by 331music; Feel Good - Feel Good Music by STAROSTIN; Upbeat - Upbeat Music by ViacheslavStarostin; Happy - Happy Music by kulishov; Pop Light by 331music; Shopping - Shopping Music by iepmusic; Summer Pop by Caldena; Cheerful - Cheerful Music by JonasBlakewood; Indie Pop by AtlasAudio; Country Pop by Music_for_Creators<br>電台串流由各電台提供，電台名稱屬於其所有者。',
   'radio.title': '電台',
   'radio.volume': '音樂音量',
   'radio.note': '電台透過網路播放，且只在遊戲開啟時播放。',

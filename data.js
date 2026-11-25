@@ -293,10 +293,10 @@ var MIX = [
   { f: 'pop-light', t: 'Pop Light', a: '331music' },
   { f: 'shopping-shopping-music', t: 'Shopping - Shopping Music', a: 'iepmusic' },
   { f: 'summer-pop', t: 'Summer Pop', a: 'Caldena' },
-  { f: 'ukulele-circus-funk', t: 'Ukulele Circus Funk', a: '51604229' },
+  { f: 'ukulele-circus-funk', t: 'Ukulele Circus Funk' },
   { f: 'cheerful-cheerful-music', t: 'Cheerful - Cheerful Music', a: 'JonasBlakewood' },
   { f: 'indie-pop', t: 'Indie Pop', a: 'AtlasAudio' },
-  { f: 'fun-jazz-background', t: 'Fun Jazz Background', a: '51604229' },
+  { f: 'fun-jazz-background', t: 'Fun Jazz Background' },
   { f: 'country-pop', t: 'Country Pop', a: 'Music_for_Creators' }
 ];
 

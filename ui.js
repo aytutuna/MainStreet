@@ -466,7 +466,7 @@ function nowText() {
   if (otherOn) return tl('radio.now.other');
   if (radio.sel === 'off') return tl('radio.now.off');
   if (!snd) return tl('radio.now.sound_off');
-  if (radio.sel === 'mix') return cur ? tl('radio.now.song', { title: MIX[cur.n].t, artist: MIX[cur.n].a }) : tl('radio.mix.name');
+  if (radio.sel === 'mix') return cur ? (MIX[cur.n].a ? tl('radio.now.song', { title: MIX[cur.n].t, artist: MIX[cur.n].a }) : MIX[cur.n].t) : tl('radio.mix.name');
   var s = station(radio.sel);
   if (stState === 'error') return tl('radio.now.error');
   if (stState === 'paused') return tl('radio.now.paused', { name: s.name });
