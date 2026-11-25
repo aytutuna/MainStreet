@@ -390,7 +390,6 @@ LANG['ta'] = {
   'shop.chip_rep': 'புகழ்',
   'shop.starter_ribbon': 'தொடக்க ஆஃபர்',
   'shop.buy_once': 'ஒருமுறை வாங்கு',
-  'shop.most_popular': 'மிகப் பிரபலம்',
   'shop.best_value': 'சிறந்த மதிப்பு',
   'shop.badge_bonus': '+{n}% போனஸ்',
   'shop.badge_more': '+{n}% ரத்தினம்',

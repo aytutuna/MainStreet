@@ -388,7 +388,6 @@ LANG['zh-Hans'] = {
   'shop.chip_rep': '声望',
   'shop.starter_ribbon': '新手特惠',
   'shop.buy_once': '限购一次',
-  'shop.most_popular': '最受欢迎',
   'shop.best_value': '超值之选',
   'shop.badge_bonus': '额外 +{n}%',
   'shop.badge_more': '钻石 +{n}%',

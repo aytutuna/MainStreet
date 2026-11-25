@@ -394,7 +394,6 @@ LANG['ru'] = {
   'shop.chip_rep': 'реп.',
   'shop.starter_ribbon': 'Стартовый набор',
   'shop.buy_once': 'Один раз',
-  'shop.most_popular': 'Самый популярный',
   'shop.best_value': 'Самый выгодный',
   'shop.badge_bonus': '+{n}% бонус',
   'shop.badge_more': '+{n}% кристаллов',

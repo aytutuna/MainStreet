@@ -390,7 +390,6 @@ LANG['de'] = {
   'shop.chip_rep': 'Ruf',
   'shop.starter_ribbon': 'Starter-Deal',
   'shop.buy_once': 'Einmal kaufen',
-  'shop.most_popular': 'Am beliebtesten',
   'shop.best_value': 'Bestes Angebot',
   'shop.badge_bonus': '+{n} % Bonus',
   'shop.badge_more': '+{n} % Edelsteine',

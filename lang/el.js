@@ -390,7 +390,6 @@ LANG['el'] = {
   'shop.chip_rep': 'φήμη',
   'shop.starter_ribbon': 'Προσφορά εκκίνησης',
   'shop.buy_once': 'Αγορά μία φορά',
-  'shop.most_popular': 'Δημοφιλές',
   'shop.best_value': 'Καλύτερη αξία',
   'shop.badge_bonus': '+{n}% μπόνους',
   'shop.badge_more': '+{n}% πετράδια',

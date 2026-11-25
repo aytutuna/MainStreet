@@ -390,7 +390,6 @@ LANG['tr'] = {
   'shop.chip_rep': 'itibar',
   'shop.starter_ribbon': 'Başlangıç fırsatı',
   'shop.buy_once': 'Bir kez al',
-  'shop.most_popular': 'En popüler',
   'shop.best_value': 'En avantajlı',
   'shop.badge_bonus': '+%{n} bonus',
   'shop.badge_more': '+%{n} elmas',

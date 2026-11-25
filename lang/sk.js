@@ -394,7 +394,6 @@ LANG['sk'] = {
   'shop.chip_rep': 'rep.',
   'shop.starter_ribbon': 'Štartovacia ponuka',
   'shop.buy_once': 'Kúpiť raz',
-  'shop.most_popular': 'Najpopulárnejšie',
   'shop.best_value': 'Najvýhodnejšie',
   'shop.badge_bonus': '+{n} % bonus',
   'shop.badge_more': '+{n} % drahokamov',

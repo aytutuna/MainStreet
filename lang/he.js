@@ -392,7 +392,6 @@ LANG['he'] = {
   'shop.chip_rep': 'מוניטין',
   'shop.starter_ribbon': 'מבצע פתיחה',
   'shop.buy_once': 'קנייה חד-פעמית',
-  'shop.most_popular': 'הכי פופולרי',
   'shop.best_value': 'הכי משתלם',
   'shop.badge_bonus': '+{n}% בונוס',
   'shop.badge_more': '+{n}% אבני חן',

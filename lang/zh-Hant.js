@@ -384,7 +384,6 @@ LANG['zh-Hant'] = {
   'shop.chip_rep': '聲望',
   'shop.starter_ribbon': '新手優惠',
   'shop.buy_once': '限購一次',
-  'shop.most_popular': '最受歡迎',
   'shop.best_value': '最划算',
   'shop.badge_bonus': '加贈 {n}%',
   'shop.badge_more': '寶石 +{n}%',

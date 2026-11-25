@@ -390,7 +390,6 @@ LANG['te'] = {
   'shop.chip_rep': 'ప్రతిష్ఠ',
   'shop.starter_ribbon': 'స్టార్టర్ డీల్',
   'shop.buy_once': 'ఒక్కసారే కొనండి',
-  'shop.most_popular': 'అత్యంత ప్రాచుర్యం',
   'shop.best_value': 'ఉత్తమ విలువ',
   'shop.badge_bonus': '+{n}% బోనస్',
   'shop.badge_more': '+{n}% రత్నాలు',

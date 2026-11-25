@@ -388,7 +388,6 @@ LANG['th'] = {
   'shop.chip_rep': 'ชื่อเสียง',
   'shop.starter_ribbon': 'ดีลเริ่มต้น',
   'shop.buy_once': 'ซื้อครั้งเดียว',
-  'shop.most_popular': 'ยอดนิยม',
   'shop.best_value': 'คุ้มที่สุด',
   'shop.badge_bonus': 'โบนัส +{n}%',
   'shop.badge_more': 'เพชร +{n}%',

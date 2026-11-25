@@ -102,7 +102,7 @@ final class StoreBridge: NSObject, WKScriptMessageHandler, PurchasesDelegate {
         Task { @MainActor in
             let list = await Purchases.shared.products(ids)
             for p in list { found[p.productIdentifier] = p }
-            emit(["t": "products", "list": list.map { ["id": $0.productIdentifier, "price": $0.localizedPriceString] }])
+            emit(["t": "products", "list": list.map { ["id": $0.productIdentifier, "price": $0.localizedPriceString, "amount": NSDecimalNumber(decimal: $0.price).doubleValue, "currency": $0.currencyCode ?? ""] }])
             await owned(restored: false)
         }
     }

@@ -390,7 +390,6 @@ LANG['ur'] = {
   'shop.chip_rep': 'ساکھ',
   'shop.starter_ribbon': 'اسٹارٹر ڈیل',
   'shop.buy_once': 'ایک بار خریدیں',
-  'shop.most_popular': 'سب سے مقبول',
   'shop.best_value': 'بہترین قیمت',
   'shop.badge_bonus': '+{n}% بونس',
   'shop.badge_more': '+{n}% جیمز',

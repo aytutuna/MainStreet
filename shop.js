@@ -27,6 +27,7 @@
 // Ids are the full store ids. In a plain browser there is no store handler and nothing here shows.
 var PID = 'com.aytutuna.mainstreet.';
 var prices = {};
+var amounts = {};
 var storeUp = false;
 var buying = '';
 var adOk = { reward: false };
@@ -239,10 +240,12 @@ function featCard(p) {
   return '<div class="feat" data-k="' + p.id + '"><u><img src="assets/' + p.ic + '.png" alt=""></u><div><b>' + p.name + '</b><span>' + p.line + '</span></div>' + shopBtn(p) + '</div>';
 }
 
-function gemTile(p, i, base, deal) {
+function gemTile(p, i, first, deal) {
   var on = deal && deal.id === p.id;
-  var more = Math.round((p.gems / p.usd / base - 1) * 100);
-  var tag = p.id === 'gems2' ? tl('shop.most_popular') : p.id === 'gems4' ? tl('shop.best_value') : '';
+  var a = amounts[PID + p.id];
+  var a1 = amounts[PID + first.id];
+  var more = a && a1 ? Math.round((p.gems / a / (first.gems / a1) - 1) * 100) : 0;
+  var tag = p.id === 'gems4' ? tl('shop.best_value') : '';
   var badge = on ? tl('shop.badge_bonus', { n: Math.round(DEAL.bonus * 100) }) : more > 0 ? tl('shop.badge_more', { n: more }) : '';
   return '<div class="tile' + (on ? ' deal' : '') + '" data-k="' + p.id + '">' + (tag ? '<i class="rib">' + tag + '</i>' : '') +
     (badge ? '<em>' + badge + '</em>' : '') + pile(i) + '<b>' + tl('shop.gems', { n: p.gems }) + '</b>' +
@@ -252,11 +255,10 @@ function gemTile(p, i, base, deal) {
 function paintShop() {
   var starter = product('starter1');
   var gems = PRODUCTS.filter(function (p) { return p.gems; });
-  var base = gems[0].gems / gems[0].usd;
   var deal = dealNow();
   var html = S.iap.starter || starterLeft(true) < 0 ? '' : heroCard(starter);
   html += '<div class="feats">' + featCard(product('noads')) + featCard(product('x2')) + '</div>';
-  html += '<h3 class="sec">' + tl('shop.gems_heading') + '</h3><div class="tiles">' + gems.map(function (p, i) { return gemTile(p, i, base, deal); }).join('') + '</div>';
+  html += '<h3 class="sec">' + tl('shop.gems_heading') + '</h3><div class="tiles">' + gems.map(function (p, i) { return gemTile(p, i, gems[0], deal); }).join('') + '</div>';
   $('shop-list').innerHTML = html;
   $('shop-txt').textContent = tl(storeUp ? 'shop.intro' : 'shop.unavailable');
   $('shop-restore').disabled = !storeUp || !!buying;
@@ -320,7 +322,11 @@ window.nativeStore = function (ev) {
 function handle(ev) {
   if (ev.t === 'products') {
     prices = {};
-    (ev.list || []).forEach(function (p) { prices[p.id] = p.price; });
+    amounts = {};
+    (ev.list || []).forEach(function (p) {
+      prices[p.id] = p.price;
+      if (p.amount > 0) amounts[p.id] = p.amount;
+    });
     storeUp = !!(ev.list && ev.list.length);
   } else if (ev.t === 'owned') {
     (ev.ids || []).forEach(function (id) { own(id.slice(PID.length)); });

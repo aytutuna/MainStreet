@@ -367,7 +367,6 @@ LANG['no'] = {
   'shop.chip_rep': 'omd.',
   'shop.starter_ribbon': 'Starttilbud',
   'shop.buy_once': 'Kjøp én gang',
-  'shop.most_popular': 'Mest populær',
   'shop.best_value': 'Best verdi',
   'shop.badge_bonus': '+{n} % bonus',
   'shop.badge_more': '+{n} % juveler',

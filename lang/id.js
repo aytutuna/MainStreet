@@ -388,7 +388,6 @@ LANG['id'] = {
   'shop.chip_rep': 'rep',
   'shop.starter_ribbon': 'Promo pemula',
   'shop.buy_once': 'Beli sekali',
-  'shop.most_popular': 'Terlaris',
   'shop.best_value': 'Paling hemat',
   'shop.badge_bonus': 'Bonus +{n}%',
   'shop.badge_more': 'Gem +{n}%',

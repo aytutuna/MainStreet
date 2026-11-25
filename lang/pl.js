@@ -479,7 +479,6 @@ LANG['pl'] = {
   'shop.chip_rep': 'rep.',
   'shop.starter_ribbon': 'Oferta startowa',
   'shop.buy_once': 'Jednorazowo',
-  'shop.most_popular': 'Najpopularniejszy',
   'shop.best_value': 'Najlepsza cena',
   'shop.badge_bonus': '+{n}% bonusu',
   'shop.badge_more': '+{n}% klejnotów',

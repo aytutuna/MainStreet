@@ -390,7 +390,6 @@ LANG['da'] = {
   'shop.chip_rep': 'ry',
   'shop.starter_ribbon': 'Startertilbud',
   'shop.buy_once': 'Køb én gang',
-  'shop.most_popular': 'Mest populær',
   'shop.best_value': 'Bedste værdi',
   'shop.badge_bonus': '+{n}% bonus',
   'shop.badge_more': '+{n}% diamanter',

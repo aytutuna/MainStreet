@@ -392,7 +392,6 @@ LANG['ro'] = {
   'shop.chip_rep': 'rep.',
   'shop.starter_ribbon': 'Ofertă de start',
   'shop.buy_once': 'Doar o dată',
-  'shop.most_popular': 'Cel mai popular',
   'shop.best_value': 'Cel mai avantajos',
   'shop.badge_bonus': '+{n}% bonus',
   'shop.badge_more': '+{n}% nestemate',

@@ -390,7 +390,6 @@ LANG['pa'] = {
   'shop.chip_rep': 'ਸਾਖ',
   'shop.starter_ribbon': 'ਸ਼ੁਰੂਆਤੀ ਡੀਲ',
   'shop.buy_once': 'ਇੱਕ ਵਾਰ ਖਰੀਦੋ',
-  'shop.most_popular': 'ਸਭ ਤੋਂ ਮਸ਼ਹੂਰ',
   'shop.best_value': 'ਸਭ ਤੋਂ ਵਧੀਆ ਮੁੱਲ',
   'shop.badge_bonus': '+{n}% ਬੋਨਸ',
   'shop.badge_more': '+{n}% ਜੈਮ',

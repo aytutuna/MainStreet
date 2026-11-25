@@ -394,7 +394,6 @@ LANG['uk'] = {
   'shop.chip_rep': 'реп.',
   'shop.starter_ribbon': 'Стартова пропозиція',
   'shop.buy_once': 'Купити раз',
-  'shop.most_popular': 'Найпопулярніше',
   'shop.best_value': 'Найвигідніше',
   'shop.badge_bonus': '+{n}% бонус',
   'shop.badge_more': '+{n}% самоцвітів',

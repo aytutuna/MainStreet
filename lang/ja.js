@@ -384,7 +384,6 @@ LANG['ja'] = {
   'shop.chip_rep': '評判',
   'shop.starter_ribbon': 'スターター特価',
   'shop.buy_once': '1回限り',
-  'shop.most_popular': '一番人気',
   'shop.best_value': '一番お得',
   'shop.badge_bonus': '+{n}%ボーナス',
   'shop.badge_more': '+{n}%ジェム',

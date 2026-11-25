@@ -390,7 +390,6 @@ LANG['ml'] = {
   'shop.chip_rep': 'പ്രശസ്തി',
   'shop.starter_ribbon': 'സ്റ്റാർട്ടർ ഓഫർ',
   'shop.buy_once': 'ഒരിക്കൽ വാങ്ങൂ',
-  'shop.most_popular': 'ഏറ്റവും പ്രിയം',
   'shop.best_value': 'മികച്ച മൂല്യം',
   'shop.badge_bonus': '+{n}% ബോണസ്',
   'shop.badge_more': '+{n}% രത്നം',

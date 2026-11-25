@@ -390,7 +390,6 @@ LANG['gu'] = {
   'shop.chip_rep': 'પ્રતિષ્ઠા',
   'shop.starter_ribbon': 'સ્ટાર્ટર ઑફર',
   'shop.buy_once': 'એક જ વાર',
-  'shop.most_popular': 'સૌથી લોકપ્રિય',
   'shop.best_value': 'સૌથી સારો સોદો',
   'shop.badge_bonus': '+{n}% બોનસ',
   'shop.badge_more': '+{n}% રત્નો',

@@ -67,7 +67,7 @@ class StoreBridge(private val activity: MainActivity) {
             override fun onReceived(storeProducts: List<StoreProduct>) {
                 storeProducts.forEach { found[it.id] = it }
                 val out = JSONArray()
-                storeProducts.forEach { out.put(JSONObject().put("id", it.id).put("price", it.price.formatted)) }
+                storeProducts.forEach { out.put(JSONObject().put("id", it.id).put("price", it.price.formatted).put("amount", it.price.amountMicros / 1e6).put("currency", it.price.currencyCode)) }
                 activity.emit(JSONObject().put("t", "products").put("list", out))
                 owned()
             }

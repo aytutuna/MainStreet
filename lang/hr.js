@@ -392,7 +392,6 @@ LANG['hr'] = {
   'shop.chip_rep': 'ugl.',
   'shop.starter_ribbon': 'Startna ponuda',
   'shop.buy_once': 'Jednokratno',
-  'shop.most_popular': 'Najpopularnije',
   'shop.best_value': 'Najbolja cijena',
   'shop.badge_bonus': '+{n}% bonus',
   'shop.badge_more': '+{n}% dragulja',

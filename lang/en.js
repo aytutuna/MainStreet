@@ -614,7 +614,6 @@ LANG['en'] = {
   'shop.starter_ribbon': 'Starter deal',
   'shop.buy_once': 'Buy once',
   // Ribbons on gem packs, keep short.
-  'shop.most_popular': 'Most popular',
   'shop.best_value': 'Best value',
   // Badge on a gem pack. {n} is a percentage. Keep short.
   'shop.badge_bonus': '+{n}% bonus',

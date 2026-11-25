@@ -390,7 +390,6 @@ LANG['or'] = {
   'shop.chip_rep': 'ସୁନାମ',
   'shop.starter_ribbon': 'ଆରମ୍ଭ ଅଫର୍',
   'shop.buy_once': 'ଥରେ କିଣ',
-  'shop.most_popular': 'ସବୁଠାରୁ ଲୋକପ୍ରିୟ',
   'shop.best_value': 'ସର୍ବୋତ୍ତମ ମୂଲ୍ୟ',
   'shop.badge_bonus': '+{n}% ବୋନସ୍',
   'shop.badge_more': '+{n}% ରତ୍ନ',

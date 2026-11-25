@@ -390,7 +390,6 @@ LANG['nl'] = {
   'shop.chip_rep': 'rep',
   'shop.starter_ribbon': 'Startaanbieding',
   'shop.buy_once': 'Eenmalig',
-  'shop.most_popular': 'Meest gekozen',
   'shop.best_value': 'Beste waarde',
   'shop.badge_bonus': '+{n}% bonus',
   'shop.badge_more': '+{n}% edelstenen',

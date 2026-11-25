@@ -392,7 +392,6 @@ LANG['es-ES'] = {
   'shop.chip_rep': 'rep.',
   'shop.starter_ribbon': 'Oferta inicial',
   'shop.buy_once': 'Compra única',
-  'shop.most_popular': 'Más popular',
   'shop.best_value': 'Mejor valor',
   'shop.badge_bonus': '+{n} % extra',
   'shop.badge_more': '+{n} % gemas',

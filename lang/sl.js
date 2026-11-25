@@ -479,7 +479,6 @@ LANG['sl'] = {
   'shop.chip_rep': 'ugled',
   'shop.starter_ribbon': 'Začetna ponudba',
   'shop.buy_once': 'Kupi enkrat',
-  'shop.most_popular': 'Najbolj priljubljeno',
   'shop.best_value': 'Najboljša vrednost',
   'shop.badge_bonus': '+{n} % bonusa',
   'shop.badge_more': '+{n} % draguljev',

@@ -388,7 +388,6 @@ LANG['vi'] = {
   'shop.chip_rep': 'uy tín',
   'shop.starter_ribbon': 'Ưu đãi khởi đầu',
   'shop.buy_once': 'Mua một lần',
-  'shop.most_popular': 'Phổ biến nhất',
   'shop.best_value': 'Hời nhất',
   'shop.badge_bonus': 'Thưởng +{n}%',
   'shop.badge_more': '+{n}% ngọc',

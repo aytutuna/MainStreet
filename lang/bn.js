@@ -390,7 +390,6 @@ LANG['bn'] = {
   'shop.chip_rep': 'সুনাম',
   'shop.starter_ribbon': 'স্টার্টার অফার',
   'shop.buy_once': 'একবারই কেনা যায়',
-  'shop.most_popular': 'সবচেয়ে জনপ্রিয়',
   'shop.best_value': 'সেরা মূল্য',
   'shop.badge_bonus': '+{n}% বোনাস',
   'shop.badge_more': '+{n}% জেম',

@@ -390,7 +390,6 @@ LANG['hi'] = {
   'shop.chip_rep': 'साख',
   'shop.starter_ribbon': 'स्टार्टर डील',
   'shop.buy_once': 'एक बार खरीदें',
-  'shop.most_popular': 'सबसे लोकप्रिय',
   'shop.best_value': 'सबसे किफ़ायती',
   'shop.badge_bonus': '+{n}% बोनस',
   'shop.badge_more': '+{n}% जेम',

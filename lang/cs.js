@@ -394,7 +394,6 @@ LANG['cs'] = {
   'shop.chip_rep': 'rep.',
   'shop.starter_ribbon': 'Startovní nabídka',
   'shop.buy_once': 'Jen jednou',
-  'shop.most_popular': 'Nejoblíbenější',
   'shop.best_value': 'Nejvýhodnější',
   'shop.badge_bonus': '+{n} % bonus',
   'shop.badge_more': '+{n} % drahokamů',

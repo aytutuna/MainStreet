@@ -390,7 +390,6 @@ LANG['hu'] = {
   'shop.chip_rep': 'hírnév',
   'shop.starter_ribbon': 'Kezdőajánlat',
   'shop.buy_once': 'Egyszer vehető',
-  'shop.most_popular': 'Legnépszerűbb',
   'shop.best_value': 'Legjobb ár',
   'shop.badge_bonus': '+{n}% bónusz',
   'shop.badge_more': '+{n}% drágakő',

@@ -363,7 +363,6 @@ LANG['ar'] = {
   "shop.chip_rep": "سمعة",
   "shop.starter_ribbon": "عرض البداية",
   "shop.buy_once": "لمرة واحدة",
-  "shop.most_popular": "الأكثر شعبية",
   "shop.best_value": "أفضل قيمة",
   "shop.badge_bonus": "+{n}% إضافية",
   "shop.badge_more": "+{n}% جواهر",

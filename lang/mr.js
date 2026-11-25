@@ -390,7 +390,6 @@ LANG['mr'] = {
   'shop.chip_rep': 'प्रतिष्ठा',
   'shop.starter_ribbon': 'स्टार्टर ऑफर',
   'shop.buy_once': 'एकदाच घ्या',
-  'shop.most_popular': 'सर्वात लोकप्रिय',
   'shop.best_value': 'सर्वोत्तम किंमत',
   'shop.badge_bonus': '+{n}% बोनस',
   'shop.badge_more': '+{n}% रत्ने',

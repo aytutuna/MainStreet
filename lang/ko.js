@@ -363,7 +363,6 @@ LANG['ko'] = {
   'shop.chip_rep': '평판',
   'shop.starter_ribbon': '스타터 특가',
   'shop.buy_once': '한 번만 구매',
-  'shop.most_popular': '인기 1위',
   'shop.best_value': '가성비 최고',
   'shop.badge_bonus': '+{n}% 보너스',
   'shop.badge_more': '+{n}% 보석',

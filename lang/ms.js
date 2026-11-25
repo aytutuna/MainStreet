@@ -388,7 +388,6 @@ LANG['ms'] = {
   'shop.chip_rep': 'rep',
   'shop.starter_ribbon': 'Tawaran permulaan',
   'shop.buy_once': 'Beli sekali',
-  'shop.most_popular': 'Paling popular',
   'shop.best_value': 'Paling berbaloi',
   'shop.badge_bonus': '+{n}% bonus',
   'shop.badge_more': '+{n}% permata',

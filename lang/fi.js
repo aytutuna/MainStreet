@@ -390,7 +390,6 @@ LANG['fi'] = {
   'shop.chip_rep': 'maine',
   'shop.starter_ribbon': 'Aloitustarjous',
   'shop.buy_once': 'Osta kerran',
-  'shop.most_popular': 'Suosituin',
   'shop.best_value': 'Paras arvo',
   'shop.badge_bonus': '+{n} % bonus',
   'shop.badge_more': '+{n} % jalokiviä',

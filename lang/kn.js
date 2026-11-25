@@ -369,7 +369,6 @@ LANG['kn'] = {
   'shop.chip_rep': 'ಖ್ಯಾತಿ',
   'shop.starter_ribbon': 'ಸ್ಟಾರ್ಟರ್ ಆಫರ್',
   'shop.buy_once': 'ಒಮ್ಮೆ ಮಾತ್ರ',
-  'shop.most_popular': 'ಅತ್ಯಂತ ಜನಪ್ರಿಯ',
   'shop.best_value': 'ಉತ್ತಮ ಮೌಲ್ಯ',
   'shop.badge_bonus': '+{n}% ಬೋನಸ್',
   'shop.badge_more': '+{n}% ರತ್ನ',

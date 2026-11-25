@@ -390,7 +390,6 @@ LANG['sv'] = {
   'shop.chip_rep': 'rykte',
   'shop.starter_ribbon': 'Startpaket',
   'shop.buy_once': 'Köp en gång',
-  'shop.most_popular': 'Mest populär',
   'shop.best_value': 'Bäst värde',
   'shop.badge_bonus': '+{n} % bonus',
   'shop.badge_more': '+{n} % juveler',
