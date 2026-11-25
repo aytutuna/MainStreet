@@ -2,8 +2,8 @@ import Foundation
 
 // The save the page shares between devices: {cmd: "cloudPut", json, at, dev} writes it to iCloud's key-value store and
 // {cmd: "cloudGet"} / {cmd: "cloudState"} ask for it. Answers and changes made by another device go back as
-// {t: "cloud", json, at, dev} and {t: "cloudState", state}. The state is a best guess from the iCloud identity: with no
-// iCloud account (the usual Simulator case) it reads signedOut, even though the store may still sync with iCloud Drive off.
+// {t: "cloud", json, at, dev} and {t: "cloudState", state}. Until the first sync is in it reads pending whatever the iCloud identity says, since the
+// identity token is also nil with iCloud Drive off, where the store still syncs. After that, no token reads signedOut.
 final class CloudBridge: NSObject {
     private let key = "save"
     private let store = NSUbiquitousKeyValueStore.default
@@ -57,7 +57,7 @@ final class CloudBridge: NSObject {
     }
 
     func state() {
-        let value = FileManager.default.ubiquityIdentityToken == nil ? "signedOut" : synced ? "available" : "pending"
+        let value = !synced ? "pending" : FileManager.default.ubiquityIdentityToken == nil ? "signedOut" : "available"
         emit(["t": "cloudState", "state": value])
     }
 
