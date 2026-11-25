@@ -10,6 +10,9 @@ final class CloudBridge: NSObject {
     private let emit: ([String: Any]) -> Void
     // set once iCloud has delivered a change, or after a wait for the first sync of a new install
     private var synced = false
+    // a change from iCloud arrived since the last get(); read counts the get() calls so only the latest one's wait answers
+    private var heard = false
+    private var read = 0
 
     init(emit: @escaping ([String: Any]) -> Void) {
         self.emit = emit
@@ -36,12 +39,21 @@ final class CloudBridge: NSObject {
     }
 
     // The local copy answers at once, marked fresh: false because iCloud may not have delivered the other devices' writes yet;
-    // the page can take it but does not write over the cloud on it. The same copy is sent again as fresh once iCloud has had a
-    // few seconds, and a change from another device is always sent as fresh.
+    // the page can take it but does not write over the cloud on it. It becomes fresh when iCloud has reported a change since
+    // the last read, or, since iCloud says nothing when nothing differs, after a wait that is only a guess at "synced".
     func get() {
         store.synchronize()
+        read += 1
+        let mine = read
+        if heard {
+            heard = false
+            send(fresh: true)
+            return
+        }
         send(fresh: false)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 3) { [weak self] in self?.send(fresh: true) }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 8) { [weak self] in
+            if let self = self, self.read == mine { self.send(fresh: true) }
+        }
     }
 
     private func send(fresh: Bool) {
@@ -63,6 +75,7 @@ final class CloudBridge: NSObject {
         let keys = note.userInfo?[NSUbiquitousKeyValueStoreChangedKeysKey] as? [String] ?? []
         DispatchQueue.main.async {
             self.synced = true
+            self.heard = true
             self.state()
             if keys.contains(self.key) { self.send(fresh: true) }
         }
