@@ -1,5 +1,6 @@
 package com.aytutuna.mainstreet
 
+import android.content.Context
 import com.google.android.gms.games.PlayGames
 import com.google.android.gms.games.PlayGamesSdk
 import com.google.android.gms.games.SnapshotsClient
@@ -7,16 +8,21 @@ import com.google.android.gms.games.snapshot.Snapshot
 import com.google.android.gms.games.snapshot.SnapshotMetadataChange
 import org.json.JSONObject
 
-// The save the page shares between devices, kept as one Play Games saved game: {cmd: "cloudPut", json, at, dev} writes it,
-// {cmd: "cloudGet"} / {cmd: "cloudState"} ask for it. Answers go back as {t: "cloud", json, at, dev} and {t: "cloudState", state}.
-// Play Games signs the player in by itself at launch; a player who is not in is asked once per launch, and declining keeps the
-// game on the local save. Nothing tells this device that another one wrote, so the page asks again when it comes back.
-// The state stays "pending" until a read has got through, so the page does not start a fresh game over a save it could not see.
-// A read that cannot open the snapshot gets no answer at all (a null copy would read as "no save"); the page asks again every few seconds and writes nothing until a read has answered.
+// The save the page shares between devices, kept as one Play Games saved game: {cmd: "cloudPut", json, at, dev, stamp, base,
+// force} writes it, {cmd: "cloudGet"} / {cmd: "cloudState"} ask for it and {cmd: "cloudSignIn"} opens the sign-in. The copy
+// carries the stamp its writer gave it. A put is written only while the saved game still holds the stamp the page called its
+// base (or when force is set, to erase); otherwise nothing is written and the copy held goes back with refused: true for the
+// page to judge. Answers go back as {t: "cloud", json, at, dev, stamp, refused}, writes as {t: "cloudPut", ok, stamp} and the
+// state as {t: "cloudState", state}.
+// Play Games signs the player in by itself at launch; the sign-in screen is opened by this class once per install and after
+// that only from the menu's Sign in button, and a player who is not in keeps the local save. Nothing tells this device that
+// another one wrote, so the page asks again when it comes back and every few minutes.
+// When Play Games cannot be reached at all the answer is the state "unavailable" and no copy, never a null copy, which the
+// page would read as "no save".
 class CloudBridge(private val activity: MainActivity) {
-    private val signIn by lazy { PlayGames.getGamesSignInClient(activity) }
+    private val games by lazy { PlayGames.getGamesSignInClient(activity) }
     private val snapshots by lazy { PlayGames.getSnapshotsClient(activity) }
-    private var declined = false
+    private val prefs = activity.getSharedPreferences("cloud", Context.MODE_PRIVATE)
     private var signing = false
     private val waiters = ArrayList<(Boolean?) -> Unit>()
     private var read = false
@@ -32,21 +38,21 @@ class CloudBridge(private val activity: MainActivity) {
     }
 
     // true when signed in, false when not, null when Play Games cannot be reached at all
-    private fun signedIn(then: (Boolean?) -> Unit) {
+    private fun signedIn(ask: Boolean, then: (Boolean?) -> Unit) {
         try {
-            signIn.isAuthenticated.addOnCompleteListener { check ->
+            games.isAuthenticated.addOnCompleteListener { check ->
                 when {
                     !check.isSuccessful -> then(null)
                     check.result.isAuthenticated -> then(true)
-                    declined -> then(false)
+                    !ask && prefs.getBoolean("asked", false) -> then(false)
                     else -> {
+                        prefs.edit().putBoolean("asked", true).apply()
                         waiters.add(then)
                         if (!signing) {
                             signing = true
-                            signIn.signIn().addOnCompleteListener {
+                            games.signIn().addOnCompleteListener {
                                 val ok = it.isSuccessful && it.result.isAuthenticated
                                 signing = false
-                                declined = !ok
                                 val list = ArrayList(waiters)
                                 waiters.clear()
                                 list.forEach { w -> w(ok) }
@@ -60,28 +66,31 @@ class CloudBridge(private val activity: MainActivity) {
         }
     }
 
-    fun state() = signedIn {
-        activity.emit(JSONObject().put("t", "cloudState").put("state", when (it) { true -> if (read) "available" else "pending"; false -> "signedOut"; null -> "unavailable" }))
+    private fun state(value: String) = activity.emit(JSONObject().put("t", "cloudState").put("state", value))
+
+    fun state() = signedIn(false) {
+        state(when (it) { true -> if (read) "available" else "pending"; false -> "signedOut"; null -> "unavailable" })
     }
 
-    fun get() = signedIn { ok ->
+    // the Sign in button of the menu
+    fun signIn() = signedIn(true) {
+        state()
+        if (it == true) get()
+    }
+
+    fun get() = signedIn(false) { ok ->
         if (ok != true) {
-            none()
+            state(if (ok == null) "unavailable" else "signedOut")
             return@signedIn
         }
         open({}) { snap ->
-            val saved = try {
-                JSONObject(String(snap.snapshotContents.readFully()))
-            } catch (e: Exception) {
-                null
-            }
+            val saved = held(snap)
             snapshots.discardAndClose(snap)
             if (!read) {
                 read = true
-                activity.emit(JSONObject().put("t", "cloudState").put("state", "available"))
+                state("available")
             }
-            activity.emit(JSONObject().put("t", "cloud").put("json", saved?.optString("json") ?: JSONObject.NULL)
-                .put("at", saved?.optLong("at") ?: 0).put("dev", saved?.optString("dev") ?: ""))
+            copy(saved, false)
         }
     }
 
@@ -91,20 +100,27 @@ class CloudBridge(private val activity: MainActivity) {
             return
         }
         writing = true
-        signedIn { ok ->
-            if (ok != true) return@signedIn done()
-            open({ done(false) }) { snap ->
-                val body = JSONObject().put("json", msg.optString("json")).put("at", msg.optLong("at")).put("dev", msg.optString("dev"))
+        val stamp = msg.optString("stamp")
+        signedIn(false) { ok ->
+            if (ok != true) return@signedIn done(stamp, false)
+            open({ done(stamp, false) }) { snap ->
+                val saved = held(snap)
+                if (!msg.optBoolean("force") && saved != null && saved.optString("stamp") != msg.optString("base")) {
+                    snapshots.discardAndClose(snap)
+                    copy(saved, true)
+                    return@open done(stamp, null)
+                }
+                val body = JSONObject().put("json", msg.optString("json")).put("at", msg.optLong("at")).put("dev", msg.optString("dev")).put("stamp", stamp)
                 snap.snapshotContents.writeBytes(body.toString().toByteArray())
                 snapshots.commitAndClose(snap, SnapshotMetadataChange.Builder().setDescription(activity.getString(R.string.notification_title)).build())
-                    .addOnCompleteListener { done(it.isSuccessful) }
+                    .addOnCompleteListener { done(stamp, it.isSuccessful) }
             }
         }
     }
 
-    // a write that was tried and did not land is reported so the page sends the save again
-    private fun done(ok: Boolean = true) {
-        if (!ok) activity.emit(JSONObject().put("t", "cloudPut").put("ok", false))
+    // a write is reported as done or failed so the page sends the save again; null is a refusal, answered by the copy held
+    private fun done(stamp: String, ok: Boolean?) {
+        if (ok != null) activity.emit(JSONObject().put("t", "cloudPut").put("ok", ok).put("stamp", stamp))
         writing = false
         waiting?.let {
             waiting = null
@@ -112,7 +128,20 @@ class CloudBridge(private val activity: MainActivity) {
         }
     }
 
-    private fun none() = activity.emit(JSONObject().put("t", "cloud").put("json", JSONObject.NULL).put("at", 0).put("dev", ""))
+    // what the saved game holds, null when it is empty or cannot be read
+    private fun held(snap: Snapshot): JSONObject? {
+        val saved = try {
+            JSONObject(String(snap.snapshotContents.readFully()))
+        } catch (e: Exception) {
+            null
+        }
+        return if (saved?.optString("json").isNullOrEmpty()) null else saved
+    }
+
+    private fun copy(saved: JSONObject?, refused: Boolean) = activity.emit(
+        JSONObject().put("t", "cloud").put("json", saved?.optString("json") ?: JSONObject.NULL).put("at", saved?.optLong("at") ?: 0)
+            .put("dev", saved?.optString("dev") ?: "").put("stamp", saved?.optString("stamp") ?: "").put("refused", refused)
+    )
 
     private fun open(fail: () -> Unit, use: (Snapshot) -> Unit) {
         snapshots.open("save", true, SnapshotsClient.RESOLUTION_POLICY_MOST_RECENTLY_MODIFIED).addOnCompleteListener { t ->

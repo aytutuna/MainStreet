@@ -1,17 +1,19 @@
 import Foundation
 
-// The save the page shares between devices: {cmd: "cloudPut", json, at, dev} writes it to iCloud's key-value store and
-// {cmd: "cloudGet"} / {cmd: "cloudState"} ask for it. Answers and changes made by another device go back as
-// {t: "cloud", json, at, dev} and {t: "cloudState", state}. Until the first sync is in it reads pending whatever the iCloud identity says, since the
-// identity token is also nil with iCloud Drive off, where the store still syncs. After that, no token reads signedOut.
+// The save the page shares between devices: {cmd: "cloudPut", json, at, dev, stamp, base, force} writes it to iCloud's
+// key-value store and {cmd: "cloudGet"} / {cmd: "cloudState"} ask for it. The copy is kept with the stamp its writer gave it,
+// and a put is written only while the store still holds the stamp the page called its base (or when force is set, to erase);
+// otherwise the copy held is sent back with refused: true for the page to judge. Answers and changes made by another device
+// go back as {t: "cloud", json, at, dev, stamp, refused}, writes as {t: "cloudPut", ok, stamp}, and the state as
+// {t: "cloudState", state}. A read answers from the local store at once; whatever iCloud brings later comes as a change.
+// Until the first sync is in the state reads pending whatever the iCloud identity says, since the identity token is also nil
+// with iCloud Drive off, where the store still syncs. After that, no token reads signedOut.
 final class CloudBridge: NSObject {
     private let key = "save"
     private let store = NSUbiquitousKeyValueStore.default
     private let emit: ([String: Any]) -> Void
     // set once iCloud has delivered a change, or after a wait for the first sync of a new install
     private var synced = false
-    // a change from iCloud arrived since the last get(); read counts the get() calls so only the latest one's wait answers
-    private var read = 0
 
     init(emit: @escaping ([String: Any]) -> Void) {
         self.emit = emit
@@ -33,27 +35,25 @@ final class CloudBridge: NSObject {
 
     func put(_ msg: [String: Any]) {
         guard let json = msg["json"] as? String else { return }
-        store.set(["json": json, "at": msg["at"] as? Double ?? 0, "dev": msg["dev"] as? String ?? ""] as [String: Any], forKey: key)
+        let stamp = msg["stamp"] as? String ?? ""
+        let base = msg["base"] as? String ?? ""
+        if let held = store.dictionary(forKey: key), msg["force"] as? Bool != true, (held["stamp"] as? String ?? "") != base {
+            send(refused: true)
+            return
+        }
+        store.set(["json": json, "at": msg["at"] as? Double ?? 0, "dev": msg["dev"] as? String ?? "", "stamp": stamp] as [String: Any], forKey: key)
         store.synchronize()
+        emit(["t": "cloudPut", "ok": true, "stamp": stamp])
     }
 
-    // The local copy answers at once, marked fresh: false because iCloud may not have delivered the other devices' writes yet;
-    // the page can take it but does not write over the cloud on it. It becomes fresh when iCloud reports a change while the
-    // read is waiting, or, since iCloud says nothing when nothing differs, after a wait that is only a guess at "synced".
-    // A change heard earlier never counts: the cache may be behind again by the time of a later read.
     func get() {
         store.synchronize()
-        read += 1
-        let mine = read
-        send(fresh: false)
-        DispatchQueue.main.asyncAfter(deadline: .now() + 8) { [weak self] in
-            if let self = self, self.read == mine { self.send(fresh: true) }
-        }
+        send()
     }
 
-    private func send(fresh: Bool) {
+    private func send(refused: Bool = false) {
         let saved = store.dictionary(forKey: key)
-        emit(["t": "cloud", "json": saved?["json"] ?? NSNull(), "at": saved?["at"] ?? 0, "dev": saved?["dev"] ?? "", "fresh": fresh])
+        emit(["t": "cloud", "json": saved?["json"] ?? NSNull(), "at": saved?["at"] ?? 0, "dev": saved?["dev"] ?? "", "stamp": saved?["stamp"] ?? "", "refused": refused])
     }
 
     func state() {
@@ -71,10 +71,7 @@ final class CloudBridge: NSObject {
         DispatchQueue.main.async {
             self.synced = true
             self.state()
-            if keys.contains(self.key) {
-                self.read += 1
-                self.send(fresh: true)
-            }
+            if keys.contains(self.key) { self.send() }
         }
     }
 }

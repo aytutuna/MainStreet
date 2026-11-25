@@ -48,6 +48,7 @@ class Bridge(private val activity: MainActivity) {
                 "cloudPut" -> activity.cloud.put(msg)
                 "cloudGet" -> activity.cloud.get()
                 "cloudState" -> activity.cloud.state()
+                "cloudSignIn" -> activity.cloud.signIn()
                 "radio" -> activity.radio.command(msg)
             }
         }
