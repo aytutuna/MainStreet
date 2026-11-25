@@ -357,6 +357,10 @@ LANG['de'] = {
   'menu.erase_no': 'Cancel',
   'save.newer': 'Update the app to continue.',
   'save.failed': 'Your progress is not being saved. Free some space on this device.',
+  'save.looking': 'Looking for your saved game',
+  'cloud.loaded': 'Saved game loaded',
+  'cloud.loaded_note': 'Your latest progress came from your other device.',
+  'cloud.local_only': 'Saved on this phone only',
   'menu.erase': 'Alles zurücksetzen',
 
   'num.suffixes': ',K,Mio,Mrd,Bio,Brd,Trl,Trd,Qa,Qad,Qi,Qid',

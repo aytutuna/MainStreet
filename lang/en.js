@@ -553,6 +553,13 @@ LANG['en'] = {
   'menu.erase_no': 'Cancel',
   'save.newer': 'Update the app to continue.',
   'save.failed': 'Your progress is not being saved. Free some space on this device.',
+  // Card shown for a few seconds on a first launch while the game looks for a saved game kept in the cloud (iCloud or Google Play Games).
+  'save.looking': 'Looking for your saved game',
+  // Banner when the game on this device was replaced by a newer one from another device: the bold line, then the small line.
+  'cloud.loaded': 'Saved game loaded',
+  'cloud.loaded_note': 'Your latest progress came from your other device.',
+  // Small line in the menu on Android when the game cannot reach Google Play Games, so the save stays on the phone.
+  'cloud.local_only': 'Saved on this phone only',
   'menu.erase': 'Erase all progress',
 
   // Compact number suffixes, comma separated and in order: none, thousand, million, billion, trillion, then the short names
