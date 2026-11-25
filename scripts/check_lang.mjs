@@ -88,4 +88,63 @@ if (args.includes('--all')) {
   for (const k of same) console.log(`untranslated in every language: ${k}`);
   if (same.length) bad++;
 }
+// A key identical to English in a non-English file is flagged unless the text is a brand name, a number or on SAME.
+const SAME = new Set(['OK', 'Wi-Fi', 'RevenueCat', 'Google', 'Pixabay', 'Main Street', 'Main Street Idle']);
+const NAMES = /^(radio\.|reg\.\w+\.name$|sign\.|piece\.|board\.|place\.|common\.(min|h_min)$)/;
+// Texts still in English in these languages, to be translated or confirmed as the same word (key: language codes).
+const PENDING = {
+  'ach.tier.bronze': 'ca da de fr-FR pt-BR pt-PT',
+  'ach.tier.gold': 'de',
+  'ach.tier.silver': 'sv',
+  'banner.flash': 'id vi',
+  'banner.jackpot': 'cs da de fi hr id it ms nl no pl pt-PT ro sk sl sv tr vi',
+  'banner.open': 'nl',
+  'banner.place_level': 'id',
+  'boost.shop': 'cs da de sk',
+  'boost.title': 'da de fr-FR fr-CA nl sv',
+  'card.items': 'nl',
+  'card.open': 'nl',
+  'common.claim': 'nl',
+  'common.later': 'nl',
+  'daily.bonus': 'ca cs da de fi fr-FR fr-CA hr id it ms nl no pl ro sk sl sv tr',
+  'dept.auto': 'de fr-FR fr-CA it ms nl pt-PT ro',
+  'dept.pets': 'pt-BR',
+  'goal.claim': 'nl',
+  'goal.open': 'nl',
+  'hud.combo': 'nl',
+  'hud.menu.aria': 'da fr-FR fr-CA id it ms nl pl pt-BR pt-PT sk vi',
+  'hud.radio.aria': 'da de es-ES es-MX fi fr-FR fr-CA hr id it ms nl no pl ro sl sv vi',
+  'hud.rush.flash': 'id vi',
+  'look.rustic.name': 'ro',
+  'menu.radio': 'da de es-ES es-MX fi fr-FR fr-CA hr id it ms nl no pl ro sl sv vi',
+  'menu.support': 'da de nl sv',
+  'menu.title': 'da fr-FR fr-CA id it ms nl pl pt-BR pt-PT sk vi',
+  'menu.version': 'da de fr-FR fr-CA sv',
+  'perk.cost': 'es-MX id it ms nl pt-BR',
+  'perk.fx.base': 'ca es-ES es-MX it pt-BR pt-PT',
+  'perk.fx.normal': 'ca da de es-ES es-MX fr-FR fr-CA id no pt-BR pt-PT ro tr',
+  'perk.line.max': 'cs de fi hu it nl sk sv',
+  'product.x2.name': 'da sv',
+  'sell.extra': 'de es-ES es-MX hu nl pt-BR pt-PT sv',
+  'sell.keep.boosts': 'da de fr-FR fr-CA nl sv',
+  'shop.badge_bonus': 'da hr it ms nl ro',
+  'shop.chip_rep': 'es-MX id it ms nl pt-BR',
+  'shop.title': 'cs da de sk',
+  'stats.title': 'de fr-FR fr-CA',
+  'tab.boosts': 'da de fr-FR fr-CA nl sv',
+  'tab.stats': 'de fr-FR fr-CA',
+  'tab.upgrades': 'de nl'
+};
+let held = 0;
+for (const code of codes) {
+  const t = load(code);
+  for (const k of Object.keys(en)) {
+    const v = JSON.stringify(t[k]);
+    if (v !== JSON.stringify(en[k]) || !/\p{L}{3}/u.test(v.replace(/\{\w+\}/g, '')) || SAME.has(en[k]) || NAMES.test(k) || /^(native\.|app\.title$|reg\.vip\.name$|cloud\.sign_in$)/.test(k)) continue;
+    if (PENDING[k] && PENDING[k].split(' ').includes(code)) { held++; continue; }
+    console.log(`same as English in ${code}: ${k}`);
+    bad++;
+  }
+}
+if (held) console.log(`${held} untranslated texts held in PENDING`);
 process.exit(bad ? 1 : 0);
