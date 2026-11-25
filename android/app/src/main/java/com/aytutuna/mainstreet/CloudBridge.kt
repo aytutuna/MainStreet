@@ -12,7 +12,7 @@ import org.json.JSONObject
 // force} writes it, {cmd: "cloudGet"} / {cmd: "cloudState"} ask for it and {cmd: "cloudSignIn"} opens the sign-in. The copy
 // carries the stamp its writer gave it. A put is written only while the saved game still holds the stamp the page called its
 // base (or when force is set, to erase); otherwise nothing is written and the copy held goes back with refused: true for the
-// page to judge. Answers go back as {t: "cloud", json, at, dev, stamp, refused}, writes as {t: "cloudPut", ok, stamp} and the
+// page to judge. Answers go back as {t: "cloud", json, at, dev, stamp, refused, put}, writes as {t: "cloudPut", ok, stamp} and the
 // state as {t: "cloudState", state}.
 // Play Games signs the player in by itself at launch; the sign-in screen is opened by this class once per install and after
 // that only from the menu's Sign in button, and a player who is not in keeps the local save. A read or write that comes while
@@ -83,14 +83,14 @@ class CloudBridge(private val activity: MainActivity) {
             state(if (ok == null) "unavailable" else "signedOut")
             return@signedIn
         }
-        open({}) { snap ->
+        open({ state("unavailable") }) { snap ->
             val saved = held(snap)
             snapshots.discardAndClose(snap)
             if (!read) {
                 read = true
                 state("available")
             }
-            copy(saved, false)
+            copy(saved, false, "")
         }
     }
 
@@ -107,7 +107,7 @@ class CloudBridge(private val activity: MainActivity) {
                 val saved = held(snap)
                 if (!msg.optBoolean("force") && saved != null && saved.optString("stamp") != msg.optString("base")) {
                     snapshots.discardAndClose(snap)
-                    copy(saved, true)
+                    copy(saved, true, stamp)
                     return@open done(stamp, null)
                 }
                 val body = JSONObject().put("json", msg.optString("json")).put("at", msg.optLong("at")).put("dev", msg.optString("dev")).put("stamp", stamp)
@@ -138,9 +138,9 @@ class CloudBridge(private val activity: MainActivity) {
         return if (saved?.optString("json").isNullOrEmpty()) null else saved
     }
 
-    private fun copy(saved: JSONObject?, refused: Boolean) = activity.emit(
+    private fun copy(saved: JSONObject?, refused: Boolean, put: String) = activity.emit(
         JSONObject().put("t", "cloud").put("json", saved?.optString("json") ?: JSONObject.NULL).put("at", saved?.optLong("at") ?: 0)
-            .put("dev", saved?.optString("dev") ?: "").put("stamp", saved?.optString("stamp") ?: "").put("refused", refused)
+            .put("dev", saved?.optString("dev") ?: "").put("stamp", saved?.optString("stamp") ?: "").put("refused", refused).put("put", put)
     )
 
     private fun open(fail: () -> Unit, use: (Snapshot) -> Unit) {
