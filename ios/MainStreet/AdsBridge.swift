@@ -27,7 +27,7 @@ final class AdsBridge: NSObject, FullScreenContentDelegate {
     func start() {
         guard !stopped else { return }
         ConsentInformation.shared.requestConsentInfoUpdate(with: RequestParameters()) { [weak self] _ in
-            guard let self = self else { return }
+            guard let self = self, !self.stopped else { return }
             guard let vc = self.presenter() else { return self.begin() }
             ConsentForm.loadAndPresentIfRequired(from: vc) { [weak self] _ in
                 self?.begin()
@@ -36,10 +36,12 @@ final class AdsBridge: NSObject, FullScreenContentDelegate {
         }
     }
 
-    // Skip ads is owned: no consent form, tracking prompt or ad requests from now on
+    // Skip ads is owned: no consent form, tracking prompt or ad requests from now on. The menu still needs to know
+    // whether "Privacy choices" is required, which the SDK answers without showing anything.
     func stop() {
         stopped = true
         reward = nil
+        ConsentInformation.shared.requestConsentInfoUpdate(with: RequestParameters()) { [weak self] _ in self?.privacy() }
     }
 
     // the menu shows "Privacy choices" only where the consent SDK says the player must be able to reopen the form
@@ -60,7 +62,8 @@ final class AdsBridge: NSObject, FullScreenContentDelegate {
     private func begin() {
         guard !started, !stopped, ConsentInformation.shared.canRequestAds else { return }
         started = true
-        let go = {
+        let go = { [weak self] in
+            guard self?.stopped == false else { return }
             // the game's audio session (ambient, mixing) stays as it is, so the radio carries on after an ad
             MobileAds.shared.audioVideoManager.isAudioSessionApplicationManaged = true
             MobileAds.shared.start { [weak self] _ in
@@ -75,6 +78,7 @@ final class AdsBridge: NSObject, FullScreenContentDelegate {
     }
 
     private func loadReward() {
+        guard !stopped else { return }
         RewardedAd.load(with: rewardUnit, request: Request()) { [weak self] ad, _ in
             DispatchQueue.main.async {
                 guard self?.stopped == false else { return }

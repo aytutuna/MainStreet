@@ -27,6 +27,7 @@ class AdsBridge(private val activity: MainActivity) {
         if (stopped) return
         val consent = UserMessagingPlatform.getConsentInformation(activity)
         consent.requestConsentInfoUpdate(activity, ConsentRequestParameters.Builder().build(), {
+            if (stopped) return@requestConsentInfoUpdate
             UserMessagingPlatform.loadAndShowConsentFormIfRequired(activity) {
                 init()
                 privacy()
@@ -40,6 +41,9 @@ class AdsBridge(private val activity: MainActivity) {
         stopped = true
         retry.removeCallbacksAndMessages(null)
         reward = null
+        // the menu still needs to know whether "Privacy choices" is required; this shows no form
+        UserMessagingPlatform.getConsentInformation(activity)
+            .requestConsentInfoUpdate(activity, ConsentRequestParameters.Builder().build(), { privacy() }, { })
     }
 
     private fun privacy() {
@@ -68,6 +72,7 @@ class AdsBridge(private val activity: MainActivity) {
     }
 
     private fun loadReward() {
+        if (stopped) return
         RewardedAd.load(activity, BuildConfig.AD_REWARD, AdRequest.Builder().build(), object : RewardedAdLoadCallback() {
             override fun onAdLoaded(ad: RewardedAd) {
                 if (stopped) return
