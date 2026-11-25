@@ -286,5 +286,6 @@ function setLang(code) {
     localStorage.setItem(LANG_KEY, code);
   } catch (e) {}
   if (typeof save === 'function') save();
+  if (typeof cloudPut === 'function') cloudPut();
   location.replace(location.pathname);
 }

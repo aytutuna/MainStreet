@@ -134,7 +134,7 @@ class MainActivity : ComponentActivity() {
         runOnUiThread {
             if (!isDestroyed) {
                 webView.evaluateJavascript("window.nativeStore ? (window.nativeStore($msg), 1) : 0") {
-                    if (it != "1" && msg.optString("t") != "time" && !msg.optString("t").startsWith("cloud") && held.size < 50) held.add(msg)
+                    if (it != "1" && msg.optString("t") != "time" && (msg.optString("t") == "cloudPut" || !msg.optString("t").startsWith("cloud")) && held.size < 50) held.add(msg)
                 }
             }
         }

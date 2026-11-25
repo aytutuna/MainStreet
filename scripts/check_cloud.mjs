@@ -306,6 +306,15 @@ run('cloudPut()');
 if (puts().length !== 2) fail('a put that failed natively was not sent again');
 run('clearTimeout(cloudTimer); cloudTimer = 0');
 
+// 10c. the failure of a put made before a reload reaches the new page, which marks its save as sent at launch
+device(T9);
+run('cloudPut()');
+const before = puts().length;
+nativeEv({ t: 'cloudPut', ok: false });
+run('cloudPut()');
+if (puts().length !== before + 1) fail('a failure held over a reload did not make the save go again');
+run('clearTimeout(cloudTimer); cloudTimer = 0');
+
 // 11. launch with a local save: play waits for the cloud's first answer, the fresh copy is taken
 device(T9);
 store['mainstreet.v11'] = copy(T9);
