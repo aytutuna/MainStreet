@@ -20,6 +20,7 @@ const T9 = Date.UTC(2026, 0, 1, 9);
 const T12 = T9 + 3 * H;
 const T17 = T9 + 8 * H;
 const PID = 'com.aytutuna.mainstreet.';
+const CLOUD_EVERY = 30000;
 let now = T9;
 let tick = 0;
 let failed = false;
@@ -37,12 +38,38 @@ function newKeys() {
   return { ios: true, keys: {}, devs: [] };
 }
 
+// the clock of the page and the server move together; every timer of the given devices that falls due is run, in order, and
+// what the native side answered is delivered after each
+function elapse(ms, ...devs) {
+  const end = tick + ms;
+  for (;;) {
+    let first = null;
+    for (const d of devs) for (const t of d.timers) if (t.at <= end && (!first || t.at < first.t.at)) first = { d, t };
+    if (!first) break;
+    const step = Math.max(0, first.t.at - tick);
+    tick += step;
+    now += step;
+    if (first.t.every) first.t.at += first.t.every;
+    else first.d.timers = first.d.timers.filter(t => t !== first.t);
+    first.t.fn();
+    devs.forEach(d => d.pump());
+  }
+  now += end - tick;
+  tick = end;
+}
+
 const iosEv = (e, more) => ({ t: 'cloud', json: e ? e.json : null, at: e ? e.at : 0, dev: e ? e.dev : '', stamp: e ? e.stamp : '', refused: false, put: '', more: !!more });
 
 // one device: its own page (vm), its own local storage, and the native side answering its messages one pump later, as the
 // real bridges do. hold keeps the answers back, fail makes puts fail, drop loses them without a word, stale is what a cache that has not synced answers to a read
 function device(cloud, st = {}, opts = {}) {
-  const dev = { st, cloud, posts: [], inbox: [], hold: false, fail: false, drop: false, out: false, unavail: false, fails: [], seen: {}, lagged: [], offline: false, mine: '' };
+  const dev = { st, cloud, posts: [], inbox: [], hold: false, fail: false, drop: false, out: false, unavail: false, fails: [], seen: {}, lagged: [], offline: false, mine: '', timers: [] };
+  let timerId = 0;
+  const addTimer = (fn, ms, every) => {
+    dev.timers.push({ id: ++timerId, at: tick + (ms || 0), fn, every });
+    return timerId;
+  };
+  const dropTimer = id => { dev.timers = dev.timers.filter(t => t.id !== id); };
   if (cloud.ios) {
     cloud.devs.push(dev);
     dev.seen = { ...cloud.keys };
@@ -59,11 +86,12 @@ function device(cloud, st = {}, opts = {}) {
     btoa: s => Buffer.from(s).toString('base64'),
     atob: s => Buffer.from(s, 'base64').toString(),
     document: { write() {}, addEventListener() {}, documentElement: {}, hidden: false },
-    navigator: { language: 'en', userAgent: '' },
+    navigator: { language: 'en', userAgent: cloud.ios ? '' : 'Android' },
     location: { search: '', protocol: 'app:' },
-    setTimeout: () => 1,
-    clearTimeout() {},
-    setInterval: () => 1,
+    setTimeout: (fn, ms) => addTimer(fn, ms, 0),
+    clearTimeout: dropTimer,
+    setInterval: (fn, ms) => addTimer(fn, ms, ms),
+    clearInterval: dropTimer,
     $: id => (els[id] = els[id] || { hidden: true, addEventListener() {}, style: {} }),
     View: { ready: () => true },
     tl: k => k,
@@ -385,7 +413,8 @@ for (const aMore of [false, true]) {
   now = T17;
   a.hold = true;
   a.run('cloudBack()');
-  a.run('cloudGot()');
+  expect(a.run('cloudHeld()'), 'the return did not wait for the cloud');
+  elapse(4000, a);
   expect(!a.run('cloudHeld()'), 'the return still waits after CLOUD_BACK');
   a.change(3, aMore ? 20000 : 5);
   a.put();
@@ -688,6 +717,17 @@ for (const putFirst of [false, true]) {
   expect(!a.dirty() && a.base() === c.stamp, 'the game does not agree with the copy it wrote last');
 }
 
+// a change is put by the timer once the throttle is over, not before
+{
+  const [a, , c] = pair();
+  a.change(1, 1);
+  expect(!a.puts().length, 'a change was put before the throttle');
+  elapse(CLOUD_EVERY - 1000, a);
+  expect(!a.puts().length, 'a change was put before the throttle was over');
+  elapse(2000, a);
+  expect(a.puts().length === 1 && JSON.parse(c.json).gems === 101, 'the timer did not put the change');
+}
+
 // an open game that only earns cash writes nothing
 {
   const [a, , c] = pair();
@@ -877,7 +917,8 @@ for (const more of [false, true]) {
   b.put();
   const gems = b.gems();
   now = T17;
-  tick += 100000;
+  elapse(100000, a);
+  now = T17;
   a.run('cloudBack()');
   a.change(1, 3);
   expect(a.run('cloudAt + CLOUD_EVERY - performance.now()') > 0, 'the first put after a return is not delayed');
