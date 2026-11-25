@@ -25,7 +25,7 @@ final class AdsBridge: NSObject, FullScreenContentDelegate {
     }
 
     func start() {
-        guard !stopped else { return }
+        stopped = false
         ConsentInformation.shared.requestConsentInfoUpdate(with: RequestParameters()) { [weak self] _ in
             guard let self = self, !self.stopped else { return }
             guard let vc = self.presenter() else { return self.begin() }

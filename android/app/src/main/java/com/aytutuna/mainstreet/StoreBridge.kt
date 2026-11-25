@@ -1,5 +1,6 @@
 package com.aytutuna.mainstreet
 
+import com.revenuecat.purchases.CacheFetchPolicy
 import com.revenuecat.purchases.CustomerInfo
 import com.revenuecat.purchases.PurchaseParams
 import com.revenuecat.purchases.Purchases
@@ -94,11 +95,13 @@ class StoreBridge(private val activity: MainActivity) {
         Purchases.sharedInstance.purchase(PurchaseParams.Builder(activity, product).build(), object : PurchaseCallback {
             override fun onCompleted(storeTransaction: StoreTransaction, customerInfo: CustomerInfo) {
                 // the id the store list uses for it, so the page counts the purchase once
-                val listed = customerInfo.nonSubscriptionTransactions.filter { it.productIdentifier == id }.maxByOrNull { it.purchaseDate }
+                val store = storeTransaction.orderId
+                val listed = customerInfo.nonSubscriptionTransactions.filter { it.productIdentifier == id && (store == null || it.storeTransactionId == store) }
+                    .maxByOrNull { it.purchaseDate }
                 if (listed == null) {
                     // charged, but RevenueCat has no id for it yet; the page credits it from the list
                     failed(id, "late")
-                    owned()
+                    ask(false, true)
                     return
                 }
                 activity.emit(JSONObject().put("t", "bought").put("id", id).put("tx", listed.transactionIdentifier).put("at", listed.purchaseDate.time))
@@ -118,7 +121,7 @@ class StoreBridge(private val activity: MainActivity) {
 
     private fun owned() = ask(false)
 
-    private fun ask(restored: Boolean) {
+    private fun ask(restored: Boolean, fresh: Boolean = false) {
         val done = object : ReceiveCustomerInfoCallback {
             override fun onReceived(customerInfo: CustomerInfo) = send(customerInfo, restored)
 
@@ -126,7 +129,7 @@ class StoreBridge(private val activity: MainActivity) {
                 if (restored) activity.emit(JSONObject().put("t", "restoreFailed"))
             }
         }
-        if (restored) Purchases.sharedInstance.restorePurchases(done) else Purchases.sharedInstance.getCustomerInfo(done)
+        if (restored) Purchases.sharedInstance.restorePurchases(done) else Purchases.sharedInstance.getCustomerInfo(if (fresh) CacheFetchPolicy.FETCH_CURRENT else CacheFetchPolicy.default(), done)
     }
 
     private fun send(info: CustomerInfo, restored: Boolean) {

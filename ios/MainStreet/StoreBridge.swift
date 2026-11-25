@@ -118,9 +118,10 @@ final class StoreBridge: NSObject, WKScriptMessageHandler, PurchasesDelegate {
         }
     }
 
-    private func owned(restored: Bool) async {
+    private func owned(restored: Bool, fresh: Bool = false) async {
         do {
-            let info = restored ? try await Purchases.shared.restorePurchases() : try await Purchases.shared.customerInfo()
+            let info = restored ? try await Purchases.shared.restorePurchases()
+                : try await Purchases.shared.customerInfo(fetchPolicy: fresh ? .fetchCurrent : .default)
             send(info, restored: restored)
         } catch {
             if restored { emit(["t": "restoreFailed"]) }
@@ -143,14 +144,16 @@ final class StoreBridge: NSObject, WKScriptMessageHandler, PurchasesDelegate {
                     failed(id, "cancel")
                 } else {
                     // the id the store list uses for it, so the page counts the purchase once
-                    let listed = result.customerInfo.nonSubscriptionTransactions.filter { $0.productIdentifier == id }
-                        .max { $0.purchaseDate < $1.purchaseDate }
-                    if let listed = listed {
+                    var mine = result.customerInfo.nonSubscriptionTransactions.filter { $0.productIdentifier == id }
+                    if let store = result.transaction?.transactionIdentifier {
+                        mine = mine.filter { $0.storeTransactionIdentifier == store }
+                    }
+                    if let listed = mine.max(by: { $0.purchaseDate < $1.purchaseDate }) {
                         emit(["t": "bought", "id": id, "at": listed.purchaseDate.timeIntervalSince1970 * 1000, "tx": listed.transactionIdentifier])
                     } else {
                         // charged, but RevenueCat has no id for it yet; the page credits it from the list
                         failed(id, "late")
-                        await owned(restored: false)
+                        await owned(restored: false, fresh: true)
                     }
                 }
             } catch {
