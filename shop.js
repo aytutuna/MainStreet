@@ -781,7 +781,6 @@ function adEvent(ev) {
     save();
   } else if (ev.state === 'closed' || ev.state === 'failed') {
     adOpen = false;
-    if (ac && snd) ac.resume();
     radioSync();
     if (!watching || ev.kind !== 'reward') return;
     // the reward can arrive a moment after the ad closes
