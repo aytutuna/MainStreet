@@ -1040,7 +1040,8 @@ function reminders() {
   var out = [{ id: 'full', at: now + maxAway() * 1000, body: tl('notify.full') }];
   if (!daily().can) {
     var d = new Date(now);
-    out.push({ id: 'daily', at: new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1, 10).getTime(), body: tl('notify.daily') });
+    var at = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1, 10).getTime();
+    out.push({ id: 'daily', at: Math.max(at, S.day.t + DAILY_GAP), body: tl('notify.daily') });
   }
   return out;
 }
@@ -1311,7 +1312,8 @@ function zoneCheck() {
 function daily() {
   var today = dayNum(clock());
   var d = S.day;
-  return { can: d.d < today && clock() - d.t >= DAILY_GAP, idx: d.d >= today - 1 ? d.n % 7 : 0 };
+  var can = d.d < today && clock() - d.t >= DAILY_GAP;
+  return { can: can, idx: d.d >= today - 1 || clock() - d.t < 48 * 3600000 ? d.n % 7 : 0, gap: d.d < today && !can };
 }
 
 function dailyReward(i) {
