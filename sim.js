@@ -102,7 +102,7 @@ var S = fresh();
 function fresh() {
   var s = { v: 11, cash: START_CASH, gems: 0, rep: 0, pk: {}, store: 1, run: 0, all: 0, pend: 0, ps: 0, x2: 0, call: 0, vt: rnd(VIP.first), b: {}, ms: {},
     st: { srv: 0, lost: 0, sr: 0, t: 0 }, goal: [0, 1, 2], gn: 3, gd: {}, day: { n: 0, d: -1, t: 0 }, tz: { o: zone(), at: clock() }, mi: { d: -1, m: [], b: 0 }, rg: { o: {}, days: 0, gifts: 0, combo: 0 }, lk: { on: 'classic', own: {} }, ac: { o: {}, m: {} },
-    ask: 0, clk: START_H * CLOCK / 24, iap: { noads: 0, x2: 0, starter: 0, noadsTx: '', x2Tx: '', noadsUser: '', x2User: '', wait: {}, tx: [] }, ads: { d: -1, n: {}, pt: 0, li: 0, sd: 0 }, ts: clock() };
+    ask: 0, clk: START_H * CLOCK / 24, iap: { noads: 0, x2: 0, starter: 0, noadsTx: '', x2Tx: '', noadsUser: '', x2User: '', wait: {}, tx: [], rf: [] }, ads: { d: -1, n: {}, pt: 0, li: 0, sd: 0 }, ts: clock() };
   noPlaces(s);
   s.b.produce = atLevel('produce', 1);
   return s;
@@ -1561,6 +1561,7 @@ function validate(o) {
     noadsTx: typeof ip.noadsTx === 'string' ? ip.noadsTx : '', x2Tx: typeof ip.x2Tx === 'string' ? ip.x2Tx : '', noadsUser: typeof ip.noadsUser === 'string' ? ip.noadsUser : '', x2User: typeof ip.x2User === 'string' ? ip.x2User : '',
     wait: waits(ip.wait),
     tx: (Array.isArray(ip.tx) ? ip.tx : []).filter(function (t) { return typeof t === 'string'; }).slice(-100),
+    rf: (Array.isArray(ip.rf) ? ip.rf : []).filter(function (t) { return typeof t === 'string'; }).slice(-20),
     deal: ip.deal && typeof ip.deal.id === 'string' && num(ip.deal.bonus, 0) > 0 ? { id: ip.deal.id, bonus: Math.floor(num(ip.deal.bonus, 0)), until: num(ip.deal.until, 0) } : null,
     held: ip.held && typeof ip.held.id === 'string' && num(ip.held.bonus, 0) > 0 ? { id: ip.held.id, bonus: Math.floor(num(ip.held.bonus, 0)), until: num(ip.held.until, 0) } : null };
   var ad = o.ads || {};
@@ -1698,6 +1699,7 @@ function load() {
     if (!o && !mall) S = fresh();
     if (o) {
       S = o;
+      cloudTs = o.ts;
       var sec = (clock() - o.ts) / 1000;
       if (sec > 60) back = away(sec);
       if (old) save();
@@ -1738,6 +1740,9 @@ var YOUNG = 600;
 // the away summary of the last copy taken, and whether one was taken since the app went to the background
 var cloudAway = null;
 var cloudTook = false;
+// the time of the save this device last had in step with the cloud: the one on disk at launch, then the last copy put or
+// taken. A copy counts as newer only against this, not against the autosave
+var cloudTs = 0;
 
 // the save of another device meets this game: the newer one is kept, a young game always gives way. True when it replaced this game
 function takeCloud(raw) {
@@ -1746,9 +1751,16 @@ function takeCloud(raw) {
     o = validate(JSON.parse(raw));
   } catch (e) {}
   if (!o) return false;
-  var tx = joinTx(S.iap.tx, o.iap.tx);
-  if (S.ads.pt >= YOUNG && !(o.ts > S.ts)) {
-    S.iap.tx = tx;
+  var i = S.iap;
+  var p = o.iap;
+  var tx = joinTx(i.tx, p.tx);
+  var rf = joinTx(i.rf, p.rf);
+  if (S.ads.pt >= YOUNG && !(o.ts > cloudTs)) {
+    i.tx = tx;
+    i.rf = rf;
+    ['noads', 'x2'].forEach(function (f) {
+      if (i[f] && rf.indexOf(i[f + 'Tx']) >= 0) i[f] = 0;
+    });
     return false;
   }
   // ad counts of the day and play time never go back
@@ -1760,11 +1772,11 @@ function takeCloud(raw) {
     c.n = a.n;
   }
   c.pt = Math.max(c.pt, a.pt);
-  // what was bought on either device stays bought
-  var i = S.iap;
-  var p = o.iap;
+  // a started starter window is not restarted
+  c.sd = c.sd && a.sd ? Math.min(c.sd, a.sd) : c.sd || a.sd;
+  // what was bought on either device stays bought, unless it was refunded
   ['noads', 'x2'].forEach(function (f) {
-    if (i[f] && !p[f]) {
+    if (i[f] && !p[f] && rf.indexOf(i[f + 'Tx']) < 0) {
       p[f] = 1;
       p[f + 'Tx'] = i[f + 'Tx'];
       p[f + 'User'] = i[f + 'User'];
@@ -1774,8 +1786,11 @@ function takeCloud(raw) {
   p.offered = p.offered || i.offered;
   p.deal = p.deal || i.deal;
   p.held = p.held || i.held;
+  for (var w in i.wait) p.wait[w] = Math.max(p.wait[w] || 0, i.wait[w]);
   p.tx = tx;
+  p.rf = rf;
   S = o;
+  cloudTs = o.ts;
   clearShoppers();
   // the copy was saved when the other device last ran: the time since is time away
   var sec = (clock() - o.ts) / 1000;

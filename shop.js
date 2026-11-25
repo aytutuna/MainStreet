@@ -61,6 +61,9 @@ var cloudFound = null;
 var cloudTimer = 0;
 var cloudLate = 0;
 var cloudTaken = false;
+var cloudShown = false;
+var cloudPend = null;
+var cloudMet = false;
 var cloudAt = -CLOUD_EVERY;
 var devKey = '';
 
@@ -163,6 +166,8 @@ function cloudPut(erase) {
   cloudTimer = 0;
   if (!native() || !loaded || blocked || !(erase === true || cloudReady())) return;
   cloudAt = performance.now();
+  cloudMet = true;
+  cloudTs = S.ts;
   post({ cmd: 'cloudPut', json: saved(), at: Math.round(clock()), dev: devId() });
 }
 
@@ -195,6 +200,27 @@ function cloudEnd() {
   done(!!raw && cloudSeed(raw));
 }
 
+// a copy replaces this game and the screen shows it, or waits for the launch reveal while the models load
+function cloudTake(raw) {
+  if (!takeCloud(raw)) return;
+  $('away').hidden = true;
+  if (S.iap.noads) post({ cmd: 'adStop' });
+  if (View.ready()) {
+    cloudShown = true;
+    afterLoad();
+    showAway(cloudAway);
+    banner('<b>' + tl('cloud.loaded') + '</b><small>' + tl('cloud.loaded_note') + '</small>', 0);
+  } else cloudTaken = true;
+}
+
+// the copy that came while the game was being played, taken now that the app is back and the time is known
+function cloudApply() {
+  var raw = cloudPend;
+  cloudPend = null;
+  cloudMet = true;
+  if (raw) cloudTake(raw);
+}
+
 function cloudEvent(ev) {
   if (ev.t === 'cloudState') {
     cloudState = ev.state;
@@ -202,15 +228,14 @@ function cloudEvent(ev) {
   } else {
     cloudSeen = true;
     if (cloudFind) cloudFound = ev.json || cloudFound;
-    else if (ev.json && loaded && ev.dev !== devId() && takeCloud(ev.json)) {
-      $('away').hidden = true;
-      if (S.iap.noads) post({ cmd: 'adStop' });
-      // the scene is not built yet while the models load: the launch shows it all once the view is ready
-      if (View.ready()) {
-        afterLoad();
-        showAway(cloudAway);
-        banner('<b>' + tl('cloud.loaded') + '</b><small>' + tl('cloud.loaded_note') + '</small>', 0);
-      } else cloudTaken = true;
+    else if (ev.json && loaded && ev.dev !== devId()) {
+      // once this device has met the cloud, copies are taken only on return, not in the middle of play, where two open
+      // devices would keep replacing each other's progress; a copy that comes while the time is unknown waits as well
+      if ((cloudMet && View.ready()) || timeHeld) cloudPend = ev.json;
+      else {
+        cloudMet = true;
+        cloudTake(ev.json);
+      }
     }
   }
   if (cloudFind && (cloudFound || (cloudSeen && cloudState && cloudState !== 'pending'))) cloudEnd();
@@ -299,6 +324,7 @@ function refunds(ev) {
     var t = S.iap[id + 'Tx'];
     if (!S.iap[id] || !t || S.iap[id + 'User'] !== ev.user || (ev.ids || []).indexOf(PID + id) >= 0 || ev.tx.some(function (x) { return x.tx === t; })) return;
     S.iap[id] = 0;
+    S.iap.rf = joinTx(S.iap.rf, [t]);
     S.iap[id + 'Tx'] = '';
     S.iap[id + 'User'] = '';
     if (id === 'noads') {

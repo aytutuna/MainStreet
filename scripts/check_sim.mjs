@@ -221,11 +221,34 @@ if (run('S.vt') !== 0) fail('a due VIP timer came back as ' + run('S.vt'));
   const stored = JSON.parse(store[key]);
   if (stored.ts !== other.ts) fail('taking the cloud save moved its time');
   // a played game keeps itself against an older copy and takes a newer one
-  run('S.ads.pt = 700; S.ts = ' + (other.ts + 1000) + '; S.iap.tx = ["a"]');
+  run('S.ads.pt = 700; cloudTs = ' + (other.ts + 1000) + '; S.iap.tx = ["a"]');
   if (run('takeCloud(' + JSON.stringify(raw) + ')')) fail('an older cloud save replaced a played game');
   if (run('S.iap.tx.join()') !== 'a,b,c') fail('purchases were not joined into the kept game');
-  run('S.ts = ' + (other.ts - 1000));
+  // the autosave moves S.ts, but a copy is judged against the time this device was last in step with the cloud
+  run('S.ts = ' + (other.ts + 60000) + '; cloudTs = ' + (other.ts - 1000));
   if (!run('takeCloud(' + JSON.stringify(raw) + ')')) fail('a newer cloud save did not replace a played game');
+  if (run('cloudTs') !== other.ts) fail('the time of the copy taken was not kept');
+  // purchases waiting, the starter window, and what was bought or refunded
+  const mine = (f) => 'S.ads.pt = 700; cloudTs = ' + (other.ts - 1000) + '; ' + f;
+  const copy = (iap, ads) => JSON.stringify(JSON.stringify({ ...other, iap: { ...other.iap, ...iap }, ads: { ...other.ads, ...ads } }));
+  run('S.iap.wait = { x2: 5, gems1: 9 }; S.ads.sd = 3000; S.iap.noads = 1; S.iap.noadsTx = "n1"; S.iap.noadsUser = "u"; S.iap.x2 = 1; S.iap.x2Tx = "x1"');
+  run(mine('0'));
+  if (!run('takeCloud(' + copy({ noads: 0, x2: 0, wait: { x2: 8 }, rf: [] }, { sd: 0 }) + ')')) fail('a newer copy was not taken');
+  if (run('S.iap.wait.x2') !== 8 || run('S.iap.wait.gems1') !== 9) fail('waiting purchases were not merged: ' + run('JSON.stringify(S.iap.wait)'));
+  if (run('S.ads.sd') !== 3000) fail('the starter window was restarted by a copy without one');
+  if (run('S.iap.noads') !== 1 || run('S.iap.x2') !== 1 || run('S.iap.noadsTx') !== 'n1') fail('purchases of this device were lost to a copy');
+  run('S.ads.sd = 5000');
+  run(mine('0'));
+  run('takeCloud(' + copy({ noads: 0, x2: 0 }, { sd: 2000 }) + ')');
+  if (run('S.ads.sd') !== 2000) fail('the earlier starter start did not win');
+  // a refund recorded on the other device is not undone by this one
+  run(mine('S.iap.noads = 1; S.iap.noadsTx = "n1"; S.iap.noadsUser = "u"'));
+  run('takeCloud(' + copy({ noads: 0, noadsTx: "", rf: ["n1"] }, {}) + ')');
+  if (run('S.iap.noads') !== 0 || run('S.iap.rf.join()') !== 'n1') fail('a refunded purchase came back from the other device');
+  // the same refund reaches a device that keeps its own game
+  run('S.ads.pt = 700; cloudTs = ' + (other.ts + 9999) + '; S.iap.noads = 1; S.iap.noadsTx = "n1"');
+  if (run('takeCloud(' + copy({ noads: 0, rf: ["n1"] }, {}) + ')')) fail('an older copy replaced a played game');
+  if (run('S.iap.noads') !== 0) fail('a refund in an older copy was not applied');
   if (run('takeCloud(' + JSON.stringify(JSON.stringify({ ...other, v: 12 })) + ')')) fail('a cloud save from a newer build was read');
   run('S.ads.pt = 700');
   run('save()');

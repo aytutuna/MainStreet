@@ -2316,6 +2316,7 @@ function wire() {
     if (!hiddenAt) return;
     // the game waits for the server time, so the time away comes from two server answers
     timeWait(function () {
+      cloudApply();
       var sec = (clock() - hiddenAt) / 1000;
       hiddenAt = 0;
       lastTick = performance.now();
@@ -2806,7 +2807,7 @@ function begin(fromCloud) {
     if (cloudTaken) {
       showAway(cloudAway);
       banner('<b>' + tl('cloud.loaded') + '</b><small>' + tl('cloud.loaded_note') + '</small>', 0);
-    } else {
+    } else if (!cloudShown) {
       showAway(gone);
       if (fromCloud) banner('<b>' + tl('cloud.loaded') + '</b><small>' + tl('cloud.back_note') + '</small>', 0);
     }
