@@ -17,21 +17,24 @@
 //   {t: 'time', n, ms, sent, recv}         the server time, answering {cmd: 'time', n}: ms is the server's clock, sent and recv
 //                                          the device's Date.now() when the request left and the answer came; ms is null
 //                                          when nothing answered. It skips the queue, since the game waits for it
-//   {t: 'cloud', json, at, dev, stamp, refused?, put?}   the save the other devices share (json is null when there is none), written at
-//                                          server time at by device dev under stamp, a string the writer made up. Answers
-//                                          {cmd: 'cloudGet'} and comes again when another device changes it (iPhone). refused is
-//                                          true when it answers a {cmd: 'cloudPut'} that was not written because the cloud holds
-//                                          another stamp than the put's base; put is then the stamp of that put. Like 'time' it skips the queue; the page judges
-//                                          every copy whenever it comes, so nothing about its age is promised
-//   {t: 'cloudState', state}               'available', 'signedOut', 'pending' (signed in, first sync not done) or 'unavailable'
-//                                          (Play Games cannot be reached: no copy comes with it); answers {cmd: 'cloudState'}, skips the queue
+//   {t: 'cloud', json, at, dev, stamp, refused?, put?, more?}   a save another device shares (json is null when there is none), written
+//                                          at server time at by device dev under stamp, a string the writer made up. Answers
+//                                          {cmd: 'cloudGet', dev} and comes again when another device changes it (iPhone). The iPhone
+//                                          keeps a key per device and sends every other device's copy, more being true on all but the
+//                                          last; Android has one saved game and sends it alone. refused is true when it answers a
+//                                          {cmd: 'cloudPut'} that was not written because the cloud holds another stamp than the put's
+//                                          base (Android only); put is then the stamp of that put. Like 'time' it skips the queue; the
+//                                          page judges every copy whenever it comes, so nothing about its age is promised
+//   {t: 'cloudState', state}               'available', 'signedOut', 'pending' (iPhone: iCloud has not delivered anything yet) or
+//                                          'unavailable' (Play Games cannot be reached: no copy comes with it); answers
+//                                          {cmd: 'cloudState', dev}, skips the queue
 //   {t: 'cloudPut', ok, stamp}             the put with this stamp was written (ok true) or could not be (ok false: Android not signed in or
-//                                          a failed write; the iPhone always writes, its store keeps the copy until an account can sync it);
+//                                          a failed write; the iPhone always writes to its own key, which iCloud syncs when it can);
 //                                          skips the queue. The page sends {cmd: 'cloudPut', json, at, dev, stamp, base, force}: base is
-//                                          the stamp of the copy the game last agreed with, and unless force is true (erasing) the
-//                                          native side writes only while the cloud still holds that stamp, else it refuses. An erase keeps force until a forced put has landed. iCloud's
-//                                          store cannot refuse for real, so a copy that came after a write on an old base is judged
-//                                          by the page too (a copy with less play than the game's base cannot have grown from it)
+//                                          the stamp of the copy the game last agreed with, and on Android, unless force is true (erasing),
+//                                          the native side writes only while the cloud still holds that stamp, else it refuses. An erase
+//                                          keeps force until a forced put has landed. The iPhone never refuses: no other device writes
+//                                          its key
 //   {cmd: 'cloudSignIn'}                   Android: opens Play Games sign-in, then answers cloudState and cloud
 //   {t: 'notify', state}                   'granted' or 'denied', answering the notify handler's {cmd: 'ask'}; the page does not use it
 //   {t: 'radio', state, url, title?}       the stream being played: state is 'buffering', 'playing', 'paused' (headphones
@@ -75,12 +78,13 @@ var cloudState = '';
 var cloudAnswered = false;
 var cloudLive = '';
 var cloudFind = null;
-var cloudFound = null;
+var cloudFound = [];
+var cloudMore = false;
 var cloudTimer = 0;
 var cloudLate = 0;
 var cloudTaken = false;
 var cloudShown = false;
-var cloudPend = null;
+var cloudPend = [];
 var cloudRet = null;
 var cloudAt = -CLOUD_EVERY;
 var lastTouch = -60000;
@@ -217,6 +221,11 @@ function cloudAck(ev) {
   save();
 }
 
+// the device id goes with every read: the iPhone keeps one key per device and leaves out this device's own
+function cloudAsk() {
+  post({ cmd: 'cloudGet', dev: devId() });
+}
+
 function cloudSoon() {
   if (!cloudTimer && native() && loaded) cloudTimer = setTimeout(cloudPut, Math.max(0, cloudAt + CLOUD_EVERY - performance.now()));
 }
@@ -230,8 +239,8 @@ function cloudMenu() {
 function cloudLook(done) {
   if (!native()) return done(false);
   setInterval(cloudPoll, CLOUD_POLL);
-  post({ cmd: 'cloudState' });
-  post({ cmd: 'cloudGet' });
+  post({ cmd: 'cloudState', dev: devId() });
+  cloudAsk();
   if (hasSave()) {
     cloudAt = performance.now();
     cloudRet = { got: false, run: null, t: setTimeout(cloudGot, CLOUD_BACK) };
@@ -247,17 +256,37 @@ function cloudLook(done) {
 function cloudPoll() {
   if (!loaded || document.hidden || timeHeld) return;
   if (S.cl.fly && performance.now() - cloudAt > 60000) S.cl.fly = null;
-  post({ cmd: 'cloudGet' });
+  cloudAsk();
 }
 
+// the play in a copy, for choosing among several
+function copyPlay(ev) {
+  try {
+    return JSON.parse(ev.json).ads.ap || 0;
+  } catch (e) {
+    return 0;
+  }
+}
+
+// the first game is the copy with the most play (the later one on a tie); the others are judged once it is loaded
 function cloudEnd() {
   if (!cloudFind) return;
   clearTimeout(cloudLate);
   $('find').hidden = true;
   var done = cloudFind;
-  var ev = cloudFound;
-  cloudFind = cloudFound = null;
-  done(!!ev && cloudSeed(ev.json, ev.stamp));
+  var list = cloudFound;
+  var best = null;
+  list.forEach(function (e) {
+    if (!best || copyPlay(e) > copyPlay(best) || (copyPlay(e) === copyPlay(best) && e.at > best.at)) best = e;
+  });
+  cloudFind = null;
+  cloudFound = [];
+  done(!!best && cloudSeed(best.json, best.stamp));
+  list.forEach(function (e) {
+    if (e === best) return;
+    e.more = false;
+    cloudEvent(e);
+  });
 }
 
 // a copy meets this game; if it replaced it the screen shows it, or waits for the launch reveal while the models load
@@ -288,7 +317,7 @@ function cloudBack() {
   cloudAt = performance.now();
   if (cloudRet) clearTimeout(cloudRet.t);
   cloudRet = { got: false, run: null, t: setTimeout(cloudGot, CLOUD_BACK) };
-  post({ cmd: 'cloudGet' });
+  cloudAsk();
 }
 
 // the game stands still while the return waits for the cloud
@@ -317,9 +346,9 @@ function cloudAfter(fn) {
 
 // the copy that came while the server time was unknown, taken now that it is known
 function cloudApply() {
-  var ev = cloudPend;
-  cloudPend = null;
-  if (ev) cloudTake(ev);
+  var list = cloudPend;
+  cloudPend = [];
+  list.forEach(cloudTake);
 }
 
 function cloudEvent(ev) {
@@ -331,17 +360,20 @@ function cloudEvent(ev) {
     else if (ev.state === 'signedOut' || ev.state === 'unavailable') cloudGot();
   } else {
     cloudAnswered = true;
+    cloudMore = !!ev.more;
     // a refused put did not land: the copy that came with the refusal is what the cloud holds now
     if (loaded && ev.refused && S.cl.fly && ev.put === S.cl.fly.stamp) S.cl.fly = null;
-    if (cloudFind) cloudFound = ev.json ? ev : cloudFound;
-    else if (ev.json && loaded) {
+    if (cloudFind) {
+      // a device's newer copy replaces its older one
+      if (ev.json) cloudFound = cloudFound.filter(function (e) { return e.dev !== ev.dev; }).concat([ev]);
+    } else if (ev.json && loaded) {
       // only while the server time is unknown does a copy wait
-      if (timeHeld) cloudPend = ev;
+      if (timeHeld) cloudPend.push(ev);
       else cloudTake(ev);
     }
-    cloudGot();
+    if (!ev.more) cloudGot();
   }
-  if (cloudFind && (cloudFound || (cloudState && cloudState !== 'pending' && (cloudAnswered || cloudState !== 'available')))) cloudEnd();
+  if (cloudFind && !cloudMore && (cloudFound.length || (cloudState && cloudState !== 'pending' && (cloudAnswered || cloudState !== 'available')))) cloudEnd();
 }
 
 function product(id) {

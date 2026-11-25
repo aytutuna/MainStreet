@@ -1,7 +1,7 @@
-// Plays the cloud save rules of shop.js and sim.js in node vms, one per device, against a fake cloud that behaves like the native
-// bridges: it keeps the stamp of the copy it holds and refuses a put whose base is another stamp. A device that reads a stale
-// cache (stale) compares its puts against that cache, as iCloud's key-value store does, and the write then lands over the
-// cloud's copy (last writer wins).
+// Plays the cloud save rules of shop.js and sim.js in node vms, one per device, against two fake clouds that behave like the
+// native bridges. The Android one holds one copy with its stamp and refuses a put whose base is another stamp. The iPhone one
+// keeps a key per device, never refuses, and delivers each write to the others when told to (lag holds it back), as iCloud's
+// key-value store does.
 //   node scripts/check_cloud.mjs
 // The rules: every copy gets a stamp, each device keeps the stamp of the copy it last agreed with and the signature of its game
 // then, a copy that comes (whenever it comes) is taken by a game that has not changed since, and when both sides changed the one
@@ -32,10 +32,21 @@ function newCloud() {
   return c;
 }
 
+// a key-value store with one key per device: a device writes its own key, and the others see it after it is delivered
+function newKeys() {
+  return { ios: true, keys: {}, devs: [] };
+}
+
+const iosEv = (e, more) => ({ t: 'cloud', json: e ? e.json : null, at: e ? e.at : 0, dev: e ? e.dev : '', stamp: e ? e.stamp : '', refused: false, put: '', more: !!more });
+
 // one device: its own page (vm), its own local storage, and the native side answering its messages one pump later, as the
 // real bridges do. hold keeps the answers back, fail makes puts fail, drop loses them without a word, stale is what a cache that has not synced answers to a read
 function device(cloud, st = {}) {
-  const dev = { st, cloud, posts: [], inbox: [], hold: false, fail: false, drop: false, stale: null, out: false, unavail: false, fails: [] };
+  const dev = { st, cloud, posts: [], inbox: [], hold: false, fail: false, drop: false, out: false, unavail: false, fails: [], seen: {}, lagged: [], offline: false, mine: '' };
+  if (cloud.ios) {
+    cloud.devs.push(dev);
+    dev.seen = { ...cloud.keys };
+  }
   const ctx = {
     console,
     localStorage: {
@@ -67,15 +78,59 @@ function device(cloud, st = {}) {
   for (const [f, code] of src) vm.runInContext(code, ctx, { filename: f });
   vm.runInContext('clock = function () { return __now(); };', ctx);
 
+  const nativeIos = m => {
+    if (m.dev) dev.mine = m.dev;
+    if (m.cmd === 'cloudState') dev.inbox.push({ t: 'cloudState', state: Object.keys(dev.seen).some(k => k !== dev.mine) ? 'available' : 'pending' });
+    else if (m.cmd === 'cloudGet') {
+      const list = Object.keys(dev.seen).filter(k => k !== dev.mine).map(k => dev.seen[k]);
+      if (!list.length) dev.inbox.push(iosEv(null));
+      list.forEach((e, i) => dev.inbox.push(iosEv(e, i < list.length - 1)));
+    } else if (m.cmd === 'cloudPut') {
+      if (dev.drop) return;
+      const e = { json: m.json, at: m.at, dev: m.dev, stamp: m.stamp };
+      dev.seen[m.dev] = e;
+      if (dev.offline) dev.late = e;
+      else dev.out_(e);
+      dev.inbox.push({ t: 'cloudPut', ok: true, stamp: m.stamp });
+    }
+  };
+  // the write reaches the store and is delivered to the other devices, each unless it lags
+  dev.out_ = e => {
+    cloud.keys[e.dev] = e;
+    cloud.devs.forEach(o => {
+      if (o === dev) return;
+      if (o.lag || o.offline) o.lagged.push(e);
+      else {
+        o.seen[e.dev] = e;
+        o.inbox.push(iosEv(e));
+      }
+    });
+  };
+  // iCloud brings what it held back
+  dev.catchUp = () => {
+    dev.lag = false;
+    dev.lagged.splice(0).forEach(e => {
+      dev.seen[e.dev] = e;
+      dev.inbox.push(iosEv(e));
+    });
+    dev.pump();
+  };
+  dev.online = () => {
+    dev.offline = false;
+    if (dev.late) dev.out_(dev.late);
+    dev.late = null;
+    dev.catchUp();
+  };
   const native = m => {
+    if (cloud.ios) return nativeIos(m);
     if (dev.unavail && (m.cmd === 'cloudState' || m.cmd === 'cloudGet')) return dev.inbox.push({ t: 'cloudState', state: 'unavailable' });
     if (m.cmd === 'cloudState') dev.inbox.push({ t: 'cloudState', state: 'available' });
-    else if (m.cmd === 'cloudGet') dev.inbox.push(dev.stale || cloud.ev());
+    else if (m.cmd === 'cloudGet') dev.inbox.push(cloud.ev());
     else if (m.cmd === 'cloudPut') {
       if (dev.drop) return;
       if (dev.fail) dev.inbox.push({ t: 'cloudPut', ok: false, stamp: m.stamp });
       else if (dev.out) dev.inbox.push({ t: 'cloudPut', ok: false, stamp: m.stamp });
-      else if (!m.force && (dev.stale || cloud).json !== null && (dev.stale || cloud).stamp !== (m.base || '')) dev.inbox.push({ ...(dev.stale || cloud.ev()), refused: true, put: m.stamp });
+      else if (!m.force && cloud.json !== null && cloud.stamp !== (m.base || '')) dev.inbox.push({ ...cloud.ev(), refused: true, put: m.stamp });
       else {
         cloud.json = m.json;
         cloud.at = m.at;
@@ -100,10 +155,11 @@ function device(cloud, st = {}) {
   dev.puts = () => dev.posts.filter(m => m.cmd === 'cloudPut');
   dev.gems = () => dev.run('S.gems');
   dev.base = () => dev.run('S.cl.base');
+  dev.id = () => dev.run('devId()');
   dev.dirty = () => dev.run('cloudSig(S) !== S.cl.sig');
   // the cloud tells this device that the copy changed (iCloud), or it asks (a return, Play Games)
   dev.push = ev => { dev.inbox.push(ev); dev.pump(); };
-  dev.ask = () => dev.run("post({ cmd: 'cloudGet' })");
+  dev.ask = () => dev.run('cloudAsk()');
   return dev;
 }
 
@@ -123,37 +179,66 @@ function pair(setup) {
   return [a, b, cloud];
 }
 
-// scenario A: the iPhone is hidden at 9:00, the iPad plays to 12:00, the iPhone returns at 17:00 and taps once before the
-// iPad's copy, which iCloud brings late, arrives. The iPad's copy wins; the one tap is the only loss. With hide the iPhone's
-// put goes out on the old base and lands over the iPad's copy (its cache cannot know better); the iPad then gets that copy,
-// sees it cannot have grown from what it wrote, keeps itself and writes again, and the iPhone follows
-for (const hide of [false, true]) {
-  const [a, b, c] = pair();
-  const s0 = c.ev();
+// the same pair on the key-value store: the first made the game and wrote its key, the second was installed after
+function pairIos(setup) {
+  const cloud = newKeys();
+  now = T9;
+  const a = device(cloud);
+  a.run('S = fresh(); S.gems = 100; S.ads.ap = 1000; ' + (setup || '') + 'save()');
+  a.launch();
+  a.put();
+  const b = device(cloud);
+  b.launch();
+  expect(a.base() === cloud.keys[a.id()].stamp && b.base() === a.base(), 'the iOS pair did not agree on the first copy');
+  expect(!a.dirty() && !b.dirty(), 'a device that took or wrote the copy counts as changed');
+  a.posts.length = b.posts.length = 0;
+  return [a, b, cloud];
+}
+
+// scenario A on the iPhone's store: the iPhone is hidden at 9:00, the iPad plays to 12:00, the iPhone returns at 17:00 with an
+// iCloud that has not delivered the iPad's copy yet, taps once and closes within seconds. Its put goes to its own key, so the
+// iPad's copy is still there; when it arrives the iPhone takes it, and the iPad keeps its game
+{
+  const [a, b, c] = pairIos();
+  const bid = b.id();
+  const aid = a.id();
+  a.lag = true;
   now = T12;
   b.change(50, 10800);
   b.put();
-  const s1 = c.ev();
   const gems = b.gems();
+  const bStamp = b.base();
   now = T17;
-  a.stale = s0;
   a.run('cloudBack()');
-  expect(!a.run('cloudHeld()'), 'the cache answer did not end the return wait');
+  expect(!a.run('cloudHeld()'), 'the answer without the iPad copy did not end the return wait');
   a.change(1, 3);
-  if (hide) {
-    a.put();
-    expect(c.stamp !== s1.stamp && a.base() === c.stamp, 'the put on the cached base did not land as it does on iCloud');
-    b.push(c.ev());
-    expect(b.gems() === gems && b.dirty(), 'the iPad took a copy that cannot have grown from its own (gems ' + b.gems() + ')');
-    b.put();
-    a.stale = null;
-    a.push(c.ev());
-  } else a.push(s1);
-  expect(a.gems() === gems, 'the iPad copy did not win over one tap (gems ' + a.gems() + ', iPad ' + gems + ')');
-  expect(a.base() === c.stamp && !a.dirty(), 'the iPhone did not agree with the iPad copy afterwards');
-  if (hide) expect(b.gems() === gems && b.base() === c.stamp && !b.dirty(), 'the iPad does not agree with the copy it wrote last');
   a.put();
-  expect(c.stamp === a.base() && JSON.parse(c.json).gems === gems, 'the iPhone wrote over the iPad copy it had just taken');
+  expect(c.keys[bid].stamp === bStamp && JSON.parse(c.keys[bid].json).gems === gems, 'the iPhone put overwrote the iPad key');
+  expect(a.puts().length === 1 && a.base() === c.keys[aid].stamp, 'the put of the iPhone was not written to its own key');
+  a.catchUp();
+  expect(a.gems() === gems, 'the iPad copy did not win over one tap (gems ' + a.gems() + ', iPad ' + gems + ')');
+  expect(!a.dirty(), 'the iPhone did not agree with the iPad copy afterwards');
+  b.pump();
+  expect(b.gems() === gems, 'the iPad took the iPhone copy that had less play (gems ' + b.gems() + ')');
+  b.put();
+  a.pump();
+  expect(a.gems() === gems && b.gems() === gems, 'the two devices do not hold the iPad game');
+}
+
+// a new install finds several devices' copies: it starts from the one with the most play, whichever comes first, and judges the
+// others against it
+for (const aMore of [false, true]) {
+  const [a, b, c] = pairIos();
+  a.change(5, aMore ? 600 : 100);
+  a.put();
+  b.change(7, aMore ? 100 : 600);
+  b.put();
+  const d = device(c);
+  d.launch();
+  const want = aMore ? 105 : 107;
+  expect(d.gems() === want, 'the new install did not start from the copy with the most play (gems ' + d.gems() + ', want ' + want + ')');
+  expect(!d.puts().length && d.run('cloudFound.length') === 0, 'the new install put or kept copies after starting');
+  expect(d.run('S.ads.ap') === 1600, 'the other copy was not joined into the game kept');
 }
 
 // time on screen is not play: a device that only watched its cash grow does not outrank one that played for 20 minutes
@@ -168,19 +253,21 @@ for (const hide of [false, true]) {
   expect(a.gems() === gems && a.base() === c.stamp, 'minutes of play lost to a device that only had the game on screen (gems ' + a.gems() + ')');
 }
 
-// scenario B: the cache answer at launch is the copy the game already agrees with, the real one comes after
+// scenario B: the answer at launch lacks the copy iCloud is still bringing; it comes after
 {
-  const [a, b, c] = pair();
-  const s0 = c.ev();
+  const [a, b, c] = pairIos();
+  const s0 = { ...c.keys };
   now = T12;
   b.change(7, 500);
   b.put();
   const a2 = device(c, a.st);
-  a2.stale = s0;
+  a2.seen = s0;
+  a2.lag = true;
+  a2.lagged.push(c.keys[b.id()]);
   a2.launch();
-  expect(!a2.puts().length && a2.gems() === 100, 'the stale answer changed or wrote the game');
-  a2.push(c.ev());
-  expect(a2.gems() === b.gems() && a2.base() === c.stamp, 'the real copy after a stale answer was not taken');
+  expect(!a2.puts().length && a2.gems() === 100, 'the answer without the copy changed or wrote the game');
+  a2.catchUp();
+  expect(a2.gems() === b.gems() && a2.base() === b.base(), 'the copy that came after the launch answer was not taken');
   expect(!a2.puts().length, 'a game that only took a copy put it back');
 }
 
@@ -225,7 +312,7 @@ for (const aMore of [false, true]) {
   a.put();
   expect(!a.puts().length, 'a put went out while the time was unknown');
   a.push(c.ev());
-  expect(a.gems() === 101 && a.run('cloudPend !== null'), 'a copy that came while the time was unknown was not parked');
+  expect(a.gems() === 101 && a.run('cloudPend.length === 1'), 'a copy that came while the time was unknown was not parked');
   a.run('timeHeld = false; cloudApply()');
   expect(a.gems() === 150 && a.base() === stamp, 'the parked copy was not judged when the time came');
 }
@@ -570,25 +657,23 @@ for (const more of [false, true]) {
   expect(a.run('JSON.stringify(S.iap.held)') === 'null' && a.run('S.iap.wait.gems2') === undefined, 'a used deal came back to the device that used it');
 }
 
-// the iPhone's read answers from its local copy and cannot refuse a write: the first put after a return or a launch waits, so the
-// copy iCloud is still bringing from the iPad is not written over before it arrives
+// the first put after a return or a launch waits, so the copy iCloud is still bringing from the iPad is taken before the game
+// writes
 {
-  const [a, b, c] = pair();
-  const s0 = c.ev();
+  const [a, b, c] = pairIos();
+  a.lag = true;
   now = T12;
   b.change(50, 10800);
   b.put();
   const gems = b.gems();
   now = T17;
   tick += 100000;
-  a.stale = s0;
   a.run('cloudBack()');
   a.change(1, 3);
   expect(a.run('cloudAt + CLOUD_EVERY - performance.now()') > 0, 'the first put after a return is not delayed');
-  expect(c.stamp !== a.base() && JSON.parse(c.json).gems === gems, 'a put went out on the cached base');
-  a.stale = null;
-  a.push(c.ev());
-  expect(a.gems() === gems && a.base() === c.stamp, 'the iPad copy that came before the delayed put was not taken');
+  expect(!a.puts().length, 'a put went out before the delay was over');
+  a.catchUp();
+  expect(a.gems() === gems && a.base() === b.base(), 'the iPad copy that came before the delayed put was not taken');
   const w = device(c, a.st);
   w.launch();
   expect(w.run('cloudAt + CLOUD_EVERY - performance.now()') > 0, 'the first put after a launch is not delayed');
@@ -710,6 +795,12 @@ for (const more of [false, true]) {
 {
   const swift = fs.readFileSync(path.join(root, 'ios', 'MainStreet', 'CloudBridge.swift'), 'utf8');
   expect(!/ubiquityIdentityToken\s*==\s*nil/.test(swift), 'CloudBridge.swift still reads the iCloud identity token');
+}
+
+{
+  const [a] = pairIos();
+  a.run('fillStore(); save()');
+  console.log('a save with every department and place at its last level: ' + a.run('saved().length') + ' bytes');
 }
 
 if (failed) process.exit(1);
