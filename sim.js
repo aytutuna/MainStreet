@@ -69,6 +69,10 @@ var clock = function () { return synced ? synced.ms + performance.now() - synced
 var onShopper = null;
 var onMission = null;
 var onYesterday = null;
+var onSaveFail = null;
+var saveFailed = false;
+// a save from a newer build is left alone
+var blocked = false;
 var BZ = {};
 BIZ.forEach(function (b, i) {
   var it = ITEMS[b.id];
@@ -1491,9 +1495,20 @@ function warp(free) {
 }
 
 function save() {
+  if (blocked) return;
   S.ts = clock();
   try {
     localStorage.setItem(KEY, saved());
+  } catch (e) {
+    if (!saveFailed && onSaveFail) onSaveFail();
+    saveFailed = true;
+  }
+}
+
+// the text of a save that is about to be replaced by a new game
+function keep(raw) {
+  try {
+    localStorage.setItem(KEY + '.bak', raw);
   } catch (e) {}
 }
 
@@ -1553,8 +1568,14 @@ function validate(o) {
     // v11 keeps the level of each item; the first l pieces are what the older saves had
     var at = o.v >= 11 && o.pi && o.pi[p.id];
     if (Array.isArray(at) && at.length === p.items.length) {
+      var had = at.reduce(function (a, c) { return a + Math.floor(num(c, 0)); }, 0);
       it = p.items.map(function (x, j) { return Math.min(x.at.length, Math.floor(num(at[j], 0))); });
       l = it.reduce(function (a, c) { return a + c; }, 0);
+      // an item with fewer pieces than it had keeps the pieces in total, spread as a new level would
+      if (had > l) {
+        l = Math.min(p.cost.length, had);
+        it = atPlace(p.id, l);
+      }
     }
     s.pl[p.id] = l;
     s.pi[p.id] = it;
@@ -1572,7 +1593,10 @@ function validate(o) {
     if (o.v >= 11 && Array.isArray(e.it) && e.it.length === z.items.length) {
       var it = z.items.map(function (x, j) { return Math.min(x.at.length, Math.floor(num(e.it[j], 0))); });
       var sum = it.reduce(function (a, c) { return a + c; }, 0);
-      if (sum >= 1) b = { l: sum, it: it };
+      var all = e.it.reduce(function (a, c) { return a + Math.floor(num(c, 0)); }, 0);
+      // an item with fewer pieces than it had keeps the pieces in total, spread as a new level would
+      if (all > sum) b = atLevel(z.id, Math.min(UPS, all));
+      else if (sum >= 1) b = { l: sum, it: it };
     }
     s.b[z.id] = b;
     s.ms[z.id] = o.v >= 11 && o.ms && z.id in o.ms ? Math.min(STAR_AT.length, Math.floor(num(o.ms[z.id], 0))) : starsAt(b.l);
@@ -1658,7 +1682,13 @@ function load() {
     OLD_KEYS.forEach(function (k) { localStorage.removeItem(k); });
     if (mall) carry(JSON.parse(mall));
     raw = raw || old || localStorage.getItem(KEY);
-    var o = raw ? validate(JSON.parse(raw)) : null;
+    var j = null;
+    try {
+      j = raw ? JSON.parse(raw) : null;
+    } catch (e) {}
+    if (j && j.v > 11) blocked = true;
+    var o = j ? validate(j) : null;
+    if (raw && !o && !blocked) keep(raw);
     // a new game is made now, so its start comes from the server time
     if (!o && !mall) S = fresh();
     if (o) {
@@ -1687,6 +1717,8 @@ function reset() {
   S.ads = ads;
   clearShoppers();
   try {
+    var old = localStorage.getItem(KEY);
+    if (old) keep(old);
     localStorage.removeItem(KEY);
   } catch (e) {}
 }

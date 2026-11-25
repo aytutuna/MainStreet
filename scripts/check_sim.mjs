@@ -104,6 +104,56 @@ const got = JSON.parse(run('saved()'));
 if (got.v !== sampleSave.v || got.cash !== sampleSave.cash || got.gems !== sampleSave.gems) fail('the v11 sample save did not load as written');
 if (Object.keys(got.b).join() !== Object.keys(sampleSave.b).join()) fail('the v11 sample save lost departments');
 
+// a save that cannot be read is kept as a backup before the new game replaces it; a newer one is left alone
+const good = fs.readFileSync(fixture, 'utf8').trim();
+for (const [name, text] of [['truncated', good.slice(0, good.length >> 1)], ['cash abc', JSON.stringify({ ...JSON.parse(good), cash: 'abc' })]]) {
+  delete store[key + '.bak'];
+  store[key] = text;
+  run('S = fresh()');
+  run('load()');
+  run('save()');
+  if (store[key + '.bak'] !== text) fail('the ' + name + ' save was not kept as a backup');
+  if (!JSON.parse(store[key]).b) fail('no new game after the ' + name + ' save');
+}
+delete store[key + '.bak'];
+delete store[key];
+run('S = fresh()');
+run('load()');
+if (key + '.bak' in store) fail('an empty store made a backup');
+const newer = JSON.stringify({ ...JSON.parse(good), v: 12 });
+store[key] = newer;
+run('S = fresh()');
+run('load()');
+run('save()');
+if (store[key] !== newer || run('blocked') !== true) fail('a v12 save was not left alone');
+run('blocked = false');
+
+// an item that lost pieces keeps the pieces in total
+{
+  const o = JSON.parse(good);
+  const id = Object.keys(o.b)[0];
+  const n = run('BZ.' + id + '.items.length');
+  o.b[id] = { l: 50, it: Array.from({ length: n }, () => 99) };
+  store[key] = JSON.stringify(o);
+  run('S = fresh()');
+  run('load()');
+  const got2 = run('S.b.' + id + '.l');
+  if (got2 !== run('UPS')) fail('an over-full department kept ' + got2 + ' pieces, not ' + run('UPS'));
+}
+
+// a write that fails is reported once
+{
+  let calls = 0;
+  const set = ctx.localStorage.setItem;
+  ctx.localStorage.setItem = () => { throw new Error('full'); };
+  ctx.hit = () => { calls++; };
+  run('onSaveFail = hit');
+  run('save()');
+  run('save()');
+  ctx.localStorage.setItem = set;
+  if (calls !== 1) fail('a failed write was reported ' + calls + ' times');
+}
+
 // the time zone is held for 20 hours after it was taken, so flipping it does not give a second day
 run('reset()');
 const zone0 = run('S.tz.o');
