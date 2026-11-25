@@ -325,7 +325,8 @@ function cloudMenu() {
 // answer, as on return, and a copy that comes later is judged whenever it comes
 function cloudLook(done) {
   if (!native()) return done(false);
-  setInterval(cloudPoll, CLOUD_POLL);
+  // Play Games has no change push; iCloud's push is the iPhone's way to learn of another device
+  if (/Android/i.test(navigator.userAgent)) setInterval(cloudPoll, CLOUD_POLL);
   claimNeeded = true;
   post({ cmd: 'cloudState', dev: devId() });
   cloudAsk();
@@ -340,7 +341,7 @@ function cloudLook(done) {
   cloudLate = setTimeout(cloudEnd, CLOUD_WAIT);
 }
 
-// Play Games has no change push, so the cloud is read again every few minutes; a put that never got an answer is given up
+// the cloud is read again every few seconds on Android; a put that never got an answer is given up
 function cloudPoll() {
   if (!loaded || document.hidden || timeHeld || cloudOff) return;
   if (S.cl.fly && performance.now() - cloudAt > 60000) S.cl.fly = null;
@@ -370,6 +371,7 @@ function cloudEnd() {
   cloudFind = null;
   cloudFound = [];
   done(!!best && cloudSeed(best.json, best.stamp));
+  if (best && loaded) cloudSeen(best);
   list.forEach(function (e) {
     if (e === best) return;
     e.more = false;
@@ -382,7 +384,10 @@ function cloudEnd() {
 function cloudTake(ev) {
   var h = copyHold(ev);
   if (claim && h.dev !== devId() && (h.at > claim.at || (h.at === claim.at && h.dev > claim.dev))) return cloudLost(ev);
+  // iCloud sends every other device's key again with each read: a copy judged once is not judged again
+  if (!ev.refused && ev.dev && ev.stamp && S.cl.seen[ev.dev] === ev.stamp) return;
   var took = takeCloud(ev.json, ev.stamp, !!ev.refused);
+  cloudSeen(ev);
   // a put of an earlier page that is not this copy did not land
   if (S.cl.fly && S.cl.fly.stamp !== cloudLive) S.cl.fly = null;
   if (blocked) return loadFail(tl('save.newer'), true);
@@ -400,6 +405,15 @@ function cloudTake(ev) {
     showAway(cloudAway);
     banner('<b>' + tl('cloud.loaded') + '</b><small>' + tl('cloud.loaded_note') + '</small>', 0);
   } else cloudTaken = true;
+}
+
+function cloudSeen(ev) {
+  if (!ev.dev || !ev.stamp || ev.dev === devId()) return;
+  var m = S.cl.seen;
+  delete m[ev.dev];
+  m[ev.dev] = ev.stamp;
+  var k = Object.keys(m);
+  while (k.length > 8) delete m[k.shift()];
 }
 
 // on return the cloud is asked again, and the return waits for its answer (at most CLOUD_BACK) so another device's copy is

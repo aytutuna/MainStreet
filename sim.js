@@ -102,7 +102,7 @@ var S = fresh();
 function fresh() {
   var s = { v: 11, cash: START_CASH, gems: 0, rep: 0, pk: {}, store: 1, run: 0, all: 0, pend: 0, ps: 0, x2: 0, call: 0, vt: rnd(VIP.first), b: {}, ms: {},
     st: { srv: 0, lost: 0, sr: 0, t: 0 }, goal: [0, 1, 2], gn: 3, gd: {}, day: { n: 0, d: -1, t: 0 }, tz: { o: zone(), at: clock() }, mi: { d: -1, m: [], b: 0 }, rg: { o: {}, days: 0, gifts: 0, combo: 0 }, lk: { on: 'classic', own: {} }, ac: { o: {}, m: {} },
-    ask: 0, clk: START_H * CLOCK / 24, iap: { noads: 0, x2: 0, starter: 0, noadsTx: '', x2Tx: '', noadsUser: '', x2User: '', noadsAt: 0, x2At: 0, wait: {}, tx: [], rf: [], paid: [] }, cl: { base: '', sig: '', bap: 0, old: [], force: 0, fly: null }, er: 0, ads: { d: -1, n: {}, pt: 0, ap: 0, li: 0, sd: 0 }, hold: { dev: '', at: 0 }, ts: clock() };
+    ask: 0, clk: START_H * CLOCK / 24, iap: { noads: 0, x2: 0, starter: 0, noadsTx: '', x2Tx: '', noadsUser: '', x2User: '', noadsAt: 0, x2At: 0, wait: {}, tx: [], rf: [], paid: [] }, cl: { base: '', sig: '', bap: 0, old: [], seen: {}, force: 0, fly: null }, er: 0, ads: { d: -1, n: {}, pt: 0, ap: 0, li: 0, sd: 0 }, hold: { dev: '', at: 0 }, ts: clock() };
   noPlaces(s);
   s.b.produce = atLevel('produce', 1);
   return s;
@@ -1505,7 +1505,7 @@ function warp(free) {
 
 function save() {
   if (blocked) return;
-  S.ts = clock();
+  S.ts = Math.max(clock(), S.er);
   try {
     localStorage.setItem(KEY, saved());
     if (onSaved) onSaved();
@@ -1578,6 +1578,7 @@ function validate(o) {
   var fl = cl.fly;
   s.cl = { base: typeof cl.base === 'string' ? cl.base : '', sig: typeof cl.sig === 'string' ? cl.sig : '',
     bap: num(cl.bap, 0), force: cl.force ? 1 : 0, old: (Array.isArray(cl.old) ? cl.old : []).filter(function (t) { return typeof t === 'string'; }).slice(-8),
+    seen: seenMap(cl.seen),
     fly: fl && typeof fl.stamp === 'string' && typeof fl.sig === 'string' ? { stamp: fl.stamp, sig: fl.sig, ap: num(fl.ap, 0), force: fl.force ? 1 : 0 } : null };
   s.er = num(o.er, 0);
   var hd = o.hold || {};
@@ -1748,12 +1749,19 @@ function cloudSeed(raw, stamp) {
     }
     var o = validate(j);
     if (!o) return false;
-    o.cl = { base: stamp || '', sig: cloudSig(o), bap: o.ads.ap, force: 0, old: [], fly: null };
+    o.cl = { base: stamp || '', sig: cloudSig(o), bap: o.ads.ap, force: 0, old: [], seen: {}, fly: null };
     localStorage.setItem(KEY, JSON.stringify(o));
     return true;
   } catch (e) {
     return false;
   }
+}
+
+// the last stamp judged from each other device, a few devices at most
+function seenMap(m) {
+  var out = {};
+  if (m && typeof m === 'object') Object.keys(m).slice(-8).forEach(function (k) { if (typeof m[k] === 'string') out[k] = m[k]; });
+  return out;
 }
 
 // refunds of both copies are listed in whichever one is kept
@@ -1889,8 +1897,8 @@ function takeCloud(raw, stamp, current) {
   if (!o) return false;
   stamp = stamp || '';
   var c = S.cl;
-  // written before this game was erased: it cannot bring the erased game back
-  if (o.ts < S.er) return false;
+  // written before this game was erased, or by a claim from before it: it cannot bring the erased game back
+  if (o.ts < S.er || (o.hold.at < S.er && o.er < S.er)) return false;
   // nothing new: the copy this game agrees with, or one it has agreed with before and moved on from
   if (stamp && (stamp === c.base || (!current && c.old.indexOf(stamp) >= 0))) return false;
   // the copy is this device's own last put, which landed without its answer reaching the game
@@ -1923,7 +1931,7 @@ function takeCloud(raw, stamp, current) {
   }
   meet(o, S, true);
   var joined = cloudSig(o);
-  o.cl = { base: stamp, sig: theirs, bap: their, force: 0, old: c.base && c.base !== stamp ? c.old.concat([c.base]).slice(-8) : c.old, fly: null };
+  o.cl = { base: stamp, sig: theirs, bap: their, force: 0, old: c.base && c.base !== stamp ? c.old.concat([c.base]).slice(-8) : c.old, seen: c.seen, fly: null };
   S = o;
   clearShoppers();
   // the copy was saved when the other device last ran: the time since is time away
@@ -1955,7 +1963,7 @@ function cloudHandOff(raw, stamp) {
   if ([o.gems, o.x2, o.rep, o.iap.noads, o.iap.x2].join() === had) return false;
   o.ads.ap = ap;
   var c = S.cl;
-  o.cl = { base: stamp || '', sig: sig, bap: ap, force: 0, old: c.old, fly: null };
+  o.cl = { base: stamp || '', sig: sig, bap: ap, force: 0, old: c.old, seen: c.seen, fly: null };
   S = o;
   clearShoppers();
   try {
@@ -1981,7 +1989,8 @@ function reset() {
   S.ads = ads;
   // stamps from before the erase stay known, so a late read of the erased game's copy is not taken back
   S.cl.old = cl.old.concat(cl.base ? [cl.base] : []).slice(-8);
-  S.er = Math.round(clock());
+  S.cl.seen = cl.seen;
+  S.er = S.ts = Math.round(clock());
   S.cl.force = 1;
   clearShoppers();
   try {
