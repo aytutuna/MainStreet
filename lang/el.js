@@ -207,6 +207,7 @@ LANG['el'] = {
   'radio.loading': 'Φόρτωση',
   'radio.resume': 'Συνέχεια',
   'radio.retry': 'Ξαναδοκίμασε',
+  'net.need': 'Main Street needs an internet connection to play. Connect and it carries on where you left off.',
   'radio.try': 'Δοκίμασε τους σταθμούς ({group}) στο μενού, στο Ράδιο',
   'radio.now.other': 'Παίζει η μουσική σου',
   'radio.now.off': 'Το ράδιο είναι κλειστό',

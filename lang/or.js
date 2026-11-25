@@ -207,6 +207,7 @@ LANG['or'] = {
   'radio.loading': 'ଲୋଡ୍ ହେଉଛି',
   'radio.resume': 'ଜାରି',
   'radio.retry': 'ପୁଣି ଚେଷ୍ଟା',
+  'net.need': 'Main Street needs an internet connection to play. Connect and it carries on where you left off.',
   'radio.try': 'ମେନୁର ରେଡିଓରେ {group} ଷ୍ଟେସନ ଦେଖ',
   'radio.now.other': 'ତୁମ ସଙ୍ଗୀତ ଚାଲିଛି',
   'radio.now.off': 'ରେଡିଓ ବନ୍ଦ',

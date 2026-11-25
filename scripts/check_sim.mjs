@@ -104,5 +104,26 @@ const got = JSON.parse(run('saved()'));
 if (got.v !== sampleSave.v || got.cash !== sampleSave.cash || got.gems !== sampleSave.gems) fail('the v11 sample save did not load as written');
 if (Object.keys(got.b).join() !== Object.keys(sampleSave.b).join()) fail('the v11 sample save lost departments');
 
+// the time zone is held for 20 hours after it was taken, so flipping it does not give a second day
+run('reset()');
+const zone0 = run('S.tz.o');
+const day0 = run('dayNum(clock())');
+run('Date.prototype.getTimezoneOffset = function () { return -840; }');
+run('zoneCheck()');
+run('Date.prototype.getTimezoneOffset = function () { return 600; }');
+run('zoneCheck()');
+if (run('S.tz.o') !== zone0 || run('dayNum(clock())') !== day0) fail('a zone flip within 20 hours moved the day');
+now += 21 * 3600000;
+run('zoneCheck()');
+if (run('S.tz.o') !== 600) fail('a changed zone was not taken on after 20 hours');
+
+// a daily reward needs 20 hours since the last one, whatever the day number says
+run('S.day = { n: 0, d: -1, t: 0 }');
+if (!run('claimDaily()')) fail('the first daily reward was refused');
+run('S.day.d -= 1');
+if (run('daily().can')) fail('a second daily reward came within 20 hours');
+now += 21 * 3600000;
+if (!run('daily().can')) fail('the daily reward did not come back after 20 hours');
+
 if (failed) process.exit(1);
 console.log('sim ok: earned ' + Math.round(earned) + ', ' + Object.keys(got.b).length + ' departments in the sample');

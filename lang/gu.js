@@ -207,6 +207,7 @@ LANG['gu'] = {
   'radio.loading': 'લોડ થાય છે',
   'radio.resume': 'ફરી ચલાવો',
   'radio.retry': 'ફરી પ્રયાસ',
+  'net.need': 'Main Street needs an internet connection to play. Connect and it carries on where you left off.',
   'radio.try': 'મેનૂમાં રેડિયો હેઠળ {group} સ્ટેશનો અજમાવો',
   'radio.now.other': 'તમારું સંગીત વાગે છે',
   'radio.now.off': 'રેડિયો બંધ છે',

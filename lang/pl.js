@@ -222,6 +222,7 @@ LANG['pl'] = {
   'radio.loading': 'Ładowanie',
   'radio.resume': 'Wznów',
   'radio.retry': 'Ponów',
+  'net.need': 'Main Street needs an internet connection to play. Connect and it carries on where you left off.',
   'radio.try': 'W menu, w sekcji Radio, znajdziesz stacje: {group}',
   'radio.now.other': 'Gra twoja muzyka',
   'radio.now.off': 'Radio wyłączone',

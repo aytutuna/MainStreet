@@ -207,6 +207,7 @@ LANG['zh-Hant'] = {
   'radio.loading': '載入中',
   'radio.resume': '繼續',
   'radio.retry': '重試',
+  'net.need': 'Main Street needs an internet connection to play. Connect and it carries on where you left off.',
   'radio.try': '到選單的電台，試試{group}電台',
   'radio.now.other': '正在播放你的音樂',
   'radio.now.off': '電台已關閉',

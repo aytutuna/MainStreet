@@ -1468,6 +1468,11 @@ button.pill:active,
   padding: calc(var(--st) + 12px) 12px calc(var(--sb) + 12px);
 }
 
+#net {
+  z-index: 60;
+  background: rgba(20, 16, 30, 0.92);
+}
+
 .box {
   width: 100%;
   max-width: 340px;

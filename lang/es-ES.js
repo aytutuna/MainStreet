@@ -207,6 +207,7 @@ LANG['es-ES'] = {
   'radio.loading': 'Cargando',
   'radio.resume': 'Reanudar',
   'radio.retry': 'Reintentar',
+  'net.need': 'Main Street needs an internet connection to play. Connect and it carries on where you left off.',
   'radio.try': 'Prueba en el menú, en Radio: {group}',
   'radio.now.other': 'Suena tu música',
   'radio.now.off': 'La radio está apagada',

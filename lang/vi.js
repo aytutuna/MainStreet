@@ -207,6 +207,7 @@ LANG['vi'] = {
   'radio.loading': 'Đang tải',
   'radio.resume': 'Tiếp tục',
   'radio.retry': 'Thử lại',
+  'net.need': 'Main Street needs an internet connection to play. Connect and it carries on where you left off.',
   'radio.try': 'Thử các đài {group} trong menu, mục Radio',
   'radio.now.other': 'Đang phát nhạc của bạn',
   'radio.now.off': 'Radio đã tắt',

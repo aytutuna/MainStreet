@@ -60,7 +60,12 @@ var SHUT = [23, 1];
 var START_H = 6;
 var speed = 1;
 var shutNow = null;
-var clock = function () { return Date.now(); };
+// server time: the last answer from the time source plus the monotonic time since it, so a changed phone clock moves
+// nothing. Until the first answer, and in tests, it is the phone's clock
+var synced = null;
+var ZONE_HOURS = 20;
+var DAILY_GAP = 20 * 3600000;
+var clock = function () { return synced ? synced.ms + performance.now() - synced.at : Date.now(); };
 var onShopper = null;
 var onMission = null;
 var onYesterday = null;
@@ -90,7 +95,7 @@ var S = fresh();
 
 function fresh() {
   var s = { v: 11, cash: START_CASH, gems: 0, rep: 0, pk: {}, store: 1, run: 0, all: 0, pend: 0, x2: 0, call: 0, b: {}, ms: {},
-    st: { srv: 0, lost: 0, sr: 0, t: 0 }, goal: [0, 1, 2], gn: 3, gd: {}, day: { n: 0, d: -1 }, mi: { d: -1, m: [], b: 0 }, rg: { o: {}, days: 0, gifts: 0, combo: 0 }, lk: { on: 'classic', own: {} }, ac: { o: {}, m: {} },
+    st: { srv: 0, lost: 0, sr: 0, t: 0 }, goal: [0, 1, 2], gn: 3, gd: {}, day: { n: 0, d: -1, t: 0 }, tz: { o: zone(), at: clock() }, mi: { d: -1, m: [], b: 0 }, rg: { o: {}, days: 0, gifts: 0, combo: 0 }, lk: { on: 'classic', own: {} }, ac: { o: {}, m: {} },
     ask: 0, clk: START_H * CLOCK / 24, iap: { noads: 0, x2: 0, starter: 0, tx: [] }, ads: { d: -1, n: {}, pt: 0, li: 0, sd: 0 }, ts: clock() };
   noPlaces(s);
   s.b.produce = atLevel('produce', 1);
@@ -1285,9 +1290,20 @@ function move() {
   return true;
 }
 
+function zone() {
+  return new Date(clock()).getTimezoneOffset();
+}
+
+// days are counted in the time zone saved at first launch. A new zone is taken on at most once in ZONE_HOURS, so
+// flipping the phone's zone back and forth does not make a second day
 function dayNum(ms) {
-  var d = new Date(ms);
-  return Math.floor((ms - d.getTimezoneOffset() * 60000) / 86400000);
+  var o = S.tz ? S.tz.o : new Date(ms).getTimezoneOffset();
+  return Math.floor((ms - o * 60000) / 86400000);
+}
+
+function zoneCheck() {
+  var o = zone();
+  if (o !== S.tz.o && clock() - S.tz.at >= ZONE_HOURS * 3600000) S.tz = { o: o, at: clock() };
 }
 
 // the streak goes on when the last claim was yesterday, and starts again after a missed day. A clock set back keeps
@@ -1295,7 +1311,7 @@ function dayNum(ms) {
 function daily() {
   var today = dayNum(clock());
   var d = S.day;
-  return { can: d.d < today, idx: d.d >= today - 1 ? d.n % 7 : 0 };
+  return { can: d.d < today && clock() - d.t >= DAILY_GAP, idx: d.d >= today - 1 ? d.n % 7 : 0 };
 }
 
 function dailyReward(i) {
@@ -1310,7 +1326,7 @@ function claimDaily() {
   S.gems += r.gems;
   S.x2 += r.x2 * 60;
   if (r.cash) earn(r.cash);
-  S.day = { n: info.idx + 1, d: dayNum(clock()) };
+  S.day = { n: info.idx + 1, d: dayNum(clock()), t: clock() };
   S.rg.days++;
   r.idx = info.idx;
   return r;
@@ -1571,7 +1587,8 @@ function validate(o) {
   s.gn = gn;
   while (s.goal.length < 3 && s.gn < GOALS.length) s.goal.push(s.gn++);
   if (o.gd) for (var k in o.gd) if (s.goal.indexOf(+k) >= 0) s.gd[k] = 1;
-  if (o.day && isFinite(o.day.n) && isFinite(o.day.d)) s.day = { n: Math.floor(o.day.n), d: Math.floor(o.day.d) };
+  if (o.day && isFinite(o.day.n) && isFinite(o.day.d)) s.day = { n: Math.floor(o.day.n), d: Math.floor(o.day.d), t: num(o.day.t, 0) };
+  if (o.tz && isFinite(o.tz.o) && isFinite(o.tz.at)) s.tz = { o: Math.floor(o.tz.o), at: o.tz.at };
   // a save from before the regulars starts the daily count from the streak it has
   s.rg.days = s.day.n;
   if (o.rg && typeof o.rg === 'object') {
@@ -1612,7 +1629,7 @@ function carry(o) {
   S.gems = Math.floor(num(o.gems, 0));
   S.x2 = num(o.x2, 0);
   S.store = 1 + Math.floor(num(o.st && o.st.sales, 0));
-  if (o.day && isFinite(o.day.n) && isFinite(o.day.d)) S.day = { n: Math.floor(o.day.n), d: Math.floor(o.day.d) };
+  if (o.day && isFinite(o.day.n) && isFinite(o.day.d)) S.day = { n: Math.floor(o.day.n), d: Math.floor(o.day.d), t: 0 };
   save();
 }
 
@@ -1628,6 +1645,8 @@ function load() {
     if (mall) carry(JSON.parse(mall));
     raw = raw || old || localStorage.getItem(KEY);
     var o = raw ? validate(JSON.parse(raw)) : null;
+    // a new game is made now, so its start comes from the server time
+    if (!o && !mall) S = fresh();
     if (o) {
       S = o;
       var sec = (clock() - o.ts) / 1000;

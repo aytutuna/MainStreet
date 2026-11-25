@@ -25,6 +25,7 @@ var cardId = null;
 var cardRow = null;
 var cardSel = -1;
 var lastTick = 0;
+var launched = false;
 var shown = {};
 var insets = [0, 0];
 var rows = {};
@@ -2341,22 +2342,30 @@ function wire() {
       if (ac) ac.suspend();
       if (sweep) sweep.redo = true;
       radioSync();
+      if (!launched) return;
       save();
       tell({ cmd: 'set', list: reminders() });
-      hiddenAt = Date.now();
+      if (!hiddenAt) hiddenAt = clock();
       return;
     }
     if (ac && snd) ac.resume();
     askOther();
     radioSync();
-    if (!hiddenAt) return;
-    var sec = (Date.now() - hiddenAt) / 1000;
-    hiddenAt = 0;
-    lastTick = performance.now();
-    if (sec > 60) {
-      var a = away(sec);
-      if (showAway(a)) updateBest();
+    if (!launched) {
+      if (timeHeld) askTime();
+      return;
     }
+    if (!hiddenAt) return;
+    // the game waits for the server time, so the time away comes from two server answers
+    timeWait(function () {
+      var sec = (clock() - hiddenAt) / 1000;
+      hiddenAt = 0;
+      lastTick = performance.now();
+      if (sec > 60) {
+        var a = away(sec);
+        if (showAway(a)) updateBest();
+      }
+    });
   });
 }
 
@@ -2613,6 +2622,10 @@ function onTap(h) {
 
 function loop(t) {
   requestAnimationFrame(loop);
+  if (timeHeld) {
+    lastTick = t;
+    return;
+  }
   var dt = Math.min(1, (t - lastTick) / 1000);
   if (sweep) sweepFrame(t);
   tick(dt);
@@ -2780,7 +2793,14 @@ function start() {
   } catch (e) {}
   if (radio.sel !== 'off' && radio.sel !== 'mix' && !station(radio.sel)) radio.sel = 'mix';
   radio.vol = +radio.vol === +radio.vol ? Math.min(1, Math.max(0, +radio.vol)) : 0.5;
+  timeWait(launch);
+}
+
+// runs on the first server time answer: no save is made or read before it
+function launch() {
+  launched = true;
   var gone = load();
+  zoneCheck();
   View.init($('view'), onTap);
   buildList();
   buildGoals();

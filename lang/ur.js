@@ -207,6 +207,7 @@ LANG['ur'] = {
   'radio.loading': 'لوڈ ہو رہا ہے',
   'radio.resume': 'جاری رکھیں',
   'radio.retry': 'دوبارہ کوشش',
+  'net.need': 'Main Street needs an internet connection to play. Connect and it carries on where you left off.',
   'radio.try': 'مینو میں ریڈیو کے تحت {group} اسٹیشن آزمائیں',
   'radio.now.other': 'آپ کی موسیقی چل رہی ہے',
   'radio.now.off': 'ریڈیو بند ہے',

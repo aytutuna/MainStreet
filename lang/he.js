@@ -207,6 +207,7 @@ LANG['he'] = {
   'radio.loading': 'טוען',
   'radio.resume': 'המשך',
   'radio.retry': 'שוב',
+  'net.need': 'Main Street needs an internet connection to play. Connect and it carries on where you left off.',
   'radio.try': 'נסו את התחנות בקטגוריה "{group}" בתפריט, תחת רדיו',
   'radio.now.other': 'המוזיקה שלכם מתנגנת',
   'radio.now.off': 'הרדיו כבוי',

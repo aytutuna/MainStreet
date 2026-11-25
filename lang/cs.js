@@ -207,6 +207,7 @@ LANG['cs'] = {
   'radio.loading': 'Načítání',
   'radio.resume': 'Pokračovat',
   'radio.retry': 'Znovu',
+  'net.need': 'Main Street needs an internet connection to play. Connect and it carries on where you left off.',
   'radio.try': 'Zkus stanice ({group}) v nabídce v části Rádio',
   'radio.now.other': 'Hraje tvoje hudba',
   'radio.now.off': 'Rádio je vypnuté',

@@ -207,6 +207,7 @@ LANG['ro'] = {
   'radio.loading': 'Se încarcă',
   'radio.resume': 'Continuă',
   'radio.retry': 'Reîncearcă',
+  'net.need': 'Main Street needs an internet connection to play. Connect and it carries on where you left off.',
   'radio.try': 'Încearcă stațiile din {group} din meniu, la Radio',
   'radio.now.other': 'Se aude muzica ta',
   'radio.now.off': 'Radioul este oprit',

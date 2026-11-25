@@ -9,6 +9,9 @@
 //   {t: 'ad', kind, state}                 kind is 'reward'; state is 'ready' or 'none' (whether one can be
 //                                          shown now), 'open', 'rewarded' (the player earned it), 'closed' or 'failed'
 //   {t: 'privacy', required}               whether the consent SDK wants a "Privacy choices" item in the menu
+//   {t: 'time', n, ms, sent, recv}         the server time, answering {cmd: 'time', n}: ms is the server's clock, sent and recv
+//                                          the device's Date.now() when the request left and the answer came; ms is null
+//                                          when nothing answered. It skips the queue, since the game waits for it
 //   {t: 'radio', state, url, title?}       the stream being played: state is 'buffering', 'playing', 'paused' (headphones
 //                                          unplugged) or 'error' (it gave out), url the one
 //                                          the page asked for, title what the station says is on (ICY metadata)
@@ -32,12 +35,79 @@ var restoreWas = 0;
 var queued = [];
 var loaded = false;
 
+// the time comes from the server (the native apps ask alazy.app, a plain browser asks it itself); the game starts and
+// resumes only on an answer, and asks again every ten minutes
+var TIME_URL = 'https://alazy.app/mainstreet/time';
+var TIME_CARD = 4000;
+var TIME_EVERY = 600000;
+var TIME_GRACE = 1200000;
+// a purchase stamped later than this after the server's now is not believed
+var TIME_SKEW = 60000;
+var timeN = 0;
+var timeAsked = 0;
+var timeSince = 0;
+var timeHeld = false;
+var timeDone = null;
+var timeTimer = 0;
+
 function native() {
   return !!(window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers.store);
 }
 
 function post(m) {
   window.webkit.messageHandlers.store.postMessage(m);
+}
+
+function askTime() {
+  var n = ++timeN;
+  timeAsked = performance.now();
+  if (native()) return post({ cmd: 'time', n: n });
+  var sent = Date.now();
+  if (/[?&]rig\b/.test(location.search)) return gotTime({ n: n, ms: sent, sent: sent, recv: sent });
+  fetch(TIME_URL, { cache: 'no-store' }).then(function (r) { return r.json(); }).then(function (j) {
+    gotTime({ n: n, ms: j.now, sent: sent, recv: Date.now() });
+  }).catch(function () {});
+}
+
+// an answer counts when it is the last one asked for and not older than a few seconds; the phone clock is used only
+// for the round trip
+function gotTime(ev) {
+  if (ev.n !== timeN || typeof ev.ms !== 'number' || Date.now() - ev.recv > 10000) return;
+  synced = { ms: ev.ms + Date.now() - (ev.sent + ev.recv) / 2, at: performance.now() };
+  zoneCheck();
+  if (!timeHeld) return;
+  timeHeld = false;
+  $('net').hidden = true;
+  var d = timeDone;
+  timeDone = null;
+  if (d) d();
+}
+
+// the game stands still until the next answer, then runs done. The card shows after TIME_CARD ms without one
+function timeWait(done, card) {
+  if (!timeTimer) {
+    timeTimer = setInterval(timeWatch, 1000);
+    $('net-retry').addEventListener('click', askTime);
+  }
+  if (!timeHeld) {
+    timeHeld = true;
+    timeSince = performance.now() - (card ? TIME_CARD : 0);
+  }
+  timeDone = done || timeDone;
+  askTime();
+}
+
+function timeWatch() {
+  if (document.hidden) return;
+  var now = performance.now();
+  if (timeHeld) {
+    if (now - timeSince >= TIME_CARD) $('net').hidden = false;
+    if (now - timeAsked >= 5000) askTime();
+  } else if (synced) {
+    // a failed refresh keeps the game running on the monotonic clock and is tried again every minute
+    if (now - synced.at >= TIME_GRACE) timeWait(null, true);
+    else if (now - synced.at >= TIME_EVERY && now - timeAsked >= 60000) askTime();
+  }
 }
 
 function product(id) {
@@ -94,7 +164,7 @@ function recover(list) {
     if (!p || p.once || t.id === PID + buying) return;
     if (p.id === 'starter1') {
       if (credit(p, t.tx)) n += STARTER.gems;
-    } else if (clock() - t.at < RECOVER * 1000 && credit(p, t.tx)) n += p.gems + dealBonus(p.id, t.at);
+    } else if (clock() - t.at >= -TIME_SKEW && clock() - t.at < RECOVER * 1000 && credit(p, t.tx)) n += p.gems + dealBonus(p.id, t.at);
   });
   return n;
 }
@@ -102,7 +172,7 @@ function recover(list) {
 // the bonus of the deal the player tapped, paid once to the purchase it was tapped for
 function dealBonus(id, at) {
   var d = S.iap.deal;
-  if (!d || d.id !== id || at > d.until) return 0;
+  if (!d || d.id !== id || at > d.until || at > clock() + TIME_SKEW) return 0;
   S.iap.deal = null;
   S.gems += d.bonus;
   save();
@@ -237,7 +307,8 @@ function adBegin() {
 }
 
 window.nativeStore = function (ev) {
-  if (loaded) handle(ev);
+  if (ev.t === 'time') gotTime(ev);
+  else if (loaded) handle(ev);
   else queued.push(ev);
 };
 

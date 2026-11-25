@@ -207,6 +207,7 @@ LANG['ru'] = {
   'radio.loading': 'Загрузка',
   'radio.resume': 'Продолжить',
   'radio.retry': 'Ещё раз',
+  'net.need': 'Main Street needs an internet connection to play. Connect and it carries on where you left off.',
   'radio.try': 'Попробуй станции ({group}) в меню «Радио»',
   'radio.now.other': 'Играет твоя музыка',
   'radio.now.off': 'Радио выключено',

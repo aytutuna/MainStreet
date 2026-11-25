@@ -207,6 +207,7 @@ LANG['ml'] = {
   'radio.loading': 'ലോഡ് ചെയ്യുന്നു',
   'radio.resume': 'തുടരൂ',
   'radio.retry': 'വീണ്ടും',
+  'net.need': 'Main Street needs an internet connection to play. Connect and it carries on where you left off.',
   'radio.try': 'മെനുവിൽ റേഡിയോയിൽ {group} സ്റ്റേഷനുകൾ നോക്കൂ',
   'radio.now.other': 'നിങ്ങളുടെ സംഗീതം പ്ലേ ചെയ്യുന്നു',
   'radio.now.off': 'റേഡിയോ ഓഫാണ്',

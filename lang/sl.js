@@ -222,6 +222,7 @@ LANG['sl'] = {
   'radio.loading': 'Nalaganje',
   'radio.resume': 'Nadaljuj',
   'radio.retry': 'Poskusi znova',
+  'net.need': 'Main Street needs an internet connection to play. Connect and it carries on where you left off.',
   'radio.try': 'Poskusi postaje ({group}) v meniju pod Radio',
   'radio.now.other': 'Predvaja se tvoja glasba',
   'radio.now.off': 'Radio je izklopljen',

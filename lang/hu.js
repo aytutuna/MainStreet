@@ -207,6 +207,7 @@ LANG['hu'] = {
   'radio.loading': 'Töltés',
   'radio.resume': 'Folytatás',
   'radio.retry': 'Újra',
+  'net.need': 'Main Street needs an internet connection to play. Connect and it carries on where you left off.',
   'radio.try': 'Próbáld a(z) {group} adókat a menüben, a Rádió alatt',
   'radio.now.other': 'A te zenéd szól',
   'radio.now.off': 'A rádió ki van kapcsolva',

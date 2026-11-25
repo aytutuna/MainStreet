@@ -207,6 +207,7 @@ LANG['fi'] = {
   'radio.loading': 'Ladataan',
   'radio.resume': 'Jatka',
   'radio.retry': 'Yritä uudelleen',
+  'net.need': 'Main Street needs an internet connection to play. Connect and it carries on where you left off.',
   'radio.try': 'Kokeile asemia: {group}. Löydät ne valikon Radiosta',
   'radio.now.other': 'Oma musiikkisi soi',
   'radio.now.off': 'Radio on pois päältä',

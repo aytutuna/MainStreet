@@ -207,6 +207,7 @@ LANG['zh-Hans'] = {
   'radio.loading': '加载中',
   'radio.resume': '继续',
   'radio.retry': '重试',
+  'net.need': 'Main Street needs an internet connection to play. Connect and it carries on where you left off.',
   'radio.try': '去菜单的“电台”里试试{group}电台',
   'radio.now.other': '正在播放你的音乐',
   'radio.now.off': '电台已关闭',

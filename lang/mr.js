@@ -207,6 +207,7 @@ LANG['mr'] = {
   'radio.loading': 'लोड होत आहे',
   'radio.resume': 'पुन्हा सुरू',
   'radio.retry': 'पुन्हा प्रयत्न',
+  'net.need': 'Main Street needs an internet connection to play. Connect and it carries on where you left off.',
   'radio.try': 'मेनूमध्ये रेडिओखाली {group} स्टेशन्स वापरून पहा',
   'radio.now.other': 'तुमचे संगीत चालू आहे',
   'radio.now.off': 'रेडिओ बंद आहे',

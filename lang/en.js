@@ -349,6 +349,8 @@ LANG['en'] = {
   'radio.loading': 'Loading',
   'radio.resume': 'Resume',
   'radio.retry': 'Retry',
+  // Full screen card shown when the game cannot reach the time server (no internet). The Retry button under it is radio.retry.
+  'net.need': 'Main Street needs an internet connection to play. Connect and it carries on where you left off.',
   // {group} is the name of a country or language group of stations (see radio.group.*).
   'radio.try': 'Try the {group} stations in the menu, under Radio',
   // The line that says what is playing.

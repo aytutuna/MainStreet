@@ -207,6 +207,7 @@ LANG['tr'] = {
   'radio.loading': 'Yükleniyor',
   'radio.resume': 'Devam',
   'radio.retry': 'Yeniden dene',
+  'net.need': 'Main Street needs an internet connection to play. Connect and it carries on where you left off.',
   'radio.try': 'Menüde Radyo altındaki {group} istasyonlarını dene',
   'radio.now.other': 'Kendi müziğin çalıyor',
   'radio.now.off': 'Radyo kapalı',
