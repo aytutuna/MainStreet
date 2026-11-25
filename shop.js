@@ -25,10 +25,13 @@
 //                                          every copy whenever it comes, so nothing about its age is promised
 //   {t: 'cloudState', state}               'available', 'signedOut', 'pending' (signed in, first sync not done) or 'unavailable'
 //                                          (Play Games cannot be reached: no copy comes with it); answers {cmd: 'cloudState'}, skips the queue
-//   {t: 'cloudPut', ok, stamp}             the put with this stamp was written (ok true) or could not be (ok false, Android);
+//   {t: 'cloudPut', ok, stamp}             the put with this stamp was written (ok true) or could not be (ok false: Android not signed in or
+//                                          a failed write, iPhone signed out of iCloud);
 //                                          skips the queue. The page sends {cmd: 'cloudPut', json, at, dev, stamp, base, force}: base is
 //                                          the stamp of the copy the game last agreed with, and unless force is true (erasing) the
-//                                          native side writes only while the cloud still holds that stamp, else it refuses
+//                                          native side writes only while the cloud still holds that stamp, else it refuses. iCloud's
+//                                          store cannot refuse for real, so a copy that came after a write on an old base is judged
+//                                          by the page too (a copy with less play than the game's base cannot have grown from it)
 //   {cmd: 'cloudSignIn'}                   Android: opens Play Games sign-in, then answers cloudState and cloud
 //   {t: 'notify', state}                   'granted' or 'denied', answering the notify handler's {cmd: 'ask'}; the page does not use it
 //   {t: 'radio', state, url, title?}       the stream being played: state is 'buffering', 'playing', 'paused' (headphones
@@ -182,7 +185,7 @@ function cloudPut(erase) {
   var sig = cloudSig(S);
   if (erase !== true && (sig === cl.sig || cl.fly)) return;
   var stamp = devId() + ':' + stampNext();
-  cl.fly = { stamp: stamp, sig: sig };
+  cl.fly = { stamp: stamp, sig: sig, pt: S.ads.pt };
   cloudLive = stamp;
   cloudAt = performance.now();
   post({ cmd: 'cloudPut', json: saved(), at: Math.round(clock()), dev: devId(), stamp: stamp, base: cl.base, force: erase === true });
@@ -205,10 +208,7 @@ function cloudAck(ev) {
   var f = S.cl.fly;
   if (!f || f.stamp !== ev.stamp) return;
   S.cl.fly = null;
-  if (ev.ok) {
-    S.cl.base = f.stamp;
-    S.cl.sig = f.sig;
-  }
+  if (ev.ok) agree(f.stamp, f.sig, f.pt);
   save();
 }
 
@@ -255,7 +255,7 @@ function cloudEnd() {
 
 // a copy meets this game; if it replaced it the screen shows it, or waits for the launch reveal while the models load
 function cloudTake(ev) {
-  var took = takeCloud(ev.json, ev.stamp);
+  var took = takeCloud(ev.json, ev.stamp, !!ev.refused);
   // a put of an earlier page that is not this copy did not land
   if (S.cl.fly && S.cl.fly.stamp !== cloudLive) S.cl.fly = null;
   if (blocked) return loadFail(tl('save.newer'), true);
@@ -321,7 +321,7 @@ function cloudEvent(ev) {
     else if (ev.state === 'signedOut' || ev.state === 'unavailable') cloudGot();
   } else {
     cloudAnswered = true;
-    // a refused put did not land: the copy that came with the refusal is judged like any other
+    // a refused put did not land: the copy that came with the refusal is what the cloud holds now
     if (loaded && ev.refused && S.cl.fly) S.cl.fly = null;
     if (cloudFind) cloudFound = ev.json ? ev : cloudFound;
     else if (ev.json && loaded) {
@@ -369,10 +369,10 @@ function credit(p, tx) {
   if (seen(tx)) return false;
   note(tx);
   delete S.iap.wait[p.id];
-  var e = { tx: tx, gems: p.gems || 0, x2: 0, rep: 0 };
+  var e = { tx: tx, id: p.id, at: clock(), gems: p.gems || 0, x2: 0, rep: 0 };
   if (p.id === 'starter1') {
     S.iap.starter = 1;
-    e = { tx: tx, gems: STARTER.gems, x2: STARTER.x2, rep: STARTER.rep };
+    e = { tx: tx, id: p.id, at: clock(), gems: STARTER.gems, x2: STARTER.x2, rep: STARTER.rep };
   }
   S.gems += e.gems;
   S.x2 += e.x2;
@@ -587,7 +587,7 @@ function buyProduct(id) {
   if (d && d.id === id) {
     var o = S.iap.deal;
     if (o && o.id !== id && o.until > clock() && !(S.iap.held && S.iap.held.until > clock())) S.iap.held = o;
-    S.iap.deal = { id: id, bonus: d.bonus, until: clock() + 3600000 };
+    S.iap.deal = { id: id, bonus: d.bonus, until: clock() + 3600000, at: clock() };
   }
   paintShop();
   post({ cmd: 'buy', id: PID + id });

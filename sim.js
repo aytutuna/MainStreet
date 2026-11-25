@@ -102,7 +102,7 @@ var S = fresh();
 function fresh() {
   var s = { v: 11, cash: START_CASH, gems: 0, rep: 0, pk: {}, store: 1, run: 0, all: 0, pend: 0, ps: 0, x2: 0, call: 0, vt: rnd(VIP.first), b: {}, ms: {},
     st: { srv: 0, lost: 0, sr: 0, t: 0 }, goal: [0, 1, 2], gn: 3, gd: {}, day: { n: 0, d: -1, t: 0 }, tz: { o: zone(), at: clock() }, mi: { d: -1, m: [], b: 0 }, rg: { o: {}, days: 0, gifts: 0, combo: 0 }, lk: { on: 'classic', own: {} }, ac: { o: {}, m: {} },
-    ask: 0, clk: START_H * CLOCK / 24, iap: { noads: 0, x2: 0, starter: 0, noadsTx: '', x2Tx: '', noadsUser: '', x2User: '', wait: {}, tx: [], rf: [], paid: [] }, cl: { base: '', sig: '', fly: null }, ads: { d: -1, n: {}, pt: 0, li: 0, sd: 0 }, ts: clock() };
+    ask: 0, clk: START_H * CLOCK / 24, iap: { noads: 0, x2: 0, starter: 0, noadsTx: '', x2Tx: '', noadsUser: '', x2User: '', wait: {}, tx: [], rf: [], paid: [] }, cl: { base: '', sig: '', bpt: 0, old: [], erased: 0, fly: null }, ads: { d: -1, n: {}, pt: 0, li: 0, sd: 0 }, ts: clock() };
   noPlaces(s);
   s.b.produce = atLevel('produce', 1);
   return s;
@@ -1570,14 +1570,15 @@ function validate(o) {
     tx: (Array.isArray(ip.tx) ? ip.tx : []).filter(function (t) { return typeof t === 'string'; }).slice(-100),
     rf: (Array.isArray(ip.rf) ? ip.rf : []).filter(function (t) { return typeof t === 'string'; }).slice(-20),
     paid: (Array.isArray(ip.paid) ? ip.paid : []).filter(function (e) { return e && typeof e.tx === 'string'; }).map(function (e) {
-      return { tx: e.tx, gems: Math.floor(num(e.gems, 0)), x2: num(e.x2, 0), rep: Math.floor(num(e.rep, 0)) };
+      return { tx: e.tx, id: typeof e.id === 'string' ? e.id : '', at: num(e.at, 0), gems: Math.floor(num(e.gems, 0)), x2: num(e.x2, 0), rep: Math.floor(num(e.rep, 0)) };
     }).slice(-100),
-    deal: ip.deal && typeof ip.deal.id === 'string' && num(ip.deal.bonus, 0) > 0 ? { id: ip.deal.id, bonus: Math.floor(num(ip.deal.bonus, 0)), until: num(ip.deal.until, 0) } : null,
-    held: ip.held && typeof ip.held.id === 'string' && num(ip.held.bonus, 0) > 0 ? { id: ip.held.id, bonus: Math.floor(num(ip.held.bonus, 0)), until: num(ip.held.until, 0) } : null };
+    deal: ip.deal && typeof ip.deal.id === 'string' && num(ip.deal.bonus, 0) > 0 ? { id: ip.deal.id, bonus: Math.floor(num(ip.deal.bonus, 0)), until: num(ip.deal.until, 0), at: num(ip.deal.at, 0) } : null,
+    held: ip.held && typeof ip.held.id === 'string' && num(ip.held.bonus, 0) > 0 ? { id: ip.held.id, bonus: Math.floor(num(ip.held.bonus, 0)), until: num(ip.held.until, 0), at: num(ip.held.at, 0) } : null };
   var cl = o.cl || {};
   var fl = cl.fly;
   s.cl = { base: typeof cl.base === 'string' ? cl.base : '', sig: typeof cl.sig === 'string' ? cl.sig : '',
-    fly: fl && typeof fl.stamp === 'string' && typeof fl.sig === 'string' ? { stamp: fl.stamp, sig: fl.sig } : null };
+    bpt: num(cl.bpt, 0), erased: cl.erased ? 1 : 0, old: (Array.isArray(cl.old) ? cl.old : []).filter(function (t) { return typeof t === 'string'; }).slice(-8),
+    fly: fl && typeof fl.stamp === 'string' && typeof fl.sig === 'string' ? { stamp: fl.stamp, sig: fl.sig, pt: num(fl.pt, 0) } : null };
   var ad = o.ads || {};
   s.ads = { d: Math.floor(num(ad.d, -1)), n: {}, pt: num(ad.pt, 0), li: num(ad.li, 0), sd: num(ad.sd, 0) };
   for (var k in AD_CAP) s.ads.n[k] = Math.min(AD_CAP[k], Math.floor(num(ad.n && ad.n[k], 0)));
@@ -1744,7 +1745,7 @@ function cloudSeed(raw, stamp) {
     }
     var o = validate(j);
     if (!o) return false;
-    o.cl = { base: stamp || '', sig: cloudSig(o), fly: null };
+    o.cl = { base: stamp || '', sig: cloudSig(o), bpt: o.ads.pt, erased: 0, old: [], fly: null };
     localStorage.setItem(KEY, JSON.stringify(o));
     return true;
   } catch (e) {
@@ -1764,15 +1765,28 @@ var cloudTook = false;
 
 // what counts as a change of the player's: income that only piles up cash is none
 function cloudSig(o) {
-  return JSON.stringify([o.gems, o.rep, o.store, o.b, o.pl, o.pi, o.ms, o.goal, o.gn, o.gd, o.lk, o.ac, o.pk, o.iap, o.ads && o.ads.n]);
+  var rg = o.rg && [o.rg.o, o.rg.days, o.rg.gifts, o.rg.combo];
+  var mi = o.mi && [o.mi.b, o.mi.m.map(function (m) { return m.c; })];
+  return JSON.stringify([o.gems, o.rep, o.store, o.b, o.pl, o.pi, o.ms, o.goal, o.gn, o.gd, o.lk, o.ac, o.pk, o.iap, o.ads && o.ads.n, rg, mi, o.day && o.day.n]);
 }
 
-// two copies of one game meet and k is the one kept. What l bought and k never credited is paid to k once, by transaction
-// id; a refund listed by either takes the purchase away; what only grows never goes back
-function meet(k, l) {
+// a deal that is still open and that the other side's ledger does not show as used up, the one set on this device first
+function openDeal(list, paid) {
+  for (var i = 0; i < list.length; i++) {
+    var d = list[i];
+    if (d && d.until > clock() && !(d.at && paid.some(function (e) { return e.id === d.id && e.at >= d.at; }))) return d;
+  }
+  return null;
+}
+
+// two copies of one game meet and k is the one kept; mine says which of the two is this device's. What l bought and k never
+// credited is paid to k once, by transaction id; a refund listed by either takes the purchase away; what only grows never
+// goes back. A deal or a wait that l still has but k's ledger shows as used is not brought back
+function meet(k, l, lMine) {
   var ki = k.iap;
   var li = l.iap;
   var rf = joinTx(ki.rf, li.rf);
+  var had = ki.paid.slice();
   li.paid.forEach(function (e) {
     if (ki.tx.indexOf(e.tx) >= 0) return;
     k.gems += e.gems;
@@ -1795,9 +1809,17 @@ function meet(k, l) {
   });
   ki.starter = Math.max(ki.starter, li.starter);
   ki.offered = ki.offered || li.offered;
-  ki.deal = ki.deal || li.deal;
-  ki.held = ki.held || li.held;
-  for (var w in li.wait) ki.wait[w] = Math.max(ki.wait[w] || 0, li.wait[w]);
+  // what k holds is its own to judge; only l's entries can be old news
+  var kd = openDeal([ki.deal], []);
+  var ld = openDeal([li.deal], had);
+  ki.deal = lMine ? ld || kd : kd || ld;
+  var kh = openDeal([ki.held], []);
+  var lh = openDeal([li.held], had);
+  ki.held = lMine ? lh || kh : kh || lh;
+  for (var w in li.wait) {
+    var gone = had.some(function (e) { return e.id === w && e.at >= li.wait[w] - ASK_WAIT * 1000; });
+    if (!gone && li.wait[w] > clock()) ki.wait[w] = Math.max(ki.wait[w] || 0, li.wait[w]);
+  }
   var a = l.ads;
   var c = k.ads;
   if (c.d === a.d) for (var n in c.n) c.n[n] = Math.max(c.n[n], a.n[n] || 0);
@@ -1810,11 +1832,23 @@ function meet(k, l) {
   c.sd = c.sd && a.sd ? Math.min(c.sd, a.sd) : c.sd || a.sd;
 }
 
+// the game now agrees with the cloud copy under stamp, whose signature and play time are given; the base it leaves is
+// remembered, so a read that was slow and comes late is known to be old news
+function agree(stamp, sig, pt) {
+  var c = S.cl;
+  if (c.base && c.base !== stamp) c.old = c.old.concat([c.base]).slice(-8);
+  c.base = stamp;
+  c.sig = sig;
+  c.bpt = pt;
+  c.erased = 0;
+}
+
 // the save of another device (written under stamp) meets this game. Each side keeps the stamp of the cloud copy it last
-// agreed with and the signature of the game then: a game that has not changed since simply takes the copy, one that has
-// changed on both sides keeps whichever has more play, and the one kept gets the other's purchases. True when the copy
-// replaced this game
-function takeCloud(raw, stamp) {
+// agreed with, the signature of the game and its play time then. A game that has not changed since takes a copy that can have
+// grown from that base (a copy with less play than the base cannot have, a cloud that took a write on an old base is such
+// a one); otherwise both sides changed and the one with more play since then is kept, the other's purchases paid to it.
+// True when the copy replaced this game. current is true for the copy a refused put brings, which is what the cloud holds now
+function takeCloud(raw, stamp, current) {
   var o = null;
   try {
     var j = JSON.parse(raw);
@@ -1828,25 +1862,29 @@ function takeCloud(raw, stamp) {
   if (!o) return false;
   stamp = stamp || '';
   var c = S.cl;
-  if (stamp && stamp === c.base) return false;
+  // nothing new: the copy this game agrees with, or one it has agreed with before and moved on from
+  if (stamp && (stamp === c.base || (!current && c.old.indexOf(stamp) >= 0))) return false;
   // the copy is this device's own last put, which landed without its answer reaching the game
   if (stamp && c.fly && stamp === c.fly.stamp) {
-    c.base = stamp;
-    c.sig = c.fly.sig;
+    agree(stamp, c.fly.sig, c.fly.pt);
     c.fly = null;
     return false;
   }
   var theirs = cloudSig(o);
-  var changed = cloudSig(S) !== c.sig;
-  if (changed && (S.ads.pt > o.ads.pt || (S.ads.pt === o.ads.pt && S.ts >= o.ts))) {
-    meet(S, o);
-    c.base = stamp;
-    c.sig = theirs;
-    return false;
+  var their = o.ads.pt;
+  var follows = cloudSig(S) === c.sig && (their >= c.bpt || o.cl.erased === 1);
+  if (!follows) {
+    var mine = S.ads.pt - c.bpt;
+    var other = their - c.bpt;
+    if (mine > other || (mine === other && S.ts >= o.ts)) {
+      meet(S, o, false);
+      agree(stamp, theirs, their);
+      return false;
+    }
   }
-  meet(o, S);
+  meet(o, S, true);
   var joined = cloudSig(o);
-  o.cl = { base: stamp, sig: theirs, fly: null };
+  o.cl = { base: stamp, sig: theirs, bpt: their, erased: 0, old: c.base && c.base !== stamp ? c.old.concat([c.base]).slice(-8) : c.old, fly: null };
   S = o;
   clearShoppers();
   // the copy was saved when the other device last ran: the time since is time away
@@ -1871,9 +1909,13 @@ function saved() {
 function reset() {
   var iap = S.iap;
   var ads = S.ads;
+  var cl = S.cl;
   S = fresh();
   S.iap = iap;
   S.ads = ads;
+  // stamps from before the erase stay known, so a late read of the erased game's copy is not taken back
+  S.cl.old = cl.old.concat(cl.base ? [cl.base] : []).slice(-8);
+  S.cl.erased = 1;
   clearShoppers();
   try {
     localStorage.removeItem(KEY);

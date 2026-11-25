@@ -1,5 +1,7 @@
 // Plays the cloud save rules of shop.js and sim.js in node vms, one per device, against a fake cloud that behaves like the native
-// bridges: it keeps the stamp of the copy it holds and refuses a put whose base is another stamp.
+// bridges: it keeps the stamp of the copy it holds and refuses a put whose base is another stamp. A device that reads a stale
+// cache (stale) compares its puts against that cache, as iCloud's key-value store does, and the write then lands over the
+// cloud's copy (last writer wins).
 //   node scripts/check_cloud.mjs
 // The rules: every copy gets a stamp, each device keeps the stamp of the copy it last agreed with and the signature of its game
 // then, a copy that comes (whenever it comes) is taken by a game that has not changed since, and when both sides changed the one
@@ -33,7 +35,7 @@ function newCloud() {
 // one device: its own page (vm), its own local storage, and the native side answering its messages one pump later, as the
 // real bridges do. hold keeps the answers back, fail makes puts fail, drop loses them without a word, stale is what a cache that has not synced answers to a read
 function device(cloud, st = {}) {
-  const dev = { st, cloud, posts: [], inbox: [], hold: false, fail: false, drop: false, stale: null, fails: [] };
+  const dev = { st, cloud, posts: [], inbox: [], hold: false, fail: false, drop: false, stale: null, out: false, fails: [] };
   const ctx = {
     console,
     localStorage: {
@@ -71,7 +73,8 @@ function device(cloud, st = {}) {
     else if (m.cmd === 'cloudPut') {
       if (dev.drop) return;
       if (dev.fail) dev.inbox.push({ t: 'cloudPut', ok: false, stamp: m.stamp });
-      else if (!m.force && cloud.json !== null && cloud.stamp !== (m.base || '')) dev.inbox.push(cloud.ev(true));
+      else if (dev.out) dev.inbox.push({ t: 'cloudPut', ok: false, stamp: m.stamp });
+      else if (!m.force && (dev.stale || cloud).json !== null && (dev.stale || cloud).stamp !== (m.base || '')) dev.inbox.push({ ...(dev.stale || cloud.ev()), refused: true });
       else {
         cloud.json = m.json;
         cloud.at = m.at;
@@ -120,7 +123,9 @@ function pair(setup) {
 }
 
 // scenario A: the iPhone is hidden at 9:00, the iPad plays to 12:00, the iPhone returns at 17:00 and taps once before the
-// iPad's copy, which iCloud brings late, arrives. The iPad's copy wins; the one tap is the only loss
+// iPad's copy, which iCloud brings late, arrives. The iPad's copy wins; the one tap is the only loss. With hide the iPhone's
+// put goes out on the old base and lands over the iPad's copy (its cache cannot know better); the iPad then gets that copy,
+// sees it cannot have grown from what it wrote, keeps itself and writes again, and the iPhone follows
 for (const hide of [false, true]) {
   const [a, b, c] = pair();
   const s0 = c.ev();
@@ -136,13 +141,18 @@ for (const hide of [false, true]) {
   a.change(1, 3);
   if (hide) {
     a.put();
-    expect(c.stamp === s1.stamp, 'a put on an old base overwrote the iPad copy');
-  }
-  a.push(s1);
+    expect(c.stamp !== s1.stamp && a.base() === c.stamp, 'the put on the cached base did not land as it does on iCloud');
+    b.push(c.ev());
+    expect(b.gems() === gems && b.dirty(), 'the iPad took a copy that cannot have grown from its own (gems ' + b.gems() + ')');
+    b.put();
+    a.stale = null;
+    a.push(c.ev());
+  } else a.push(s1);
   expect(a.gems() === gems, 'the iPad copy did not win over one tap (gems ' + a.gems() + ', iPad ' + gems + ')');
-  expect(a.base() === s1.stamp && !a.dirty(), 'the iPhone did not agree with the iPad copy afterwards');
+  expect(a.base() === c.stamp && !a.dirty(), 'the iPhone did not agree with the iPad copy afterwards');
+  if (hide) expect(b.gems() === gems && b.base() === c.stamp && !b.dirty(), 'the iPad does not agree with the copy it wrote last');
   a.put();
-  expect(c.stamp === s1.stamp, 'the iPhone wrote over the iPad copy it had just taken');
+  expect(c.stamp === a.base() && JSON.parse(c.json).gems === gems, 'the iPhone wrote over the iPad copy it had just taken');
 }
 
 // scenario B: the cache answer at launch is the copy the game already agrees with, the real one comes after
@@ -451,6 +461,100 @@ for (const putFirst of [false, true]) {
   }
   expect(!a.puts().length, 'an idle open game kept writing its own copy');
   expect(c.stamp === stamp, 'income alone changed the cloud copy');
+}
+
+// a copy that a slow read brought, older than the one the game has moved on to, is old news, also when it was parked
+{
+  const [a, , c] = pair();
+  const x = c.ev();
+  a.change(1, 1);
+  a.put();
+  const f = c.stamp;
+  a.push(x);
+  expect(a.gems() === 101 && a.base() === f, 'an older copy that came late was taken');
+  a.run('timeHeld = true');
+  a.push(x);
+  a.run('timeHeld = false; cloudApply()');
+  expect(a.gems() === 101 && a.base() === f, 'an older copy parked while the time was unknown was taken');
+  // the read is answered before the put's own answer comes
+  const [a2, , c2] = pair();
+  const x2 = c2.ev();
+  a2.hold = true;
+  a2.change(1, 1);
+  a2.put();
+  a2.inbox.push(x2);
+  a2.hold = false;
+  a2.pump();
+  expect(a2.gems() === 101 && a2.base() === c2.stamp, 'a read from before the game\'s own put undid it (gems ' + a2.gems() + ')');
+}
+
+// a device that cannot write (signed out of iCloud) never agrees with a copy, so what it played counts when the account's copy comes
+{
+  const [a, b, c] = pair();
+  b.change(10, 100);
+  b.put();
+  a.out = true;
+  for (let k = 0; k < 3; k++) {
+    a.change(5, 3000);
+    a.put();
+  }
+  expect(a.dirty() && a.base() !== c.stamp, 'a put that could not be written moved the base');
+  a.out = false;
+  a.push(c.ev());
+  expect(a.gems() === 115 && a.base() === c.stamp && a.dirty(), 'the weeks played signed out were lost to the account copy (gems ' + a.gems() + ')');
+  a.put();
+  expect(JSON.parse(c.json).gems === 115, 'the game kept was not written');
+}
+
+// regulars, mission claims and the daily streak are progress too
+{
+  const [a, b] = pair();
+  a.run('S.rg.o.ollie = 1; save()');
+  expect(a.dirty(), 'meeting a regular was not counted as a change');
+  a.put();
+  b.ask();
+  expect(b.run('!!S.rg.o.ollie'), 'a regular met on one device did not reach the other');
+  b.run('S.cl.sig = cloudSig(S); S.mi = { d: 0, m: [{ c: 1 }], b: 0 }');
+  expect(b.dirty(), 'a mission claim was not counted as a change');
+  b.run('S.cl.sig = cloudSig(S); S.day.n++');
+  expect(b.dirty(), 'the daily streak was not counted as a change');
+}
+
+// a deal still open on this device is not replaced by an old one of the kept copy
+for (const more of [false, true]) {
+  const [a, b] = pair("S.iap.held = { id: 'gems2', bonus: 100, until: clock() - 1000, at: clock() - 5000 }; ");
+  a.run("S.iap.held = { id: 'gems3', bonus: 240, until: clock() + 86400000, at: clock() }; S.iap.wait.gems3 = clock() + 86400000");
+  a.change(0, more ? 9000 : 10);
+  b.change(1, 5000);
+  b.put();
+  a.ask();
+  expect(a.run('S.iap.held && S.iap.held.id') === 'gems3', 'the open held deal was replaced by an old one (more play here: ' + more + ')');
+  const g = a.gems();
+  a.run('grant("gems3", "TA"); dealBonus("gems3", clock(), "TA")');
+  expect(a.gems() === g + 1200 + 240, 'the bonus of the pending purchase was lost (more play here: ' + more + ', got ' + (a.gems() - g) + ')');
+}
+
+// a deal that was used on one device does not come back from the other's older copy
+{
+  const [a, b] = pair();
+  a.run("S.iap.held = { id: 'gems2', bonus: 100, until: clock() + 86400000, at: clock() }; S.iap.wait.gems2 = clock() + 86400000");
+  a.change(0, 10);
+  a.put();
+  b.ask();
+  expect(b.run('S.iap.held && S.iap.held.id') === 'gems2' && b.run('S.iap.wait.gems2 > 0'), 'the pending purchase did not reach the other device');
+  now += 600000;
+  const g = a.gems();
+  a.run('grant("gems2", "TA"); dealBonus("gems2", clock(), "TA")');
+  expect(a.gems() === g + 500 + 100, 'the approved purchase did not pay its bonus');
+  a.change(0, 10);
+  a.put();
+  b.ask();
+  expect(b.run('JSON.stringify(S.iap.held)') === 'null' && b.run('S.iap.wait.gems2') === undefined, 'a used deal came back from the older copy');
+  b.run('grant("gems2", "TA2")');
+  expect(b.gems() === g + 500 + 100 + 500, 'a later plain purchase paid a bonus again (gems ' + b.gems() + ')');
+  b.put();
+  a.ask();
+  expect(a.run('JSON.stringify(S.iap.held)') === 'null' && a.run('S.iap.wait.gems2') === undefined, 'a used deal came back to the device that used it');
 }
 
 if (failed) process.exit(1);
