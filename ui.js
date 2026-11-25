@@ -446,7 +446,9 @@ function askOther() {
 }
 
 function radioEvent(ev) {
-  if (ev.t === 'other') {
+  if (ev.t === 'other' && ev.recheck) {
+    if (!unsure && !otherOn) askOther();
+  } else if (ev.t === 'other') {
     otherOn = !!ev.on;
     unsure = false;
     clearTimeout(unsureT);

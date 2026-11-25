@@ -39,7 +39,9 @@
 //                                          the page asked for, title what the station says is on (ICY metadata)
 //   {t: 'other', on}                       whether another app is playing music (answers 'radio' check, and comes by itself
 //                                          when it starts or stops); the page keeps its radio and the store murmur quiet
-//                                          while it is, and waits for the answer after coming to the front
+//                                          while it is, and waits for the answer after coming to the front;
+//                                          {t: 'other', recheck: true} (Android) asks the page to look again, since a second
+//                                          media stream appeared while the game was sounding
 // 'adStart' ({mute}) runs the consent step and starts the ads SDK (not sent after Skip ads; 'adStop' ends them), 'adReady' is answered
 // with a 'ready' or 'none' for each kind, 'ad' ({kind, mute}) shows one, muted when the game's sound is off, and 'privacy' opens the consent SDK's options form.
 // 'radio' is {url, vol} to play a live stream (vol 0 to 1, replacing any other), {vol} to change the volume, {stop: true}

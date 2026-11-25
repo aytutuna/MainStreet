@@ -29,11 +29,20 @@ class RadioBridge(private val activity: MainActivity) {
 
     // Apps cannot see each other's players, but the system reports when any playback starts or stops. While the page is
     // idle for other music (ui.js rest()) the only audio left is that music, so the change that ends it is trusted here;
-    // while the game plays, its own web view audio would look like another app, so only an explicit ask looks.
+    // while the game plays, its own web view audio would look like another app, so only an explicit ask looks. A second
+    // media stream beside the web view's own is another app starting, and the page is asked to look.
     private val callback = object : AudioManager.AudioPlaybackCallback() {
         override fun onPlaybackConfigChanged(configs: MutableList<AudioPlaybackConfiguration>) {
             if (other) check(false)
+            else if (configs.count { music(it) } >= 2) {
+                handler.removeCallbacks(recheck)
+                handler.postDelayed(recheck, 500)
+            }
         }
+    }
+
+    private val recheck = Runnable {
+        if (!other) activity.emit(JSONObject().put("t", "other").put("recheck", true))
     }
 
     init {
