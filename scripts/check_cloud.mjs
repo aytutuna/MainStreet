@@ -17,6 +17,7 @@ const T17 = T9 + 8 * H;
 
 const store = {};
 const posts = [];
+const fails = [];
 let now = T17;
 let tick = 0;
 const ctx = {
@@ -38,6 +39,7 @@ const ctx = {
   $: () => ({ hidden: false, addEventListener() {}, style: {} }),
   View: { ready: () => true },
   tl: k => k,
+  loadFail: (msg, hold) => fails.push([msg, hold]),
   banner() {},
   afterLoad() {},
   showAway() {},
@@ -351,6 +353,18 @@ if (run('S.ts') !== T12) fail('an older copy replaced a newer game');
   posts.length = 0;
   nativeEv(ipad(T9));
   if (!posts.some(m => m.cmd === 'products')) fail('the store was not asked for its list after a copy was refused');
+}
+
+// a copy from a newer build in a running session stops the saving and holds the update message over the revealed store
+{
+  device(T12);
+  fails.length = 0;
+  nativeEv({ t: 'cloud', json: JSON.stringify({ ...base, ts: T17 + 1000, v: base.v + 1 }), at: T17 + 1000, dev: 'ipad' });
+  if (run('blocked') !== true) fail('a copy from a newer build did not stop saving');
+  if (!fails.some(f => f[1] === true)) fail('the update message was not held over the running store');
+  posts.length = 0;
+  change();
+  if (puts().length) fail('a copy from a newer build was put over after it arrived');
 }
 
 if (failed) process.exit(1);

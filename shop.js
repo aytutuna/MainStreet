@@ -224,7 +224,7 @@ function cloudEnd() {
 // a copy replaces this game and the screen shows it, or waits for the launch reveal while the models load
 function cloudTake(raw) {
   var took = takeCloud(raw);
-  if (blocked) return loadFail(tl('save.newer'));
+  if (blocked) return loadFail(tl('save.newer'), true);
   // a pack bought on either side that the game kept does not hold is paid again from the store's list
   if (native()) askProducts();
   if (!took) return;

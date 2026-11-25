@@ -459,9 +459,13 @@ SOFTWARE.</pre>
 </div>
 <script>
 // a script that fails to load or throws before the store is up would leave the loading card for good; it says so instead
-function loadFail(msg) {
+function loadFail(msg, hold) {
   var el = document.getElementById('loading');
-  if (!el || el.classList.contains('done')) return;
+  if (!el) return;
+  if (hold) {
+    el.dataset.hold = '1';
+    el.classList.remove('done');
+  } else if (el.classList.contains('done')) return;
   if (el.querySelector('button')) {
     if (msg) el.firstChild.children[1].textContent = msg;
     return;

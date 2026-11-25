@@ -6626,7 +6626,7 @@ function build() {
   focusNow();
   warmFx();
   ready = true;
-  loadingEl.classList.add('done');
+  if (!loadingEl.dataset.hold) loadingEl.classList.add('done');
 }
 
 var lastT = 0;
