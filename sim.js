@@ -94,7 +94,7 @@ PLACES.forEach(function (p) {
 var S = fresh();
 
 function fresh() {
-  var s = { v: 11, cash: START_CASH, gems: 0, rep: 0, pk: {}, store: 1, run: 0, all: 0, pend: 0, x2: 0, call: 0, vt: rnd(VIP.first), b: {}, ms: {},
+  var s = { v: 11, cash: START_CASH, gems: 0, rep: 0, pk: {}, store: 1, run: 0, all: 0, pend: 0, ps: 0, x2: 0, call: 0, vt: rnd(VIP.first), b: {}, ms: {},
     st: { srv: 0, lost: 0, sr: 0, t: 0 }, goal: [0, 1, 2], gn: 3, gd: {}, day: { n: 0, d: -1, t: 0 }, tz: { o: zone(), at: clock() }, mi: { d: -1, m: [], b: 0 }, rg: { o: {}, days: 0, gifts: 0, combo: 0 }, lk: { on: 'classic', own: {} }, ac: { o: {}, m: {} },
     ask: 0, clk: START_H * CLOCK / 24, iap: { noads: 0, x2: 0, starter: 0, noadsTx: '', x2Tx: '', noadsUser: '', x2User: '', wait: {}, tx: [] }, ads: { d: -1, n: {}, pt: 0, li: 0, sd: 0 }, ts: clock() };
   noPlaces(s);
@@ -803,7 +803,7 @@ function perkOff() {
 }
 
 function perkStep(dt) {
-  if (!hold && S.vt > 0) S.vt -= dt;
+  if (!hold && S.vt > 0) S.vt = Math.max(0, S.vt - dt);
   if (gift) {
     gift.left -= dt;
     if (gift.left <= 0) {
@@ -1028,6 +1028,7 @@ function away(sec) {
   S.call = Math.max(0, S.call - s);
   perkOff();
   S.pend += gain;
+  S.ps += s;
   S.st.srv += n;
   S.st.sr += n;
   return { secs: s, real: sec, gain: gain, n: n };
@@ -1045,10 +1046,9 @@ function reminders() {
   return out;
 }
 
-// AWAY_X2 gems for each hour away, worked out with the multipliers the pay used so owning x2 does not double the price
+// AWAY_X2 gems for each hour away, counted from the time away so boosts and x2 do not change the price
 function awayCost() {
-  var hour = baseRate() * openShare() * (S.iap.x2 ? 2 : 1) * (1 + HEAD * S.pl.head) * 3600;
-  return Math.max(AWAY_X2, Math.ceil(S.pend / Math.max(hour, 1)) * AWAY_X2);
+  return Math.max(AWAY_X2, Math.ceil(S.ps / 3600 - 1e-9) * AWAY_X2);
 }
 
 // free: the doubling was paid for by an ad
@@ -1062,6 +1062,7 @@ function claimAway(dbl, free) {
     v *= 2;
   }
   S.pend = 0;
+  S.ps = 0;
   earn(v);
   return v;
 }
@@ -1529,6 +1530,7 @@ function validate(o) {
   s.run = num(o.run, 0);
   s.all = Math.max(s.run, num(o.all, 0));
   s.pend = num(o.pend, 0);
+  s.ps = num(o.ps, 0);
   s.x2 = num(o.x2, 0);
   s.call = Math.min(CALL.cool, num(o.call, 0));
   s.vt = Math.min(VIP.gap[1], num(o.vt, s.vt));

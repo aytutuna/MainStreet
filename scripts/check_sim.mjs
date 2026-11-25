@@ -133,5 +133,23 @@ if (!run('daily().can') || run('daily().idx') !== 3) fail('a claim 33 hours ago 
 now += 48 * 3600000;
 if (run('daily().idx') !== 0) fail('a claim 105 hours ago kept the streak');
 
+// doubling the away pay costs 5 gems an hour away, whatever x2 or a boost is running
+for (const [x2, boost] of [[0, 0], [1, 0], [0, 7200], [1, 7200]]) {
+  for (const [hours, gems] of [[1, 5], [8, 40], [20, 40]]) {
+    run('reset()');
+    run('S.iap.x2 = ' + x2 + '; S.x2 = ' + boost);
+    run('away(' + hours * 3600 + ')');
+    if (run('awayCost()') !== gems) fail(hours + ' h away cost ' + run('awayCost()') + ' gems (x2 ' + x2 + ', boost ' + boost + '), not ' + gems);
+  }
+}
+
+// a VIP that is due but held back keeps its zero through a save and load
+run('reset()');
+run('S.vt = 0.4; perkStep(1, true)');
+run('save()');
+run('S = fresh()');
+run('load()');
+if (run('S.vt') !== 0) fail('a due VIP timer came back as ' + run('S.vt'));
+
 if (failed) process.exit(1);
 console.log('sim ok: earned ' + Math.round(earned) + ', ' + Object.keys(got.b).length + ' departments in the sample');
