@@ -96,6 +96,11 @@ var claim = null;
 var claimNeeded = false;
 var claimDue = false;
 var cloudOff = false;
+// a purchase credited while a put was in flight waits for its answer; tookCopy is the copy that took this device over and handed
+// the stamp of the copy this game was last made from, for a hand-off
+var nowDue = false;
+var tookCopy = null;
+var handed = '';
 var devKey = '';
 
 // the time comes from the server (the native apps ask alazy.app, a plain browser asks it itself); the game starts and
@@ -191,14 +196,16 @@ function devId() {
 
 // one put at a time: its answer moves the base the next one is checked against. A put is only sent for a game that
 // differs from the copy it last agreed with, so an open game that only earns cash writes nothing
-function cloudPut(erase) {
+function cloudPut(erase, hand) {
   clearTimeout(cloudTimer);
   cloudTimer = 0;
-  // the time is stamped on the copy, so nothing is put while it is unknown
-  if (!native() || !loaded || blocked || timeHeld || !claim) return;
+  // the time is stamped on the copy, so nothing is put while it is unknown; a device that was taken over puts only a hand-off
+  if (!native() || !loaded || blocked || timeHeld || (!claim && hand !== true)) return;
   var cl = S.cl;
+  if (erase !== true && cl.fly) return;
+  nowDue = false;
   var sig = cloudSig(S);
-  if (erase !== true && (cl.fly || (!cl.force && !claimDue && sig === cl.sig))) return;
+  if (erase !== true && !cl.force && !claimDue && sig === cl.sig) return;
   // an erase stays forced until a forced put has landed
   var force = erase === true || !!cl.force;
   var stamp = devId() + ':' + stampNext();
@@ -206,9 +213,11 @@ function cloudPut(erase) {
   cloudLive = stamp;
   cloudAt = performance.now();
   // the claim goes with the first put after it, which also lifts the taken-over card
-  claimDue = false;
-  $('taken').hidden = true;
-  S.hold = { dev: claim.dev, at: claim.at };
+  if (claim) {
+    claimDue = false;
+    $('taken').hidden = true;
+    S.hold = { dev: claim.dev, at: claim.at };
+  }
   post({ cmd: 'cloudPut', json: saved(), at: Math.round(clock()), dev: devId(), stamp: stamp, base: cl.base, force: force });
   save();
 }
@@ -232,12 +241,28 @@ function cloudAck(ev) {
   if (ev.ok) agree(f.stamp, f.sig, f.ap);
   else if (f.claim) claimDue = true;
   save();
-  if (claimDue && ev.ok) cloudPut();
+  if (ev.ok && (claimDue || nowDue)) cloudNow();
 }
 
-// a purchase that was credited goes out at once
+// a purchase that was credited goes out at once, or once the put in flight is answered. A device that was taken over has no claim:
+// its game becomes the newest copy with the purchase joined in, put for the holder to judge
 function cloudNow() {
+  nowDue = true;
   if (claim) cloudPut();
+  else if (cloudOff) cloudHand();
+}
+
+function cloudHand() {
+  if (!tookCopy || claim || !native() || !loaded || timeHeld) return;
+  if (handed !== tookCopy.stamp) {
+    if (!cloudHandOff(tookCopy.json, tookCopy.stamp)) {
+      nowDue = false;
+      return;
+    }
+    handed = tookCopy.stamp;
+    afterLoad();
+  }
+  cloudPut(false, true);
 }
 
 function cloudClaim() {
@@ -264,13 +289,18 @@ function copyHold(ev) {
 }
 
 // another device claimed after this one: this one stops and shows the card, and its game is left as it is
-function cloudLost() {
+function cloudLost(ev) {
   claim = null;
   claimDue = false;
   cloudOff = true;
+  // a put that never got its answer must not keep Play here's claim from going out
+  S.cl.fly = null;
   clearTimeout(cloudTimer);
   cloudTimer = 0;
   $('taken').hidden = false;
+  tookCopy = ev;
+  handed = '';
+  cloudHand();
 }
 
 function cloudHere() {
@@ -351,7 +381,7 @@ function cloudEnd() {
 // a copy meets this game; if it replaced it the screen shows it, or waits for the launch reveal while the models load
 function cloudTake(ev) {
   var h = copyHold(ev);
-  if (claim && h.dev !== devId() && (h.at > claim.at || (h.at === claim.at && h.dev > claim.dev))) return cloudLost();
+  if (claim && h.dev !== devId() && (h.at > claim.at || (h.at === claim.at && h.dev > claim.dev))) return cloudLost(ev);
   var took = takeCloud(ev.json, ev.stamp, !!ev.refused);
   // a put of an earlier page that is not this copy did not land
   if (S.cl.fly && S.cl.fly.stamp !== cloudLive) S.cl.fly = null;
@@ -443,6 +473,10 @@ function cloudEvent(ev) {
       // only while the server time is unknown does a copy wait
       if (timeHeld) cloudPend.push(ev);
       else cloudTake(ev);
+    } else if (ev.json && loaded && ev.refused) {
+      // a hand-off written on an older copy than the cloud holds goes again on the newer one
+      tookCopy = ev;
+      cloudHand();
     }
     if (!ev.more) cloudGot();
   }
@@ -455,7 +489,7 @@ function product(id) {
 }
 
 // a one-time product is flagged when the store says the player owns it
-function own(id, tx) {
+function own(id, tx, fresh) {
   var p = product(id);
   if (!p || !p.once) return false;
   // the newest transaction listed wins, kept with the RevenueCat user that listed it
@@ -463,8 +497,8 @@ function own(id, tx) {
     S.iap[id + 'Tx'] = tx;
     S.iap[id + 'User'] = lastUser;
   }
-  // a restored purchase is no refund, whatever an earlier answer made of it
-  if (tx) S.iap.rf = S.iap.rf.filter(function (e) { return e.split(' ')[0] !== tx; });
+  // a purchase or a restore is a new grant: a refund seen before it no longer counts against it, on any device
+  if (fresh || !S.iap[id]) S.iap[id + 'At'] = Math.round(clock());
   if (S.iap[id]) return false;
   S.iap[id] = 1;
   delete S.iap.wait[id];
@@ -503,7 +537,7 @@ function credit(p, tx) {
 function grant(id, tx) {
   var p = product(id);
   if (!p) return false;
-  var done = p.once ? own(id, tx) : credit(p, tx);
+  var done = p.once ? own(id, tx, true) : credit(p, tx);
   if (done) {
     save();
     cloudNow();
@@ -553,10 +587,11 @@ function refunds(ev) {
       return;
     }
     S.iap[id] = 0;
-    // the pair of transaction and user: a purchase that moved to another RevenueCat user (a restore) is not refunded
-    S.iap.rf = joinTx(S.iap.rf, [t + ' ' + ev.user]);
+    // transaction, user and time: a purchase that moved to another RevenueCat user (a restore) is not refunded
+    S.iap.rf = joinTx(S.iap.rf, [t + ' ' + ev.user + ' ' + Math.round(clock())]);
     S.iap[id + 'Tx'] = '';
     S.iap[id + 'User'] = '';
+    S.iap[id + 'At'] = 0;
     if (id === 'noads') {
       adOn = false;
       if (S.ads.pt >= AD_START) adBegin();
@@ -778,7 +813,7 @@ function handle(ev) {
     storeUp = !!(ev.list && ev.list.length);
   } else if (ev.t === 'owned') {
     lastUser = ev.user || '';
-    (ev.ids || []).forEach(function (id) { own(id.slice(PID.length), txOf(ev.tx, id)); });
+    (ev.ids || []).forEach(function (id) { own(id.slice(PID.length), txOf(ev.tx, id), !!ev.restore); });
     refunds(ev);
     var back = recover(ev.tx);
     if (back) banner('<b>' + tl('shop.recovered', { n: back, count: short(back) }) + '</b><small>' + tl('shop.recovered_note') + '</small>', 0);

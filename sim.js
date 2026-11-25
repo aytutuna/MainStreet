@@ -102,7 +102,7 @@ var S = fresh();
 function fresh() {
   var s = { v: 11, cash: START_CASH, gems: 0, rep: 0, pk: {}, store: 1, run: 0, all: 0, pend: 0, ps: 0, x2: 0, call: 0, vt: rnd(VIP.first), b: {}, ms: {},
     st: { srv: 0, lost: 0, sr: 0, t: 0 }, goal: [0, 1, 2], gn: 3, gd: {}, day: { n: 0, d: -1, t: 0 }, tz: { o: zone(), at: clock() }, mi: { d: -1, m: [], b: 0 }, rg: { o: {}, days: 0, gifts: 0, combo: 0 }, lk: { on: 'classic', own: {} }, ac: { o: {}, m: {} },
-    ask: 0, clk: START_H * CLOCK / 24, iap: { noads: 0, x2: 0, starter: 0, noadsTx: '', x2Tx: '', noadsUser: '', x2User: '', wait: {}, tx: [], rf: [], paid: [] }, cl: { base: '', sig: '', bap: 0, old: [], force: 0, fly: null }, er: 0, ads: { d: -1, n: {}, pt: 0, ap: 0, li: 0, sd: 0 }, hold: { dev: '', at: 0 }, ts: clock() };
+    ask: 0, clk: START_H * CLOCK / 24, iap: { noads: 0, x2: 0, starter: 0, noadsTx: '', x2Tx: '', noadsUser: '', x2User: '', noadsAt: 0, x2At: 0, wait: {}, tx: [], rf: [], paid: [] }, cl: { base: '', sig: '', bap: 0, old: [], force: 0, fly: null }, er: 0, ads: { d: -1, n: {}, pt: 0, ap: 0, li: 0, sd: 0 }, hold: { dev: '', at: 0 }, ts: clock() };
   noPlaces(s);
   s.b.produce = atLevel('produce', 1);
   return s;
@@ -1565,7 +1565,7 @@ function validate(o) {
   s.clk = num(o.clk, s.clk) % CLOCK;
   var ip = o.iap || {};
   s.iap = { noads: ip.noads ? 1 : 0, x2: ip.x2 ? 1 : 0, starter: ip.starter === 2 ? 2 : ip.starter ? 1 : 0, offered: ip.offered ? 1 : 0,
-    noadsTx: typeof ip.noadsTx === 'string' ? ip.noadsTx : '', x2Tx: typeof ip.x2Tx === 'string' ? ip.x2Tx : '', noadsUser: typeof ip.noadsUser === 'string' ? ip.noadsUser : '', x2User: typeof ip.x2User === 'string' ? ip.x2User : '',
+    noadsTx: typeof ip.noadsTx === 'string' ? ip.noadsTx : '', x2Tx: typeof ip.x2Tx === 'string' ? ip.x2Tx : '', noadsUser: typeof ip.noadsUser === 'string' ? ip.noadsUser : '', x2User: typeof ip.x2User === 'string' ? ip.x2User : '', noadsAt: num(ip.noadsAt, 0), x2At: num(ip.x2At, 0),
     wait: waits(ip.wait),
     tx: (Array.isArray(ip.tx) ? ip.tx : []).filter(function (t) { return typeof t === 'string'; }).slice(-100),
     rf: (Array.isArray(ip.rf) ? ip.rf : []).filter(function (t) { return typeof t === 'string'; }).slice(-20),
@@ -1786,6 +1786,14 @@ function openDeal(list, paid) {
   return null;
 }
 
+// a refund is "transaction user time". It takes a flag away only when it names the transaction and user the flag holds and is
+// later than the grant, so a purchase restored after its refund was seen stays, and a restore under another user is no refund
+function refunded(i, f, rf) {
+  var key = i[f + 'Tx'] + ' ' + i[f + 'User'] + ' ';
+  var at = i[f + 'At'] || 0;
+  return rf.some(function (e) { return e.indexOf(key) === 0 && (+e.slice(key.length) || 0) > at; });
+}
+
 // two copies of one game meet and k is the one kept; mine says which of the two is this device's. What l bought and k never
 // credited is paid to k once, by transaction id; a refund listed by either takes the purchase away; what only grows never
 // goes back. A deal or a wait that l still has but k's ledger shows as used is not brought back
@@ -1812,15 +1820,16 @@ function meet(k, l, lMine) {
   ki.paid = ki.paid.slice(-100);
   ki.rf = rf;
   ['noads', 'x2'].forEach(function (f) {
-    // a refund is the pair of transaction and user, so a purchase restored under another user stays
-    if (ki[f] && rf.indexOf(ki[f + 'Tx'] + ' ' + ki[f + 'User']) >= 0) {
+    if (ki[f] && refunded(ki, f, rf)) {
       ki[f] = 0;
       ki[f + 'Tx'] = ki[f + 'User'] = '';
+      ki[f + 'At'] = 0;
     }
-    if (!ki[f] && li[f] && rf.indexOf(li[f + 'Tx'] + ' ' + li[f + 'User']) < 0) {
+    if (!ki[f] && li[f] && !refunded(li, f, rf)) {
       ki[f] = 1;
       ki[f + 'Tx'] = li[f + 'Tx'];
       ki[f + 'User'] = li[f + 'User'];
+      ki[f + 'At'] = li[f + 'At'];
     }
   });
   ki.starter = Math.max(ki.starter, li.starter);
@@ -1922,6 +1931,33 @@ function takeCloud(raw, stamp, current) {
   cloudAway = sec > 60 ? away(sec) : null;
   if (joined === theirs) S.cl.sig = cloudSig(S);
   cloudTook = true;
+  try {
+    localStorage.setItem(KEY, saved());
+  } catch (e) {}
+  return true;
+}
+
+// this game was taken over and holds a purchase the other's copy lacks: it becomes the copy's game with this ledger and these
+// flags joined in, to be put for the holder to judge. The copy's play stays, or the hand-off would outrank the game it joins.
+// False when the copy has it all
+function cloudHandOff(raw, stamp) {
+  var o = null;
+  try {
+    var j = JSON.parse(raw);
+    if (j && j.v > SAVE_V) return false;
+    o = validate(j);
+  } catch (e) {}
+  if (!o) return false;
+  var sig = cloudSig(o);
+  var ap = o.ads.ap;
+  var had = [o.gems, o.x2, o.rep, o.iap.noads, o.iap.x2].join();
+  meet(o, S, true);
+  if ([o.gems, o.x2, o.rep, o.iap.noads, o.iap.x2].join() === had) return false;
+  o.ads.ap = ap;
+  var c = S.cl;
+  o.cl = { base: stamp || '', sig: sig, bap: ap, force: 0, old: c.old, fly: null };
+  S = o;
+  clearShoppers();
   try {
     localStorage.setItem(KEY, saved());
   } catch (e) {}
