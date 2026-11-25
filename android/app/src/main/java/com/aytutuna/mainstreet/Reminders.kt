@@ -40,12 +40,27 @@ object Reminders {
         context.getSystemService(NotificationManager::class.java).cancelAll()
     }
 
+    // Alarms do not survive a reboot or an update; what came due meanwhile is shown now.
     @Synchronized
     fun restore(context: Context) {
         val now = System.currentTimeMillis()
+        val left = JSONArray()
         for (item in saved(context)) {
-            if (item.getLong("at") > now) arm(context, item, item.getLong("at"))
+            if (item.getLong("at") > now) {
+                arm(context, item, item.getLong("at"))
+                left.put(item)
+            } else {
+                show(context, item.getString("id").hashCode(), item.getString("body"))
+            }
         }
+        prefs(context).edit().putString(LIST, left.toString()).apply()
+    }
+
+    @Synchronized
+    fun fired(context: Context, code: Int) {
+        val left = JSONArray()
+        for (item in saved(context)) if (item.getString("id").hashCode() != code) left.put(item)
+        prefs(context).edit().putString(LIST, left.toString()).apply()
     }
 
     fun show(context: Context, id: Int, body: String) {
@@ -111,12 +126,15 @@ class ReminderReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val id = intent.getIntExtra("id", 0)
         Reminders.cancel(context, id)
+        Reminders.fired(context, id)
         Reminders.show(context, id, intent.getStringExtra("body") ?: return)
     }
 }
 
 class BootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action == Intent.ACTION_BOOT_COMPLETED) Reminders.restore(context)
+        when (intent.action) {
+            Intent.ACTION_BOOT_COMPLETED, Intent.ACTION_MY_PACKAGE_REPLACED -> Reminders.restore(context)
+        }
     }
 }
