@@ -9,6 +9,8 @@ import WebKit
 final class StoreBridge: NSObject, WKScriptMessageHandler, PurchasesDelegate {
     weak var web: WKWebView?
     private var found: [String: StoreProduct] = [:]
+    // events the page was not there to take (it was reloading); replayed when it asks for the products again
+    private var held: [[String: Any]] = []
     private lazy var ads = AdsBridge(presenter: presenter, emit: { [weak self] in self?.emit($0) })
     private lazy var radio = RadioBridge(emit: { [weak self] in self?.emit($0) })
     private let presenter: () -> UIViewController?
@@ -31,6 +33,7 @@ final class StoreBridge: NSObject, WKScriptMessageHandler, PurchasesDelegate {
         guard let msg = message.body as? [String: Any] else { return }
         switch msg["cmd"] as? String {
         case "products":
+            replay()
             products(msg["ids"] as? [String] ?? [])
         case "buy":
             if let id = msg["id"] as? String { buy(id) }
@@ -60,8 +63,16 @@ final class StoreBridge: NSObject, WKScriptMessageHandler, PurchasesDelegate {
     private func emit(_ event: [String: Any]) {
         guard let data = try? JSONSerialization.data(withJSONObject: event), let json = String(data: data, encoding: .utf8) else { return }
         DispatchQueue.main.async { [weak self] in
-            self?.web?.evaluateJavaScript("window.nativeStore && window.nativeStore(\(json))", completionHandler: nil)
+            self?.web?.evaluateJavaScript("window.nativeStore ? (window.nativeStore(\(json)), 1) : 0") { result, _ in
+                if (result as? Int) != 1 && event["t"] as? String != "time" && (self?.held.count ?? 50) < 50 { self?.held.append(event) }
+            }
         }
+    }
+
+    private func replay() {
+        let list = held
+        held = []
+        list.forEach(emit)
     }
 
     // server time for the page: alazy.app, else the Date header of a RevenueCat answer. sent and recv are the phone's
@@ -108,15 +119,19 @@ final class StoreBridge: NSObject, WKScriptMessageHandler, PurchasesDelegate {
     }
 
     private func owned(restored: Bool) async {
-        let info = restored ? try? await Purchases.shared.restorePurchases() : try? await Purchases.shared.customerInfo()
-        if let info = info { send(info, restored: restored) } else if restored { emit(["t": "owned", "ids": [String](), "restore": true]) }
+        do {
+            let info = restored ? try await Purchases.shared.restorePurchases() : try await Purchases.shared.customerInfo()
+            send(info, restored: restored)
+        } catch {
+            if restored { emit(["t": "restoreFailed"]) }
+        }
     }
 
     private func send(_ info: CustomerInfo, restored: Bool) {
         let tx = info.nonSubscriptionTransactions.map {
             ["id": $0.productIdentifier, "tx": $0.transactionIdentifier, "at": $0.purchaseDate.timeIntervalSince1970 * 1000] as [String: Any]
         }
-        emit(["t": "owned", "ids": Array(info.allPurchasedProductIdentifiers), "tx": tx, "restore": restored])
+        emit(["t": "owned", "ids": Array(info.allPurchasedProductIdentifiers), "tx": tx, "user": Purchases.shared.appUserID, "restore": restored])
     }
 
     private func buy(_ id: String) {
@@ -130,12 +145,21 @@ final class StoreBridge: NSObject, WKScriptMessageHandler, PurchasesDelegate {
                     // the id the store list uses for it, so the page counts the purchase once
                     let listed = result.customerInfo.nonSubscriptionTransactions.filter { $0.productIdentifier == id }
                         .max { $0.purchaseDate < $1.purchaseDate }
-                    let at = (listed?.purchaseDate ?? result.transaction?.purchaseDate ?? Date()).timeIntervalSince1970 * 1000
-                    emit(["t": "bought", "id": id, "at": at,
-                          "tx": listed?.transactionIdentifier ?? result.transaction?.transactionIdentifier ?? "\(id)-\(Date().timeIntervalSince1970)"])
+                    if let listed = listed {
+                        emit(["t": "bought", "id": id, "at": listed.purchaseDate.timeIntervalSince1970 * 1000, "tx": listed.transactionIdentifier])
+                    } else {
+                        // charged, but RevenueCat has no id for it yet; the page credits it from the list
+                        failed(id, "late")
+                        await owned(restored: false)
+                    }
                 }
             } catch {
-                failed(id, (error as NSError).code == ErrorCode.purchaseCancelledError.rawValue ? "cancel" : "error")
+                let code = (error as NSError).code
+                if code == ErrorCode.paymentPendingError.rawValue {
+                    emit(["t": "pending", "id": id])
+                } else {
+                    failed(id, code == ErrorCode.purchaseCancelledError.rawValue ? "cancel" : "error")
+                }
             }
         }
     }
