@@ -23,6 +23,7 @@ import org.json.JSONObject
 class AdsBridge(private val activity: MainActivity) {
     private var reward: RewardedAd? = null
     private var started = false
+    private var ready = false
     private var stopped = false
     private var loadedAt = 0L
     private var muted = false
@@ -33,7 +34,7 @@ class AdsBridge(private val activity: MainActivity) {
     fun start(mute: Boolean) {
         stopped = false
         muted = mute
-        MobileAds.setAppMuted(mute)
+        if (ready) MobileAds.setAppMuted(mute)
         if (started && reward == null) loadReward()
         val consent = UserMessagingPlatform.getConsentInformation(activity)
         consent.requestConsentInfoUpdate(activity, ConsentRequestParameters.Builder().build(), {
@@ -61,12 +62,20 @@ class AdsBridge(private val activity: MainActivity) {
     private fun retryOnNetwork() {
         if (waiting != null || stopped) return
         val cm = activity.getSystemService(Context.CONNECTIVITY_SERVICE) as ConnectivityManager
+        // the default callback reports a network that is already up, which would retry in a tight loop
+        var up = cm.activeNetwork != null
         val cb = object : ConnectivityManager.NetworkCallback() {
             override fun onAvailable(network: Network) {
+                if (up) return
+                up = true
                 retry.post {
                     unwait()
                     start(muted)
                 }
+            }
+
+            override fun onLost(network: Network) {
+                up = false
             }
         }
         waiting = cb
@@ -111,6 +120,8 @@ class AdsBridge(private val activity: MainActivity) {
             RequestConfiguration.Builder().setMaxAdContentRating(RequestConfiguration.MAX_AD_CONTENT_RATING_G).build()
         )
         MobileAds.initialize(activity) {
+            ready = true
+            MobileAds.setAppMuted(muted)
             loadReward()
         }
     }
@@ -133,12 +144,15 @@ class AdsBridge(private val activity: MainActivity) {
     }
 
     fun report() {
+        resume()
         state("reward", if (reward != null) "ready" else "none")
     }
 
     fun show(kind: String, mute: Boolean) {
         if (kind != "reward") return
-        MobileAds.setAppMuted(mute)
+        muted = mute
+        if (ready) MobileAds.setAppMuted(mute)
+        resume()
         val ad = reward ?: return state(kind, "failed")
         reward = null
         state(kind, "none")

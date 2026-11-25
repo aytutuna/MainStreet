@@ -20,6 +20,7 @@ final class AdsBridge: NSObject, FullScreenContentDelegate {
     private var loadedAt = Date.distantPast
     private var muted = false
     private var monitor: NWPathMonitor?
+    private var online: Bool?
     private let presenter: () -> UIViewController?
     private let emit: ([String: Any]) -> Void
 
@@ -37,7 +38,11 @@ final class AdsBridge: NSObject, FullScreenContentDelegate {
         if started && reward == nil { loadReward() }
         ConsentInformation.shared.requestConsentInfoUpdate(with: RequestParameters()) { [weak self] error in
             guard let self = self, !self.stopped else { return }
-            if error != nil { return self.retryOnNetwork() }
+            if error != nil {
+                // a consent choice from an earlier launch may still allow requests
+                self.begin()
+                return self.retryOnNetwork()
+            }
             guard let vc = self.presenter() else { return self.begin() }
             ConsentForm.loadAndPresentIfRequired(from: vc) { [weak self] _ in
                 self?.begin()
@@ -61,10 +66,15 @@ final class AdsBridge: NSObject, FullScreenContentDelegate {
         guard monitor == nil else { return }
         let m = NWPathMonitor()
         monitor = m
+        // the monitor reports the current path first; retrying on that would loop when the update fails with a network up
+        online = nil
         m.pathUpdateHandler = { [weak self] path in
-            guard path.status == .satisfied else { return }
+            let now = path.status == .satisfied
             DispatchQueue.main.async {
                 guard let self = self, self.monitor === m else { return }
+                let was = self.online
+                self.online = now
+                guard now, was == false else { return }
                 m.cancel()
                 self.monitor = nil
                 self.start(mute: self.muted)
@@ -93,7 +103,15 @@ final class AdsBridge: NSObject, FullScreenContentDelegate {
 
     func options() {
         guard let vc = presenter() else { return }
-        ConsentForm.presentPrivacyOptionsForm(from: vc) { [weak self] _ in self?.begin() }
+        ConsentForm.presentPrivacyOptionsForm(from: vc) { [weak self] _ in
+            guard let self = self else { return }
+            let was = self.started
+            self.begin()
+            // a player who now accepts personalised ads is asked, as at first launch
+            if was && !self.stopped && ATTrackingManager.trackingAuthorizationStatus == .notDetermined && self.personalised() {
+                ATTrackingManager.requestTrackingAuthorization { _ in }
+            }
+        }
     }
 
     private func begin() {
@@ -141,12 +159,14 @@ final class AdsBridge: NSObject, FullScreenContentDelegate {
     }
 
     func report() {
+        resume()
         send("reward", reward != nil ? "ready" : "none")
     }
 
     func show(_ kind: String, mute: Bool) {
         guard kind == "reward" else { return }
         MobileAds.shared.isApplicationMuted = mute
+        resume()
         guard let vc = presenter(), let ad = reward else { return send(kind, "failed") }
         reward = nil
         send(kind, "none")
