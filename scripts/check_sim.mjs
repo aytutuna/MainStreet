@@ -250,6 +250,8 @@ if (run('S.vt') !== 0) fail('a due VIP timer came back as ' + run('S.vt'));
   if (run('takeCloud(' + copy({ noads: 0, rf: ["n1"] }, {}) + ')')) fail('an older copy replaced a played game');
   if (run('S.iap.noads') !== 0) fail('a refund in an older copy was not applied');
   if (run('takeCloud(' + JSON.stringify(JSON.stringify({ ...other, v: 12 })) + ')')) fail('a cloud save from a newer build was read');
+  if (run('blocked') !== true) fail('a cloud save from a newer build did not stop this build from saving');
+  run('blocked = false');
   run('S.ads.pt = 700');
   run('save()');
   if (store[key].length > 1000000) fail('the save is ' + store[key].length + ' bytes, over the 1 MB the cloud allows');

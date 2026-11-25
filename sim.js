@@ -1786,7 +1786,10 @@ function cloudSig(o) {
 function takeCloud(raw) {
   var o = null;
   try {
-    o = validate(JSON.parse(raw));
+    var j = JSON.parse(raw);
+    // a copy from a newer build is left in the cloud; this build stops writing so it cannot be overwritten
+    if (j && j.v > SAVE_V) blocked = true;
+    o = validate(j);
   } catch (e) {}
   if (!o) return false;
   cloudNote();
