@@ -266,6 +266,7 @@ LANG['hu'] = {
   'daily.day': '{n}. nap',
   'daily.streak': '{n}. nap a 7-ből. Gyere vissza minden nap, hogy megmaradjon a sorozat.',
   'daily.claimed': 'Mára átvetted. Gyere vissza holnap, hogy megmaradjon a sorozat.',
+  'daily.wait': 'Come back a little later to claim the next reward.',
 
   'boost.have': { one: '{n} drágakövöd van.', other: '{n} drágakövöd van.' },
   'boost.x2.active': 'Aktív: még {t}. Vásárláskor +30 perc.',

@@ -265,6 +265,7 @@ LANG['id'] = {
   'daily.day': 'Hari {n}',
   'daily.streak': 'Hari ke-{n} dari 7. Datang tiap hari agar rentetanmu terjaga.',
   'daily.claimed': 'Sudah diklaim hari ini. Datang lagi besok agar rentetanmu terjaga.',
+  'daily.wait': 'Come back a little later to claim the next reward.',
 
   'boost.have': { other: 'Kamu punya {n} gem.' },
   'boost.x2.active': 'Aktif: sisa {t}. Membeli menambah 30 mnt.',

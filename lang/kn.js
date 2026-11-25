@@ -254,6 +254,7 @@ LANG['kn'] = {
   'daily.day': 'ದಿನ {n}',
   'daily.streak': '7 ರಲ್ಲಿ ದಿನ {n}. ಸರಣಿ ಉಳಿಸಲು ಪ್ರತಿದಿನ ಬನ್ನಿ.',
   'daily.claimed': 'ಇಂದಿನದು ಪಡೆದಾಯಿತು. ಸರಣಿ ಉಳಿಸಲು ನಾಳೆ ಬನ್ನಿ.',
+  'daily.wait': 'Come back a little later to claim the next reward.',
   'boost.have': { one: 'ನಿಮ್ಮ ಬಳಿ {n} ರತ್ನ ಇದೆ.', other: 'ನಿಮ್ಮ ಬಳಿ {n} ರತ್ನಗಳಿವೆ.' },
   'boost.x2.active': 'ಸಕ್ರಿಯ: {t} ಉಳಿದಿದೆ. ಖರೀದಿಸಿದರೆ 30 ನಿಮಿಷ ಸೇರುತ್ತದೆ.',
   'boost.x2.idle': '30 ನಿಮಿಷ ಎಲ್ಲಾ ಆದಾಯ x2.',

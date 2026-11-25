@@ -1313,7 +1313,7 @@ function daily() {
   var today = dayNum(clock());
   var d = S.day;
   var can = d.d < today && clock() - d.t >= DAILY_GAP;
-  return { can: can, idx: d.d >= today - 1 || clock() - d.t < 48 * 3600000 ? d.n % 7 : 0, gap: d.d < today && !can };
+  return { can: can, idx: d.d >= today - 1 || dayNum(d.t + DAILY_GAP) >= today - 1 ? d.n % 7 : 0, gap: d.d < today && !can };
 }
 
 function dailyReward(i) {

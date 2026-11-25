@@ -265,6 +265,7 @@ LANG['zh-Hans'] = {
   'daily.day': '第{n}天',
   'daily.streak': '第{n}/7天。每天回来才能保持连续签到。',
   'daily.claimed': '今天已领取。明天再来，保持连续签到。',
+  'daily.wait': 'Come back a little later to claim the next reward.',
 
   'boost.have': { other: '你有{n}钻石。' },
   'boost.x2.active': '生效中，剩余 {t}。购买可延长30分钟。',

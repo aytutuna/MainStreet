@@ -266,6 +266,7 @@ LANG['tr'] = {
   'daily.day': 'Gün {n}',
   'daily.streak': '7 günün {n}. günü. Seriyi korumak için her gün gel.',
   'daily.claimed': 'Bugünkü ödül alındı. Seriyi korumak için yarın gel.',
+  'daily.wait': 'Come back a little later to claim the next reward.',
 
   'boost.have': { one: 'Elinde {n} elmas var.', other: 'Elinde {n} elmas var.' },
   'boost.x2.active': 'Aktif: {t} kaldı. Satın almak 30 dk ekler.',

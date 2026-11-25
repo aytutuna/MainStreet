@@ -252,6 +252,7 @@ LANG['no'] = {
   'daily.day': 'Dag {n}',
   'daily.streak': 'Dag {n} av 7. Kom tilbake hver dag for å holde rekken.',
   'daily.claimed': 'Hentet for i dag. Kom tilbake i morgen for å holde rekken.',
+  'daily.wait': 'Come back a little later to claim the next reward.',
   'boost.have': { one: 'Du har {n} juvel.', other: 'Du har {n} juveler.' },
   'boost.x2.active': 'Aktiv: {t} igjen. Kjøp legger til 30 min.',
   'boost.x2.idle': 'All inntekt x2 i 30 minutter.',

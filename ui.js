@@ -1860,7 +1860,7 @@ function openDaily() {
     c.innerHTML = '<b>' + tl('daily.day', { n: i + 1 }) + '</b><img src="assets/' + ic + '.png" alt=""><span>' + dayText(d) + '</span>';
     box.appendChild(c);
   });
-  $('daily-txt').textContent = info.can ? tl('daily.streak', { n: info.idx + 1 }) : info.gap ? '' : tl('daily.claimed');
+  $('daily-txt').textContent = info.can ? tl('daily.streak', { n: info.idx + 1 }) : info.gap ? tl('daily.wait') : tl('daily.claimed');
   $('daily-ok').hidden = !info.can;
   $('daily-x').textContent = tl(info.can ? 'common.later' : 'common.close');
   $('daily').hidden = false;

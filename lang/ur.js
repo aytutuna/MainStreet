@@ -266,6 +266,7 @@ LANG['ur'] = {
   'daily.day': 'دن {n}',
   'daily.streak': '7 میں سے دن {n}۔ سلسلہ برقرار رکھنے کے لیے روز آئیں۔',
   'daily.claimed': 'آج کا انعام لے لیا۔ سلسلہ برقرار رکھنے کے لیے کل آئیں۔',
+  'daily.wait': 'Come back a little later to claim the next reward.',
 
   'boost.have': { one: 'آپ کے پاس {n} جیم ہے۔', other: 'آپ کے پاس {n} جیمز ہیں۔' },
   'boost.x2.active': 'جاری: {t} باقی۔ خریدنے پر 30 منٹ بڑھیں گے۔',

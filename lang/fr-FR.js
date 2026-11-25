@@ -255,6 +255,7 @@ LANG['fr-FR'] = {
   'daily.day': 'Jour {n}',
   'daily.streak': 'Jour {n} sur 7. Reviens chaque jour pour garder la série.',
   'daily.claimed': 'Récupérée pour aujourd’hui. Reviens demain pour garder la série.',
+  'daily.wait': 'Come back a little later to claim the next reward.',
   'boost.have': { one: 'Tu as {n} gemme.', many: 'Tu as {n} de gemmes.', other: 'Tu as {n} gemmes.' },
   'boost.x2.active': 'Actif : {t} restantes. Un achat ajoute 30 min.',
   'boost.x2.idle': 'Tous les revenus x2 pendant 30 minutes.',

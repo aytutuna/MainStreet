@@ -263,6 +263,7 @@ LANG['zh-Hant'] = {
   'daily.day': '第 {n} 天',
   'daily.streak': '第 {n}/7 天。每天回來才能保持連續。',
   'daily.claimed': '今天已領取。明天再來，保持連續。',
+  'daily.wait': 'Come back a little later to claim the next reward.',
 
   'boost.have': { other: '你有 {n} 顆寶石。' },
   'boost.x2.active': '進行中：剩 {t}。購買可延長 30 分鐘。',

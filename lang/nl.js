@@ -266,6 +266,7 @@ LANG['nl'] = {
   'daily.day': 'Dag {n}',
   'daily.streak': 'Dag {n} van 7. Kom elke dag terug om je reeks vol te houden.',
   'daily.claimed': 'Vandaag opgehaald. Kom morgen terug om je reeks vol te houden.',
+  'daily.wait': 'Come back a little later to claim the next reward.',
 
   'boost.have': { one: 'Je hebt {n} edelsteen.', other: 'Je hebt {n} edelstenen.' },
   'boost.x2.active': 'Actief: nog {t}. Kopen voegt 30 min toe.',

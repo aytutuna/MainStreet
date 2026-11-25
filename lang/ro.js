@@ -267,6 +267,7 @@ LANG['ro'] = {
   'daily.day': 'Ziua {n}',
   'daily.streak': 'Ziua {n} din 7. Revino în fiecare zi ca să păstrezi seria.',
   'daily.claimed': 'Luat pentru azi. Revino mâine ca să păstrezi seria.',
+  'daily.wait': 'Come back a little later to claim the next reward.',
 
   'boost.have': { one: 'Ai {n} nestemată.', few: 'Ai {n} nestemate.', other: 'Ai {n} de nestemate.' },
   'boost.x2.active': 'Activ: mai are {t}. Prin cumpărare se adaugă 30 min.',

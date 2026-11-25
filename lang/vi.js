@@ -265,6 +265,7 @@ LANG['vi'] = {
   'daily.day': 'Ngày {n}',
   'daily.streak': 'Ngày {n}/7. Vào game mỗi ngày để giữ chuỗi.',
   'daily.claimed': 'Hôm nay bạn đã nhận rồi. Mai quay lại để giữ chuỗi.',
+  'daily.wait': 'Come back a little later to claim the next reward.',
 
   'boost.have': { other: 'Bạn có {n} ngọc.' },
   'boost.x2.active': 'Đang bật: còn {t}. Mua thêm được cộng 30 phút.',

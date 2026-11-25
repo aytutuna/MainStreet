@@ -266,6 +266,7 @@ LANG['da'] = {
   'daily.day': 'Dag {n}',
   'daily.streak': 'Dag {n} af 7. Kom tilbage hver dag for at holde din stribe.',
   'daily.claimed': 'Hentet for i dag. Kom tilbage i morgen for at holde din stribe.',
+  'daily.wait': 'Come back a little later to claim the next reward.',
 
   'boost.have': { one: 'Du har {n} diamant.', other: 'Du har {n} diamanter.' },
   'boost.x2.active': 'Aktiv: {t} tilbage. Et køb lægger 30 min. til.',

@@ -130,8 +130,8 @@ run('S.day = { n: 3, d: dayNum(clock()) - 1, t: clock() - 9 * 3600000 }');
 if (run('daily().can') || !run('daily().gap')) fail('the gap was not reported as the reason');
 now += 24 * 3600000;
 if (!run('daily().can') || run('daily().idx') !== 3) fail('a claim 33 hours ago lost the streak');
-now += 24 * 3600000;
-if (run('daily().idx') !== 0) fail('a claim 57 hours ago kept the streak');
+now += 48 * 3600000;
+if (run('daily().idx') !== 0) fail('a claim 105 hours ago kept the streak');
 
 if (failed) process.exit(1);
 console.log('sim ok: earned ' + Math.round(earned) + ', ' + Object.keys(got.b).length + ' departments in the sample');

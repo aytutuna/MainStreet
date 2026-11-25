@@ -265,6 +265,7 @@ LANG['th'] = {
   'daily.day': 'วันที่ {n}',
   'daily.streak': 'วันที่ {n} จาก 7 กลับมาทุกวันเพื่อไม่ให้ขาดช่วง',
   'daily.claimed': 'รับของวันนี้แล้ว พรุ่งนี้มาใหม่เพื่อไม่ให้ขาดช่วง',
+  'daily.wait': 'Come back a little later to claim the next reward.',
 
   'boost.have': { other: 'คุณมี {n} เพชร' },
   'boost.x2.active': 'ใช้งานอยู่ เหลือ {t} ซื้อเพิ่มได้อีก 30 นาที',

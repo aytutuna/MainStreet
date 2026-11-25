@@ -268,6 +268,7 @@ LANG['cs'] = {
   'daily.day': 'Den {n}',
   'daily.streak': 'Den {n} ze 7. Vracej se každý den, ať série neskončí.',
   'daily.claimed': 'Na dnešek vyzvednuto. Vrať se zítra, ať série neskončí.',
+  'daily.wait': 'Come back a little later to claim the next reward.',
 
   'boost.have': { one: 'Máš {n} drahokam.', few: 'Máš {n} drahokamy.', many: 'Máš {n} drahokamu.', other: 'Máš {n} drahokamů.' },
   'boost.x2.active': 'Aktivní: zbývá {t}. Nákupem přidáš 30 min.',

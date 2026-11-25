@@ -266,6 +266,7 @@ LANG['sv'] = {
   'daily.day': 'Dag {n}',
   'daily.streak': 'Dag {n} av 7. Kom tillbaka varje dag för att behålla serien.',
   'daily.claimed': 'Hämtad för idag. Kom tillbaka imorgon för att behålla serien.',
+  'daily.wait': 'Come back a little later to claim the next reward.',
 
   'boost.have': { one: 'Du har {n} juvel.', other: 'Du har {n} juveler.' },
   'boost.x2.active': 'Aktiv: {t} kvar. Ett köp ger 30 min till.',

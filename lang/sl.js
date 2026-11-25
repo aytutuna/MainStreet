@@ -283,6 +283,7 @@ LANG['sl'] = {
   'daily.day': 'Dan {n}',
   'daily.streak': 'Dan {n} od 7. Vrni se vsak dan, da ohraniš niz.',
   'daily.claimed': 'Za danes prevzeto. Vrni se jutri, da ohraniš niz.',
+  'daily.wait': 'Come back a little later to claim the next reward.',
 
   'boost.have': {
     one: 'Imaš {n} dragulj.',

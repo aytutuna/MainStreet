@@ -45,7 +45,7 @@ var TIME_GRACE = 1200000;
 var TIME_SKEW = 60000;
 var timeN = 0;
 var timeFirst = 0;
-var timeRecv = 0;
+var timeGot = 0;
 var timeAsked = 0;
 var timeSince = 0;
 var timeHeld = false;
@@ -75,8 +75,8 @@ function askTime() {
 // an answer counts when it belongs to the current wait (or is the last refresh) and arrived a few seconds ago; a slow
 // lookup still counts after the next ask went out. The phone clock is used only for the round trip
 function gotTime(ev) {
-  if (ev.n < timeFirst || ev.n > timeN || typeof ev.ms !== 'number' || Math.abs(Date.now() - ev.recv) > 10000 || ev.recv < timeRecv) return;
-  timeRecv = ev.recv;
+  if (ev.n < timeFirst || ev.n > timeN || typeof ev.ms !== 'number' || Math.abs(Date.now() - ev.recv) > 10000 || ev.n < timeGot) return;
+  timeGot = ev.n;
   synced = { ms: ev.ms + Date.now() - (ev.sent + ev.recv) / 2, at: performance.now() };
   zoneCheck();
   if (!timeHeld) return;

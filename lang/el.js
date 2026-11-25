@@ -266,6 +266,7 @@ LANG['el'] = {
   'daily.day': 'Μέρα {n}',
   'daily.streak': 'Μέρα {n} από 7. Έλα κάθε μέρα για να κρατήσεις τη σειρά.',
   'daily.claimed': 'Το πήρες για σήμερα. Έλα αύριο για να κρατήσεις τη σειρά.',
+  'daily.wait': 'Come back a little later to claim the next reward.',
 
   'boost.have': { one: 'Έχεις {n} πετράδι.', other: 'Έχεις {n} πετράδια.' },
   'boost.x2.active': 'Ενεργό: απομένουν {t}. Με νέα αγορά προστίθενται 30 λ.',

@@ -266,6 +266,7 @@ LANG['fi'] = {
   'daily.day': 'Päivä {n}',
   'daily.streak': 'Päivä {n}/7. Palaa joka päivä, niin putki jatkuu.',
   'daily.claimed': 'Tämän päivän palkinto on otettu. Palaa huomenna, niin putki jatkuu.',
+  'daily.wait': 'Come back a little later to claim the next reward.',
 
   'boost.have': { one: 'Sinulla on {n} jalokivi.', other: 'Sinulla on {n} jalokiveä.' },
   'boost.x2.active': 'Voimassa: {t} jäljellä. Ostettaessa +30 min.',

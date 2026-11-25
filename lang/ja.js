@@ -263,6 +263,7 @@ LANG['ja'] = {
   'daily.day': '{n}日目',
   'daily.streak': '7日中{n}日目。毎日来て連続記録を続けよう。',
   'daily.claimed': '今日は受け取り済み。明日また来て連続記録を続けよう。',
+  'daily.wait': 'Come back a little later to claim the next reward.',
 
   'boost.have': { other: '{n}ジェム持っているよ。' },
   'boost.x2.active': '有効: 残り{t}。買うと30分延長。',

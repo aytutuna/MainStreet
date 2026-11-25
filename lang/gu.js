@@ -266,6 +266,7 @@ LANG['gu'] = {
   'daily.day': 'દિવસ {n}',
   'daily.streak': '7 માંથી દિવસ {n}. સિલસિલો જાળવવા રોજ આવો.',
   'daily.claimed': 'આજનું મેળવી લીધું. સિલસિલો જાળવવા કાલે આવો.',
+  'daily.wait': 'Come back a little later to claim the next reward.',
 
   'boost.have': { one: 'તમારી પાસે {n} રત્ન છે.', other: 'તમારી પાસે {n} રત્નો છે.' },
   'boost.x2.active': 'ચાલુ: {t} બાકી. ખરીદવાથી 30 મિનિટ વધે છે.',

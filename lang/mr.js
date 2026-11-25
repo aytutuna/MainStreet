@@ -266,6 +266,7 @@ LANG['mr'] = {
   'daily.day': 'दिवस {n}',
   'daily.streak': 'दिवस {n}/7. सलग सुरू ठेवण्यासाठी रोज परत या.',
   'daily.claimed': 'आजचे बक्षीस मिळाले. सलग सुरू ठेवण्यासाठी उद्या परत या.',
+  'daily.wait': 'Come back a little later to claim the next reward.',
 
   'boost.have': { one: 'तुमच्याकडे {n} रत्न आहे.', other: 'तुमच्याकडे {n} रत्ने आहेत.' },
   'boost.x2.active': 'सुरू: {t} बाकी. खरेदीने 30 मि वाढतात.',

@@ -267,6 +267,7 @@ LANG['ca'] = {
   'daily.day': 'Dia {n}',
   'daily.streak': 'Dia {n} de 7. Torna cada dia per mantenir la ratxa.',
   'daily.claimed': 'Reclamat per avui. Torna demà per mantenir la ratxa.',
+  'daily.wait': 'Come back a little later to claim the next reward.',
 
   'boost.have': { one: 'Tens {n} gemma.', many: 'Tens {n} de gemmes.', other: 'Tens {n} gemmes.' },
   'boost.x2.active': 'Actiu: queden {t}. Si el compres, afegeix 30 min.',

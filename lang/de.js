@@ -266,6 +266,7 @@ LANG['de'] = {
   'daily.day': 'Tag {n}',
   'daily.streak': 'Tag {n} von 7. Komm jeden Tag wieder, um die Serie zu halten.',
   'daily.claimed': 'Für heute abgeholt. Komm morgen wieder, um die Serie zu halten.',
+  'daily.wait': 'Come back a little later to claim the next reward.',
 
   'boost.have': { one: 'Du hast {n} Edelstein.', other: 'Du hast {n} Edelsteine.' },
   'boost.x2.active': 'Aktiv: noch {t}. Kaufen gibt 30 min dazu.',

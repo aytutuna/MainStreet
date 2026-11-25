@@ -268,6 +268,7 @@ LANG['uk'] = {
   'daily.day': 'День {n}',
   'daily.streak': 'День {n} із 7. Заходь щодня, щоб не перервати серію.',
   'daily.claimed': 'На сьогодні забрано. Приходь завтра, щоб не перервати серію.',
+  'daily.wait': 'Come back a little later to claim the next reward.',
 
   'boost.have': { one: 'У тебе {n} самоцвіт.', few: 'У тебе {n} самоцвіти.', many: 'У тебе {n} самоцвітів.', other: 'У тебе {n} самоцвіта.' },
   'boost.x2.active': 'Діє: ще {t}. Купівля додає 30 хв.',

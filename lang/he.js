@@ -267,6 +267,7 @@ LANG['he'] = {
   'daily.day': 'יום {n}',
   'daily.streak': 'יום {n} מתוך 7. חזרו כל יום כדי לשמור על הרצף.',
   'daily.claimed': 'התקבל להיום. חזרו מחר כדי לשמור על הרצף.',
+  'daily.wait': 'Come back a little later to claim the next reward.',
 
   'boost.have': { one: 'יש לכם אבן חן אחת.', two: 'יש לכם {n} אבני חן.', other: 'יש לכם {n} אבני חן.' },
   'boost.x2.active': 'פעיל: נשארו {t}. קנייה מוסיפה 30 דק׳.',

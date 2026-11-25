@@ -427,6 +427,7 @@ LANG['en'] = {
   'daily.day': 'Day {n}',
   'daily.streak': 'Day {n} of 7. Come back every day to keep the streak.',
   'daily.claimed': 'Claimed for today. Come back tomorrow to keep the streak.',
+  'daily.wait': 'Come back a little later to claim the next reward.',
 
   // Boost panel
   // {n} is the player's gems.

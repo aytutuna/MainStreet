@@ -283,6 +283,7 @@ LANG['pl'] = {
   'daily.day': 'Dzień {n}',
   'daily.streak': 'Dzień {n} z 7. Wracaj codziennie, by nie przerwać serii.',
   'daily.claimed': 'Odebrane na dziś. Wróć jutro, by nie przerwać serii.',
+  'daily.wait': 'Come back a little later to claim the next reward.',
 
   'boost.have': {
     one: 'Masz {n} klejnot.',

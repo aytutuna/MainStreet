@@ -251,6 +251,7 @@ LANG['ko'] = {
   'daily.day': '{n}일차',
   'daily.streak': '7일 중 {n}일차. 매일 접속해서 연속 기록을 이어가세요.',
   'daily.claimed': '오늘 보상을 받았어요. 내일 다시 와서 연속 기록을 이어가세요.',
+  'daily.wait': 'Come back a little later to claim the next reward.',
   'boost.have': { other: '보석이 {n}개 있어요.' },
   'boost.x2.active': '적용 중: {t} 남음. 구매하면 30분 추가.',
   'boost.x2.idle': '30분 동안 모든 수입 x2.',

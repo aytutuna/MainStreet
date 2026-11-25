@@ -265,6 +265,7 @@ LANG['ms'] = {
   'daily.day': 'Hari {n}',
   'daily.streak': 'Hari {n} daripada 7. Datang setiap hari untuk kekalkan rentetan.',
   'daily.claimed': 'Sudah dituntut hari ini. Datang esok untuk kekalkan rentetan.',
+  'daily.wait': 'Come back a little later to claim the next reward.',
 
   'boost.have': { other: 'Anda ada {n} permata.' },
   'boost.x2.active': 'Aktif: {t} lagi. Beli untuk tambah 30 min.',

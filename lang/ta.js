@@ -266,6 +266,7 @@ LANG['ta'] = {
   'daily.day': 'நாள் {n}',
   'daily.streak': 'நாள் {n} / 7. தொடர்ச்சி விடாமல் தினமும் வாருங்கள்.',
   'daily.claimed': 'இன்றைய பரிசைப் பெற்றுவிட்டீர்கள். தொடர்ச்சிக்கு நாளை வாருங்கள்.',
+  'daily.wait': 'Come back a little later to claim the next reward.',
 
   'boost.have': { one: 'உங்களிடம் {n} ரத்தினம் உள்ளது.', other: 'உங்களிடம் {n} ரத்தினங்கள் உள்ளன.' },
   'boost.x2.active': 'செயலில்: {t} மீதம். வாங்கினால் 30 நிமிடம் கூடும்.',
