@@ -81,8 +81,9 @@ for (const code of codes) {
 }
 // A text that is still English in every language was added without being translated; the per-language check only sees missing keys.
 if (args.includes('--all')) {
-  const same = Object.keys(en).filter(k => typeof en[k] === 'string' && /\p{L}{3}/u.test(en[k].replace(/\{\w+\}/g, ''))
-    && !/^(native\.|app\.title$|reg\.vip\.name$)/.test(k) && codes.every(c => load(c)[k] === en[k]));
+  const all = codes.map(load);
+  const same = Object.keys(en).filter(k => /\p{L}{3}/u.test(JSON.stringify(en[k]).replace(/\{\w+\}/g, ''))
+    && !/^(native\.|app\.title$|reg\.vip\.name$)/.test(k) && all.every(t => t && JSON.stringify(t[k]) === JSON.stringify(en[k])));
   for (const k of same) console.log(`untranslated in every language: ${k}`);
   if (same.length) bad++;
 }
