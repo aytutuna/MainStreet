@@ -1505,6 +1505,7 @@ function warp(free) {
 
 function save() {
   if (blocked) return;
+  cloudNote();
   S.ts = clock();
   try {
     localStorage.setItem(KEY, saved());
@@ -1707,6 +1708,8 @@ function load() {
     if (o) {
       S = o;
       cloudTs = o.ts;
+      cloudSent = cloudLast = cloudSig(o);
+      cloudMine = 0;
       var sec = (clock() - o.ts) / 1000;
       if (sec > 60) back = away(sec);
       if (old) save();
@@ -1730,7 +1733,8 @@ function cloudSeed(raw) {
     var j = JSON.parse(raw);
     if (!j || typeof j.v !== 'number' || (j.v <= SAVE_V && !validate(j))) return false;
     localStorage.setItem(KEY, raw);
-    if (j.v <= SAVE_V) cloudSent = cloudSig(validate(JSON.parse(raw)));
+    if (j.v <= SAVE_V) cloudSent = cloudLast = cloudSig(validate(JSON.parse(raw)));
+    cloudMine = 0;
     return true;
   } catch (e) {
     return false;
@@ -1755,6 +1759,17 @@ var cloudTs = 0;
 // what this device last wrote to the cloud or read from it, so an open game that only earns income does not write over
 // the other device's play with a copy that merely has a later time
 var cloudSent = '';
+// the time of this device's latest change of its own, which no copy older than it may replace: puts are throttled and reads can
+// be late, so a copy newer than the last one read can still be older than what the player has just done here
+var cloudMine = 0;
+var cloudLast = '';
+
+function cloudNote() {
+  var sig = cloudSig(S);
+  if (sig === cloudLast) return;
+  cloudLast = sig;
+  cloudMine = clock();
+}
 
 function cloudSig(o) {
   return JSON.stringify([o.gems, o.rep, o.store, o.b, o.pl, o.pi, o.ms, o.goal, o.gn, o.gd, o.lk, o.ac, o.pk, o.iap, o.ads && o.ads.n]);
@@ -1767,11 +1782,15 @@ function takeCloud(raw) {
     o = validate(JSON.parse(raw));
   } catch (e) {}
   if (!o) return false;
+  cloudNote();
   var i = S.iap;
   var p = o.iap;
   var tx = joinTx(i.tx, p.tx);
   var rf = joinTx(i.rf, p.rf);
-  if (S.ads.pt >= YOUNG && !(o.ts > cloudTs)) {
+  var mine = o.ts < cloudMine;
+  if (S.ads.pt >= YOUNG && (!(o.ts > cloudTs) || mine)) {
+    // this game is newer than the copy, so the cloud gets it again
+    if (mine) cloudSent = '';
     i.tx = tx;
     i.rf = rf;
     ['noads', 'x2'].forEach(function (f) {
@@ -1818,6 +1837,8 @@ function takeCloud(raw) {
   S = o;
   cloudTs = o.ts;
   cloudSent = merged ? '' : cloudSig(S);
+  cloudLast = cloudSig(S);
+  cloudMine = 0;
   clearShoppers();
   // the copy was saved when the other device last ran: the time since is time away
   var sec = (clock() - o.ts) / 1000;

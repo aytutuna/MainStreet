@@ -66,8 +66,11 @@ function device(ts) {
   run('S = fresh()');
   run('S.ads.pt = 700; S.ts = ' + ts + '; cloudTs = ' + ts);
   run("loaded = true; blocked = false; cloudSeen = true; cloudState = 'available'; cloudPend = null; cloudRet = null; timeHeld = false; cloudTaken = false");
-  run('cloudAt = -1e9; cloudSent = ""');
+  run('cloudAt = -1e9; cloudSent = cloudLast = cloudSig(S); cloudMine = 0');
 }
+
+// a change the player makes here, saved at the current time
+const change = () => run('S.gems += 1; save()');
 
 const ipad = (ts, iap) => ({ t: 'cloud', json: copy(ts, iap), at: ts, dev: 'ipad' });
 
@@ -81,24 +84,40 @@ run('save()');
 tick += 5000;
 run('cloudPut()');
 if (puts().length) fail('a game that only matches the copy it took was written back over it');
-run('S.gems += 1; cloudPut()');
+change();
+run('cloudPut()');
 if (!puts().length || lastPut().ts < T12) fail('the first put after a change did not carry the newer copy');
 
-// 1b. the copy comes after this device already put: judged by its own time, it still wins
+// 1b. a change made here after the copy's time is newer: the copy that comes late is refused and this game is put again
 device(T9);
 run('cloudBack()');
 nativeEv({ t: 'cloud', json: null, at: 0, dev: '' });
-run('S.ts = ' + T17 + '; cloudPut()');
-if (!puts().length) fail('nothing was put once the cloud had answered');
+change();
+run('cloudPut()');
+if (puts().length !== 1) fail('a real change was not put');
+const gems = run('S.gems');
 nativeEv(ipad(T12));
-if (run('S.ts') !== T12) fail('a copy older than this device\'s own put was refused (S.ts ' + run('S.ts') + ')');
+if (run('S.gems') !== gems) fail('a copy older than own change on this device replaced the game');
+run('cloudAt = -1e9; cloudPut()');
+if (puts().length !== 2 || lastPut().gems !== gems) fail('the newer game was not put again over the older copy');
 
-// 1c. a stale answer at launch, a put, then the real value
+// 1c. an unchanged game is not written, so a stale answer at launch cannot stamp it as new; the real value is then taken
 device(T9);
-nativeEv({ t: 'cloud', json: copy(T9 - H), at: 0, dev: 'ipad' });
-run('S.ts = ' + T17 + '; cloudPut()');
+nativeEv({ t: 'cloud', json: copy(T9 - H), at: 0, dev: 'ipad', fresh: false });
+nativeEv({ t: 'cloud', json: null, at: 0, dev: '' });
+run('save()');
+run('cloudPut()');
+if (puts().length) fail('a game with no change was put and stamped with the time of the launch');
 nativeEv(ipad(T12));
 if (run('S.ts') !== T12) fail('the real value after a stale answer was refused (S.ts ' + run('S.ts') + ')');
+
+// 1c2. load() leaves nothing to put until something changes
+device(T9);
+run('cloudSent = cloudLast = ""; cloudMine = 0');
+store['mainstreet.v11'] = copy(T9);
+run('load()');
+run('cloudPut()');
+if (puts().length) fail('a launch with an unchanged game put it');
 
 // 1d. the same copy again is old news
 device(T9);
@@ -118,7 +137,7 @@ if (!posts.some(m => m.cmd === 'cloudGet')) fail('the return did not ask the clo
 // 2. a refund recorded here is not undone by the other device's copy that still has the purchase
 for (const f of ['noads', 'x2']) {
   device(T9);
-  run('S.iap.rf = ["T"]; S.iap.' + f + ' = 0');
+  run('S.iap.rf = ["T"]; S.iap.' + f + ' = 0; cloudLast = cloudSig(S)');
   const o = {};
   o[f] = 1;
   o[f + 'Tx'] = 'T';
@@ -165,7 +184,7 @@ if (!puts().length || lastPut().ts !== T12) fail('puts stayed blocked after a mi
 device(T9);
 run('cloudBack()');
 nativeEv({ t: 'cloud', json: copy(T9 - H), at: 0, dev: 'ipad', fresh: false });
-run('S.gems += 1; cloudPut()');
+run('cloudSent = ""; cloudPut()');
 if (puts().length) fail('a put went out on a cache answer that had not synced');
 nativeEv(ipad(T12));
 if (run('S.ts') !== T12) fail('the real value after a cache answer was not taken');
@@ -197,6 +216,42 @@ for (let k = 0; k < 3; k++) {
 if (puts().length) fail('an idle open game kept writing its own copy');
 run('S.gems += 5; cloudAt = -1e9; cloudPut()');
 if (puts().length !== 1) fail('a changed game was not written');
+
+// 8. the other device's copy that still carries a purchase refunded here, or that carries the refund itself
+for (const f of ['noads', 'x2']) {
+  device(T9);
+  run('S.iap.' + f + ' = 1; S.iap.' + f + 'Tx = "T"; cloudLast = cloudSig(S)');
+  run('takeCloud(' + JSON.stringify(copy(T12, { rf: ['T'] })) + ')');
+  if (run('S.iap.' + f) !== 0 || run('S.ts') !== T12) fail(f + ' survived a taken copy that lists its refund');
+}
+
+// 9. the player keeps changing things here while the read has no answer: the copy that comes late is older than them
+device(T9);
+now = T9 + 2 * H;
+run('cloudBack()');
+run('cloudGot()');
+change();
+now = T17 - 60000;
+change();
+now = T17;
+run('save()');
+run('cloudPut()');
+if (puts().length) fail('a put went out while the read had no answer');
+const mine = run('S.gems');
+nativeEv(ipad(T12));
+if (run('S.gems') !== mine) fail('the hours played here were dropped for an older copy (gems ' + run('S.gems') + ')');
+run('cloudAt = -1e9; cloudPut()');
+if (puts().length !== 1 || lastPut().gems !== mine) fail('the game was not put after the older copy was refused');
+
+// 10. two open devices: the other's put arrives while this change waits for its own put
+device(T9);
+now = T12 + 10000;
+change();
+nativeEv({ t: 'cloud', json: copy(T12 + 5000), at: T12 + 5000, dev: 'ipad' });
+if (run('S.ts') !== T12 + 10000) fail('a put that was older than a change made here replaced the game');
+run('cloudPut()');
+if (puts().length !== 1) fail('the waiting change was not put');
+now = T17;
 
 // a copy older than what this device read is still refused
 device(T12);
