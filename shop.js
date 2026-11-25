@@ -380,12 +380,24 @@ function txOf(list, id) {
 }
 
 // a Skip ads or x2 whose transaction the store no longer lists was refunded, so its flag goes; gems stay. Only an answer
-// from the RevenueCat user that listed the transaction counts, since another user has a different list
+// from the RevenueCat user that listed the transaction counts, since another user has a different list. A restore on
+// another device moves the purchase to its user and empties this one's list, so a plain answer only raises a doubt: the
+// store is asked to restore, and the flag goes only if that answer still does not list the purchase
+var refundDoubt = {};
+var restoreQuiet = false;
 function refunds(ev) {
   if (!Array.isArray(ev.tx) || !ev.user) return;
   ['noads', 'x2'].forEach(function (id) {
     var t = S.iap[id + 'Tx'];
     if (!S.iap[id] || !t || S.iap[id + 'User'] !== ev.user || (ev.ids || []).indexOf(PID + id) >= 0 || ev.tx.some(function (x) { return x.tx === t; })) return;
+    if (!ev.restore) {
+      if (!refundDoubt[id]) {
+        refundDoubt[id] = 1;
+        restoreQuiet = true;
+        post({ cmd: 'restore' });
+      }
+      return;
+    }
     S.iap[id] = 0;
     S.iap.rf = joinTx(S.iap.rf, [t]);
     S.iap[id + 'Tx'] = '';
@@ -597,7 +609,8 @@ function handle(ev) {
     refunds(ev);
     var back = recover(ev.tx);
     if (back) banner('<b>' + tl('shop.recovered', { n: back, count: short(back) }) + '</b><small>' + tl('shop.recovered_note') + '</small>', 0);
-    if (ev.restore) banner('<b>' + tl(S.iap.noads + S.iap.x2 + S.iap.starter > restoreWas ? 'shop.restored' : 'shop.nothing_to_restore') + '</b>', 0);
+    if (ev.restore && restoreQuiet) restoreQuiet = false;
+    else if (ev.restore) banner('<b>' + tl(S.iap.noads + S.iap.x2 + S.iap.starter > restoreWas ? 'shop.restored' : 'shop.nothing_to_restore') + '</b>', 0);
     save();
   } else if (ev.t === 'bought') {
     buyDone();
@@ -618,8 +631,10 @@ function handle(ev) {
     }
     save();
     banner('<b>' + tl('shop.pending') + '</b><small>' + tl('shop.pending_note') + '</small>', 0);
-  } else if (ev.t === 'restoreFailed') banner('<b>' + tl('shop.restore_failed') + '</b>', 0);
-  else if (ev.t === 'failed') {
+  } else if (ev.t === 'restoreFailed') {
+    if (restoreQuiet) restoreQuiet = false;
+    else banner('<b>' + tl('shop.restore_failed') + '</b>', 0);
+  } else if (ev.t === 'failed') {
     buyDone();
     if (ev.why !== 'late' && S.iap.deal && S.iap.deal.id === ev.id.slice(PID.length)) S.iap.deal = null;
     if (ev.why === 'late') banner('<b>' + tl('shop.late') + '</b><small>' + tl('shop.late_note') + '</small>', 0);
