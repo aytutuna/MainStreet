@@ -679,10 +679,13 @@ function handle(ev) {
     buyDone(wid);
     S.iap.wait[wid] = clock() + ASK_WAIT * 1000;
     // a held deal is kept apart, so the deal of another day can still be tapped meanwhile
-    if (S.iap.deal && S.iap.deal.id === wid && !(S.iap.held && S.iap.held.until > clock())) {
-      S.iap.held = S.iap.deal;
-      S.iap.held.until = S.iap.wait[wid];
-      S.iap.deal = null;
+    if (S.iap.deal && S.iap.deal.id === wid) {
+      if (S.iap.held && S.iap.held.until > clock()) S.iap.deal.until = S.iap.wait[wid];
+      else {
+        S.iap.held = S.iap.deal;
+        S.iap.held.until = S.iap.wait[wid];
+        S.iap.deal = null;
+      }
     }
     save();
     banner('<b>' + tl('shop.pending') + '</b><small>' + tl('shop.pending_note') + '</small>', 0);

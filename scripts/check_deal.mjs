@@ -72,5 +72,14 @@ const g0 = run('S.gems');
 ev({ t: 'bought', id: pid + 'gems2', tx: 'c', at: now + 3000 });
 if (run('S.gems') - g0 !== run("product('gems2').gems + Math.round(product('gems2').gems * DEAL.bonus)")) fail('the earlier deal bonus was lost to the next deal');
 
+// a pending answer for a second deal pack leaves the live held deal alone and stretches its own window to the wait
+run("S = fresh(); buying = ''; prices[PID + 'gems3'] = '$9.99'");
+run("DEAL.packs = ['gems2']; buyProduct('gems2')");
+ev({ t: 'pending', id: pid + 'gems2' });
+run("DEAL.packs = ['gems3']; buyProduct('gems3')");
+ev({ t: 'pending', id: pid + 'gems3' });
+if (run('S.iap.held && S.iap.held.id') !== 'gems2') fail('a second pending answer replaced the held deal');
+if (run("S.iap.deal && S.iap.deal.until === S.iap.wait.gems3") !== true) fail('the second deal did not last as long as its wait');
+
 if (failed) process.exit(1);
 console.log('deal ok');
