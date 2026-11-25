@@ -25,7 +25,6 @@ var cardId = null;
 var cardRow = null;
 var cardSel = -1;
 var lastTick = 0;
-var launched = false;
 var shown = {};
 var insets = [0, 0];
 var rows = {};
@@ -1861,7 +1860,7 @@ function openDaily() {
     c.innerHTML = '<b>' + tl('daily.day', { n: i + 1 }) + '</b><img src="assets/' + ic + '.png" alt=""><span>' + dayText(d) + '</span>';
     box.appendChild(c);
   });
-  $('daily-txt').textContent = info.can ? tl('daily.streak', { n: info.idx + 1 }) : tl('daily.claimed');
+  $('daily-txt').textContent = info.can ? tl('daily.streak', { n: info.idx + 1 }) : info.gap ? '' : tl('daily.claimed');
   $('daily-ok').hidden = !info.can;
   $('daily-x').textContent = tl(info.can ? 'common.later' : 'common.close');
   $('daily').hidden = false;
@@ -2342,7 +2341,6 @@ function wire() {
       if (ac) ac.suspend();
       if (sweep) sweep.redo = true;
       radioSync();
-      if (!launched) return;
       save();
       tell({ cmd: 'set', list: reminders() });
       if (!hiddenAt) hiddenAt = clock();
@@ -2351,10 +2349,6 @@ function wire() {
     if (ac && snd) ac.resume();
     askOther();
     radioSync();
-    if (!launched) {
-      if (timeHeld) askTime();
-      return;
-    }
     if (!hiddenAt) return;
     // the game waits for the server time, so the time away comes from two server answers
     timeWait(function () {
@@ -2798,7 +2792,6 @@ function start() {
 
 // runs on the first server time answer: no save is made or read before it
 function launch() {
-  launched = true;
   var gone = load();
   zoneCheck();
   View.init($('view'), onTap);
@@ -2839,7 +2832,7 @@ function launch() {
     showAway(gone);
     lastTick = performance.now();
     requestAnimationFrame(loop);
-    setInterval(save, 5000);
+    setInterval(function () { if (!timeHeld) save(); }, 5000);
     if (location.protocol !== 'file:') {
       // file:// blocks the manifest fetch and logs an error
       var man = document.createElement('link');

@@ -44,6 +44,8 @@ var TIME_GRACE = 1200000;
 // a purchase stamped later than this after the server's now is not believed
 var TIME_SKEW = 60000;
 var timeN = 0;
+var timeFirst = 0;
+var timeRecv = 0;
 var timeAsked = 0;
 var timeSince = 0;
 var timeHeld = false;
@@ -60,6 +62,7 @@ function post(m) {
 
 function askTime() {
   var n = ++timeN;
+  if (!timeHeld) timeFirst = n;
   timeAsked = performance.now();
   if (native()) return post({ cmd: 'time', n: n });
   var sent = Date.now();
@@ -69,10 +72,11 @@ function askTime() {
   }).catch(function () {});
 }
 
-// an answer counts when it is the last one asked for and not older than a few seconds; the phone clock is used only
-// for the round trip
+// an answer counts when it belongs to the current wait (or is the last refresh) and arrived a few seconds ago; a slow
+// lookup still counts after the next ask went out. The phone clock is used only for the round trip
 function gotTime(ev) {
-  if (ev.n !== timeN || typeof ev.ms !== 'number' || Date.now() - ev.recv > 10000) return;
+  if (ev.n < timeFirst || ev.n > timeN || typeof ev.ms !== 'number' || Math.abs(Date.now() - ev.recv) > 10000 || ev.recv < timeRecv) return;
+  timeRecv = ev.recv;
   synced = { ms: ev.ms + Date.now() - (ev.sent + ev.recv) / 2, at: performance.now() };
   zoneCheck();
   if (!timeHeld) return;
@@ -91,6 +95,7 @@ function timeWait(done, card) {
   }
   if (!timeHeld) {
     timeHeld = true;
+    timeFirst = timeN + 1;
     timeSince = performance.now() - (card ? TIME_CARD : 0);
   }
   timeDone = done || timeDone;
