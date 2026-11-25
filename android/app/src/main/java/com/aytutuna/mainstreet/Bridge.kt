@@ -39,6 +39,7 @@ class Bridge(private val activity: MainActivity) {
                 "adReady" -> activity.ads.report()
                 "privacy" -> activity.ads.options()
                 "adId" -> activity.ads.adId()
+                "time" -> activity.store.time(msg.optInt("n"))
                 "ad" -> activity.ads.show(msg.optString("kind"))
                 "radio" -> activity.radio.command(msg)
             }

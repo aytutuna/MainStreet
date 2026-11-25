@@ -3,7 +3,7 @@ import UIKit
 import WebKit
 
 // The page sends {cmd: "products", ids}, {cmd: "buy", id}, {cmd: "restore"}, {cmd: "adReady"}, {cmd: "ad", kind} and
-// {cmd: "radio", ...} to the "store" handler and gets its answers through window.nativeStore(event); shop.js lists the
+// {cmd: "time", n} and {cmd: "radio", ...} to the "store" handler and gets its answers through window.nativeStore(event); shop.js lists the
 // events. Purchases go through RevenueCat, ads through AdsBridge, radio streams through RadioBridge. The web view is held
 // weakly, since it holds this handler.
 final class StoreBridge: NSObject, WKScriptMessageHandler, PurchasesDelegate {
@@ -46,6 +46,8 @@ final class StoreBridge: NSObject, WKScriptMessageHandler, PurchasesDelegate {
             ads.options()
         case "adId":
             ads.adId()
+        case "time":
+            if let n = msg["n"] as? Int { time(n) }
         case "ad":
             ads.show(msg["kind"] as? String ?? "")
         case "radio":
@@ -60,6 +62,40 @@ final class StoreBridge: NSObject, WKScriptMessageHandler, PurchasesDelegate {
         DispatchQueue.main.async { [weak self] in
             self?.web?.evaluateJavaScript("window.nativeStore && window.nativeStore(\(json))", completionHandler: nil)
         }
+    }
+
+    // server time for the page: alazy.app, else the Date header of a RevenueCat answer. sent and recv are the phone's
+    // clock around the request, which the page uses to place the answer
+    private func time(_ n: Int) {
+        Task { @MainActor in
+            let sent = Date().timeIntervalSince1970 * 1000
+            let ms = await serverTime()
+            let recv = Date().timeIntervalSince1970 * 1000
+            emit(["t": "time", "n": n, "ms": ms ?? NSNull(), "sent": sent, "recv": recv])
+        }
+    }
+
+    private func serverTime() async -> Double? {
+        if let url = URL(string: "https://alazy.app/mainstreet/time"),
+           let (data, _) = try? await URLSession.shared.data(for: request(url, "GET")),
+           let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+           let now = json["now"] as? Double {
+            return now
+        }
+        guard let url = URL(string: "https://api.revenuecat.com/"),
+              let (_, response) = try? await URLSession.shared.data(for: request(url, "HEAD")),
+              let header = (response as? HTTPURLResponse)?.value(forHTTPHeaderField: "Date") else { return nil }
+        let format = DateFormatter()
+        format.locale = Locale(identifier: "en_US_POSIX")
+        format.timeZone = TimeZone(identifier: "GMT")
+        format.dateFormat = "EEE, dd MMM yyyy HH:mm:ss zzz"
+        return format.date(from: header).map { $0.timeIntervalSince1970 * 1000 }
+    }
+
+    private func request(_ url: URL, _ method: String) -> URLRequest {
+        var r = URLRequest(url: url, cachePolicy: .reloadIgnoringLocalCacheData, timeoutInterval: 5)
+        r.httpMethod = method
+        return r
     }
 
     private func products(_ ids: [String]) {

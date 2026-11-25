@@ -13,6 +13,8 @@ import com.revenuecat.purchases.models.StoreProduct
 import com.revenuecat.purchases.models.StoreTransaction
 import org.json.JSONArray
 import org.json.JSONObject
+import java.net.HttpURLConnection
+import java.net.URL
 
 // Purchases through RevenueCat. The events it sends the page are listed at the top of shop.js.
 class StoreBridge(private val activity: MainActivity) {
@@ -28,6 +30,35 @@ class StoreBridge(private val activity: MainActivity) {
 
     fun stop() {
         Purchases.sharedInstance.updatedCustomerInfoListener = null
+    }
+
+    // server time for the page: alazy.app, else the Date header of a RevenueCat answer. sent and recv are the phone's
+    // clock around the request, which the page uses to place the answer
+    fun time(n: Int) {
+        Thread {
+            val sent = System.currentTimeMillis()
+            val ms = serverTime()
+            val recv = System.currentTimeMillis()
+            activity.emit(JSONObject().put("t", "time").put("n", n).put("ms", ms ?: JSONObject.NULL).put("sent", sent).put("recv", recv))
+        }.start()
+    }
+
+    private fun serverTime(): Long? {
+        fetch("https://alazy.app/mainstreet/time", "GET") { c ->
+            JSONObject(c.inputStream.bufferedReader().readText()).getLong("now")
+        }?.let { return it }
+        return fetch("https://api.revenuecat.com/", "HEAD") { c -> c.date.takeIf { it > 0 } }
+    }
+
+    private fun <T> fetch(url: String, method: String, read: (HttpURLConnection) -> T?): T? = try {
+        val c = URL(url).openConnection() as HttpURLConnection
+        c.requestMethod = method
+        c.useCaches = false
+        c.connectTimeout = 5000
+        c.readTimeout = 5000
+        try { read(c) } finally { c.disconnect() }
+    } catch (e: Exception) {
+        null
     }
 
     fun products(ids: JSONArray?) {
