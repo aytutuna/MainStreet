@@ -1583,7 +1583,7 @@ a.btn {
 }
 
 #notices-list {
-  text-align: left;
+  text-align: start;
   font-size: 12px;
   max-height: 55vh;
   overflow-y: auto;
