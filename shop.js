@@ -76,7 +76,7 @@ var devKey = '';
 var TIME_URL = 'https://alazy.app/mainstreet/time';
 var TIME_CARD = 4000;
 var TIME_EVERY = 600000;
-var TIME_GRACE = 1200000;
+var TIME_GRACE = 120000;
 // a purchase stamped later than this after the server's now is not believed
 var TIME_SKEW = 60000;
 var timeN = 0;
@@ -145,8 +145,9 @@ function timeWatch() {
     if (now - timeSince >= TIME_CARD) $('net').hidden = false;
     if (now - timeAsked >= 5000) askTime();
   } else if (synced) {
-    // a failed refresh keeps the game running on the monotonic clock and is tried again every minute
-    if (now - synced.at >= TIME_GRACE) timeWait(null, true);
+    // a failed refresh keeps the game running on the monotonic clock and is tried again every minute; the grace
+    // counts from the moment the refresh was due
+    if (now - synced.at >= TIME_EVERY + TIME_GRACE) timeWait(null, true);
     else if (now - synced.at >= TIME_EVERY && now - timeAsked >= 60000) askTime();
   }
 }
