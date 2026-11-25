@@ -227,9 +227,10 @@ function cloudTake(raw) {
   if (blocked) return loadFail(tl('save.newer'), true);
   // a pack bought on either side that the game kept does not hold is paid again from the store's list
   if (native()) askProducts();
+  // Skip ads can arrive in a game that was kept, too
+  if (S.iap.noads) post({ cmd: 'adStop' });
   if (!took) return;
   $('away').hidden = true;
-  if (S.iap.noads) post({ cmd: 'adStop' });
   if (View.ready()) {
     cloudShown = true;
     afterLoad();
