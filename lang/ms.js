@@ -207,7 +207,7 @@ LANG['ms'] = {
   'radio.loading': 'Memuatkan',
   'radio.resume': 'Sambung',
   'radio.retry': 'Cuba lagi',
-  'net.need': 'Main Street needs an internet connection to play. Connect and it carries on where you left off.',
+  'net.need': 'Main Street memerlukan sambungan internet untuk dimainkan. Sambung dan permainan diteruskan dari tempat anda berhenti.',
   'radio.try': 'Cuba stesen {group} dalam menu, di bawah Radio',
   'radio.now.other': 'Muzik anda sedang dimainkan',
   'radio.now.off': 'Radio dimatikan',

@@ -195,7 +195,7 @@ LANG['no'] = {
   'radio.loading': 'Laster',
   'radio.resume': 'Fortsett',
   'radio.retry': 'Prøv igjen',
-  'net.need': 'Main Street needs an internet connection to play. Connect and it carries on where you left off.',
+  'net.need': 'Main Street trenger internettforbindelse for å spille. Koble til, så fortsetter det der du slapp.',
   'radio.try': 'Prøv {group}-stasjonene i menyen, under Radio',
   'radio.now.other': 'Musikken din spiller',
   'radio.now.off': 'Radioen er av',

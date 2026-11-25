@@ -207,7 +207,7 @@ LANG['pa'] = {
   'radio.loading': 'ਲੋਡ ਹੋ ਰਿਹਾ',
   'radio.resume': 'ਜਾਰੀ ਰੱਖੋ',
   'radio.retry': 'ਦੁਬਾਰਾ ਕਰੋ',
-  'net.need': 'Main Street needs an internet connection to play. Connect and it carries on where you left off.',
+  'net.need': 'Main Street ਖੇਡਣ ਲਈ ਇੰਟਰਨੈੱਟ ਕਨੈਕਸ਼ਨ ਚਾਹੀਦਾ ਹੈ। ਕਨੈਕਟ ਕਰੋ ਤੇ ਜਿੱਥੇ ਛੱਡਿਆ ਸੀ ਉੱਥੋਂ ਚੱਲੇਗਾ।',
   'radio.try': 'ਮੀਨੂ ਵਿੱਚ ਰੇਡੀਓ ਹੇਠ {group} ਸਟੇਸ਼ਨ ਅਜ਼ਮਾਓ',
   'radio.now.other': 'ਤੁਹਾਡਾ ਸੰਗੀਤ ਚੱਲ ਰਿਹਾ ਹੈ',
   'radio.now.off': 'ਰੇਡੀਓ ਬੰਦ ਹੈ',

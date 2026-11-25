@@ -207,7 +207,7 @@ LANG['ca'] = {
   'radio.loading': 'Carregant',
   'radio.resume': 'Continua',
   'radio.retry': 'Reintenta',
-  'net.need': 'Main Street needs an internet connection to play. Connect and it carries on where you left off.',
+  'net.need': 'Main Street necessita connexió a internet per jugar. Connecta\'t i continuarà pel punt on ho havies deixat.',
   'radio.try': 'Prova al menú, a Ràdio, les emissores: {group}',
   'radio.now.other': 'Sona la teva música',
   'radio.now.off': 'La ràdio està apagada',

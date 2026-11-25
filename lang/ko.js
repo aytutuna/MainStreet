@@ -197,7 +197,7 @@ LANG['ko'] = {
   'radio.loading': '로딩 중',
   'radio.resume': '이어 재생',
   'radio.retry': '재시도',
-  'net.need': 'Main Street needs an internet connection to play. Connect and it carries on where you left off.',
+  'net.need': 'Main Street을 하려면 인터넷 연결이 필요합니다. 연결하면 하던 곳에서 이어집니다.',
   'radio.try': '메뉴의 라디오에서 방송국 보기: {group}',
   'radio.now.other': '내 음악이 재생 중이에요',
   'radio.now.off': '라디오가 꺼져 있어요',

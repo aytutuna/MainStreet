@@ -207,7 +207,7 @@ LANG['nl'] = {
   'radio.loading': 'Laden',
   'radio.resume': 'Hervat',
   'radio.retry': 'Opnieuw',
-  'net.need': 'Main Street needs an internet connection to play. Connect and it carries on where you left off.',
+  'net.need': 'Main Street heeft een internetverbinding nodig om te spelen. Maak verbinding en het gaat verder waar je gebleven was.',
   'radio.try': 'Probeer de zenders uit {group} in het menu, onder Radio',
   'radio.now.other': 'Je eigen muziek speelt',
   'radio.now.off': 'De radio staat uit',

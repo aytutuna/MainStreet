@@ -207,7 +207,7 @@ LANG['id'] = {
   'radio.loading': 'Memuat',
   'radio.resume': 'Lanjut',
   'radio.retry': 'Coba lagi',
-  'net.need': 'Main Street needs an internet connection to play. Connect and it carries on where you left off.',
+  'net.need': 'Main Street memerlukan koneksi internet untuk dimainkan. Sambungkan, lalu permainan lanjut dari tempat kamu berhenti.',
   'radio.try': 'Coba stasiun {group} di menu, bagian Radio',
   'radio.now.other': 'Musikmu sedang diputar',
   'radio.now.off': 'Radio mati',

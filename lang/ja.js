@@ -207,7 +207,7 @@ LANG['ja'] = {
   'radio.loading': '読み込み中',
   'radio.resume': '再開',
   'radio.retry': '再試行',
-  'net.need': 'Main Street needs an internet connection to play. Connect and it carries on where you left off.',
+  'net.need': 'Main Street を遊ぶにはインターネット接続が必要です。接続すると、続きから再開します。',
   'radio.try': 'メニューの「ラジオ」で{group}の局を試してみてね',
   'radio.now.other': '音楽を再生中',
   'radio.now.off': 'ラジオはオフ',

@@ -197,7 +197,7 @@ LANG['kn'] = {
   'radio.loading': 'ಲೋಡ್ ಆಗುತ್ತಿದೆ',
   'radio.resume': 'ಮುಂದುವರಿಸಿ',
   'radio.retry': 'ಮತ್ತೆ ಪ್ರಯತ್ನಿಸಿ',
-  'net.need': 'Main Street needs an internet connection to play. Connect and it carries on where you left off.',
+  'net.need': 'Main Street ಆಡಲು ಇಂಟರ್ನೆಟ್ ಸಂಪರ್ಕ ಬೇಕು. ಸಂಪರ್ಕಿಸಿ, ನೀವು ಬಿಟ್ಟ ಜಾಗದಿಂದಲೇ ಮುಂದುವರಿಯುತ್ತದೆ.',
   'radio.try': 'ಮೆನುವಿನ ರೇಡಿಯೋದಲ್ಲಿ {group} ಕೇಂದ್ರಗಳನ್ನು ಪ್ರಯತ್ನಿಸಿ',
   'radio.now.other': 'ನಿಮ್ಮ ಸಂಗೀತ ಪ್ಲೇ ಆಗುತ್ತಿದೆ',
   'radio.now.off': 'ರೇಡಿಯೋ ಆಫ್ ಆಗಿದೆ',

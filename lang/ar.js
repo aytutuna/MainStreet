@@ -197,7 +197,7 @@ LANG['ar'] = {
   "radio.loading": "جارٍ التحميل",
   "radio.resume": "استئناف",
   "radio.retry": "إعادة المحاولة",
-  "net.need": "Main Street needs an internet connection to play. Connect and it carries on where you left off.",
+  "net.need": "تحتاج Main Street إلى اتصال بالإنترنت للعب. اتصل بالإنترنت وستتابع من حيث توقفت.",
   "radio.try": "جرّب محطات {group} في القائمة، تحت الراديو",
   "radio.now.other": "موسيقاك تعمل",
   "radio.now.off": "الراديو متوقف",

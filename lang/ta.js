@@ -207,7 +207,7 @@ LANG['ta'] = {
   'radio.loading': 'ஏற்றுகிறது',
   'radio.resume': 'தொடர்',
   'radio.retry': 'மறுமுயற்சி',
-  'net.need': 'Main Street needs an internet connection to play. Connect and it carries on where you left off.',
+  'net.need': 'Main Street விளையாட இணைய இணைப்பு தேவை. இணைத்தால் நீங்கள் விட்ட இடத்திலிருந்தே தொடரும்.',
   'radio.try': 'மெனுவில் ரேடியோ பகுதியில் {group} நிலையங்களை முயலுங்கள்',
   'radio.now.other': 'உங்கள் இசை ஒலிக்கிறது',
   'radio.now.off': 'ரேடியோ நிறுத்தம்',

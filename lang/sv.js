@@ -207,7 +207,7 @@ LANG['sv'] = {
   'radio.loading': 'Laddar',
   'radio.resume': 'Fortsätt',
   'radio.retry': 'Försök igen',
-  'net.need': 'Main Street needs an internet connection to play. Connect and it carries on where you left off.',
+  'net.need': 'Main Street behöver internetanslutning för att spela. Anslut, så fortsätter det där du slutade.',
   'radio.try': 'Prova stationerna från {group} i menyn, under Radio',
   'radio.now.other': 'Din musik spelas',
   'radio.now.off': 'Radion är av',

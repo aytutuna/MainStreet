@@ -207,7 +207,7 @@ LANG['hi'] = {
   'radio.loading': 'लोड हो रहा है',
   'radio.resume': 'फिर चलाएँ',
   'radio.retry': 'दोबारा',
-  'net.need': 'Main Street needs an internet connection to play. Connect and it carries on where you left off.',
+  'net.need': 'Main Street खेलने के लिए इंटरनेट कनेक्शन चाहिए। कनेक्ट करें और खेल वहीं से आगे बढ़ेगा जहाँ आपने छोड़ा था।',
   'radio.try': 'मेन्यू के रेडियो में {group} स्टेशन आज़माएँ',
   'radio.now.other': 'आपका संगीत चल रहा है',
   'radio.now.off': 'रेडियो बंद है',

@@ -207,7 +207,7 @@ LANG['sk'] = {
   'radio.loading': 'Načítava sa',
   'radio.resume': 'Pokračovať',
   'radio.retry': 'Skúsiť znova',
-  'net.need': 'Main Street needs an internet connection to play. Connect and it carries on where you left off.',
+  'net.need': 'Main Street na hranie potrebuje pripojenie na internet. Pripoj sa a hra bude pokračovať tam, kde si skončil.',
   'radio.try': 'Skús v ponuke Rádio stanice: {group}',
   'radio.now.other': 'Hrá tvoja hudba',
   'radio.now.off': 'Rádio je vypnuté',

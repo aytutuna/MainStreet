@@ -207,7 +207,7 @@ LANG['th'] = {
   'radio.loading': 'กำลังโหลด',
   'radio.resume': 'เล่นต่อ',
   'radio.retry': 'ลองใหม่',
-  'net.need': 'Main Street needs an internet connection to play. Connect and it carries on where you left off.',
+  'net.need': 'Main Street ต้องใช้อินเทอร์เน็ตในการเล่น เชื่อมต่อแล้วเกมจะเล่นต่อจากที่ค้างไว้',
   'radio.try': 'ลองสถานี{group}ในเมนู ใต้หัวข้อวิทยุ',
   'radio.now.other': 'กำลังเล่นเพลงของคุณ',
   'radio.now.off': 'ปิดวิทยุอยู่',

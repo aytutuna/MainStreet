@@ -197,7 +197,7 @@ LANG['fr-FR'] = {
   'radio.loading': 'Chargement',
   'radio.resume': 'Reprendre',
   'radio.retry': 'Réessayer',
-  'net.need': 'Main Street needs an internet connection to play. Connect and it carries on where you left off.',
+  'net.need': 'Main Street a besoin d\'une connexion Internet pour jouer. Connecte-toi et la partie reprend là où tu l\'avais laissée.',
   'radio.try': 'Essaie les stations « {group} » dans le menu, sous Radio',
   'radio.now.other': 'Ta musique joue',
   'radio.now.off': 'La radio est éteinte',

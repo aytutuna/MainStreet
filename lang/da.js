@@ -207,7 +207,7 @@ LANG['da'] = {
   'radio.loading': 'Henter',
   'radio.resume': 'Fortsæt',
   'radio.retry': 'Prøv igen',
-  'net.need': 'Main Street needs an internet connection to play. Connect and it carries on where you left off.',
+  'net.need': 'Main Street kræver en internetforbindelse for at spille. Opret forbindelse, så fortsætter det, hvor du slap.',
   'radio.try': 'Prøv stationerne for {group} i menuen under Radio',
   'radio.now.other': 'Din musik spiller',
   'radio.now.off': 'Radioen er slukket',

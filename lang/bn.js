@@ -207,7 +207,7 @@ LANG['bn'] = {
   'radio.loading': 'লোড হচ্ছে',
   'radio.resume': 'আবার চালান',
   'radio.retry': 'আবার চেষ্টা',
-  'net.need': 'Main Street needs an internet connection to play. Connect and it carries on where you left off.',
+  'net.need': 'Main Street খেলতে ইন্টারনেট সংযোগ লাগে। সংযুক্ত হলে যেখানে ছেড়েছিলেন সেখান থেকেই চলবে।',
   'radio.try': 'মেনুর রেডিওতে {group} স্টেশনগুলো চালিয়ে দেখুন',
   'radio.now.other': 'আপনার গান চলছে',
   'radio.now.off': 'রেডিও বন্ধ',

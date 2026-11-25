@@ -207,7 +207,7 @@ LANG['hr'] = {
   'radio.loading': 'Učitavanje',
   'radio.resume': 'Nastavi',
   'radio.retry': 'Ponovi',
-  'net.need': 'Main Street needs an internet connection to play. Connect and it carries on where you left off.',
+  'net.need': 'Main Street treba internetsku vezu za igranje. Spoji se i igra se nastavlja tamo gdje si stao.',
   'radio.try': 'Probaj postaje: {group}, u izborniku pod Radio',
   'radio.now.other': 'Svira tvoja glazba',
   'radio.now.off': 'Radio je isključen',

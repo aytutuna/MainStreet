@@ -207,7 +207,7 @@ LANG['te'] = {
   'radio.loading': 'లోడ్ అవుతోంది',
   'radio.resume': 'కొనసాగించండి',
   'radio.retry': 'మళ్లీ ప్రయత్నించండి',
-  'net.need': 'Main Street needs an internet connection to play. Connect and it carries on where you left off.',
+  'net.need': 'Main Street ఆడటానికి ఇంటర్నెట్ కనెక్షన్ కావాలి. కనెక్ట్ చేస్తే మీరు ఆపిన చోటి నుంచే కొనసాగుతుంది.',
   'radio.try': 'మెనూలో రేడియో కింద {group} స్టేషన్లను ప్రయత్నించండి',
   'radio.now.other': 'మీ సంగీతం ప్లే అవుతోంది',
   'radio.now.off': 'రేడియో ఆఫ్‌లో ఉంది',
