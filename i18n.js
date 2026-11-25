@@ -265,6 +265,8 @@ function applyText(root) {
 
 function setLang(code) {
   if (!ready(code) || code === I18N.code) return;
+  // a purchase in flight finishes first, since its answer would reach the page that is going away
+  if (typeof buying === 'string' && buying) return void setTimeout(function () { setLang(code); }, 500);
   try {
     localStorage.setItem(LANG_KEY, code);
   } catch (e) {}

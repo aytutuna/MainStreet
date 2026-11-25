@@ -635,6 +635,9 @@ LANG['en'] = {
   // {name} is the product name, {n} the extra gems.
   'shop.thanks_bonus': { one: '{name} · +{n} bonus gem', other: '{name} · +{n} bonus gems' },
   'shop.failed': 'Purchase not completed.',
+  'shop.pending': 'Waiting for approval',
+  'shop.pending_note': 'It arrives once the purchase is approved.',
+  'shop.restore_failed': 'Restore failed. Try again later.',
   // Banner after watching an ad that gave nothing.
   'ads.no_reward': 'No reward',
   'ads.unavailable': 'No ad was available.',

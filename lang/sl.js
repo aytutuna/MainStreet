@@ -509,6 +509,9 @@ LANG['sl'] = {
     other: '{name} · +{n} bonus draguljev'
   },
   'shop.failed': 'Nakup ni bil dokončan.',
+  'shop.pending': 'Waiting for approval',
+  'shop.pending_note': 'It arrives once the purchase is approved.',
+  'shop.restore_failed': 'Restore failed. Try again later.',
   'ads.no_reward': 'Brez nagrade',
   'ads.unavailable': 'Oglas ni bil na voljo.',
   'ads.unfinished': 'Oglas ni bil dokončan.',

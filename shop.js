@@ -2,10 +2,14 @@
 // {cmd: 'adReady'}, {cmd: 'ad', kind}, {cmd: 'privacy'} and {cmd: 'radio', ...} on window.webkit.messageHandlers.store and
 // answers through window.nativeStore(ev), ev being one of
 //   {t: 'products', list: [{id, price, amount, currency}]}   the products the store knows, price already in the player's currency
-//   {t: 'owned', ids, tx, restore}         one-time products the player owns, and tx: [{id, tx, at}] for the gem packs
-//                                          the store knows (at is ms since 1970); answers 'products' and 'restore'
-//   {t: 'bought', id, tx, at}              a purchase went through; tx is the store's transaction id, at its time
-//   {t: 'failed', id, why}                 why is 'cancel' or 'error'
+//   {t: 'owned', ids, tx, user, restore}   one-time products the player owns, and tx: [{id, tx, at}] for everything
+//                                          bought the store knows (at is ms since 1970), user the RevenueCat user the
+//                                          list belongs to; answers 'products' and 'restore'
+//   {t: 'bought', id, tx, at}              a purchase went through; tx is RevenueCat's transaction id, at its time
+//   {t: 'pending', id}                     the store holds the purchase for approval (a parent, a slow payment method)
+//   {t: 'failed', id, why}                 why is 'cancel', 'error' or 'late' (charged, but RevenueCat has not listed it yet;
+//                                          an 'owned' follows)
+//   {t: 'restoreFailed'}                   a restore could not be done
 //   {t: 'ad', kind, state}                 kind is 'reward'; state is 'ready' or 'none' (whether one can be
 //                                          shown now), 'open', 'rewarded' (the player earned it), 'closed' or 'failed'
 //   {t: 'privacy', required}               whether the consent SDK wants a "Privacy choices" item in the menu
@@ -33,6 +37,11 @@ var buying = '';
 var adOk = { reward: false };
 var watching = null;
 var restoreWas = 0;
+var waiting = {};
+var buyTimer = 0;
+var productsAt = 0;
+// a purchase the store has not answered in this long frees the buttons
+var BUY_WAIT = 60000;
 var queued = [];
 var loaded = false;
 
@@ -122,10 +131,13 @@ function product(id) {
 }
 
 // a one-time product is flagged when the store says the player owns it
-function own(id) {
+function own(id, tx) {
   var p = product(id);
-  if (!p || !p.once || S.iap[id]) return false;
+  if (!p || !p.once) return false;
+  if (tx && !S.iap[id + 'Tx']) S.iap[id + 'Tx'] = tx;
+  if (S.iap[id]) return false;
   S.iap[id] = 1;
+  delete waiting[id];
   if (id === 'noads') post({ cmd: 'adStop' });
   return true;
 }
@@ -143,6 +155,7 @@ function note(tx) {
 function credit(p, tx) {
   if (seen(tx)) return false;
   note(tx);
+  delete waiting[p.id];
   if (p.id === 'starter1') {
     S.iap.starter = 1;
     S.gems += STARTER.gems;
@@ -155,7 +168,7 @@ function credit(p, tx) {
 function grant(id, tx) {
   var p = product(id);
   if (!p) return false;
-  var done = p.once ? own(id) : credit(p, tx);
+  var done = p.once ? own(id, tx) : credit(p, tx);
   if (done) save();
   return done;
 }
@@ -175,6 +188,34 @@ function recover(list) {
   return n;
 }
 
+function txOf(list, id) {
+  var best = null;
+  (list || []).forEach(function (t) {
+    if (t.id === id && (!best || t.at > best.at)) best = t;
+  });
+  return best ? best.tx : '';
+}
+
+// a Skip ads or x2 whose transaction the store no longer lists was refunded, so its flag goes; gems stay. Only an answer
+// for the same RevenueCat user counts, since a new user has a different list
+function refunds(ev) {
+  if (!Array.isArray(ev.tx) || !ev.user) return;
+  if (S.iap.user !== ev.user) {
+    S.iap.user = ev.user;
+    return;
+  }
+  ['noads', 'x2'].forEach(function (id) {
+    var t = S.iap[id + 'Tx'];
+    if (!S.iap[id] || !t || ev.tx.some(function (x) { return x.tx === t; })) return;
+    S.iap[id] = 0;
+    S.iap[id + 'Tx'] = '';
+    if (id === 'noads') {
+      adOn = false;
+      if (S.ads.pt >= AD_START) adBegin();
+    }
+  });
+}
+
 // the bonus of the deal the player tapped, paid once to the purchase it was tapped for
 function dealBonus(id, at) {
   var d = S.iap.deal;
@@ -192,7 +233,7 @@ function priceOf(p) {
 function shopBtn(p) {
   var done = p.once && S.iap[p.id];
   var price = priceOf(p);
-  var off = done || !price || !!buying;
+  var off = done || !price || !!buying || !!waiting[p.id];
   return '<button type="button" class="btn' + (done ? ' alt' : '') + '" data-p="' + p.id + '"' + (off ? ' disabled' : '') + '>' + (done ? tl('shop.owned') : price || '-') + '</button>';
 }
 
@@ -278,6 +319,7 @@ function paintShop() {
 
 function openShop(at) {
   if (!native()) return;
+  askAgain();
   paintShop();
   $('shop').hidden = false;
   var box = $('shop').firstElementChild;
@@ -286,14 +328,34 @@ function openShop(at) {
   if (el) box.scrollTop = el.getBoundingClientRect().top - box.getBoundingClientRect().top - (box.clientHeight - el.offsetHeight) / 2;
 }
 
+function buyDone() {
+  buying = '';
+  clearTimeout(buyTimer);
+}
+
+function askProducts() {
+  productsAt = performance.now();
+  post({ cmd: 'products', ids: PRODUCTS.map(function (p) { return PID + p.id; }) });
+}
+
+// the store list is asked for again when the last answer was empty or never came
+function askAgain() {
+  if (native() && loaded && !storeUp && performance.now() - productsAt > 5000) askProducts();
+}
+
 function buyProduct(id) {
-  if (buying || !prices[PID + id] || (id === 'starter1' && (S.iap.starter || starterLeft(false) < 0))) return;
+  if (buying || waiting[id] || !prices[PID + id] || (id === 'starter1' && (S.iap.starter || starterLeft(false) < 0))) return;
   buying = id;
   var d = dealNow();
   // the deal is fixed when the player taps, so a day change during the purchase does not lose it
   S.iap.deal = d && d.id === id ? { id: id, bonus: d.bonus, until: clock() + 3600000 } : null;
   paintShop();
   post({ cmd: 'buy', id: PID + id });
+  buyTimer = setTimeout(function () {
+    if (buying !== id) return;
+    buyDone();
+    if (!$('shop').hidden) paintShop();
+  }, BUY_WAIT);
 }
 
 var adOn = false;
@@ -304,7 +366,8 @@ function shopStart() {
   loaded = true;
   queued.splice(0).forEach(handle);
   askOther();
-  post({ cmd: 'products', ids: PRODUCTS.map(function (p) { return PID + p.id; }) });
+  askProducts();
+  document.addEventListener('visibilitychange', function () { if (!document.hidden) askAgain(); });
   if (S.iap.noads) post({ cmd: 'adStop' });
   if (S.ads.pt >= AD_START) adBegin();
   $('b-shop').hidden = false;
@@ -340,22 +403,28 @@ function handle(ev) {
     });
     storeUp = !!(ev.list && ev.list.length);
   } else if (ev.t === 'owned') {
-    (ev.ids || []).forEach(function (id) { own(id.slice(PID.length)); });
+    (ev.ids || []).forEach(function (id) { own(id.slice(PID.length), txOf(ev.tx, id)); });
+    refunds(ev);
     var back = recover(ev.tx);
     if (back) banner('<b>' + tl('shop.recovered', { n: back, count: short(back) }) + '</b><small>' + tl('shop.recovered_note') + '</small>', 0);
     if (ev.restore) banner('<b>' + tl(S.iap.noads + S.iap.x2 + S.iap.starter > restoreWas ? 'shop.restored' : 'shop.nothing_to_restore') + '</b>', 0);
     save();
   } else if (ev.t === 'bought') {
-    buying = '';
+    buyDone();
     var bid = ev.id.slice(PID.length);
     var extra = grant(bid, ev.tx) && product(bid).gems ? dealBonus(bid, ev.at) : 0;
     sfx('done');
     buzz('success');
     banner('<b>' + tl('shop.thanks') + '</b><small>' + (extra ? tl('shop.thanks_bonus', { name: product(bid).name, n: extra }) : product(bid).name) + '</small>', 0, true);
-  } else if (ev.t === 'failed') {
-    buying = '';
-    S.iap.deal = null;
-    if (ev.why !== 'cancel') banner('<b>' + tl('shop.failed') + '</b>', 0);
+  } else if (ev.t === 'pending') {
+    buyDone();
+    waiting[ev.id.slice(PID.length)] = 1;
+    banner('<b>' + tl('shop.pending') + '</b><small>' + tl('shop.pending_note') + '</small>', 0);
+  } else if (ev.t === 'restoreFailed') banner('<b>' + tl('shop.restore_failed') + '</b>', 0);
+  else if (ev.t === 'failed') {
+    buyDone();
+    if (ev.why !== 'late') S.iap.deal = null;
+    if (ev.why !== 'cancel' && ev.why !== 'late') banner('<b>' + tl('shop.failed') + '</b>', 0);
   } else if (ev.t === 'adId') testAdId(ev.id);
   else if (ev.t === 'privacy') $('m-priv').hidden = !ev.required;
   else if (ev.t === 'ad') adEvent(ev);

@@ -509,6 +509,9 @@ LANG['pl'] = {
     other: '{name} · +{n} klejnota gratis'
   },
   'shop.failed': 'Zakup nie został dokończony.',
+  'shop.pending': 'Waiting for approval',
+  'shop.pending_note': 'It arrives once the purchase is approved.',
+  'shop.restore_failed': 'Restore failed. Try again later.',
   'ads.no_reward': 'Bez nagrody',
   'ads.unavailable': 'Brak dostępnej reklamy.',
   'ads.unfinished': 'Reklama nie została obejrzana do końca.',

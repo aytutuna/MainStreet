@@ -96,7 +96,7 @@ var S = fresh();
 function fresh() {
   var s = { v: 11, cash: START_CASH, gems: 0, rep: 0, pk: {}, store: 1, run: 0, all: 0, pend: 0, x2: 0, call: 0, b: {}, ms: {},
     st: { srv: 0, lost: 0, sr: 0, t: 0 }, goal: [0, 1, 2], gn: 3, gd: {}, day: { n: 0, d: -1, t: 0 }, tz: { o: zone(), at: clock() }, mi: { d: -1, m: [], b: 0 }, rg: { o: {}, days: 0, gifts: 0, combo: 0 }, lk: { on: 'classic', own: {} }, ac: { o: {}, m: {} },
-    ask: 0, clk: START_H * CLOCK / 24, iap: { noads: 0, x2: 0, starter: 0, tx: [] }, ads: { d: -1, n: {}, pt: 0, li: 0, sd: 0 }, ts: clock() };
+    ask: 0, clk: START_H * CLOCK / 24, iap: { noads: 0, x2: 0, starter: 0, noadsTx: '', x2Tx: '', user: '', tx: [] }, ads: { d: -1, n: {}, pt: 0, li: 0, sd: 0 }, ts: clock() };
   noPlaces(s);
   s.b.produce = atLevel('produce', 1);
   return s;
@@ -1529,6 +1529,7 @@ function validate(o) {
   s.clk = num(o.clk, s.clk) % CLOCK;
   var ip = o.iap || {};
   s.iap = { noads: ip.noads ? 1 : 0, x2: ip.x2 ? 1 : 0, starter: ip.starter === 2 ? 2 : ip.starter ? 1 : 0, offered: ip.offered ? 1 : 0,
+    noadsTx: typeof ip.noadsTx === 'string' ? ip.noadsTx : '', x2Tx: typeof ip.x2Tx === 'string' ? ip.x2Tx : '', user: typeof ip.user === 'string' ? ip.user : '',
     tx: (Array.isArray(ip.tx) ? ip.tx : []).filter(function (t) { return typeof t === 'string'; }).slice(-100),
     deal: ip.deal && typeof ip.deal.id === 'string' && num(ip.deal.bonus, 0) > 0 ? { id: ip.deal.id, bonus: Math.floor(num(ip.deal.bonus, 0)), until: num(ip.deal.until, 0) } : null };
   var ad = o.ads || {};
