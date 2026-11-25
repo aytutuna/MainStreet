@@ -37,7 +37,8 @@
 //                                          its key
 //   {cmd: 'cloudSignIn'}                   Android: opens Play Games sign-in, then answers cloudState and cloud
 // Every copy carries hold {dev, at}: the device that claimed the game and the server time it did so, at launch, on coming back
-// and on Play here. A device that sees a later claim than its own stops and shows the taken-over card; one with no claim puts nothing.
+// and on Play here. A device that sees a later claim than its own stops and shows the taken-over card; one with no claim puts nothing,
+// except a purchase it holds that the copy lacks, which goes out once as the copy's game with that purchase joined in (a hand-off).
 //   {t: 'notify', state}                   'granted' or 'denied', answering the notify handler's {cmd: 'ask'}; the page does not use it
 //   {t: 'radio', state, url, title?}       the stream being played: state is 'buffering', 'playing', 'paused' (headphones
 //                                          unplugged) or 'error' (it gave out), url the one
@@ -304,7 +305,6 @@ function cloudLost(ev) {
 }
 
 function cloudHere() {
-  cloudOff = false;
   cloudBack();
 }
 
@@ -390,7 +390,7 @@ function cloudTake(ev) {
   if (S.iap.noads) post({ cmd: 'adStop' });
   // a game kept over a refused put goes out at once: the other device keeps writing on its own base, and waiting would
   // get this one refused again every round
-  if (!took && ev.refused && claim) cloudPut();
+  if (ev.refused && claim && (!took || claimDue)) cloudPut();
   else cloudSoon();
   if (!took) return;
   $('away').hidden = true;
@@ -409,7 +409,8 @@ function cloudBack() {
   // iCloud answers a read from its local copy at once and brings other devices' changes later, and it cannot refuse a write,
   // so the first put waits for them
   cloudAt = performance.now();
-  // coming back claims the game again, once what the cloud holds has been judged
+  // coming back claims the game again, once what the cloud holds has been judged, also for a game that was taken over
+  cloudOff = false;
   claim = null;
   claimNeeded = true;
   if (cloudRet) clearTimeout(cloudRet.t);
@@ -778,12 +779,15 @@ function shopStart() {
   $('b-shop').hidden = false;
   // play time counts only while the game is in front, and active play only with a touch in the last minute
   document.addEventListener('pointerdown', function () { lastTouch = performance.now(); }, true);
-  setInterval(function () {
-    if (document.hidden) return;
-    if (performance.now() - lastTouch < 60000) S.ads.ap++;
-    S.ads.pt++;
-    if (S.ads.pt >= AD_START) adBegin();
-  }, 1000);
+  setInterval(playTick, 1000);
+}
+
+// not counted while the game stands still: taken over, waiting for the time or for the cloud
+function playTick() {
+  if (document.hidden || timeHeld || cloudHeld()) return;
+  if (performance.now() - lastTouch < 60000) S.ads.ap++;
+  S.ads.pt++;
+  if (S.ads.pt >= AD_START) adBegin();
 }
 
 // the consent form and the tracking prompt wait until the player has had a few minutes with the game

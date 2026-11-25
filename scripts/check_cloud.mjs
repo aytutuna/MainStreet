@@ -63,7 +63,7 @@ const iosEv = (e, more) => ({ t: 'cloud', json: e ? e.json : null, at: e ? e.at 
 // one device: its own page (vm), its own local storage, and the native side answering its messages one pump later, as the
 // real bridges do. hold keeps the answers back, fail makes puts fail, drop loses them without a word, stale is what a cache that has not synced answers to a read
 function device(cloud, st = {}, opts = {}) {
-  const dev = { st, cloud, posts: [], inbox: [], hold: false, fail: false, drop: false, out: false, unavail: false, fails: [], seen: {}, lagged: [], offline: false, mine: '', timers: [] };
+  const dev = { st, cloud, posts: [], inbox: [], hold: false, fail: false, drop: false, out: false, unavail: false, fails: [], seen: {}, lagged: [], offline: false, mine: '', synced: false, timers: [] };
   let timerId = 0;
   const addTimer = (fn, ms, every) => {
     dev.timers.push({ id: ++timerId, at: tick + (ms || 0), fn, every });
@@ -112,7 +112,7 @@ function device(cloud, st = {}, opts = {}) {
 
   const nativeIos = m => {
     if (m.dev) dev.mine = m.dev;
-    if (m.cmd === 'cloudState') dev.inbox.push({ t: 'cloudState', state: Object.keys(dev.seen).some(k => k !== dev.mine) ? 'available' : 'pending' });
+    if (m.cmd === 'cloudState') dev.inbox.push({ t: 'cloudState', state: dev.synced || Object.keys(dev.seen).some(k => k !== dev.mine) ? 'available' : 'pending' });
     else if (m.cmd === 'cloudGet') {
       const list = Object.keys(dev.seen).filter(k => k !== dev.mine).map(k => dev.seen[k]);
       if (!list.length) dev.inbox.push(iosEv(null));
@@ -141,10 +141,14 @@ function device(cloud, st = {}, opts = {}) {
   // iCloud brings what it held back
   dev.catchUp = () => {
     dev.lag = false;
-    dev.lagged.splice(0).forEach(e => {
+    dev.synced = true;
+    const list = dev.lagged.splice(0);
+    list.forEach((e, i) => {
       dev.seen[e.dev] = e;
-      dev.inbox.push(iosEv(e));
+      dev.inbox.push(iosEv(e, i < list.length - 1));
     });
+    // the bridge sends the copies first and the state after them
+    dev.inbox.push({ t: 'cloudState', state: 'available' });
     dev.pump();
   };
   dev.online = () => {
@@ -356,6 +360,116 @@ for (const ios of [false, true]) {
   a.hold = false;
   a.pump();
   expect(a.puts().length === 2 && JSON.parse(c.json).gems === 181, 'a purchase credited during a put did not go out when it was answered (gems ' + JSON.parse(c.json).gems + ')');
+}
+
+// coming back while taken over claims the game again: the card goes, the newest copy is judged first and the time away is not
+// paid to a game that is about to be replaced
+for (const ios of [false, true]) {
+  const name = ios ? 'iPhone' : 'Android';
+  const { sync, a, b } = claimPair(ios);
+  a.launch();
+  now = T9 + 60000;
+  b.launch();
+  sync(a);
+  expect(a.run('cloudOff') && a.shown('taken'), name + ': the first device did not stop');
+  b.change(40, 600);
+  b.put();
+  now += 600000;
+  a.hold = true;
+  a.run('cloudBack()');
+  a.run('var ranWith = null; cloudAfter(function () { cloudApply(); ranWith = S.gems; })');
+  expect(!a.run('cloudOff') && a.run('cloudHeld()') && a.run('ranWith') === null, name + ': the return did not leave the stopped state and wait for the cloud');
+  a.hold = false;
+  a.pump();
+  expect(a.run('ranWith') === b.gems() && a.gems() === b.gems(), name + ': the time away was handled before the newest copy was taken (' + a.run('ranWith') + ', want ' + b.gems() + ')');
+  expect(a.run('claim && claim.at') === now && !a.shown('taken') && !a.run('cloudHeld()') && !a.run('cloudOff'), name + ': the return did not claim and lift the card');
+  sync(b);
+  expect(b.run('cloudOff') && b.shown('taken'), name + ': the other device was not stopped by the return');
+}
+
+// the later claim on Android is refused when the earlier one put in between; it takes that copy and claims again at once, and the
+// earlier device learns of it on its next poll
+{
+  const { cloud, a, b } = claimPair(false);
+  b.hold = true;
+  b.launch();
+  a.launch();
+  now = T9 + 1000;
+  b.hold = false;
+  b.pump();
+  const bid = b.id();
+  expect(JSON.parse(cloud.json).hold.dev === 'bb' && b.puts().length === 2, 'Android: a refused claim that took the copy waited for the throttle');
+  expect(bid === 'bb' && !a.run('cloudOff'), 'Android: the earlier device stopped before it asked');
+  elapse(46000, a, b);
+  expect(a.run('cloudOff') && a.shown('taken') && !b.run('cloudOff'), 'Android: the earlier device did not stop within a poll after the later claim');
+}
+
+// a put that never got its answer before the takeover does not keep Play here from claiming
+for (const ios of [false, true]) {
+  const name = ios ? 'iPhone' : 'Android';
+  const { sync, a, b } = claimPair(ios);
+  a.launch();
+  a.drop = true;
+  now = T9 + 30000;
+  a.change(1, 40);
+  a.put();
+  expect(a.run('S.cl.fly') !== null, name + ': the put in flight is not there');
+  a.drop = false;
+  now = T9 + 60000;
+  b.launch();
+  sync(a);
+  expect(a.run('cloudOff') && a.run('S.cl.fly') === null, name + ': a put without an answer was left in flight under the card');
+  const n = a.puts().length;
+  a.run('cloudHere()');
+  expect(a.puts().length === n + 1 && a.run('claim') !== null && !a.shown('taken'), name + ': Play here did not claim after a put without an answer');
+}
+
+// time and active play are not counted while the game is held: taken over, waiting for the time, or waiting for the cloud
+{
+  const { sync, a, b } = claimPair(true);
+  a.launch();
+  a.run('lastTouch = performance.now()');
+  a.run('playTick()');
+  const p = a.run('S.ads.pt + "," + S.ads.ap');
+  expect(a.run('S.ads.ap') >= 1 && a.run('S.ads.pt') >= 1, 'the play counters did not run on a playing game');
+  now = T9 + 60000;
+  b.launch();
+  sync(a);
+  a.run('playTick()');
+  expect(a.run('S.ads.pt + "," + S.ads.ap') === p, 'a taken-over game counted play');
+  a.run('cloudOff = false; timeHeld = true');
+  a.run('playTick()');
+  expect(a.run('S.ads.pt + "," + S.ads.ap') === p, 'a game waiting for the time counted play');
+  a.run('timeHeld = false; cloudRet = { got: false, run: null, t: 0 }');
+  a.run('playTick()');
+  expect(a.run('S.ads.pt + "," + S.ads.ap') === p, 'a game waiting for the cloud counted play');
+  a.run('cloudRet = null');
+  a.run('playTick()');
+  expect(a.run('S.ads.pt + "," + S.ads.ap') !== p, 'the play counters did not run again once the game was free');
+}
+
+// the first iCloud sync brings the copies before the state: a new install does not end its wait on the state with no copy, so it
+// neither starts nor claims an empty game over the real one
+{
+  const [a, b, c] = pairIos();
+  a.change(50, 3000);
+  a.put();
+  b.pump();
+  b.change(7, 100);
+  b.put();
+  const d = device(c, {}, { claim: true });
+  d.run("devKey = 'dd'");
+  d.seen = {};
+  d.lag = true;
+  d.lagged.push(c.keys[a.id()], c.keys[b.id()]);
+  d.launch();
+  expect(d.run('!!cloudFind') && d.shown('find'), 'the new install did not wait for iCloud');
+  d.catchUp();
+  expect(d.gems() === 157 && !d.run('!!cloudFind'), 'the new install did not start from the copies of the first sync (gems ' + d.gems() + ')');
+  expect(d.puts().length === 1 && JSON.parse(d.puts()[0].json).gems === 157, 'the new install put something other than the game it found');
+  const swift = fs.readFileSync(path.join(root, 'ios', 'MainStreet', 'CloudBridge.swift'), 'utf8');
+  const body = swift.slice(swift.indexOf('@objc private func changed'));
+  expect(body.indexOf('self.send(') > 0 && body.indexOf('self.send(') < body.indexOf('self.state('), 'CloudBridge.swift sends the state before the copies of a change');
 }
 
 // a copy that was written before the claim, delivered after it, is judged by play and does not stop the claimer

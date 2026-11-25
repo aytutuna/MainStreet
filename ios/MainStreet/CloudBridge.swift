@@ -70,9 +70,10 @@ final class CloudBridge: NSObject {
         let keys = (note.userInfo?[NSUbiquitousKeyValueStoreChangedKeysKey] as? [String] ?? []).filter { $0.hasPrefix(prefix) && $0 != prefix + dev }
         DispatchQueue.main.async {
             self.synced = true
-            self.state(dev: nil)
+            // the copies come first: the state ends the page's wait for a new install, so it must not arrive with no copy yet
             let copies = keys.compactMap { self.store.dictionary(forKey: $0) }
             for (i, copy) in copies.enumerated() { self.send(copy, more: i < copies.count - 1) }
+            self.state(dev: nil)
         }
     }
 }
