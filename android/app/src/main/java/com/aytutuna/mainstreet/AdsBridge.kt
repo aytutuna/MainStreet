@@ -29,6 +29,8 @@ class AdsBridge(private val activity: MainActivity) {
     private var muted = false
     private var waiting: ConnectivityManager.NetworkCallback? = null
     private val retry = Handler(Looper.getMainLooper())
+    private val reload = Runnable { loadReward() }
+    private var loading = false
 
     // the page asks for this unless the player owns Skip ads
     fun start(mute: Boolean) {
@@ -129,9 +131,13 @@ class AdsBridge(private val activity: MainActivity) {
     }
 
     private fun loadReward() {
-        if (stopped) return
+        if (stopped || loading) return
+        // a queued retry is replaced by this load, so failures never run more than one chain
+        retry.removeCallbacks(reload)
+        loading = true
         RewardedAd.load(activity, BuildConfig.AD_REWARD, AdRequest.Builder().build(), object : RewardedAdLoadCallback() {
             override fun onAdLoaded(ad: RewardedAd) {
+                loading = false
                 if (stopped) return
                 reward = ad
                 loadedAt = System.currentTimeMillis()
@@ -140,8 +146,9 @@ class AdsBridge(private val activity: MainActivity) {
             }
 
             override fun onAdFailedToLoad(error: LoadAdError) {
+                loading = false
                 reward = null
-                if (!stopped) retry.postDelayed({ loadReward() }, RETRY)
+                if (!stopped) retry.postDelayed(reload, RETRY)
             }
         })
     }
