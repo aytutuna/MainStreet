@@ -18,7 +18,7 @@ import org.json.JSONObject
 // that only from the menu's Sign in button, and a player who is not in keeps the local save. A read or write that comes while
 // the sign-in screen is up waits for its result. Nothing tells this device that
 // another one wrote, so the page asks again when it comes back and every few minutes.
-// When Play Games cannot be reached at all the answer is the state "unavailable" and no copy, never a null copy, which the
+// When Play Games cannot be reached or a saved game cannot be read the answer is the state "unavailable" and no copy, never a null copy, which the
 // page would read as "no save".
 class CloudBridge(private val activity: MainActivity) {
     private val games by lazy { PlayGames.getGamesSignInClient(activity) }
@@ -27,6 +27,7 @@ class CloudBridge(private val activity: MainActivity) {
     private var signing = false
     private val waiters = ArrayList<(Boolean?) -> Unit>()
     private var read = false
+    private var lastState = ""
     private var writing = false
     private var waiting: JSONObject? = null
 
@@ -66,7 +67,10 @@ class CloudBridge(private val activity: MainActivity) {
         }
     }
 
-    private fun state(value: String) = activity.emit(JSONObject().put("t", "cloudState").put("state", value))
+    private fun state(value: String) {
+        lastState = value
+        activity.emit(JSONObject().put("t", "cloudState").put("state", value))
+    }
 
     fun state() = signedIn(false) {
         state(when (it) { true -> if (read) "available" else "pending"; false -> "signedOut"; null -> "unavailable" })
@@ -86,11 +90,11 @@ class CloudBridge(private val activity: MainActivity) {
         open({ state("unavailable") }) { snap ->
             val saved = held(snap)
             snapshots.discardAndClose(snap)
-            if (!read) {
-                read = true
-                state("available")
-            }
-            copy(saved, false, "")
+            // a save that could not be read is not "no save": the page would start a new game over it
+            if (saved == null) return@open state("unavailable")
+            read = true
+            if (lastState != "available") state("available")
+            copy(if (has(saved)) saved else null, false, "")
         }
     }
 
@@ -105,7 +109,11 @@ class CloudBridge(private val activity: MainActivity) {
             if (ok != true) return@signedIn done(stamp, false)
             open({ done(stamp, false) }) { snap ->
                 val saved = held(snap)
-                if (!msg.optBoolean("force") && saved != null && saved.optString("stamp") != msg.optString("base")) {
+                if (saved == null) {
+                    snapshots.discardAndClose(snap)
+                    return@open done(stamp, false)
+                }
+                if (!msg.optBoolean("force") && has(saved) && saved.optString("stamp") != msg.optString("base")) {
                     snapshots.discardAndClose(snap)
                     copy(saved, true, stamp)
                     return@open done(stamp, null)
@@ -128,15 +136,15 @@ class CloudBridge(private val activity: MainActivity) {
         }
     }
 
-    // what the saved game holds, null when it is empty or cannot be read
-    private fun held(snap: Snapshot): JSONObject? {
-        val saved = try {
-            JSONObject(String(snap.snapshotContents.readFully()))
-        } catch (e: Exception) {
-            null
-        }
-        return if (saved?.optString("json").isNullOrEmpty()) null else saved
+    // what the saved game holds: an object without json when it is empty, null when it could not be read
+    private fun held(snap: Snapshot): JSONObject? = try {
+        val bytes = snap.snapshotContents.readFully()
+        if (bytes.isEmpty()) JSONObject() else JSONObject(String(bytes))
+    } catch (e: Exception) {
+        null
     }
+
+    private fun has(saved: JSONObject) = saved.optString("json").isNotEmpty()
 
     private fun copy(saved: JSONObject?, refused: Boolean, put: String) = activity.emit(
         JSONObject().put("t", "cloud").put("json", saved?.optString("json") ?: JSONObject.NULL).put("at", saved?.optLong("at") ?: 0)

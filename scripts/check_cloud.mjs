@@ -961,5 +961,14 @@ for (const more of [false, true]) {
   console.log('a save with every department and place at its last level: ' + a.run('saved().length') + ' bytes');
 }
 
+// Android cannot be run here: the source is checked for the two rules that were broken. A saved game that cannot be read is
+// not an empty one (no null copy, no write over it), and 'available' follows every read that worked after another state
+{
+  const kt = fs.readFileSync(path.join(root, 'android', 'app', 'src', 'main', 'java', 'com', 'aytutuna', 'mainstreet', 'CloudBridge.kt'), 'utf8');
+  expect(/catch \(e: Exception\) \{\s*null\s*\}/.test(kt) && kt.includes('if (bytes.isEmpty()) JSONObject()'), 'CloudBridge.kt reads an unreadable saved game as an empty one');
+  expect(kt.includes('if (saved == null) return@open state("unavailable")') && kt.includes('return@open done(stamp, false)'), 'CloudBridge.kt does not stop on a saved game it cannot read');
+  expect(kt.includes('if (lastState != "available") state("available")'), 'CloudBridge.kt does not send available after a failed read');
+}
+
 if (failed) process.exit(1);
 console.log('cloud ok');
