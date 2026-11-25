@@ -5,6 +5,15 @@ name: TestFlight
 # secrets, so no certificate or profile is kept here.
 on:
   workflow_dispatch:
+    inputs:
+      tester:
+        description: Tester build (test menu and test ads)
+        type: boolean
+        default: false
+      upload:
+        description: Upload to TestFlight (off archives and exports only)
+        type: boolean
+        default: true
 
 permissions:
   contents: read
@@ -14,10 +23,16 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  check:
+    uses: ./.github/workflows/check.yml
+
   upload:
+    needs: check
     runs-on: xcode-27
     timeout-minutes: 60
     env:
+      TESTER_CONDITIONS: ${{ inputs.tester && '$(inherited) TESTER' || '$(inherited)' }}
+      EXPORT_DESTINATION: ${{ inputs.upload && 'upload' || 'export' }}
       APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
       APPSTORE_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
       APPSTORE_KEY_ID: ${{ secrets.APPSTORE_KEY_ID }}
@@ -33,9 +48,11 @@ jobs:
             echo "Missing repository secrets:$missing"
             exit 1
           fi
-      - uses: actions/checkout@v7
-      - name: Select Xcode 27.2
-        run: sudo xcode-select -s /Applications/Xcode_27.2.app
+      - uses: actions/checkout@v7.0.1
+      - name: Show Xcode
+        run: |
+          xcode-select -p
+          xcodebuild -version
       # Pinned release, checked against its SHA-256.
       - name: Install XcodeGen
         env:
@@ -61,7 +78,7 @@ jobs:
           printf '%s\n' "$APPSTORE_PRIVATE_KEY" > "$RUNNER_TEMP/keys/AuthKey_$APPSTORE_KEY_ID.p8"
       # The archive is left unsigned and signed on export instead: an automatically signed archive
       # wants a development profile, which needs a registered device, and CI has none. The run
-      # number is the build number, so every upload gets a new one.
+      # number is the build number, times ten plus the attempt, so every upload and every re-run gets a new one.
       - name: Archive
         run: |
           set -o pipefail
@@ -71,7 +88,8 @@ jobs:
             -configuration Release \
             -destination generic/platform=iOS \
             -archivePath "$RUNNER_TEMP/MainStreet.xcarchive" \
-            CURRENT_PROJECT_VERSION=${{ github.run_number }} \
+            CURRENT_PROJECT_VERSION=$((${{ github.run_number }} * 10 + ${{ github.run_attempt }})) \
+            SWIFT_ACTIVE_COMPILATION_CONDITIONS="$TESTER_CONDITIONS" \
             DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
             CODE_SIGNING_ALLOWED=NO
       # An unsigned archive leaves the ads frameworks it embeds without a valid signature, and the export only
@@ -83,7 +101,7 @@ jobs:
             [ -e "$f" ] && codesign --force --sign - "$f"
           done
           codesign --force --sign - "$app"
-      - name: Sign and upload
+      - name: Sign and export
         run: |
           set -o pipefail
           cat > "$RUNNER_TEMP/ExportOptions.plist" <<EOF
@@ -94,7 +112,7 @@ jobs:
             <key>method</key>
             <string>app-store-connect</string>
             <key>destination</key>
-            <string>upload</string>
+            <string>$EXPORT_DESTINATION</string>
             <key>teamID</key>
             <string>$APPLE_TEAM_ID</string>
             <key>signingStyle</key>

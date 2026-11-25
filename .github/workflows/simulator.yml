@@ -4,6 +4,11 @@ name: Simulator
 # reinstall so a save that survives an App Store update can be checked without an upload.
 on:
   workflow_dispatch:
+    inputs:
+      tester:
+        description: Build as a tester build (compile condition TESTER)
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -12,10 +17,14 @@ jobs:
   run:
     runs-on: xcode-27
     timeout-minutes: 30
+    env:
+      TESTER_CONDITIONS: ${{ inputs.tester && '$(inherited) TESTER' || '$(inherited)' }}
     steps:
-      - uses: actions/checkout@v7
-      - name: Select Xcode 27.2
-        run: sudo xcode-select -s /Applications/Xcode_27.2.app
+      - uses: actions/checkout@v7.0.1
+      - name: Show Xcode
+        run: |
+          xcode-select -p
+          xcodebuild -version
       # Pinned release, checked against its SHA-256.
       - name: Install XcodeGen
         env:
@@ -63,31 +72,37 @@ jobs:
             -configuration Debug \
             -destination "platform=iOS Simulator,id=$UDID" \
             -derivedDataPath "$RUNNER_TEMP/build" \
+            SWIFT_ACTIVE_COMPILATION_CONDITIONS="$TESTER_CONDITIONS" \
             CODE_SIGNING_ALLOWED=NO
       - name: Boot
         run: |
           xcrun simctl boot "$UDID"
           xcrun simctl bootstatus "$UDID" -b
+      # The page saves every 5 seconds, and only once the 3D store is built (View.ready), so a changed save
+      # in the web view's storage shows the page started. A page that never gets there fails the run.
       - name: First run
         run: |
           set -euo pipefail
+          . scripts/sim_ready.sh
           mkdir -p out
           app="$RUNNER_TEMP/build/Build/Products/Debug-iphonesimulator/MainStreet.app"
           xcrun simctl install "$UDID" "$app"
           echo "first install: $(xcrun simctl get_app_container "$UDID" com.aytutuna.mainstreet app)" | tee -a out/storage.txt
+          before=$(save_state)
           xcrun simctl launch "$UDID" com.aytutuna.mainstreet
-          sleep 20
+          wait_for_save "$before"
           xcrun simctl io "$UDID" screenshot out/first.png
-          sleep 10
           xcrun simctl terminate "$UDID" com.aytutuna.mainstreet
       - name: Reinstall and run again
         run: |
           set -euo pipefail
+          . scripts/sim_ready.sh
           app="$RUNNER_TEMP/build/Build/Products/Debug-iphonesimulator/MainStreet.app"
           xcrun simctl install "$UDID" "$app"
           echo "second install: $(xcrun simctl get_app_container "$UDID" com.aytutuna.mainstreet app)" | tee -a out/storage.txt
+          before=$(save_state)
           xcrun simctl launch "$UDID" com.aytutuna.mainstreet
-          sleep 20
+          wait_for_save "$before"
           xcrun simctl io "$UDID" screenshot out/second.png
       - name: List the saved data
         if: always()
