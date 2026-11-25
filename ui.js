@@ -2273,9 +2273,13 @@ function wire() {
     buzz();
   });
   $('m-reset').addEventListener('click', function () {
+    $('menu').hidden = true;
     $('erase').hidden = false;
   });
-  $('erase-x').addEventListener('click', function () { $('erase').hidden = true; });
+  $('erase-x').addEventListener('click', function () {
+    $('erase').hidden = true;
+    $('menu').hidden = false;
+  });
   $('erase-yes').addEventListener('click', function () {
     reset();
     speed = 1;

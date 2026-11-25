@@ -69,6 +69,7 @@ var clock = function () { return synced ? synced.ms + performance.now() - synced
 var onShopper = null;
 var onMission = null;
 var onYesterday = null;
+var SAVE_V = 11;
 var onSaveFail = null;
 var saveFailed = false;
 // a save from a newer build is left alone
@@ -1500,8 +1501,10 @@ function save() {
   try {
     localStorage.setItem(KEY, saved());
   } catch (e) {
-    if (!saveFailed && onSaveFail) onSaveFail();
-    saveFailed = true;
+    if (!saveFailed && onSaveFail) {
+      onSaveFail();
+      saveFailed = true;
+    }
   }
 }
 
@@ -1532,7 +1535,7 @@ function oldPieces(l) {
 
 // copies what it knows by id; anything unknown is dropped and anything missing starts over
 function validate(o) {
-  if (!o || typeof o !== 'object' || typeof o.v !== 'number' || o.v < 7 || o.v > 11 || !o.b || typeof o.b !== 'object') return null;
+  if (!o || typeof o !== 'object' || typeof o.v !== 'number' || o.v < 7 || o.v > SAVE_V || !o.b || typeof o.b !== 'object') return null;
   if (!isFinite(o.cash) || !isFinite(o.ts)) return null;
   var s = fresh();
   s.b = {};
@@ -1686,7 +1689,7 @@ function load() {
     try {
       j = raw ? JSON.parse(raw) : null;
     } catch (e) {}
-    if (j && j.v > 11) blocked = true;
+    if (j && j.v > SAVE_V) blocked = true;
     var o = j ? validate(j) : null;
     if (raw && !o && !blocked) keep(raw);
     // a new game is made now, so its start comes from the server time
@@ -1717,8 +1720,6 @@ function reset() {
   S.ads = ads;
   clearShoppers();
   try {
-    var old = localStorage.getItem(KEY);
-    if (old) keep(old);
     localStorage.removeItem(KEY);
   } catch (e) {}
 }
