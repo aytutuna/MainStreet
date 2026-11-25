@@ -37,6 +37,7 @@ class Bridge(private val activity: MainActivity) {
                 }
                 "buy" -> activity.store.buy(msg.optString("id"))
                 "restore" -> activity.store.restore()
+                "sync" -> activity.store.sync()
                 "adStart" -> activity.ads.start(msg.optBoolean("mute"))
                 "adStop" -> activity.ads.stop()
                 "adReady" -> activity.ads.report()

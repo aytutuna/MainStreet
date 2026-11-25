@@ -40,6 +40,8 @@ final class StoreBridge: NSObject, WKScriptMessageHandler, PurchasesDelegate {
             if let id = msg["id"] as? String { buy(id) }
         case "restore":
             Task { @MainActor in await owned(restored: true) }
+        case "sync":
+            Task { @MainActor in await owned(sync: true) }
         case "adStart":
             ads.start(mute: msg["mute"] as? Bool ?? false)
         case "adStop":
@@ -125,21 +127,22 @@ final class StoreBridge: NSObject, WKScriptMessageHandler, PurchasesDelegate {
         }
     }
 
-    private func owned(restored: Bool, fresh: Bool = false) async {
+    private func owned(restored: Bool = false, sync: Bool = false, fresh: Bool = false) async {
         do {
             let info = restored ? try await Purchases.shared.restorePurchases()
+                : sync ? try await Purchases.shared.syncPurchases()
                 : try await Purchases.shared.customerInfo(fetchPolicy: fresh ? .fetchCurrent : .default)
-            send(info, restored: restored)
+            send(info, restored: restored, sync: sync)
         } catch {
             if restored { emit(["t": "restoreFailed"]) }
         }
     }
 
-    private func send(_ info: CustomerInfo, restored: Bool) {
+    private func send(_ info: CustomerInfo, restored: Bool, sync: Bool = false) {
         let tx = info.nonSubscriptions.map {
             ["id": $0.productIdentifier, "tx": $0.transactionIdentifier, "at": $0.purchaseDate.timeIntervalSince1970 * 1000] as [String: Any]
         }
-        emit(["t": "owned", "ids": Array(info.allPurchasedProductIdentifiers), "tx": tx, "user": Purchases.shared.appUserID, "restore": restored])
+        emit(["t": "owned", "ids": Array(info.allPurchasedProductIdentifiers), "tx": tx, "user": Purchases.shared.appUserID, "restore": restored, "sync": sync])
     }
 
     private func buy(_ id: String) {

@@ -11,6 +11,7 @@ import com.revenuecat.purchases.interfaces.GetStoreProductsCallback
 import com.revenuecat.purchases.interfaces.PurchaseCallback
 import com.revenuecat.purchases.interfaces.UpdatedCustomerInfoListener
 import com.revenuecat.purchases.interfaces.ReceiveCustomerInfoCallback
+import com.revenuecat.purchases.interfaces.SyncPurchasesCallback
 import com.revenuecat.purchases.models.StoreProduct
 import com.revenuecat.purchases.models.StoreTransaction
 import org.json.JSONArray
@@ -119,27 +120,33 @@ class StoreBridge(private val activity: MainActivity) {
 
     fun restore() = ask(true)
 
+    fun sync() = ask(false, sync = true)
+
     private fun owned() = ask(false)
 
-    private fun ask(restored: Boolean, fresh: Boolean = false) {
+    private fun ask(restored: Boolean, fresh: Boolean = false, sync: Boolean = false) {
         val done = object : ReceiveCustomerInfoCallback {
-            override fun onReceived(customerInfo: CustomerInfo) = send(customerInfo, restored)
+            override fun onReceived(customerInfo: CustomerInfo) = send(customerInfo, restored, sync)
 
             override fun onError(error: PurchasesError) {
                 if (restored) activity.emit(JSONObject().put("t", "restoreFailed"))
             }
         }
-        if (restored) Purchases.sharedInstance.restorePurchases(done) else Purchases.sharedInstance.getCustomerInfo(if (fresh) CacheFetchPolicy.FETCH_CURRENT else CacheFetchPolicy.default(), done)
+        if (restored) Purchases.sharedInstance.restorePurchases(done) else if (sync) Purchases.sharedInstance.syncPurchases(object : SyncPurchasesCallback {
+            override fun onSuccess(customerInfo: CustomerInfo) = send(customerInfo, false, true)
+
+            override fun onError(error: PurchasesError) {}
+        }) else Purchases.sharedInstance.getCustomerInfo(if (fresh) CacheFetchPolicy.FETCH_CURRENT else CacheFetchPolicy.default(), done)
     }
 
-    private fun send(info: CustomerInfo, restored: Boolean) {
+    private fun send(info: CustomerInfo, restored: Boolean, sync: Boolean = false) {
         val ids = JSONArray()
         info.allPurchasedProductIds.forEach { ids.put(it) }
         val tx = JSONArray()
         info.nonSubscriptionTransactions.forEach {
             tx.put(JSONObject().put("id", it.productIdentifier).put("tx", it.transactionIdentifier).put("at", it.purchaseDate.time))
         }
-        activity.emit(JSONObject().put("t", "owned").put("ids", ids).put("tx", tx).put("user", Purchases.sharedInstance.appUserID).put("restore", restored))
+        activity.emit(JSONObject().put("t", "owned").put("ids", ids).put("tx", tx).put("user", Purchases.sharedInstance.appUserID).put("restore", restored).put("sync", sync))
     }
 
     private fun failed(id: String, why: String) {
