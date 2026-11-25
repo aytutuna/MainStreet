@@ -53,8 +53,15 @@ jobs:
           python3 - <<'PY'
           import plistlib, sys
           m = plistlib.load(open('ios/MainStreet/PrivacyInfo.xcprivacy', 'rb'))
-          if m.get('NSPrivacyTracking') and not m.get('NSPrivacyTrackingDomains'):
-              sys.exit('NSPrivacyTracking is true with no tracking domains')
+          import subprocess
+          uses_att = subprocess.run(['git', 'grep', '-q', 'requestTrackingAuthorization', '--', 'ios/*.swift']).returncode == 0
+          if uses_att:
+              if not m.get('NSPrivacyTracking'):
+                  sys.exit('ATT is requested in ios code but NSPrivacyTracking is not true')
+              for t in ('DeviceID', 'AdvertisingData'):
+                  e = [d for d in m.get('NSPrivacyCollectedDataTypes', []) if d['NSPrivacyCollectedDataType'].endswith(t)]
+                  if not e or not e[0].get('NSPrivacyCollectedDataTypeTracking'):
+                      sys.exit(t + ' must be declared as used for tracking')
           if m.get('NSPrivacyTrackingDomains'):
               sys.exit('tracking domains listed: ad hosts in the list would be blocked without ATT')
           cats = [t.get('NSPrivacyAccessedAPIType') for t in m.get('NSPrivacyAccessedAPITypes', [])]
