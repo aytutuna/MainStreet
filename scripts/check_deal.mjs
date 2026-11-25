@@ -62,5 +62,15 @@ if (run('S.iap.deal') !== null) fail('the deal bonus was not paid when the late 
 ev({ t: 'bought', id: pid + 'gems1', tx: 'b', at: now + 2000 });
 if (run('buying') !== '') fail('the answer of the pack in flight did not free the buttons');
 
+// the deal of the next day, for another pack, is tapped while the first answer is still to come
+run("S = fresh(); buying = ''; DEAL.packs = ['gems2', 'gems1']; prices[PID + 'gems3'] = '$9.99'");
+run("DEAL.packs = ['gems2']");
+run("buyProduct('gems2')");
+run("buying = ''; DEAL.packs = ['gems3']");
+run("buyProduct('gems3')");
+const g0 = run('S.gems');
+ev({ t: 'bought', id: pid + 'gems2', tx: 'c', at: now + 3000 });
+if (run('S.gems') - g0 !== run("product('gems2').gems + Math.round(product('gems2').gems * DEAL.bonus)")) fail('the earlier deal bonus was lost to the next deal');
+
 if (failed) process.exit(1);
 console.log('deal ok');

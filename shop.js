@@ -551,7 +551,11 @@ function buyProduct(id) {
   var d = dealNow();
   // the deal is fixed when the player taps, so a day change during the purchase does not lose it. Tapping another
   // pack keeps an earlier deal whose answer is still to come
-  if (d && d.id === id) S.iap.deal = { id: id, bonus: d.bonus, until: clock() + 3600000 };
+  if (d && d.id === id) {
+    var o = S.iap.deal;
+    if (o && o.id !== id && o.until > clock() && !(S.iap.held && S.iap.held.until > clock())) S.iap.held = o;
+    S.iap.deal = { id: id, bonus: d.bonus, until: clock() + 3600000 };
+  }
   paintShop();
   post({ cmd: 'buy', id: PID + id });
   buyTimer = setTimeout(function () {
