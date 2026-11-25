@@ -433,14 +433,16 @@ function rest() {
 // The web view's own output plays as media too, so the context is held while the app looks; the answer lets it go on
 function askOther() {
   if (!native()) return;
-  if (ac && ac.state === 'running') ac.suspend();
+  var held = ac && ac.state === 'running' ? ac.suspend() : Promise.resolve();
   unsure = true;
   clearTimeout(unsureT);
   unsureT = setTimeout(function () {
     unsure = false;
     radioSync();
-  }, 2000);
-  setTimeout(function () { post({ cmd: 'radio', check: true }); }, 400);
+  }, 2500);
+  // the stream leaves the system's list a moment after the context has stopped (about 150 ms on the emulator)
+  function ask() { setTimeout(function () { post({ cmd: 'radio', check: true }); }, 400); }
+  held.then(ask, ask);
 }
 
 function radioEvent(ev) {
