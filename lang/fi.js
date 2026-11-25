@@ -351,7 +351,12 @@ LANG['fi'] = {
   'menu.sound_off': 'Ääni: pois',
   'menu.vibration_on': 'Värinä: päällä',
   'menu.vibration_off': 'Värinä: pois',
-  'menu.erase_armed': 'Napauta uudelleen: poistaa jalokivet, kaupat ja putken',
+  'menu.erase_title': 'Erase all progress?',
+  'menu.erase_text': 'This erases your gems, stores and daily streak. Purchases you made stay.',
+  'menu.erase_yes': 'Erase',
+  'menu.erase_no': 'Cancel',
+  'save.newer': 'Update the app to continue.',
+  'save.failed': 'Your progress is not being saved. Free some space on this device.',
   'menu.erase': 'Poista kaikki edistyminen',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

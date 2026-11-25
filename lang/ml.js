@@ -351,7 +351,12 @@ LANG['ml'] = {
   'menu.sound_off': 'ശബ്ദം: ഓഫ്',
   'menu.vibration_on': 'വൈബ്രേഷൻ: ഓൺ',
   'menu.vibration_off': 'വൈബ്രേഷൻ: ഓഫ്',
-  'menu.erase_armed': 'വീണ്ടും ടാപ്പ്: രത്നങ്ങൾ, കടകൾ, തുടർച്ച മായ്ക്കും',
+  'menu.erase_title': 'Erase all progress?',
+  'menu.erase_text': 'This erases your gems, stores and daily streak. Purchases you made stay.',
+  'menu.erase_yes': 'Erase',
+  'menu.erase_no': 'Cancel',
+  'save.newer': 'Update the app to continue.',
+  'save.failed': 'Your progress is not being saved. Free some space on this device.',
   'menu.erase': 'എല്ലാ പുരോഗതിയും മായ്ക്കൂ',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

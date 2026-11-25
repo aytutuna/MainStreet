@@ -351,7 +351,12 @@ LANG['el'] = {
   'menu.sound_off': 'Ήχος: όχι',
   'menu.vibration_on': 'Δόνηση: ναι',
   'menu.vibration_off': 'Δόνηση: όχι',
-  'menu.erase_armed': 'Πάτα ξανά: σβήνει πετράδια, μαγαζιά και σειρά',
+  'menu.erase_title': 'Erase all progress?',
+  'menu.erase_text': 'This erases your gems, stores and daily streak. Purchases you made stay.',
+  'menu.erase_yes': 'Erase',
+  'menu.erase_no': 'Cancel',
+  'save.newer': 'Update the app to continue.',
+  'save.failed': 'Your progress is not being saved. Free some space on this device.',
   'menu.erase': 'Διαγραφή όλης της προόδου',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

@@ -349,7 +349,12 @@ LANG['zh-Hans'] = {
   'menu.sound_off': '声音：关',
   'menu.vibration_on': '震动：开',
   'menu.vibration_off': '震动：关',
-  'menu.erase_armed': '再点一次：清除钻石、门店和连续签到',
+  'menu.erase_title': 'Erase all progress?',
+  'menu.erase_text': 'This erases your gems, stores and daily streak. Purchases you made stay.',
+  'menu.erase_yes': 'Erase',
+  'menu.erase_no': 'Cancel',
+  'save.newer': 'Update the app to continue.',
+  'save.failed': 'Your progress is not being saved. Free some space on this device.',
   'menu.erase': '清除所有进度',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

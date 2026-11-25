@@ -351,7 +351,12 @@ LANG['de'] = {
   'menu.sound_off': 'Ton: aus',
   'menu.vibration_on': 'Vibration: an',
   'menu.vibration_off': 'Vibration: aus',
-  'menu.erase_armed': 'Nochmal tippen: löscht Edelsteine, Märkte und Serie',
+  'menu.erase_title': 'Erase all progress?',
+  'menu.erase_text': 'This erases your gems, stores and daily streak. Purchases you made stay.',
+  'menu.erase_yes': 'Erase',
+  'menu.erase_no': 'Cancel',
+  'save.newer': 'Update the app to continue.',
+  'save.failed': 'Your progress is not being saved. Free some space on this device.',
   'menu.erase': 'Alles zurücksetzen',
 
   'num.suffixes': ',K,Mio,Mrd,Bio,Brd,Trl,Trd,Qa,Qad,Qi,Qid',

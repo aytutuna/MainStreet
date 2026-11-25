@@ -351,7 +351,12 @@ LANG['or'] = {
   'menu.sound_off': 'ଧ୍ୱନି: ବନ୍ଦ',
   'menu.vibration_on': 'କମ୍ପନ: ଚାଲୁ',
   'menu.vibration_off': 'କମ୍ପନ: ବନ୍ଦ',
-  'menu.erase_armed': 'ପୁଣି ଟ୍ୟାପ୍: ରତ୍ନ, ଦୋକାନ ଓ ଧାରା ଲିଭିଯିବ',
+  'menu.erase_title': 'Erase all progress?',
+  'menu.erase_text': 'This erases your gems, stores and daily streak. Purchases you made stay.',
+  'menu.erase_yes': 'Erase',
+  'menu.erase_no': 'Cancel',
+  'save.newer': 'Update the app to continue.',
+  'save.failed': 'Your progress is not being saved. Free some space on this device.',
   'menu.erase': 'ସବୁ ଅଗ୍ରଗତି ଲିଭାଅ',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

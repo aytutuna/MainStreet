@@ -547,7 +547,12 @@ LANG['en'] = {
   'menu.sound_off': 'Sound: off',
   'menu.vibration_on': 'Vibration: on',
   'menu.vibration_off': 'Vibration: off',
-  'menu.erase_armed': 'Tap again: erases gems, stores and streak',
+  'menu.erase_title': 'Erase all progress?',
+  'menu.erase_text': 'This erases your gems, stores and daily streak. Purchases you made stay.',
+  'menu.erase_yes': 'Erase',
+  'menu.erase_no': 'Cancel',
+  'save.newer': 'Update the app to continue.',
+  'save.failed': 'Your progress is not being saved. Free some space on this device.',
   'menu.erase': 'Erase all progress',
 
   // Compact number suffixes, comma separated and in order: none, thousand, million, billion, trillion, then the short names

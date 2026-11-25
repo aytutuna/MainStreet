@@ -351,7 +351,12 @@ LANG['hi'] = {
   'menu.sound_off': 'आवाज़: बंद',
   'menu.vibration_on': 'वाइब्रेशन: चालू',
   'menu.vibration_off': 'वाइब्रेशन: बंद',
-  'menu.erase_armed': 'फिर टैप करें: जेम, स्टोर और सिलसिला मिट जाएँगे',
+  'menu.erase_title': 'Erase all progress?',
+  'menu.erase_text': 'This erases your gems, stores and daily streak. Purchases you made stay.',
+  'menu.erase_yes': 'Erase',
+  'menu.erase_no': 'Cancel',
+  'save.newer': 'Update the app to continue.',
+  'save.failed': 'Your progress is not being saved. Free some space on this device.',
   'menu.erase': 'सारी प्रगति मिटाएँ',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

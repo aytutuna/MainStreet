@@ -351,7 +351,12 @@ LANG['te'] = {
   'menu.sound_off': 'సౌండ్: ఆఫ్',
   'menu.vibration_on': 'వైబ్రేషన్: ఆన్',
   'menu.vibration_off': 'వైబ్రేషన్: ఆఫ్',
-  'menu.erase_armed': 'మళ్లీ నొక్కండి: రత్నాలు, స్టోర్లు, వరుస తొలగిపోతాయి',
+  'menu.erase_title': 'Erase all progress?',
+  'menu.erase_text': 'This erases your gems, stores and daily streak. Purchases you made stay.',
+  'menu.erase_yes': 'Erase',
+  'menu.erase_no': 'Cancel',
+  'save.newer': 'Update the app to continue.',
+  'save.failed': 'Your progress is not being saved. Free some space on this device.',
   'menu.erase': 'అన్ని పురోగతిని తొలగించండి',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

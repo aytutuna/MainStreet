@@ -349,7 +349,12 @@ LANG['th'] = {
   'menu.sound_off': 'เสียง: ปิด',
   'menu.vibration_on': 'สั่น: เปิด',
   'menu.vibration_off': 'สั่น: ปิด',
-  'menu.erase_armed': 'แตะอีกครั้ง: ลบเพชร ร้าน และสถิติรายวัน',
+  'menu.erase_title': 'Erase all progress?',
+  'menu.erase_text': 'This erases your gems, stores and daily streak. Purchases you made stay.',
+  'menu.erase_yes': 'Erase',
+  'menu.erase_no': 'Cancel',
+  'save.newer': 'Update the app to continue.',
+  'save.failed': 'Your progress is not being saved. Free some space on this device.',
   'menu.erase': 'ลบความคืบหน้าทั้งหมด',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

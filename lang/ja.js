@@ -345,7 +345,12 @@ LANG['ja'] = {
   'menu.sound_off': 'サウンド: オフ',
   'menu.vibration_on': '振動: オン',
   'menu.vibration_off': '振動: オフ',
-  'menu.erase_armed': 'もう一度タップ: ジェム、店舗、連続記録が消える',
+  'menu.erase_title': 'Erase all progress?',
+  'menu.erase_text': 'This erases your gems, stores and daily streak. Purchases you made stay.',
+  'menu.erase_yes': 'Erase',
+  'menu.erase_no': 'Cancel',
+  'save.newer': 'Update the app to continue.',
+  'save.failed': 'Your progress is not being saved. Free some space on this device.',
   'menu.erase': '全データを消去',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

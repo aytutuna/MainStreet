@@ -420,7 +420,12 @@ LANG['pl'] = {
   'menu.sound_off': 'Dźwięk: wył.',
   'menu.vibration_on': 'Wibracje: wł.',
   'menu.vibration_off': 'Wibracje: wył.',
-  'menu.erase_armed': 'Dotknij ponownie: usunie klejnoty, sklepy i serię',
+  'menu.erase_title': 'Erase all progress?',
+  'menu.erase_text': 'This erases your gems, stores and daily streak. Purchases you made stay.',
+  'menu.erase_yes': 'Erase',
+  'menu.erase_no': 'Cancel',
+  'save.newer': 'Update the app to continue.',
+  'save.failed': 'Your progress is not being saved. Free some space on this device.',
   'menu.erase': 'Usuń cały postęp',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

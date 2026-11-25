@@ -351,7 +351,12 @@ LANG['sv'] = {
   'menu.sound_off': 'Ljud: av',
   'menu.vibration_on': 'Vibration: på',
   'menu.vibration_off': 'Vibration: av',
-  'menu.erase_armed': 'Tryck igen: raderar juveler, butiker och serie',
+  'menu.erase_title': 'Erase all progress?',
+  'menu.erase_text': 'This erases your gems, stores and daily streak. Purchases you made stay.',
+  'menu.erase_yes': 'Erase',
+  'menu.erase_no': 'Cancel',
+  'save.newer': 'Update the app to continue.',
+  'save.failed': 'Your progress is not being saved. Free some space on this device.',
   'menu.erase': 'Radera alla framsteg',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

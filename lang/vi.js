@@ -349,7 +349,12 @@ LANG['vi'] = {
   'menu.sound_off': 'Âm thanh: tắt',
   'menu.vibration_on': 'Rung: bật',
   'menu.vibration_off': 'Rung: tắt',
-  'menu.erase_armed': 'Chạm lần nữa: xóa ngọc, siêu thị và chuỗi ngày',
+  'menu.erase_title': 'Erase all progress?',
+  'menu.erase_text': 'This erases your gems, stores and daily streak. Purchases you made stay.',
+  'menu.erase_yes': 'Erase',
+  'menu.erase_no': 'Cancel',
+  'save.newer': 'Update the app to continue.',
+  'save.failed': 'Your progress is not being saved. Free some space on this device.',
   'menu.erase': 'Xóa toàn bộ tiến trình',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

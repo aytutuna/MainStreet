@@ -351,7 +351,12 @@ LANG['tr'] = {
   'menu.sound_off': 'Ses: kapalı',
   'menu.vibration_on': 'Titreşim: açık',
   'menu.vibration_off': 'Titreşim: kapalı',
-  'menu.erase_armed': 'Tekrar dokun: elmas, mağaza ve seri silinir',
+  'menu.erase_title': 'Erase all progress?',
+  'menu.erase_text': 'This erases your gems, stores and daily streak. Purchases you made stay.',
+  'menu.erase_yes': 'Erase',
+  'menu.erase_no': 'Cancel',
+  'save.newer': 'Update the app to continue.',
+  'save.failed': 'Your progress is not being saved. Free some space on this device.',
   'menu.erase': 'Tüm ilerlemeyi sil',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

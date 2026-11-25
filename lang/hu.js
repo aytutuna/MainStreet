@@ -351,7 +351,12 @@ LANG['hu'] = {
   'menu.sound_off': 'Hang: ki',
   'menu.vibration_on': 'Rezgés: be',
   'menu.vibration_off': 'Rezgés: ki',
-  'menu.erase_armed': 'Koppints újra: törli a drágaköveket, áruházakat és a sorozatot',
+  'menu.erase_title': 'Erase all progress?',
+  'menu.erase_text': 'This erases your gems, stores and daily streak. Purchases you made stay.',
+  'menu.erase_yes': 'Erase',
+  'menu.erase_no': 'Cancel',
+  'save.newer': 'Update the app to continue.',
+  'save.failed': 'Your progress is not being saved. Free some space on this device.',
   'menu.erase': 'Minden haladás törlése',
 
   'num.suffixes': ',E,M,Mrd,B,Qa,Qi,Sx,Sp,Oc,No,Dc',

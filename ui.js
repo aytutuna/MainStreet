@@ -69,7 +69,7 @@ var lvl = { amb: 1 / 3, fx: 0.8 };
 var humG = null;
 // the button that closes each panel a tap outside or a swipe can dismiss; the away box is left out since it pays out
 var CLOSE = { pack: 'pack-x', shop: 'shop-x', daily: 'daily-x', sell: 'sell-x', regs: 'regs-x', boost: 'boost-x', radio: 'radio-x', langs: 'langs-x',
-  sound: 'sound-x', stats: 'stats-x', menu: 'm-ok', ach: 'ach-x', look: 'look-x' };
+  sound: 'sound-x', erase: 'erase-x', stats: 'stats-x', menu: 'm-ok', ach: 'ach-x', look: 'look-x' };
 var dragging = false;
 var IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
 
@@ -2272,23 +2272,16 @@ function wire() {
     setSound();
     buzz();
   });
-  var armed = false;
   $('m-reset').addEventListener('click', function () {
-    if (!armed) {
-      armed = true;
-      $('m-reset').textContent = tl('menu.erase_armed');
-      setTimeout(function () {
-        armed = false;
-        $('m-reset').textContent = tl('menu.erase');
-      }, 3000);
-      return;
-    }
-    armed = false;
+    $('erase').hidden = false;
+  });
+  $('erase-x').addEventListener('click', function () { $('erase').hidden = true; });
+  $('erase-yes').addEventListener('click', function () {
     reset();
     speed = 1;
     dailyAsked = -1;
     afterLoad();
-    $('m-reset').textContent = tl('menu.erase');
+    $('erase').hidden = true;
     $('menu').hidden = true;
   });
   if (window.TESTER) wireTest();
@@ -2757,6 +2750,11 @@ function start() {
 // runs on the first server time answer: no save is made or read before it
 function launch() {
   var gone = load();
+  if (blocked) {
+    loadFail(tl('save.newer'));
+    return;
+  }
+  onSaveFail = function () { banner('<b>' + tl('save.failed') + '</b>', 0); };
   zoneCheck();
   View.init($('view'), onTap);
   buildList();

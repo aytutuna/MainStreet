@@ -355,7 +355,12 @@ LANG['ru'] = {
   'menu.sound_off': 'Звук: выкл.',
   'menu.vibration_on': 'Вибрация: вкл.',
   'menu.vibration_off': 'Вибрация: выкл.',
-  'menu.erase_armed': 'Нажми ещё раз: сотрёт кристаллы, магазины и серию',
+  'menu.erase_title': 'Erase all progress?',
+  'menu.erase_text': 'This erases your gems, stores and daily streak. Purchases you made stay.',
+  'menu.erase_yes': 'Erase',
+  'menu.erase_no': 'Cancel',
+  'save.newer': 'Update the app to continue.',
+  'save.failed': 'Your progress is not being saved. Free some space on this device.',
   'menu.erase': 'Стереть весь прогресс',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

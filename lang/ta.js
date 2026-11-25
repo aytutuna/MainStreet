@@ -351,7 +351,12 @@ LANG['ta'] = {
   'menu.sound_off': 'ஒலி: நிறுத்தம்',
   'menu.vibration_on': 'அதிர்வு: இயக்கம்',
   'menu.vibration_off': 'அதிர்வு: நிறுத்தம்',
-  'menu.erase_armed': 'மீண்டும் தட்டு: ரத்தினம், கடைகள், தொடர்ச்சி அழியும்',
+  'menu.erase_title': 'Erase all progress?',
+  'menu.erase_text': 'This erases your gems, stores and daily streak. Purchases you made stay.',
+  'menu.erase_yes': 'Erase',
+  'menu.erase_no': 'Cancel',
+  'save.newer': 'Update the app to continue.',
+  'save.failed': 'Your progress is not being saved. Free some space on this device.',
   'menu.erase': 'முன்னேற்றம் முழுதும் அழி',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',
