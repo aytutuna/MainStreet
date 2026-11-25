@@ -44,6 +44,9 @@ class Bridge(private val activity: MainActivity) {
                 "adId" -> activity.ads.adId()
                 "time" -> activity.store.time(msg.optInt("n"))
                 "ad" -> activity.ads.show(msg.optString("kind"), msg.optBoolean("mute"))
+                "cloudPut" -> activity.cloud.put(msg)
+                "cloudGet" -> activity.cloud.get()
+                "cloudState" -> activity.cloud.state()
                 "radio" -> activity.radio.command(msg)
             }
         }

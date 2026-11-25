@@ -5,4 +5,6 @@
     <string name="notification_title">Main Street</string>
     <string name="webview_old">Main Street needs a newer Android System WebView.</string>
     <string name="update">Update</string>
+    <!-- the Play Games project id from Play Console; this one is a placeholder until the project exists -->
+    <string name="game_services_project_id" translatable="false">000000000000</string>
 </resources>

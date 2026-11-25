@@ -42,10 +42,13 @@ class MainActivity : ComponentActivity() {
         private set
     lateinit var radio: RadioBridge
         private set
+    lateinit var cloud: CloudBridge
+        private set
     private val held = ArrayList<JSONObject>()
 
     private lateinit var notice: LinearLayout
     private var loaded = false
+    private var resumed = false
 
     private val permission = registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
 
@@ -108,6 +111,7 @@ class MainActivity : ComponentActivity() {
         store = StoreBridge(this)
         ads = AdsBridge(this)
         radio = RadioBridge(this)
+        cloud = CloudBridge(this)
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
@@ -145,7 +149,7 @@ class MainActivity : ComponentActivity() {
         runOnUiThread {
             if (!isDestroyed) {
                 webView.evaluateJavascript("window.nativeStore ? (window.nativeStore($msg), 1) : 0") {
-                    if (it != "1" && msg.optString("t") != "time" && held.size < 50) held.add(msg)
+                    if (it != "1" && msg.optString("t") != "time" && !msg.optString("t").startsWith("cloud") && held.size < 50) held.add(msg)
                 }
             }
         }
@@ -206,6 +210,8 @@ class MainActivity : ComponentActivity() {
         radio.check()
         startIfCurrent()
         ads.resume()
+        if (resumed) cloud.get()
+        resumed = true
         webView.onResume()
         Reminders.clear(this)
     }
