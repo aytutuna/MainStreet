@@ -52,22 +52,6 @@ class MainActivity : ComponentActivity() {
 
     private val permission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { notified(it) }
 
-    // Closes the topmost panel; the answer says whether there was one. The away box collects instead of closing.
-    private val closePanel = """
-        (function () {
-          var panels = [['remind', 'remind-x'], ['erase', 'erase-x'], ['pack', 'pack-x'], ['shop', 'shop-x'], ['away', 'away-ok'], ['look', 'look-x'], ['ach', 'ach-x'], ['sound', 'sound-x'],
-                        ['stats', 'stats-x'], ['menu', 'm-ok'], ['daily', 'daily-x'], ['sell', 'sell-x'], ['regs', 'regs-x'],
-                        ['boost', 'boost-x'], ['radio', 'radio-x'],
-                        ['sheet', 'sheet-x'], ['card', 'card-x']];
-          for (var i = 0; i < panels.length; i++) {
-            var el = document.getElementById(panels[i][0]);
-            var x = document.getElementById(panels[i][1]);
-            if (el && x && !el.hidden) { x.click(); return true; }
-          }
-          return false;
-        })()
-    """.trimIndent()
-
     @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge(SystemBarStyle.dark(Color.TRANSPARENT), SystemBarStyle.dark(Color.TRANSPARENT))
@@ -116,7 +100,7 @@ class MainActivity : ComponentActivity() {
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                webView.evaluateJavascript(closePanel) { if (it != "true") finish() }
+                webView.evaluateJavascript("typeof closeTop === 'function' && closeTop()") { if (it != "true") finish() }
             }
         })
     }

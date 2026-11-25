@@ -2634,11 +2634,13 @@ function closeVeil(v) {
   else v.hidden = true;
 }
 
-// the panel on top: the last open veil, else the upgrades sheet, else a card. False when nothing can close
+// the panel on top: the last open veil, else the upgrades sheet, else a card. False when nothing can close.
+// The away box only answers true: it has to be collected, and closing it would drop the double offer
 function closeTop() {
   var v = document.querySelectorAll('.veil:not([hidden])');
   if (v.length) {
     v = v[v.length - 1];
+    if (v.id === 'away') return true;
     if (!CLOSE[v.id]) return false;
     closeVeil(v);
     return true;
