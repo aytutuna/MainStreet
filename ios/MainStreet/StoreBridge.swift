@@ -129,7 +129,7 @@ final class StoreBridge: NSObject, WKScriptMessageHandler, PurchasesDelegate {
     }
 
     private func send(_ info: CustomerInfo, restored: Bool) {
-        let tx = info.nonSubscriptionTransactions.map {
+        let tx = info.nonSubscriptions.map {
             ["id": $0.productIdentifier, "tx": $0.transactionIdentifier, "at": $0.purchaseDate.timeIntervalSince1970 * 1000] as [String: Any]
         }
         emit(["t": "owned", "ids": Array(info.allPurchasedProductIdentifiers), "tx": tx, "user": Purchases.shared.appUserID, "restore": restored])
@@ -144,7 +144,7 @@ final class StoreBridge: NSObject, WKScriptMessageHandler, PurchasesDelegate {
                     failed(id, "cancel")
                 } else {
                     // the id the store list uses for it, so the page counts the purchase once
-                    var mine = result.customerInfo.nonSubscriptionTransactions.filter { $0.productIdentifier == id }
+                    var mine = result.customerInfo.nonSubscriptions.filter { $0.productIdentifier == id }
                     if let store = result.transaction?.transactionIdentifier {
                         mine = mine.filter { $0.storeTransactionIdentifier == store }
                     }
