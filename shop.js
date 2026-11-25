@@ -1,4 +1,4 @@
-// Purchases and ads. The native app takes {cmd: 'products', ids}, {cmd: 'buy', id}, {cmd: 'restore'}, {cmd: 'adStart'},
+// Purchases and ads. The native app takes {cmd: 'products', ids}, {cmd: 'buy', id}, {cmd: 'restore'}, {cmd: 'adStart'}, {cmd: 'adStop'},
 // {cmd: 'adReady'}, {cmd: 'ad', kind}, {cmd: 'privacy'} and {cmd: 'radio', ...} on window.webkit.messageHandlers.store and
 // answers through window.nativeStore(ev), ev being one of
 //   {t: 'products', list: [{id, price}]}   the products the store knows, price already in the player's currency
@@ -15,7 +15,7 @@
 //   {t: 'other', on}                       whether another app is playing music (answers 'radio' check, and comes by itself
 //                                          when it starts or stops); the page keeps its radio and the store murmur quiet
 //                                          while it is, and waits for the answer after coming to the front
-// 'adStart' runs the consent step and starts the ads SDK (not sent when the player has No ads), 'adReady' is answered
+// 'adStart' runs the consent step and starts the ads SDK (not sent after Skip ads; 'adStop' ends them), 'adReady' is answered
 // with a 'ready' or 'none' for each kind, 'ad' shows one and 'privacy' opens the consent SDK's options form.
 // 'radio' is {url, vol} to play a live stream (vol 0 to 1, replacing any other), {vol} to change the volume, {stop: true}
 // to end it and {check: true} to ask for an 'other' answer.
@@ -53,6 +53,7 @@ function own(id, fresh) {
   var extras = id === 'starter' && fresh && S.iap.starter !== 2;
   if (!extras && S.iap[id]) return false;
   S.iap[id] = extras ? 2 : 1;
+  if (id === 'noads') post({ cmd: 'adStop' });
   if (extras) {
     S.gems += STARTER.gems;
     S.x2 += STARTER.x2;
@@ -220,6 +221,7 @@ function shopStart() {
   queued.splice(0).forEach(handle);
   askOther();
   post({ cmd: 'products', ids: PRODUCTS.map(function (p) { return PID + p.id; }) });
+  if (S.iap.noads) post({ cmd: 'adStop' });
   if (S.ads.pt >= AD_START) adBegin();
   $('b-shop').hidden = false;
   // play time counts only while the game is in front
@@ -324,7 +326,7 @@ function canWatch(k) {
   return native() && adLeft(k) > 0 && (S.iap.noads || adOk.reward);
 }
 
-// with No ads the reward comes straight away
+// with Skip ads the reward comes straight away
 function watch(k, give) {
   if (!canWatch(k) || watching) return;
   if (S.iap.noads) {

@@ -38,6 +38,8 @@ final class StoreBridge: NSObject, WKScriptMessageHandler, PurchasesDelegate {
             Task { @MainActor in await owned(restored: true) }
         case "adStart":
             ads.start()
+        case "adStop":
+            ads.stop()
         case "adReady":
             ads.report()
         case "privacy":

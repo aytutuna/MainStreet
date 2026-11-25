@@ -22,8 +22,9 @@ class AdsBridge(private val activity: MainActivity) {
     private var stopped = false
     private val retry = Handler(Looper.getMainLooper())
 
-    // the page asks for this unless the player has No ads
+    // the page asks for this unless the player owns Skip ads
     fun start() {
+        if (stopped) return
         val consent = UserMessagingPlatform.getConsentInformation(activity)
         consent.requestConsentInfoUpdate(activity, ConsentRequestParameters.Builder().build(), {
             UserMessagingPlatform.loadAndShowConsentFormIfRequired(activity) {

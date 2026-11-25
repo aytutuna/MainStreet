@@ -15,6 +15,7 @@ private let rewardUnit = "ca-app-pub-8985801196261971/4925455704"
 final class AdsBridge: NSObject, FullScreenContentDelegate {
     private var reward: RewardedAd?
     private var started = false
+    private var stopped = false
     private let presenter: () -> UIViewController?
     private let emit: ([String: Any]) -> Void
 
@@ -24,6 +25,7 @@ final class AdsBridge: NSObject, FullScreenContentDelegate {
     }
 
     func start() {
+        guard !stopped else { return }
         ConsentInformation.shared.requestConsentInfoUpdate(with: RequestParameters()) { [weak self] _ in
             guard let self = self else { return }
             guard let vc = self.presenter() else { return self.begin() }
@@ -32,6 +34,12 @@ final class AdsBridge: NSObject, FullScreenContentDelegate {
                 self?.privacy()
             }
         }
+    }
+
+    // Skip ads is owned: no consent form, tracking prompt or ad requests from now on
+    func stop() {
+        stopped = true
+        reward = nil
     }
 
     // the menu shows "Privacy choices" only where the consent SDK says the player must be able to reopen the form
@@ -50,7 +58,7 @@ final class AdsBridge: NSObject, FullScreenContentDelegate {
     }
 
     private func begin() {
-        guard !started, ConsentInformation.shared.canRequestAds else { return }
+        guard !started, !stopped, ConsentInformation.shared.canRequestAds else { return }
         started = true
         let go = {
             // the game's audio session (ambient, mixing) stays as it is, so the radio carries on after an ad
@@ -69,6 +77,7 @@ final class AdsBridge: NSObject, FullScreenContentDelegate {
     private func loadReward() {
         RewardedAd.load(with: rewardUnit, request: Request()) { [weak self] ad, _ in
             DispatchQueue.main.async {
+                guard self?.stopped == false else { return }
                 self?.reward = ad
                 if ad != nil {
                     self?.send("reward", "ready")
@@ -102,11 +111,11 @@ final class AdsBridge: NSObject, FullScreenContentDelegate {
 
     func adDidDismissFullScreenContent(_ ad: FullScreenPresentingAd) {
         send("reward", "closed")
-        loadReward()
+        if !stopped { loadReward() }
     }
 
     func ad(_ ad: FullScreenPresentingAd, didFailToPresentFullScreenContentWithError error: Error) {
         send("reward", "failed")
-        loadReward()
+        if !stopped { loadReward() }
     }
 }
