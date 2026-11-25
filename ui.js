@@ -2315,16 +2315,19 @@ function wire() {
     radioSync();
     if (!hiddenAt) return;
     // the game waits for the server time, so the time away comes from two server answers
+    cloudBack();
     timeWait(function () {
-      cloudApply();
-      var sec = (clock() - hiddenAt) / 1000;
-      hiddenAt = 0;
-      lastTick = performance.now();
-      // a copy taken meanwhile already paid the time since it was saved
-      if (sec > 60 && !cloudTook) {
-        var a = away(sec);
-        if (showAway(a)) updateBest();
-      }
+      cloudAfter(function () {
+        cloudApply();
+        var sec = (clock() - hiddenAt) / 1000;
+        hiddenAt = 0;
+        lastTick = performance.now();
+        // a copy taken meanwhile already paid the time since it was saved
+        if (sec > 60 && !cloudTook) {
+          var a = away(sec);
+          if (showAway(a)) updateBest();
+        }
+      });
     });
   });
 }

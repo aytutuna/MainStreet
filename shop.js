@@ -54,6 +54,7 @@ var loaded = false;
 // the launch waits this long for the cloud's copy
 var CLOUD_EVERY = 30000;
 var CLOUD_WAIT = 10000;
+var CLOUD_BACK = 4000;
 var cloudState = '';
 var cloudSeen = false;
 var cloudFind = null;
@@ -64,6 +65,7 @@ var cloudTaken = false;
 var cloudShown = false;
 var cloudPend = null;
 var cloudMet = false;
+var cloudRet = null;
 var cloudAt = -CLOUD_EVERY;
 var devKey = '';
 
@@ -213,6 +215,34 @@ function cloudTake(raw) {
   } else cloudTaken = true;
 }
 
+// on return the cloud is asked again, and the return waits for its answer (at most CLOUD_BACK) so another device's copy is
+// taken before this one plays on and writes over it
+function cloudBack() {
+  if (!native()) return;
+  if (cloudRet) clearTimeout(cloudRet.t);
+  cloudRet = { got: false, run: null, t: setTimeout(cloudGot, CLOUD_BACK) };
+  post({ cmd: 'cloudGet' });
+}
+
+function cloudGot() {
+  var r = cloudRet;
+  if (!r) return;
+  clearTimeout(r.t);
+  r.got = true;
+  if (r.run) {
+    cloudRet = null;
+    r.run();
+  }
+}
+
+function cloudAfter(fn) {
+  var r = cloudRet;
+  if (!r || r.got) {
+    cloudRet = null;
+    fn();
+  } else r.run = fn;
+}
+
 // the copy that came while the game was being played, taken now that the app is back and the time is known
 function cloudApply() {
   var raw = cloudPend;
@@ -238,6 +268,7 @@ function cloudEvent(ev) {
       }
     }
   }
+  if (ev.t === 'cloud') cloudGot();
   if (cloudFind && (cloudFound || (cloudSeen && cloudState && cloudState !== 'pending'))) cloudEnd();
 }
 

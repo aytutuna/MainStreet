@@ -10,11 +10,15 @@ import org.json.JSONObject
 // The save the page shares between devices, kept as one Play Games saved game: {cmd: "cloudPut", json, at, dev} writes it,
 // {cmd: "cloudGet"} / {cmd: "cloudState"} ask for it. Answers go back as {t: "cloud", json, at, dev} and {t: "cloudState", state}.
 // Play Games signs the player in by itself at launch; a player who is not in is asked once per launch, and declining keeps the
-// game on the local save. Nothing tells this device that another one wrote, so the activity asks again when it comes back.
+// game on the local save. Nothing tells this device that another one wrote, so the page asks again when it comes back.
+// The state stays "pending" until a read has got through, so the page does not start a fresh game over a save it could not see.
 class CloudBridge(private val activity: MainActivity) {
     private val signIn by lazy { PlayGames.getGamesSignInClient(activity) }
     private val snapshots by lazy { PlayGames.getSnapshotsClient(activity) }
-    private var asked = false
+    private var declined = false
+    private var signing = false
+    private val waiters = ArrayList<(Boolean?) -> Unit>()
+    private var read = false
     private var writing = false
     private var waiting: JSONObject? = null
 
@@ -29,10 +33,20 @@ class CloudBridge(private val activity: MainActivity) {
                 when {
                     !check.isSuccessful -> then(null)
                     check.result.isAuthenticated -> then(true)
-                    asked -> then(false)
+                    declined -> then(false)
                     else -> {
-                        asked = true
-                        signIn.signIn().addOnCompleteListener { then(if (it.isSuccessful) it.result.isAuthenticated else false) }
+                        waiters.add(then)
+                        if (!signing) {
+                            signing = true
+                            signIn.signIn().addOnCompleteListener {
+                                val ok = it.isSuccessful && it.result.isAuthenticated
+                                signing = false
+                                declined = !ok
+                                val list = ArrayList(waiters)
+                                waiters.clear()
+                                list.forEach { w -> w(ok) }
+                            }
+                        }
                     }
                 }
             }
@@ -42,7 +56,7 @@ class CloudBridge(private val activity: MainActivity) {
     }
 
     fun state() = signedIn {
-        activity.emit(JSONObject().put("t", "cloudState").put("state", when (it) { true -> "available"; false -> "signedOut"; null -> "unavailable" }))
+        activity.emit(JSONObject().put("t", "cloudState").put("state", when (it) { true -> if (read) "available" else "pending"; false -> "signedOut"; null -> "unavailable" }))
     }
 
     fun get() = signedIn { ok ->
@@ -50,13 +64,17 @@ class CloudBridge(private val activity: MainActivity) {
             none()
             return@signedIn
         }
-        open(::none) { snap ->
+        open({}) { snap ->
             val saved = try {
                 JSONObject(String(snap.snapshotContents.readFully()))
             } catch (e: Exception) {
                 null
             }
             snapshots.discardAndClose(snap)
+            if (!read) {
+                read = true
+                activity.emit(JSONObject().put("t", "cloudState").put("state", "available"))
+            }
             activity.emit(JSONObject().put("t", "cloud").put("json", saved?.optString("json") ?: JSONObject.NULL)
                 .put("at", saved?.optLong("at") ?: 0).put("dev", saved?.optString("dev") ?: ""))
         }
@@ -73,7 +91,7 @@ class CloudBridge(private val activity: MainActivity) {
             open(::done) { snap ->
                 val body = JSONObject().put("json", msg.optString("json")).put("at", msg.optLong("at")).put("dev", msg.optString("dev"))
                 snap.snapshotContents.writeBytes(body.toString().toByteArray())
-                snapshots.commitAndClose(snap, SnapshotMetadataChange.Builder().setDescription("Main Street").build())
+                snapshots.commitAndClose(snap, SnapshotMetadataChange.Builder().setDescription(activity.getString(R.string.notification_title)).build())
                     .addOnCompleteListener { done() }
             }
         }

@@ -48,7 +48,6 @@ class MainActivity : ComponentActivity() {
 
     private lateinit var notice: LinearLayout
     private var loaded = false
-    private var resumed = false
 
     private val permission = registerForActivityResult(ActivityResultContracts.RequestPermission()) {}
 
@@ -210,8 +209,6 @@ class MainActivity : ComponentActivity() {
         radio.check()
         startIfCurrent()
         ads.resume()
-        if (resumed) cloud.get()
-        resumed = true
         webView.onResume()
         Reminders.clear(this)
     }
