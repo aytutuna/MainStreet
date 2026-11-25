@@ -219,9 +219,10 @@ function refunds(ev) {
 
 // the bonus of the deal the player tapped, paid once to the purchase it was tapped for
 function dealBonus(id, at) {
-  var d = S.iap.deal;
+  var key = S.iap.deal && S.iap.deal.id === id ? 'deal' : 'held';
+  var d = S.iap[key];
   if (!d || d.id !== id || at > d.until || at > clock() + TIME_SKEW) return 0;
-  S.iap.deal = null;
+  S.iap[key] = null;
   S.gems += d.bonus;
   save();
   return d.bonus;
@@ -240,7 +241,7 @@ function shopBtn(p) {
   var done = p.once && S.iap[p.id];
   var price = priceOf(p);
   var off = done || !price || !!buying || waitOn(p.id);
-  return '<button type="button" class="btn' + (done ? ' alt' : '') + '" data-p="' + p.id + '"' + (off ? ' disabled' : '') + '>' + (done ? tl('shop.owned') : price || '-') + '</button>';
+  return '<button type="button" class="btn' + (done ? ' alt' : '') + '" data-p="' + p.id + '"' + (off ? ' disabled' : '') + '>' + (done ? tl('shop.owned') : waitOn(p.id) ? tl('shop.pending') : price || '-') + '</button>';
 }
 
 function hms(v) {
@@ -313,7 +314,7 @@ function paintShop() {
   var starter = product('starter1');
   var gems = PRODUCTS.filter(function (p) { return p.gems; });
   var deal = dealNow();
-  var html = S.iap.starter || starterLeft(true) < 0 ? '' : heroCard(starter);
+  var html = S.iap.starter || (starterLeft(true) < 0 && !waitOn('starter1')) ? '' : heroCard(starter);
   html += '<div class="feats">' + featCard(product('noads')) + featCard(product('x2')) + '</div>';
   var best = bestPack(gems);
   html += '<h3 class="sec">' + tl('shop.gems_heading') + '</h3><div class="tiles">' + gems.map(function (p, i) { return gemTile(p, i, gems[0], deal, best); }).join('') + '</div>';
@@ -354,8 +355,7 @@ function buyProduct(id) {
   buying = id;
   var d = dealNow();
   // the deal is fixed when the player taps, so a day change during the purchase does not lose it
-  var held = S.iap.deal && waitOn(S.iap.deal.id);
-  if (!held) S.iap.deal = d && d.id === id ? { id: id, bonus: d.bonus, until: clock() + 3600000 } : null;
+  S.iap.deal = d && d.id === id ? { id: id, bonus: d.bonus, until: clock() + 3600000 } : null;
   paintShop();
   post({ cmd: 'buy', id: PID + id });
   buyTimer = setTimeout(function () {
@@ -427,14 +427,19 @@ function handle(ev) {
   } else if (ev.t === 'pending') {
     buyDone();
     var wid = ev.id.slice(PID.length);
-    S.iap.wait[wid] = clock() + RECOVER * 1000;
-    if (S.iap.deal && S.iap.deal.id === wid) S.iap.deal.until = S.iap.wait[wid];
+    S.iap.wait[wid] = clock() + ASK_WAIT * 1000;
+    // a held deal is kept apart, so the deal of another day can still be tapped meanwhile
+    if (S.iap.deal && S.iap.deal.id === wid) {
+      S.iap.held = S.iap.deal;
+      S.iap.held.until = S.iap.wait[wid];
+      S.iap.deal = null;
+    }
     save();
     banner('<b>' + tl('shop.pending') + '</b><small>' + tl('shop.pending_note') + '</small>', 0);
   } else if (ev.t === 'restoreFailed') banner('<b>' + tl('shop.restore_failed') + '</b>', 0);
   else if (ev.t === 'failed') {
     buyDone();
-    if (ev.why !== 'late' && S.iap.deal && S.iap.deal.id === ev.id.slice(PID.length) && !waitOn(S.iap.deal.id)) S.iap.deal = null;
+    if (ev.why !== 'late' && S.iap.deal && S.iap.deal.id === ev.id.slice(PID.length)) S.iap.deal = null;
     if (ev.why === 'late') banner('<b>' + tl('shop.late') + '</b><small>' + tl('shop.late_note') + '</small>', 0);
     else if (ev.why !== 'cancel') banner('<b>' + tl('shop.failed') + '</b>', 0);
   } else if (ev.t === 'adId') testAdId(ev.id);

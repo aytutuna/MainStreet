@@ -220,6 +220,8 @@ var AD_CAP = { x2: 4, away: 3, warp: 2, gems: 3, rush: 2 };
 var AD_GEMS = 3;
 // a gem pack the store lists is credited if it is no older than this many seconds and not credited before
 var RECOVER = 3 * 86400;
+// Ask to Buy requests lapse after a day
+var ASK_WAIT = 86400;
 // seconds of play before the ads, and with them the consent and tracking prompts, start
 var AD_START = 180;
 
