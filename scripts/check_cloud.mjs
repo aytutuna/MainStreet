@@ -225,23 +225,24 @@ for (const f of ['noads', 'x2']) {
   if (run('S.iap.' + f) !== 0 || run('S.ts') !== T12) fail(f + ' survived a taken copy that lists its refund');
 }
 
-// 8b. a restore on another device empties this user's list: that alone is no refund, a restore that still lacks it is
+// 8b. a restore on another device empties this user's list: that alone is no refund, a sync that still lacks it is
 for (const f of ['noads', 'x2']) {
   const pid = 'com.aytutuna.mainstreet.' + f;
   const setup = () => {
     device(T9);
-    run('var snd = 1; refundDoubt = {}; restoreQuiet = false; S.iap.' + f + ' = 1; S.iap.' + f + 'Tx = "T"; S.iap.' + f + 'User = "U1"');
+    run('var snd = 1; refundDoubt = {}; S.iap.' + f + ' = 1; S.iap.' + f + 'Tx = "T"; S.iap.' + f + 'User = "U1"');
   };
   setup();
   nativeEv({ t: 'owned', ids: [], tx: [], user: 'U1' });
   if (run('S.iap.' + f) !== 1) fail(f + ' was taken away by an answer that only lacked the transaction');
-  if (!posts.some(m => m.cmd === 'restore')) fail('the store was not asked to restore before a refund was assumed');
+  if (posts.some(m => m.cmd === 'restore')) fail('a doubt used the player-facing restore, which can open a sign-in sheet');
+  if (!posts.some(m => m.cmd === 'sync')) fail('the store was not asked to sync before a refund was assumed');
   if (run('S.iap.rf.length')) fail('a refund was recorded before the restore answered');
-  nativeEv({ t: 'owned', ids: [pid], tx: [{ id: pid, tx: 'T2', at: T9 }], user: 'U1', restore: true });
+  nativeEv({ t: 'owned', ids: [pid], tx: [{ id: pid, tx: 'T2', at: T9 }], user: 'U1', sync: true });
   if (run('S.iap.' + f) !== 1 || run('S.iap.rf.length')) fail(f + ' was refunded though the restore listed it');
   setup();
   nativeEv({ t: 'owned', ids: [], tx: [], user: 'U1' });
-  nativeEv({ t: 'owned', ids: [], tx: [], user: 'U1', restore: true });
+  nativeEv({ t: 'owned', ids: [], tx: [], user: 'U1', sync: true });
   if (run('S.iap.' + f) !== 0 || run('S.iap.rf.join()') !== 'T') fail('a purchase the restore did not list was not refunded');
 }
 
