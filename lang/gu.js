@@ -769,11 +769,10 @@ LANG['gu'] = {
 
   'product.starter.name': 'સ્ટાર્ટર પેક',
   'product.starter.text': '150 રત્નો, 2 કલાક બમણી કમાણી અને 10 પ્રતિષ્ઠા.',
-  'product.noads.name': 'જાહેરાત નહીં',
-  'product.noads.line': 'કાયમ જાહેરાત નહીં. ઇનામ મફત મળે.',
+  'product.noads.name': 'જાહેરાતો છોડો',
+  'product.noads.line': 'દરેક જાહેરાતનું ઇનામ તરત મળે છે, જાહેરાત જોવાની જરૂર નથી.',
   'product.x2.name': 'કાયમી x2',
   'product.x2.line': 'કાયમ બમણી કમાણી.',
-  'product.x2.text': 'બધી કમાણી કાયમ બમણી, સમયવાળા બૂસ્ટ ઉપરાંત.',
 
   'look.classic.name': 'ક્લાસિક',
   'look.classic.text': 'લાલ અને સોનેરી, પહેલાં જેવું',

@@ -769,11 +769,10 @@ LANG['bn'] = {
 
   'product.starter.name': 'স্টার্টার প্যাক',
   'product.starter.text': '১৫০ জেম, ২ ঘণ্টা দ্বিগুণ আয় আর ১০ সুনাম।',
-  'product.noads.name': 'বিজ্ঞাপনমুক্ত',
-  'product.noads.line': 'আর কখনো বিজ্ঞাপন নয়। পুরস্কার ফ্রি।',
+  'product.noads.name': 'বিজ্ঞাপন বাদ',
+  'product.noads.line': 'প্রতিটি বিজ্ঞাপনের পুরস্কার সঙ্গে সঙ্গে মেলে, বিজ্ঞাপন দেখতে হয় না।',
   'product.x2.name': 'স্থায়ী x2',
   'product.x2.line': 'চিরদিনের জন্য দ্বিগুণ আয়।',
-  'product.x2.text': 'সময়ভিত্তিক বুস্টের ওপরেও, সব আয় চিরদিনের জন্য দ্বিগুণ।',
 
   'look.classic.name': 'ক্লাসিক',
   'look.classic.text': 'লাল আর সোনালি, আগের মতোই',

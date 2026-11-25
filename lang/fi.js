@@ -769,11 +769,10 @@ LANG['fi'] = {
 
   'product.starter.name': 'Aloituspaketti',
   'product.starter.text': '150 jalokiveä, 2 tuntia tuplatuloja ja 10 mainetta.',
-  'product.noads.name': 'Ei mainoksia',
-  'product.noads.line': 'Ei mainoksia koskaan. Palkinnot ilmaiseksi.',
+  'product.noads.name': 'Ohita mainokset',
+  'product.noads.line': 'Jokainen mainospalkkio tulee heti, ilman mainoksen katsomista.',
   'product.x2.name': 'Pysyvä x2',
   'product.x2.line': 'Tuplatulot pysyvästi.',
-  'product.x2.text': 'Kaikki tulot kaksinkertaisina pysyvästi, ajastetun tehosteen lisäksi.',
 
   'look.classic.name': 'Klassinen',
   'look.classic.text': 'Punaista ja kultaa, kuten ennen',

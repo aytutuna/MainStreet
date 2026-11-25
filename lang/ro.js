@@ -771,11 +771,10 @@ LANG['ro'] = {
 
   'product.starter.name': 'Pachet de start',
   'product.starter.text': '150 de nestemate, 2 ore de venit dublu și 10 rep.',
-  'product.noads.name': 'Fără reclame',
-  'product.noads.line': 'Fără reclame, niciodată. Recompensele vin gratis.',
+  'product.noads.name': 'Sari peste reclame',
+  'product.noads.line': 'Fiecare recompensă pentru reclamă vine imediat, fără să urmărești o reclamă.',
   'product.x2.name': 'x2 permanent',
   'product.x2.line': 'Venit dublu pentru totdeauna.',
-  'product.x2.text': 'Tot venitul dublat pentru totdeauna, pe lângă boostul cu timp limitat.',
 
   'look.classic.name': 'Clasic',
   'look.classic.text': 'Roșu și auriu, ca la început',

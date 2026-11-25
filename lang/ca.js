@@ -771,11 +771,10 @@ LANG['ca'] = {
 
   'product.starter.name': 'Paquet d’inici',
   'product.starter.text': '150 gemmes, 2 hores d’ingressos dobles i 10 rep.',
-  'product.noads.name': 'Sense anuncis',
-  'product.noads.line': 'Mai més anuncis. Els premis, gratis.',
+  'product.noads.name': 'Salta els anuncis',
+  'product.noads.line': 'Cada recompensa d\'anunci arriba a l\'instant, sense veure cap anunci.',
   'product.x2.name': 'x2 permanent',
   'product.x2.line': 'Ingressos dobles per sempre.',
-  'product.x2.text': 'Tots els ingressos es dupliquen per sempre, a més de l’impuls temporal.',
 
   'look.classic.name': 'Clàssic',
   'look.classic.text': 'Vermell i or, com abans',

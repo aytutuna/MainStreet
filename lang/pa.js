@@ -769,11 +769,10 @@ LANG['pa'] = {
 
   'product.starter.name': 'ਸ਼ੁਰੂਆਤੀ ਪੈਕ',
   'product.starter.text': '150 ਜੈਮ, 2 ਘੰਟੇ ਦੁੱਗਣੀ ਕਮਾਈ ਅਤੇ 10 ਸਾਖ।',
-  'product.noads.name': 'ਕੋਈ ਇਸ਼ਤਿਹਾਰ ਨਹੀਂ',
-  'product.noads.line': 'ਕਦੇ ਇਸ਼ਤਿਹਾਰ ਨਹੀਂ। ਇਨਾਮ ਮੁਫ਼ਤ ਮਿਲਦੇ ਹਨ।',
+  'product.noads.name': 'ਇਸ਼ਤਿਹਾਰ ਛੱਡੋ',
+  'product.noads.line': 'ਹਰ ਇਸ਼ਤਿਹਾਰ ਦਾ ਇਨਾਮ ਤੁਰੰਤ ਮਿਲਦਾ ਹੈ, ਇਸ਼ਤਿਹਾਰ ਵੇਖਣ ਦੀ ਲੋੜ ਨਹੀਂ।',
   'product.x2.name': 'ਪੱਕਾ x2',
   'product.x2.line': 'ਹਮੇਸ਼ਾ ਲਈ ਦੁੱਗਣੀ ਕਮਾਈ।',
-  'product.x2.text': 'ਸਾਰੀ ਕਮਾਈ ਹਮੇਸ਼ਾ ਲਈ ਦੁੱਗਣੀ, ਸਮੇਂ ਵਾਲੇ ਬੂਸਟ ਤੋਂ ਵੱਖਰੀ।',
 
   'look.classic.name': 'ਕਲਾਸਿਕ',
   'look.classic.text': 'ਲਾਲ ਅਤੇ ਸੁਨਹਿਰੀ, ਪਹਿਲਾਂ ਵਾਂਗ',

@@ -769,11 +769,10 @@ LANG['or'] = {
 
   'product.starter.name': 'ଆରମ୍ଭ ପ୍ୟାକ୍',
   'product.starter.text': '150 ରତ୍ନ, 2 ଘଣ୍ଟା ଦୁଇଗୁଣ ଆୟ ଓ 10 ସୁନାମ।',
-  'product.noads.name': 'ବିଜ୍ଞାପନ ନାହିଁ',
-  'product.noads.line': 'କେବେ ବିଜ୍ଞାପନ ନାହିଁ। ପୁରସ୍କାର ମାଗଣା।',
+  'product.noads.name': 'ବିଜ୍ଞାପନ ଛାଡ଼ନ୍ତୁ',
+  'product.noads.line': 'ପ୍ରତ୍ୟେକ ବିଜ୍ଞାପନ ପୁରସ୍କାର ତୁରନ୍ତ ମିଳେ, ବିଜ୍ଞାପନ ଦେଖିବାକୁ ପଡ଼େ ନାହିଁ।',
   'product.x2.name': 'ସ୍ଥାୟୀ x2',
   'product.x2.line': 'ସବୁଦିନ ପାଇଁ ଦୁଇଗୁଣ ଆୟ।',
-  'product.x2.text': 'ସମୟ ବୁଷ୍ଟ ଉପରେ ସବୁ ଆୟ ସବୁଦିନ ପାଇଁ ଦୁଇଗୁଣ।',
 
   'look.classic.name': 'କ୍ଲାସିକ୍',
   'look.classic.text': 'ଲାଲ ଓ ସୁନେଲୀ, ପୂର୍ବ ପରି',

@@ -767,11 +767,10 @@ LANG['zh-Hans'] = {
 
   'product.starter.name': '新手礼包',
   'product.starter.text': '150钻石、2小时双倍收入和10声望。',
-  'product.noads.name': '去广告',
-  'product.noads.line': '永久去广告，奖励免费领。',
+  'product.noads.name': '跳过广告',
+  'product.noads.line': '每个广告奖励立即到账，无需观看广告。',
   'product.x2.name': '永久 x2',
   'product.x2.line': '永久双倍收入。',
-  'product.x2.text': '所有收入永久翻倍，与限时助力叠加。',
 
   'look.classic.name': '经典',
   'look.classic.text': '红与金，一如从前',

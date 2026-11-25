@@ -763,11 +763,10 @@ LANG['ja'] = {
 
   'product.starter.name': 'スターターパック',
   'product.starter.text': '150ジェム、2時間の収入2倍、評判10。',
-  'product.noads.name': '広告なし',
-  'product.noads.line': '広告なし。報酬は無料でもらえる。',
+  'product.noads.name': '広告スキップ',
+  'product.noads.line': '広告報酬がすぐにもらえる。広告は見なくていい。',
   'product.x2.name': '永久x2',
   'product.x2.line': 'ずっと収入2倍。',
-  'product.x2.text': 'すべての収入がずっと2倍。時間制ブーストとも重なる。',
 
   'look.classic.name': 'クラシック',
   'look.classic.text': '赤と金、元のまま',

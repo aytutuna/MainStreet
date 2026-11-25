@@ -773,11 +773,10 @@ LANG['ru'] = {
 
   'product.starter.name': 'Стартовый набор',
   'product.starter.text': '150 кристаллов, 2 часа двойного дохода и 10 реп.',
-  'product.noads.name': 'Без рекламы',
-  'product.noads.line': 'Никакой рекламы. Награды бесплатно.',
+  'product.noads.name': 'Пропуск рекламы',
+  'product.noads.line': 'Каждая награда за рекламу приходит сразу, смотреть рекламу не нужно.',
   'product.x2.name': 'Постоянный x2',
   'product.x2.line': 'Двойной доход навсегда.',
-  'product.x2.text': 'Весь доход навсегда удвоен, сверх временного буста.',
 
   'look.classic.name': 'Классика',
   'look.classic.text': 'Красное и золотое, как раньше',

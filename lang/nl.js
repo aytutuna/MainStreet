@@ -769,11 +769,10 @@ LANG['nl'] = {
 
   'product.starter.name': 'Startpakket',
   'product.starter.text': '150 edelstenen, 2 uur dubbel inkomen en 10 rep.',
-  'product.noads.name': 'Geen ads',
-  'product.noads.line': 'Nooit meer ads. Beloningen zijn gratis.',
+  'product.noads.name': 'Ads overslaan',
+  'product.noads.line': 'Elke adbeloning komt meteen, zonder een ad te kijken.',
   'product.x2.name': 'Altijd x2',
   'product.x2.line': 'Voorgoed dubbel inkomen.',
-  'product.x2.text': 'Al je inkomen voorgoed verdubbeld, bovenop de tijdelijke boost.',
 
   'look.classic.name': 'Klassiek',
   'look.classic.text': 'Rood en goud, zoals het was',

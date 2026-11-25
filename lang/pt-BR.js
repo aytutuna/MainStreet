@@ -771,11 +771,10 @@ LANG['pt-BR'] = {
 
   'product.starter.name': 'Pacote inicial',
   'product.starter.text': '150 gemas, 2 horas de renda em dobro e 10 rep.',
-  'product.noads.name': 'Sem anúncios',
-  'product.noads.line': 'Sem anúncios, para sempre. Os prêmios saem de graça.',
+  'product.noads.name': 'Pular anúncios',
+  'product.noads.line': 'Cada recompensa de anúncio chega na hora, sem assistir a nenhum anúncio.',
   'product.x2.name': 'x2 permanente',
   'product.x2.line': 'Renda em dobro para sempre.',
-  'product.x2.text': 'Toda a renda em dobro para sempre, além do turbo temporário.',
 
   'look.classic.name': 'Clássico',
   'look.classic.text': 'Vermelho e dourado, como era',

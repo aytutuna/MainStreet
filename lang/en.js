@@ -1061,12 +1061,11 @@ LANG['en'] = {
   'product.starter.name': 'Starter pack',
   // What the product gives, shown in the shop.
   'product.starter.text': '150 gems, 2 hours of double income and 10 rep.',
-  'product.noads.name': 'No ads',
+  'product.noads.name': 'Skip ads',
   // One short line on the product button.
-  'product.noads.line': 'No ads, ever. Rewards come free.',
+  'product.noads.line': 'Every ad reward comes at once, no ad to watch.',
   'product.x2.name': 'Permanent x2',
   'product.x2.line': 'Double income for good.',
-  'product.x2.text': 'All income doubled for good, on top of the timed boost.',
 
   // Store looks: designs for floors, walls and signs.
   // Name of a store design (colours of floors, walls and signs).

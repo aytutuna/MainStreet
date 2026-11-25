@@ -771,11 +771,10 @@ LANG['es-ES'] = {
 
   'product.starter.name': 'Pack inicial',
   'product.starter.text': '150 gemas, 2 horas de ingresos dobles y 10 rep.',
-  'product.noads.name': 'Sin anuncios',
-  'product.noads.line': 'Sin anuncios nunca. Los premios, gratis.',
+  'product.noads.name': 'Saltar anuncios',
+  'product.noads.line': 'Cada recompensa de anuncio llega al instante, sin ver ningún anuncio.',
   'product.x2.name': 'x2 permanente',
   'product.x2.line': 'Ingresos dobles para siempre.',
-  'product.x2.text': 'Todos los ingresos se duplican para siempre, además del impulso temporal.',
 
   'look.classic.name': 'Clásico',
   'look.classic.text': 'Rojo y dorado, como siempre',

@@ -769,11 +769,10 @@ LANG['de'] = {
 
   'product.starter.name': 'Starterpaket',
   'product.starter.text': '150 Edelsteine, 2 Stunden doppeltes Einkommen und 10 Ruf.',
-  'product.noads.name': 'Keine Werbung',
-  'product.noads.line': 'Nie wieder Werbung. Belohnungen gibt es gratis.',
+  'product.noads.name': 'Werbung überspringen',
+  'product.noads.line': 'Jede Werbebelohnung kommt sofort, ohne Werbung anzusehen.',
   'product.x2.name': 'Dauerhaft x2',
   'product.x2.line': 'Doppeltes Einkommen für immer.',
-  'product.x2.text': 'Dein ganzes Einkommen dauerhaft verdoppelt, zusätzlich zum zeitlichen Boost.',
 
   'look.classic.name': 'Klassisch',
   'look.classic.text': 'Rot und Gold, wie früher',

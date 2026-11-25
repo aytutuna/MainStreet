@@ -873,11 +873,10 @@ LANG['pl'] = {
 
   'product.starter.name': 'Pakiet startowy',
   'product.starter.text': '150 klejnotów, 2 godziny podwójnego przychodu i 10 rep.',
-  'product.noads.name': 'Bez reklam',
-  'product.noads.line': 'Bez reklam na zawsze. Nagrody za darmo.',
+  'product.noads.name': 'Pomiń reklamy',
+  'product.noads.line': 'Każda nagroda za reklamę przychodzi od razu, bez oglądania reklamy.',
   'product.x2.name': 'Stałe x2',
   'product.x2.line': 'Podwójny przychód na zawsze.',
-  'product.x2.text': 'Cały przychód podwojony na stałe, oprócz czasowego wzmocnienia.',
 
   'look.classic.name': 'Klasyczny',
   'look.classic.text': 'Czerwień i złoto, jak dawniej',

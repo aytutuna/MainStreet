@@ -769,11 +769,10 @@ LANG['hi'] = {
 
   'product.starter.name': 'स्टार्टर पैक',
   'product.starter.text': '150 जेम, 2 घंटे दोगुनी कमाई और 10 साख।',
-  'product.noads.name': 'विज्ञापन बंद',
-  'product.noads.line': 'कभी विज्ञापन नहीं। इनाम मुफ़्त मिलते हैं।',
+  'product.noads.name': 'विज्ञापन छोड़ें',
+  'product.noads.line': 'हर विज्ञापन का इनाम तुरंत मिलता है, विज्ञापन देखना नहीं पड़ता।',
   'product.x2.name': 'हमेशा x2',
   'product.x2.line': 'हमेशा के लिए दोगुनी कमाई।',
-  'product.x2.text': 'पूरी कमाई हमेशा के लिए दोगुनी, समय वाले बूस्ट के ऊपर।',
 
   'look.classic.name': 'क्लासिक',
   'look.classic.text': 'लाल और सुनहरा, जैसा पहले था',

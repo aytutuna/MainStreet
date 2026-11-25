@@ -769,11 +769,10 @@ LANG['ur'] = {
 
   'product.starter.name': 'اسٹارٹر پیک',
   'product.starter.text': '150 جیمز، 2 گھنٹے دوگنی آمدنی اور 10 ساکھ۔',
-  'product.noads.name': 'اشتہار نہیں',
-  'product.noads.line': 'کبھی اشتہار نہیں۔ انعام مفت ملتے ہیں۔',
+  'product.noads.name': 'اشتہارات چھوڑیں',
+  'product.noads.line': 'ہر اشتہار کا انعام فوراً ملتا ہے، اشتہار دیکھنے کی ضرورت نہیں۔',
   'product.x2.name': 'مستقل x2',
   'product.x2.line': 'ہمیشہ کے لیے دوگنی آمدنی۔',
-  'product.x2.text': 'ساری آمدنی ہمیشہ کے لیے دوگنی، وقتی بوسٹ کے علاوہ۔',
 
   'look.classic.name': 'کلاسک',
   'look.classic.text': 'سرخ اور سنہرا، پہلے جیسا',

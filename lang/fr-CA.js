@@ -771,11 +771,10 @@ LANG['fr-CA'] = {
 
   'product.starter.name': 'Pack de départ',
   'product.starter.text': '150 gemmes, 2 heures de revenus doublés et 10 rép.',
-  'product.noads.name': 'Sans pub',
-  'product.noads.line': 'Zéro pub, pour toujours. Récompenses gratuites.',
+  'product.noads.name': 'Sauter les pubs',
+  'product.noads.line': 'Chaque récompense de pub arrive tout de suite, sans pub à regarder.',
   'product.x2.name': 'x2 permanent',
   'product.x2.line': 'Revenus doublés pour de bon.',
-  'product.x2.text': 'Tous les revenus doublés pour de bon, en plus du boost temporaire.',
 
   'look.classic.name': 'Classique',
   'look.classic.text': 'Rouge et or, comme avant',

@@ -769,11 +769,10 @@ LANG['tr'] = {
 
   'product.starter.name': 'Başlangıç paketi',
   'product.starter.text': '150 elmas, 2 saat çift gelir ve 10 itibar.',
-  'product.noads.name': 'Reklamsız',
-  'product.noads.line': 'Hiç reklam yok. Ödüller bedava gelir.',
+  'product.noads.name': 'Reklamları atla',
+  'product.noads.line': 'Her reklam ödülü hemen gelir, reklam izlemek gerekmez.',
   'product.x2.name': 'Kalıcı x2',
   'product.x2.line': 'Kalıcı çift gelir.',
-  'product.x2.text': 'Tüm gelir kalıcı olarak ikiye katlanır, süreli takviyenin üstüne.',
 
   'look.classic.name': 'Klasik',
   'look.classic.text': 'Kırmızı ve altın, eskisi gibi',

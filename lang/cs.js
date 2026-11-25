@@ -773,11 +773,10 @@ LANG['cs'] = {
 
   'product.starter.name': 'Startovní balíček',
   'product.starter.text': '150 drahokamů, 2 hodiny dvojnásobného příjmu a 10 rep.',
-  'product.noads.name': 'Bez reklam',
-  'product.noads.line': 'Nikdy žádné reklamy. Odměny jsou zdarma.',
+  'product.noads.name': 'Přeskočit reklamy',
+  'product.noads.line': 'Každá odměna za reklamu přijde hned, bez sledování reklamy.',
   'product.x2.name': 'Trvalé x2',
   'product.x2.line': 'Dvojnásobný příjem navždy.',
-  'product.x2.text': 'Veškerý příjem navždy dvojnásobný, navíc k časovanému boostu.',
 
   'look.classic.name': 'Klasika',
   'look.classic.text': 'Červená a zlatá, jako dřív',

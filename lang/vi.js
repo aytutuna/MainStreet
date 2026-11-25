@@ -767,11 +767,10 @@ LANG['vi'] = {
 
   'product.starter.name': 'Gói khởi đầu',
   'product.starter.text': '150 ngọc, 2 giờ thu nhập gấp đôi và 10 uy tín.',
-  'product.noads.name': 'Không quảng cáo',
-  'product.noads.line': 'Hết quảng cáo mãi mãi. Thưởng nhận luôn.',
+  'product.noads.name': 'Bỏ qua quảng cáo',
+  'product.noads.line': 'Mọi phần thưởng quảng cáo đến ngay, không cần xem quảng cáo.',
   'product.x2.name': 'Vĩnh viễn x2',
   'product.x2.line': 'Thu nhập gấp đôi mãi mãi.',
-  'product.x2.text': 'Mọi thu nhập nhân đôi vĩnh viễn, cộng thêm cả tăng tốc theo giờ.',
 
   'look.classic.name': 'Cổ điển',
   'look.classic.text': 'Đỏ và vàng như ban đầu',

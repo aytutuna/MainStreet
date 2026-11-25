@@ -769,11 +769,10 @@ LANG['da'] = {
 
   'product.starter.name': 'Startpakke',
   'product.starter.text': '150 diamanter, 2 timers dobbelt indtjening og 10 ry.',
-  'product.noads.name': 'Ingen reklamer',
-  'product.noads.line': 'Aldrig reklamer. Belønninger er gratis.',
+  'product.noads.name': 'Spring reklamer over',
+  'product.noads.line': 'Hver reklamebelønning kommer med det samme, uden at se en reklame.',
   'product.x2.name': 'Permanent x2',
   'product.x2.line': 'Dobbelt indtjening for altid.',
-  'product.x2.text': 'Al indtjening fordoblet for altid, oven i den tidsbegrænsede boost.',
 
   'look.classic.name': 'Klassisk',
   'look.classic.text': 'Rød og guld, som før',

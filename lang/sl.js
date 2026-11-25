@@ -873,11 +873,10 @@ LANG['sl'] = {
 
   'product.starter.name': 'Začetni paket',
   'product.starter.text': '150 draguljev, 2 uri dvojnega dohodka in 10 ugleda.',
-  'product.noads.name': 'Brez oglasov',
-  'product.noads.line': 'Nikoli oglasov. Nagrade so zastonj.',
+  'product.noads.name': 'Preskoči oglase',
+  'product.noads.line': 'Vsako nagrado za oglas dobiš takoj, brez ogleda oglasa.',
   'product.x2.name': 'Trajni x2',
   'product.x2.line': 'Dvojni dohodek za vedno.',
-  'product.x2.text': 'Ves dohodek podvojen za vedno, povrhu časovnega pospeška.',
 
   'look.classic.name': 'Klasika',
   'look.classic.text': 'Rdeča in zlata, kot prej',

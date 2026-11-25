@@ -771,11 +771,10 @@ LANG['he'] = {
 
   'product.starter.name': 'חבילת פתיחה',
   'product.starter.text': '150 אבני חן, שעתיים של הכנסה כפולה ו-10 מוניטין.',
-  'product.noads.name': 'בלי מודעות',
-  'product.noads.line': 'בלי מודעות לעולם. הפרסים מגיעים חינם.',
+  'product.noads.name': 'דילוג על מודעות',
+  'product.noads.line': 'כל פרס של מודעה מגיע מיד, בלי לצפות במודעה.',
   'product.x2.name': 'x2 לתמיד',
   'product.x2.line': 'הכנסה כפולה לתמיד.',
-  'product.x2.text': 'כל ההכנסה כפולה לתמיד, בנוסף לתגבור הזמני.',
 
   'look.classic.name': 'קלאסי',
   'look.classic.text': 'אדום וזהב, כמו פעם',

@@ -767,11 +767,10 @@ LANG['th'] = {
 
   'product.starter.name': 'แพ็กเริ่มต้น',
   'product.starter.text': '150 เพชร รายได้สองเท่า 2 ชั่วโมง และชื่อเสียง 10',
-  'product.noads.name': 'ไม่มีโฆษณา',
-  'product.noads.line': 'ไม่มีโฆษณาตลอดไป รางวัลได้ฟรี',
+  'product.noads.name': 'ข้ามโฆษณา',
+  'product.noads.line': 'รางวัลจากโฆษณาทุกอันได้ทันที ไม่ต้องดูโฆษณา',
   'product.x2.name': 'x2 ถาวร',
   'product.x2.line': 'รายได้สองเท่าตลอดไป',
-  'product.x2.text': 'รายได้ทั้งหมดเป็นสองเท่าถาวร ซ้อนกับบูสต์ชั่วคราวได้',
 
   'look.classic.name': 'คลาสสิก',
   'look.classic.text': 'แดงและทองเหมือนเดิม',

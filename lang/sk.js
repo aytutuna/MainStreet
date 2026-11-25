@@ -773,11 +773,10 @@ LANG['sk'] = {
 
   'product.starter.name': 'Štartovací balíček',
   'product.starter.text': '150 drahokamov, 2 hodiny dvojnásobného príjmu a 10 rep.',
-  'product.noads.name': 'Bez reklám',
-  'product.noads.line': 'Navždy bez reklám. Odmeny dostaneš zadarmo.',
+  'product.noads.name': 'Preskočiť reklamy',
+  'product.noads.line': 'Každá odmena za reklamu príde hneď, bez pozerania reklamy.',
   'product.x2.name': 'Trvalé x2',
   'product.x2.line': 'Dvojnásobný príjem navždy.',
-  'product.x2.text': 'Všetok príjem navždy dvojnásobný, navyše k časovanému boostu.',
 
   'look.classic.name': 'Klasika',
   'look.classic.text': 'Červená a zlatá, ako bývalo',

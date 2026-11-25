@@ -200,7 +200,7 @@ RG.vip = { id: 'vip', name: tl('reg.vip.name'), ref: 'chars/character-male-b@9,2
 var PRODUCTS = [
   { id: 'starter', once: 1, ic: 'ui_gift', name: tl('product.starter.name'), text: tl('product.starter.text') },
   { id: 'noads', once: 1, ic: 'ui_star', name: tl('product.noads.name'), line: tl('product.noads.line') },
-  { id: 'x2', once: 1, ic: 'ui_bolt', name: tl('product.x2.name'), line: tl('product.x2.line'), text: tl('product.x2.text') },
+  { id: 'x2', once: 1, ic: 'ui_bolt', name: tl('product.x2.name'), line: tl('product.x2.line') },
   { id: 'gems1', gems: 80, usd: 0.99, ic: 'ui_gem', name: tl('shop.gems', { n: 80 }) },
   { id: 'gems2', gems: 500, usd: 4.99, ic: 'ui_gem', name: tl('shop.gems', { n: 500 }) },
   { id: 'gems3', gems: 1200, usd: 9.99, ic: 'ui_gem', name: tl('shop.gems', { n: 1200 }) },

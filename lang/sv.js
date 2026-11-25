@@ -769,11 +769,10 @@ LANG['sv'] = {
 
   'product.starter.name': 'Startpaket',
   'product.starter.text': '150 juveler, 2 timmars dubbel inkomst och 10 rykte.',
-  'product.noads.name': 'Inga annonser',
-  'product.noads.line': 'Inga annonser, någonsin. Belöningar får du gratis.',
+  'product.noads.name': 'Hoppa över annonser',
+  'product.noads.line': 'Varje annonsbelöning kommer direkt, utan att titta på en annons.',
   'product.x2.name': 'Permanent x2',
   'product.x2.line': 'Dubbel inkomst för alltid.',
-  'product.x2.text': 'All inkomst dubblas för alltid, utöver den tidsbegränsade boosten.',
 
   'look.classic.name': 'Klassisk',
   'look.classic.text': 'Rött och guld, som förut',

@@ -769,11 +769,10 @@ LANG['mr'] = {
 
   'product.starter.name': 'स्टार्टर पॅक',
   'product.starter.text': '150 रत्ने, 2 तास दुप्पट उत्पन्न आणि 10 प्रतिष्ठा.',
-  'product.noads.name': 'जाहिराती नाहीत',
-  'product.noads.line': 'कायमच्या जाहिराती बंद. बक्षिसे मोफत.',
+  'product.noads.name': 'जाहिराती वगळा',
+  'product.noads.line': 'प्रत्येक जाहिरातीचे बक्षीस लगेच मिळते, जाहिरात पाहावी लागत नाही.',
   'product.x2.name': 'कायमचे x2',
   'product.x2.line': 'कायमचे दुप्पट उत्पन्न.',
-  'product.x2.text': 'सगळे उत्पन्न कायमचे दुप्पट, वेळेच्या बूस्टच्या वर.',
 
   'look.classic.name': 'क्लासिक',
   'look.classic.text': 'लाल आणि सोनेरी, पूर्वीसारखे',

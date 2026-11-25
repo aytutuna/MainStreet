@@ -767,11 +767,10 @@ LANG['id'] = {
 
   'product.starter.name': 'Paket pemula',
   'product.starter.text': '150 gem, 2 jam pendapatan ganda, dan 10 rep.',
-  'product.noads.name': 'Tanpa iklan',
-  'product.noads.line': 'Tanpa iklan selamanya. Hadiah tetap gratis.',
+  'product.noads.name': 'Lewati iklan',
+  'product.noads.line': 'Setiap hadiah iklan langsung datang, tanpa perlu menonton iklan.',
   'product.x2.name': 'x2 Permanen',
   'product.x2.line': 'Pendapatan ganda selamanya.',
-  'product.x2.text': 'Semua pendapatan berlipat dua selamanya, di luar booster berwaktu.',
 
   'look.classic.name': 'Klasik',
   'look.classic.text': 'Merah dan emas, seperti dulu',
