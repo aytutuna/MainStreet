@@ -367,6 +367,9 @@ LANG['te'] = {
   'cloud.back_note': 'మీ సేవ్ చేసిన గేమ్ తిరిగి తీసుకురాబడింది.',
   'cloud.local_only': 'ఈ ఫోన్‌లో మాత్రమే సేవ్ చేయబడింది',
   'cloud.sign_in': 'Sign in',
+  'cloud.taken_title': 'Playing on another device',
+  'cloud.taken_line': 'Your game is open on another phone or tablet. Play here to carry on with the newest save.',
+  'cloud.play_here': 'Play here',
   'menu.erase': 'అన్ని పురోగతిని తొలగించండి',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

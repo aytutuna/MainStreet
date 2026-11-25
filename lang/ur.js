@@ -367,6 +367,9 @@ LANG['ur'] = {
   'cloud.back_note': 'آپ کا محفوظ کردہ گیم واپس لایا گیا۔',
   'cloud.local_only': 'صرف اس فون پر محفوظ',
   'cloud.sign_in': 'Sign in',
+  'cloud.taken_title': 'Playing on another device',
+  'cloud.taken_line': 'Your game is open on another phone or tablet. Play here to carry on with the newest save.',
+  'cloud.play_here': 'Play here',
   'menu.erase': 'ساری پیشرفت مٹائیں',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

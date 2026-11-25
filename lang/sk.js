@@ -371,6 +371,9 @@ LANG['sk'] = {
   'cloud.back_note': 'Tvoja uložená hra bola obnovená.',
   'cloud.local_only': 'Uložené len v tomto telefóne',
   'cloud.sign_in': 'Sign in',
+  'cloud.taken_title': 'Playing on another device',
+  'cloud.taken_line': 'Your game is open on another phone or tablet. Play here to carry on with the newest save.',
+  'cloud.play_here': 'Play here',
   'menu.erase': 'Zmazať všetok postup',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

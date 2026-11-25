@@ -2646,10 +2646,10 @@ function closeVeil(v) {
 
 // the panel on top: the last open veil, else the upgrades sheet, else a card. False when nothing can close.
 // The away box only answers true: it has to be collected, and closing it would drop the double offer.
-// The needs-internet and cloud lookup cards go away by themselves, so Back must not quit under them
+// The needs-internet, cloud lookup and taken-over cards go away by themselves, so Back must not quit under them
 function closeTop() {
   // they sit on top by z-index, not by order in the page, so they are checked before the last veil
-  if (!$('net').hidden || !$('find').hidden) return true;
+  if (!$('net').hidden || !$('find').hidden || !$('taken').hidden) return true;
   var v = document.querySelectorAll('.veil:not([hidden])');
   if (v.length) {
     v = v[v.length - 1];

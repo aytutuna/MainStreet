@@ -361,6 +361,9 @@ LANG['zh-Hant'] = {
   'cloud.back_note': '已找回你的存檔。',
   'cloud.local_only': '僅儲存在這支手機上',
   'cloud.sign_in': 'Sign in',
+  'cloud.taken_title': 'Playing on another device',
+  'cloud.taken_line': 'Your game is open on another phone or tablet. Play here to carry on with the newest save.',
+  'cloud.play_here': 'Play here',
   'menu.erase': '清除所有進度',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

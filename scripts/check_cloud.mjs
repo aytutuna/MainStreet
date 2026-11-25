@@ -41,12 +41,13 @@ const iosEv = (e, more) => ({ t: 'cloud', json: e ? e.json : null, at: e ? e.at 
 
 // one device: its own page (vm), its own local storage, and the native side answering its messages one pump later, as the
 // real bridges do. hold keeps the answers back, fail makes puts fail, drop loses them without a word, stale is what a cache that has not synced answers to a read
-function device(cloud, st = {}) {
+function device(cloud, st = {}, opts = {}) {
   const dev = { st, cloud, posts: [], inbox: [], hold: false, fail: false, drop: false, out: false, unavail: false, fails: [], seen: {}, lagged: [], offline: false, mine: '' };
   if (cloud.ios) {
     cloud.devs.push(dev);
     dev.seen = { ...cloud.keys };
   }
+  const els = {};
   const ctx = {
     console,
     localStorage: {
@@ -63,7 +64,7 @@ function device(cloud, st = {}) {
     setTimeout: () => 1,
     clearTimeout() {},
     setInterval: () => 1,
-    $: () => ({ hidden: false, addEventListener() {}, style: {} }),
+    $: id => (els[id] = els[id] || { hidden: true, addEventListener() {}, style: {} }),
     View: { ready: () => true },
     tl: k => k,
     loadFail: (msg, hold) => dev.fails.push([msg, hold]),
@@ -77,6 +78,9 @@ function device(cloud, st = {}) {
   vm.createContext(ctx);
   for (const [f, code] of src) vm.runInContext(code, ctx, { filename: f });
   vm.runInContext('clock = function () { return __now(); };', ctx);
+  // most checks play one game on two devices without the one-at-a-time rule: their claim holds from the start, is never put
+  // and never loses to another's. opts.claim lets the page claim as it does
+  if (!opts.claim) vm.runInContext('cloudClaim = function () { claim = { dev: devId(), at: 0 }; S.hold = claim; };', ctx);
 
   const nativeIos = m => {
     if (m.dev) dev.mine = m.dev;
@@ -156,6 +160,7 @@ function device(cloud, st = {}) {
   dev.gems = () => dev.run('S.gems');
   dev.base = () => dev.run('S.cl.base');
   dev.id = () => dev.run('devId()');
+  dev.shown = id => !els[id].hidden;
   dev.dirty = () => dev.run('cloudSig(S) !== S.cl.sig');
   // the cloud tells this device that the copy changed (iCloud), or it asks (a return, Play Games)
   dev.push = ev => { dev.inbox.push(ev); dev.pump(); };
@@ -193,6 +198,106 @@ function pairIos(setup) {
   expect(!a.dirty() && !b.dirty(), 'a device that took or wrote the copy counts as changed');
   a.posts.length = b.posts.length = 0;
   return [a, b, cloud];
+}
+
+// one device plays at a time. a claims at launch, b opens a minute later and claims too; each cloud tells the other device
+function claimPair(ios) {
+  const cloud = ios ? newKeys() : newCloud();
+  const sync = d => (ios ? d.pump() : d.ask());
+  now = T9;
+  const q = device(cloud);
+  q.run('S = fresh(); S.gems = 100; S.ads.ap = 1000; save()');
+  q.launch();
+  q.put();
+  const a = device(cloud, {}, { claim: true });
+  const b = device(cloud, {}, { claim: true });
+  a.run("devKey = 'aa'");
+  b.run("devKey = 'bb'");
+  return { cloud, sync, q, a, b };
+}
+
+for (const ios of [false, true]) {
+  const name = ios ? 'iPhone' : 'Android';
+  // b opens while a plays: a stops and shows the card, and puts nothing more; b plays on
+  {
+    const { cloud, sync, a, b } = claimPair(ios);
+    a.launch();
+    expect(a.run('claim.at') === T9 && a.puts().length === 1 && a.puts()[0].json.indexOf('"hold":{"dev":"aa","at":' + T9) > 0, name + ': the launch did not claim and put at once');
+    now = T9 + 60000;
+    a.change(2, 30);
+    b.launch();
+    expect(b.run('claim.at') === now && b.puts().length === 1, name + ': the second device did not claim at its launch');
+    sync(a);
+    expect(a.run('cloudOff') && a.shown('taken') && a.run('cloudHeld()') && a.run('claim') === null, name + ': the first device did not stop under the claim of the other');
+    const n = a.puts().length;
+    a.change(3, 10);
+    now += 60000;
+    a.put();
+    a.run('cloudSoon()');
+    expect(a.puts().length === n, name + ': a taken-over device kept putting');
+    expect(!b.run('cloudOff') && !b.shown('taken'), name + ': the device that claimed last was stopped');
+    // a taps Play here: b's newest game is loaded, a claims, and b is the one that stops
+    b.change(40, 600);
+    b.put();
+    a.run('document.hidden = false');
+    a.run('cloudHere()');
+    expect(a.gems() === b.gems(), name + ': Play here did not load the newest game (gems ' + a.gems() + ' and ' + b.gems() + ')');
+    expect(!a.run('cloudOff') && a.run('claim.at') === now && !a.shown('taken'), name + ': Play here did not claim and lift the card');
+    sync(b);
+    expect(b.run('cloudOff') && b.shown('taken'), name + ': the other device did not stop after Play here');
+  }
+  // both open in the same second: the larger id keeps playing, on both devices
+  {
+    const { cloud, sync, a, b } = claimPair(ios);
+    now = T9 + 3600000;
+    a.launch();
+    b.launch();
+    sync(a);
+    sync(b);
+    sync(a);
+    expect(a.run('cloudOff') && !b.run('cloudOff'), name + ': two devices that opened in the same second did not settle on one (a off ' + a.run('cloudOff') + ', b off ' + b.run('cloudOff') + ')');
+    b.change(1, 5);
+    b.put();
+    sync(a);
+    expect(a.run('cloudOff') && !b.run('cloudOff'), name + ': the loser came back by itself');
+  }
+  // a purchase made just before the takeover reaches the other device
+  {
+    const { cloud, sync, a, b } = claimPair(ios);
+    a.launch();
+    now = T9 + 60000;
+    a.run('grant("gems2", "TA")');
+    expect(a.puts().length === 2, name + ': a credited purchase did not go out at once');
+    b.launch();
+    expect(b.gems() === 600, name + ': the other device did not get the purchase (gems ' + b.gems() + ')');
+    // and one that comes in on the device that was taken over waits for Play here, then is joined into the newest game
+    sync(a);
+    expect(a.run('cloudOff'), name + ': the first device did not stop');
+    const n = a.puts().length;
+    a.run('grant("gems3", "TB")');
+    expect(a.puts().length === n && a.gems() === 600 + 1200, name + ': a purchase on a taken-over device went out or was lost');
+    b.change(5, 800);
+    b.put();
+    now += 60000;
+    a.run('cloudHere()');
+    expect(a.gems() === 600 + 1200 + 5 && !a.run('cloudOff'), name + ': the purchase made while stopped was not joined into the newest game (gems ' + a.gems() + ')');
+    sync(b);
+    b.run('cloudHere()');
+    expect(b.gems() === a.gems(), name + ': the other device did not get the joined game (gems ' + b.gems() + ' and ' + a.gems() + ')');
+  }
+}
+
+// a copy that was written before the claim, delivered after it, is judged by play and does not stop the claimer
+{
+  const { cloud, a, b } = claimPair(true);
+  a.launch();
+  b.lag = true;
+  now = T9 + 60000;
+  a.change(7, 500);
+  a.put();
+  b.launch();
+  b.catchUp();
+  expect(!b.run('cloudOff') && b.gems() === 107, 'a copy written before the claim stopped the device that claimed after it (gems ' + b.gems() + ')');
 }
 
 // scenario A on the iPhone's store: the iPhone is hidden at 9:00, the iPad plays to 12:00, the iPhone returns at 17:00 with an
@@ -339,8 +444,11 @@ for (const aMore of [false, true]) {
 for (const aMore of [false, true]) {
   const [a, b, c] = pair();
   const buy = (d, id, tx, bonus) => d.run("S.iap.deal = { id: '" + id + "', bonus: " + bonus + ', until: clock() + 3600000 }; grant("' + id + '", "' + tx + '"); dealBonus("' + id + '", clock(), "' + tx + '")');
+  // apart: a purchase goes out at once, so the two devices are cut off while they buy
+  a.fail = b.fail = true;
   buy(a, 'gems2', 'TA', 100);
   buy(b, 'gems3', 'TB', 240);
+  a.fail = b.fail = false;
   a.change(0, aMore ? 5000 : 10);
   b.change(0, 100);
   b.put();

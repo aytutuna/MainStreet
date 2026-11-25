@@ -367,6 +367,9 @@ LANG['bn'] = {
   'cloud.back_note': 'আপনার সংরক্ষিত গেম ফিরিয়ে আনা হয়েছে।',
   'cloud.local_only': 'শুধু এই ফোনে সংরক্ষিত',
   'cloud.sign_in': 'Sign in',
+  'cloud.taken_title': 'Playing on another device',
+  'cloud.taken_line': 'Your game is open on another phone or tablet. Play here to carry on with the newest save.',
+  'cloud.play_here': 'Play here',
   'menu.erase': 'সব অগ্রগতি মুছুন',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

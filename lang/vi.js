@@ -365,6 +365,9 @@ LANG['vi'] = {
   'cloud.back_note': 'Trò chơi đã lưu của bạn đã được khôi phục.',
   'cloud.local_only': 'Chỉ lưu trên điện thoại này',
   'cloud.sign_in': 'Sign in',
+  'cloud.taken_title': 'Playing on another device',
+  'cloud.taken_line': 'Your game is open on another phone or tablet. Play here to carry on with the newest save.',
+  'cloud.play_here': 'Play here',
   'menu.erase': 'Xóa toàn bộ tiến trình',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

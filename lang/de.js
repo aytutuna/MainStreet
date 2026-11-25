@@ -367,6 +367,9 @@ LANG['de'] = {
   'cloud.back_note': 'Dein Spielstand wurde wiederhergestellt.',
   'cloud.local_only': 'Nur auf diesem Telefon gespeichert',
   'cloud.sign_in': 'Sign in',
+  'cloud.taken_title': 'Playing on another device',
+  'cloud.taken_line': 'Your game is open on another phone or tablet. Play here to carry on with the newest save.',
+  'cloud.play_here': 'Play here',
   'menu.erase': 'Alles zurücksetzen',
 
   'num.suffixes': ',K,Mio,Mrd,Bio,Brd,Trl,Trd,Qa,Qad,Qi,Qid',

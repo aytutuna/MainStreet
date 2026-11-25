@@ -361,6 +361,9 @@ LANG['ja'] = {
   'cloud.back_note': 'セーブデータを復元しました。',
   'cloud.local_only': 'この端末にのみ保存',
   'cloud.sign_in': 'Sign in',
+  'cloud.taken_title': 'Playing on another device',
+  'cloud.taken_line': 'Your game is open on another phone or tablet. Play here to carry on with the newest save.',
+  'cloud.play_here': 'Play here',
   'menu.erase': '全データを消去',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

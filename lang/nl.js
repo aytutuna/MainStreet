@@ -367,6 +367,9 @@ LANG['nl'] = {
   'cloud.back_note': 'Je opgeslagen spel is teruggehaald.',
   'cloud.local_only': 'Alleen op deze telefoon opgeslagen',
   'cloud.sign_in': 'Sign in',
+  'cloud.taken_title': 'Playing on another device',
+  'cloud.taken_line': 'Your game is open on another phone or tablet. Play here to carry on with the newest save.',
+  'cloud.play_here': 'Play here',
   'menu.erase': 'Alle voortgang wissen',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

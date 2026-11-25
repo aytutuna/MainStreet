@@ -16,7 +16,7 @@ const code = grab(/var CLOSE = \{[\s\S]*?\};/) + '\n' + grab(/function closeVeil
 
 const els = {};
 const el = id => (els[id] = els[id] || { id, hidden: true, click() { this.hidden = true; } });
-const order = ['net', 'find', 'shop', 'away', 'daily'];
+const order = ['net', 'taken', 'find', 'shop', 'away', 'daily'];
 const ctx = {
   $: id => el(id),
   document: { querySelectorAll: () => order.map(el).filter(v => !v.hidden) },
@@ -34,7 +34,7 @@ el('daily-x').click = () => { el('daily').hidden = true; };
 let failed = false;
 const check = (name, ok) => { if (!ok) { console.error('FAIL: ' + name); failed = true; } };
 
-for (const card of ['net', 'find']) {
+for (const card of ['net', 'taken', 'find']) {
   el(card).hidden = false;
   ctx.cardId = 'hall';
   check(card + ' over a card: Back answers true', ctx.closeTop() === true);

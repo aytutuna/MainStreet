@@ -369,6 +369,9 @@ LANG['he'] = {
   'cloud.back_note': 'המשחק השמור שלך שוחזר.',
   'cloud.local_only': 'נשמר בטלפון הזה בלבד',
   'cloud.sign_in': 'Sign in',
+  'cloud.taken_title': 'Playing on another device',
+  'cloud.taken_line': 'Your game is open on another phone or tablet. Play here to carry on with the newest save.',
+  'cloud.play_here': 'Play here',
   'menu.erase': 'מחיקת כל ההתקדמות',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

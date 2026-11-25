@@ -365,6 +365,9 @@ LANG['ms'] = {
   'cloud.back_note': 'Permainan tersimpan anda telah dipulihkan.',
   'cloud.local_only': 'Disimpan pada telefon ini sahaja',
   'cloud.sign_in': 'Sign in',
+  'cloud.taken_title': 'Playing on another device',
+  'cloud.taken_line': 'Your game is open on another phone or tablet. Play here to carry on with the newest save.',
+  'cloud.play_here': 'Play here',
   'menu.erase': 'Padam semua kemajuan',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

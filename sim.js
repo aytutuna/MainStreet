@@ -102,7 +102,7 @@ var S = fresh();
 function fresh() {
   var s = { v: 11, cash: START_CASH, gems: 0, rep: 0, pk: {}, store: 1, run: 0, all: 0, pend: 0, ps: 0, x2: 0, call: 0, vt: rnd(VIP.first), b: {}, ms: {},
     st: { srv: 0, lost: 0, sr: 0, t: 0 }, goal: [0, 1, 2], gn: 3, gd: {}, day: { n: 0, d: -1, t: 0 }, tz: { o: zone(), at: clock() }, mi: { d: -1, m: [], b: 0 }, rg: { o: {}, days: 0, gifts: 0, combo: 0 }, lk: { on: 'classic', own: {} }, ac: { o: {}, m: {} },
-    ask: 0, clk: START_H * CLOCK / 24, iap: { noads: 0, x2: 0, starter: 0, noadsTx: '', x2Tx: '', noadsUser: '', x2User: '', wait: {}, tx: [], rf: [], paid: [] }, cl: { base: '', sig: '', bap: 0, old: [], erased: 0, force: 0, fly: null }, ads: { d: -1, n: {}, pt: 0, ap: 0, li: 0, sd: 0 }, ts: clock() };
+    ask: 0, clk: START_H * CLOCK / 24, iap: { noads: 0, x2: 0, starter: 0, noadsTx: '', x2Tx: '', noadsUser: '', x2User: '', wait: {}, tx: [], rf: [], paid: [] }, cl: { base: '', sig: '', bap: 0, old: [], erased: 0, force: 0, fly: null }, ads: { d: -1, n: {}, pt: 0, ap: 0, li: 0, sd: 0 }, hold: { dev: '', at: 0 }, ts: clock() };
   noPlaces(s);
   s.b.produce = atLevel('produce', 1);
   return s;
@@ -1579,6 +1579,8 @@ function validate(o) {
   s.cl = { base: typeof cl.base === 'string' ? cl.base : '', sig: typeof cl.sig === 'string' ? cl.sig : '',
     bap: num(cl.bap, 0), erased: cl.erased ? 1 : 0, force: cl.force ? 1 : 0, old: (Array.isArray(cl.old) ? cl.old : []).filter(function (t) { return typeof t === 'string'; }).slice(-8),
     fly: fl && typeof fl.stamp === 'string' && typeof fl.sig === 'string' ? { stamp: fl.stamp, sig: fl.sig, ap: num(fl.ap, 0), force: fl.force ? 1 : 0 } : null };
+  var hd = o.hold || {};
+  s.hold = { dev: typeof hd.dev === 'string' ? hd.dev : '', at: num(hd.at, 0) };
   var ad = o.ads || {};
   s.ads = { d: Math.floor(num(ad.d, -1)), n: {}, pt: num(ad.pt, 0), ap: num(ad.ap, 0), li: num(ad.li, 0), sd: num(ad.sd, 0) };
   for (var k in AD_CAP) s.ads.n[k] = Math.min(AD_CAP[k], Math.floor(num(ad.n && ad.n[k], 0)));

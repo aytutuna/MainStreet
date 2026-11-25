@@ -369,6 +369,9 @@ LANG['fr-CA'] = {
   'cloud.back_note': 'Ta partie sauvegardée a été récupérée.',
   'cloud.local_only': 'Sauvegardée sur ce téléphone seulement',
   'cloud.sign_in': 'Sign in',
+  'cloud.taken_title': 'Playing on another device',
+  'cloud.taken_line': 'Your game is open on another phone or tablet. Play here to carry on with the newest save.',
+  'cloud.play_here': 'Play here',
   'menu.erase': 'Effacer toute la progression',
 
   'num.suffixes': ',k,M,Md,Bn,Bd,Tn,Qa,Qi,Sx,Sp,Oc',

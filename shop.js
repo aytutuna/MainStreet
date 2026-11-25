@@ -36,6 +36,8 @@
 //                                          keeps force until a forced put has landed. The iPhone never refuses: no other device writes
 //                                          its key
 //   {cmd: 'cloudSignIn'}                   Android: opens Play Games sign-in, then answers cloudState and cloud
+// Every copy carries hold {dev, at}: the device that claimed the game and the server time it did so, at launch, on coming back
+// and on Play here. A device that sees a later claim than its own stops and shows the taken-over card; one with no claim puts nothing.
 //   {t: 'notify', state}                   'granted' or 'denied', answering the notify handler's {cmd: 'ask'}; the page does not use it
 //   {t: 'radio', state, url, title?}       the stream being played: state is 'buffering', 'playing', 'paused' (headphones
 //                                          unplugged) or 'error' (it gave out), url the one
@@ -73,7 +75,7 @@ var loaded = false;
 var CLOUD_EVERY = 30000;
 var CLOUD_WAIT = 10000;
 var CLOUD_BACK = 4000;
-var CLOUD_POLL = 180000;
+var CLOUD_POLL = 45000;
 var cloudState = '';
 var cloudAnswered = false;
 var cloudLive = '';
@@ -88,6 +90,12 @@ var cloudPend = [];
 var cloudRet = null;
 var cloudAt = -CLOUD_EVERY;
 var lastTouch = -60000;
+// one device plays at a time: claim is what this device holds (null before it has claimed, and when another device took over),
+// claimNeeded is set until the claim is made, claimDue until it is put, cloudOff while the taken-over card is up
+var claim = null;
+var claimNeeded = false;
+var claimDue = false;
+var cloudOff = false;
 var devKey = '';
 
 // the time comes from the server (the native apps ask alazy.app, a plain browser asks it itself); the game starts and
@@ -187,16 +195,20 @@ function cloudPut(erase) {
   clearTimeout(cloudTimer);
   cloudTimer = 0;
   // the time is stamped on the copy, so nothing is put while it is unknown
-  if (!native() || !loaded || blocked || timeHeld) return;
+  if (!native() || !loaded || blocked || timeHeld || !claim) return;
   var cl = S.cl;
   var sig = cloudSig(S);
-  if (erase !== true && (cl.fly || (!cl.force && sig === cl.sig))) return;
+  if (erase !== true && (cl.fly || (!cl.force && !claimDue && sig === cl.sig))) return;
   // an erase stays forced until a forced put has landed
   var force = erase === true || !!cl.force;
   var stamp = devId() + ':' + stampNext();
-  cl.fly = { stamp: stamp, sig: sig, ap: S.ads.ap, force: force ? 1 : 0 };
+  cl.fly = { stamp: stamp, sig: sig, ap: S.ads.ap, force: force ? 1 : 0, claim: claimDue };
   cloudLive = stamp;
   cloudAt = performance.now();
+  // the claim goes with the first put after it, which also lifts the taken-over card
+  claimDue = false;
+  $('taken').hidden = true;
+  S.hold = { dev: claim.dev, at: claim.at };
   post({ cmd: 'cloudPut', json: saved(), at: Math.round(clock()), dev: devId(), stamp: stamp, base: cl.base, force: force });
   save();
 }
@@ -218,7 +230,52 @@ function cloudAck(ev) {
   if (!f || f.stamp !== ev.stamp) return;
   S.cl.fly = null;
   if (ev.ok) agree(f.stamp, f.sig, f.ap);
+  else if (f.claim) claimDue = true;
   save();
+  if (claimDue && ev.ok) cloudPut();
+}
+
+// a purchase that was credited goes out at once
+function cloudNow() {
+  if (claim) cloudPut();
+}
+
+function cloudClaim() {
+  claim = { dev: devId(), at: Math.round(clock()) };
+  claimDue = true;
+  S.hold = { dev: claim.dev, at: claim.at };
+  cloudPut();
+}
+
+// the claim is made once the cloud has answered and the time is known, so a copy that came first was judged first
+function cloudMaybeClaim() {
+  if (!claimNeeded || timeHeld || cloudHeld() || cloudFind) return;
+  claimNeeded = false;
+  cloudClaim();
+}
+
+// who holds the game in a copy; a hold with no time is none
+function copyHold(ev) {
+  try {
+    var h = JSON.parse(ev.json).hold;
+    if (h && typeof h.dev === 'string' && h.at > 0) return h;
+  } catch (e) {}
+  return { dev: '', at: 0 };
+}
+
+// another device claimed after this one: this one stops and shows the card, and its game is left as it is
+function cloudLost() {
+  claim = null;
+  claimDue = false;
+  cloudOff = true;
+  clearTimeout(cloudTimer);
+  cloudTimer = 0;
+  $('taken').hidden = false;
+}
+
+function cloudHere() {
+  cloudOff = false;
+  cloudBack();
 }
 
 // the device id goes with every read: the iPhone keeps one key per device and leaves out this device's own
@@ -239,6 +296,7 @@ function cloudMenu() {
 function cloudLook(done) {
   if (!native()) return done(false);
   setInterval(cloudPoll, CLOUD_POLL);
+  claimNeeded = true;
   post({ cmd: 'cloudState', dev: devId() });
   cloudAsk();
   if (hasSave()) {
@@ -254,7 +312,7 @@ function cloudLook(done) {
 
 // Play Games has no change push, so the cloud is read again every few minutes; a put that never got an answer is given up
 function cloudPoll() {
-  if (!loaded || document.hidden || timeHeld) return;
+  if (!loaded || document.hidden || timeHeld || cloudOff) return;
   if (S.cl.fly && performance.now() - cloudAt > 60000) S.cl.fly = null;
   cloudAsk();
 }
@@ -287,10 +345,13 @@ function cloudEnd() {
     e.more = false;
     cloudEvent(e);
   });
+  cloudMaybeClaim();
 }
 
 // a copy meets this game; if it replaced it the screen shows it, or waits for the launch reveal while the models load
 function cloudTake(ev) {
+  var h = copyHold(ev);
+  if (claim && h.dev !== devId() && (h.at > claim.at || (h.at === claim.at && h.dev > claim.dev))) return cloudLost();
   var took = takeCloud(ev.json, ev.stamp, !!ev.refused);
   // a put of an earlier page that is not this copy did not land
   if (S.cl.fly && S.cl.fly.stamp !== cloudLive) S.cl.fly = null;
@@ -315,6 +376,9 @@ function cloudBack() {
   // iCloud answers a read from its local copy at once and brings other devices' changes later, and it cannot refuse a write,
   // so the first put waits for them
   cloudAt = performance.now();
+  // coming back claims the game again, once what the cloud holds has been judged
+  claim = null;
+  claimNeeded = true;
   if (cloudRet) clearTimeout(cloudRet.t);
   cloudRet = { got: false, run: null, t: setTimeout(cloudGot, CLOUD_BACK) };
   cloudAsk();
@@ -322,7 +386,7 @@ function cloudBack() {
 
 // the game stands still while the return waits for the cloud
 function cloudHeld() {
-  return !!cloudRet && !cloudRet.got;
+  return cloudOff || (!!cloudRet && !cloudRet.got);
 }
 
 function cloudGot() {
@@ -334,6 +398,7 @@ function cloudGot() {
     cloudRet = null;
     r.run();
   }
+  cloudMaybeClaim();
 }
 
 function cloudAfter(fn) {
@@ -349,6 +414,7 @@ function cloudApply() {
   var list = cloudPend;
   cloudPend = [];
   list.forEach(cloudTake);
+  cloudMaybeClaim();
 }
 
 function cloudEvent(ev) {
@@ -362,11 +428,15 @@ function cloudEvent(ev) {
     cloudAnswered = true;
     cloudMore = !!ev.more;
     // a refused put did not land: the copy that came with the refusal is what the cloud holds now
-    if (loaded && ev.refused && S.cl.fly && ev.put === S.cl.fly.stamp) S.cl.fly = null;
+    if (loaded && ev.refused && S.cl.fly && ev.put === S.cl.fly.stamp) {
+      // the claim did not land with it
+      if (S.cl.fly.claim) claimDue = true;
+      S.cl.fly = null;
+    }
     if (cloudFind) {
       // a device's newer copy replaces its older one
       if (ev.json) cloudFound = cloudFound.filter(function (e) { return e.dev !== ev.dev; }).concat([ev]);
-    } else if (ev.json && loaded) {
+    } else if (ev.json && loaded && !cloudOff) {
       // only while the server time is unknown does a copy wait
       if (timeHeld) cloudPend.push(ev);
       else cloudTake(ev);
@@ -429,7 +499,10 @@ function grant(id, tx) {
   var p = product(id);
   if (!p) return false;
   var done = p.once ? own(id, tx) : credit(p, tx);
-  if (done) save();
+  if (done) {
+    save();
+    cloudNow();
+  }
   return done;
 }
 
@@ -653,6 +726,7 @@ function shopStart() {
   if (!native()) return;
   loaded = true;
   onSaved = cloudSoon;
+  $('taken-play').addEventListener('click', cloudHere);
   $('m-signin').addEventListener('click', function () { post({ cmd: 'cloudSignIn' }); });
   queued.splice(0).forEach(handle);
   askOther();
@@ -704,6 +778,7 @@ function handle(ev) {
     if (back) banner('<b>' + tl('shop.recovered', { n: back, count: short(back) }) + '</b><small>' + tl('shop.recovered_note') + '</small>', 0);
     if (ev.restore) banner('<b>' + tl(S.iap.noads + S.iap.x2 + S.iap.starter > restoreWas ? 'shop.restored' : 'shop.nothing_to_restore') + '</b>', 0);
     save();
+    cloudNow();
   } else if (ev.t === 'bought') {
     var bid = ev.id.slice(PID.length);
     buyDone(bid);

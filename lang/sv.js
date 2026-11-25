@@ -367,6 +367,9 @@ LANG['sv'] = {
   'cloud.back_note': 'Ditt sparade spel har hämtats tillbaka.',
   'cloud.local_only': 'Sparat bara på den här telefonen',
   'cloud.sign_in': 'Sign in',
+  'cloud.taken_title': 'Playing on another device',
+  'cloud.taken_line': 'Your game is open on another phone or tablet. Play here to carry on with the newest save.',
+  'cloud.play_here': 'Play here',
   'menu.erase': 'Radera alla framsteg',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

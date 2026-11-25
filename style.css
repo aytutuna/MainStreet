@@ -1476,6 +1476,7 @@ a.btn {
 }
 
 #net,
+#taken,
 #find {
   z-index: 60;
   background: rgba(20, 16, 30, 0.92);

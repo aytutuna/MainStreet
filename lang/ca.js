@@ -369,6 +369,9 @@ LANG['ca'] = {
   'cloud.back_note': 'S\'ha recuperat la teva partida desada.',
   'cloud.local_only': 'Desada només en aquest telèfon',
   'cloud.sign_in': 'Sign in',
+  'cloud.taken_title': 'Playing on another device',
+  'cloud.taken_line': 'Your game is open on another phone or tablet. Play here to carry on with the newest save.',
+  'cloud.play_here': 'Play here',
   'menu.erase': 'Esborra tot el progrés',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

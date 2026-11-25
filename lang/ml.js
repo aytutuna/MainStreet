@@ -367,6 +367,9 @@ LANG['ml'] = {
   'cloud.back_note': 'നിങ്ങളുടെ സേവ് ചെയ്ത ഗെയിം തിരികെ കൊണ്ടുവന്നു.',
   'cloud.local_only': 'ഈ ഫോണിൽ മാത്രം സേവ് ചെയ്തു',
   'cloud.sign_in': 'Sign in',
+  'cloud.taken_title': 'Playing on another device',
+  'cloud.taken_line': 'Your game is open on another phone or tablet. Play here to carry on with the newest save.',
+  'cloud.play_here': 'Play here',
   'menu.erase': 'എല്ലാ പുരോഗതിയും മായ്ക്കൂ',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

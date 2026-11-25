@@ -566,6 +566,10 @@ LANG['en'] = {
   // Small line in the menu on Android when the game cannot reach Google Play Games, so the save stays on the phone.
   'cloud.local_only': 'Saved on this phone only',
   'cloud.sign_in': 'Sign in',
+  // Card over the game when it was opened on another device: only one device plays at a time.
+  'cloud.taken_title': 'Playing on another device',
+  'cloud.taken_line': 'Your game is open on another phone or tablet. Play here to carry on with the newest save.',
+  'cloud.play_here': 'Play here',
   'menu.erase': 'Erase all progress',
 
   // Compact number suffixes, comma separated and in order: none, thousand, million, billion, trillion, then the short names

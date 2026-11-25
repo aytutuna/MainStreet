@@ -367,6 +367,9 @@ LANG['or'] = {
   'cloud.back_note': 'ଆପଣଙ୍କ ସେଭ୍ ଗେମ୍ ଫେରାଇ ଆଣାଗଲା।',
   'cloud.local_only': 'କେବଳ ଏହି ଫୋନ୍‌ରେ ସେଭ୍',
   'cloud.sign_in': 'Sign in',
+  'cloud.taken_title': 'Playing on another device',
+  'cloud.taken_line': 'Your game is open on another phone or tablet. Play here to carry on with the newest save.',
+  'cloud.play_here': 'Play here',
   'menu.erase': 'ସବୁ ଅଗ୍ରଗତି ଲିଭାଅ',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

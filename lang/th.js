@@ -365,6 +365,9 @@ LANG['th'] = {
   'cloud.back_note': 'นำเกมที่บันทึกไว้ของคุณกลับมาแล้ว',
   'cloud.local_only': 'บันทึกไว้ในโทรศัพท์เครื่องนี้เท่านั้น',
   'cloud.sign_in': 'Sign in',
+  'cloud.taken_title': 'Playing on another device',
+  'cloud.taken_line': 'Your game is open on another phone or tablet. Play here to carry on with the newest save.',
+  'cloud.play_here': 'Play here',
   'menu.erase': 'ลบความคืบหน้าทั้งหมด',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

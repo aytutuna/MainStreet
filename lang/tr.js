@@ -367,6 +367,9 @@ LANG['tr'] = {
   'cloud.back_note': 'Kayıtlı oyunun geri getirildi.',
   'cloud.local_only': 'Yalnızca bu telefonda kayıtlı',
   'cloud.sign_in': 'Sign in',
+  'cloud.taken_title': 'Playing on another device',
+  'cloud.taken_line': 'Your game is open on another phone or tablet. Play here to carry on with the newest save.',
+  'cloud.play_here': 'Play here',
   'menu.erase': 'Tüm ilerlemeyi sil',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',
