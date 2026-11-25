@@ -64,6 +64,6 @@ class Bridge(private val activity: MainActivity) {
               } };
               Object.defineProperty(Navigator.prototype, 'vibrate', { value: undefined });
             })();
-        """.trimIndent() + if (BuildConfig.TESTER) "\nwindow.TESTER = 1;" else ""
+        """.trimIndent() + "\nwindow.APPVER = {v: '${BuildConfig.VERSION_NAME}', b: '${BuildConfig.VERSION_CODE}'};" + if (BuildConfig.TESTER) "\nwindow.TESTER = 1;" else ""
     }
 }

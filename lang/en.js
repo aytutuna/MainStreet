@@ -132,6 +132,9 @@ LANG['en'] = {
   'menu.achievements': 'Achievements',
   // Menu button that reopens the privacy/ads consent form. Shown only in some regions.
   'menu.privacy': 'Privacy choices',
+  'menu.policy': 'Privacy policy',
+  'menu.support': 'Support',
+  'menu.version': 'Version {v} ({b})',
   // Credits. Translate only the labels (Models, Sounds, Store models, ...) and the connecting words; keep every name, company, URL and the <br> tags exactly.
   'menu.credits': 'Models: Kenney (www.kenney.nl)<br>Sounds: Kenney; recordings by Membrans, G4F SFX, The Chris Alan, Gamemaster Audio, SoundBits, 3maze, Mechanical Wave, Shapeforms, Airborne Sound, Soundrangers, SmartSoundFX, Kpow Sounds and Creative Audio Pool, from the Sonniss GameAudioGDC bundles<br>Store models: Pipework packs<br>Pizza props: Vira Voloshyn<br>Tools: mekmeesk<br>Nature: Kay Lousberg (KayKit, www.kaylousberg.com), Quaternius, Elijah Cobden<br>Icons: LimeZu (https://limezu.itch.io/)<br>Font: Lilita One by Juan Montoreano (SIL Open Font License)<br>3D: three.js (threejs.org)',
   // Music and radio credits. Translate only the label words ("Music, from Pixabay:", "by") and the last sentence; keep every title, artist name and the <br> tags exactly.

@@ -2232,6 +2232,10 @@ function wire() {
   });
   $('gear').addEventListener('click', function () {
     setSound();
+    if (window.APPVER) {
+      $('m-ver').textContent = tl('menu.version', { v: APPVER.v, b: APPVER.b });
+      $('m-ver').hidden = false;
+    }
     $('menu').hidden = false;
   });
   $('m-ok').addEventListener('click', function () {

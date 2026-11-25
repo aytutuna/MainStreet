@@ -859,6 +859,13 @@ button.pill:active,
   background: var(--gloss-gold);
 }
 
+a.btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-decoration: none;
+}
+
 #tabs {
   display: grid;
   grid-template-columns: repeat(5, 1fr);

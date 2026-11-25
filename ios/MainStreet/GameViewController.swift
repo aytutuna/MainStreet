@@ -122,6 +122,9 @@ final class GameViewController: UIViewController, WKNavigationDelegate, WKUIDele
         config.userContentController.add(BuzzHandler(), name: "buzz")
         config.userContentController.add(NotifyHandler(), name: "notify")
         config.userContentController.add(store, name: "store")
+        let info = Bundle.main.infoDictionary
+        let ver = "window.APPVER = {v: \"\(info?["CFBundleShortVersionString"] as? String ?? "")\", b: \"\(info?["CFBundleVersion"] as? String ?? "")\"};"
+        config.userContentController.addUserScript(WKUserScript(source: ver, injectionTime: .atDocumentStart, forMainFrameOnly: true))
         #if DEBUG || TESTER
         config.userContentController.addUserScript(WKUserScript(source: "window.TESTER = 1;", injectionTime: .atDocumentStart, forMainFrameOnly: true))
         #endif
@@ -157,7 +160,7 @@ final class GameViewController: UIViewController, WKNavigationDelegate, WKUIDele
     }
 
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
-        if let url = navigationAction.request.url, url.scheme == "http" || url.scheme == "https" {
+        if let url = navigationAction.request.url, url.scheme == "http" || url.scheme == "https" || url.scheme == "mailto" {
             UIApplication.shared.open(url)
             decisionHandler(.cancel)
         } else {
