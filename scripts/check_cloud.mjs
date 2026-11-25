@@ -726,7 +726,7 @@ for (const putFirst of [false, true]) {
   expect(a2.gems() === 101 && a2.base() === c2.stamp, 'a read from before the game\'s own put undid it (gems ' + a2.gems() + ')');
 }
 
-// a device that cannot write (signed out of iCloud) never agrees with a copy, so what it played counts when the account's copy comes
+// Android signed out of Play Games cannot write and never agrees with a copy, so what it played counts when the account's copy comes
 {
   const [a, b, c] = pair();
   b.change(10, 100);
@@ -742,6 +742,27 @@ for (const putFirst of [false, true]) {
   expect(a.gems() === 115 && a.base() === c.stamp && a.dirty(), 'the weeks played signed out were lost to the account copy (gems ' + a.gems() + ')');
   a.put();
   expect(JSON.parse(c.json).gems === 115, 'the game kept was not written');
+}
+
+// the iPhone signed out of iCloud still writes: its puts answer ok and move its base to stamps only it knows. The account's copy
+// that comes later is judged by the play since the split: more of it and the game is taken, less and the game is kept
+for (const bMore of [true, false]) {
+  const [a, b, c] = pairIos();
+  a.offline = true;
+  for (let k = 0; k < 3; k++) {
+    a.change(5, 300);
+    a.put();
+  }
+  expect(a.puts().length === 3 && a.run('S.cl.fly') === null && !a.dirty(), 'a put with no account was not answered ok');
+  b.change(10, bMore ? 5000 : 100);
+  b.put();
+  a.online();
+  const g = a.gems();
+  expect(bMore ? g === 110 : g === 115, 'the account copy with ' + (bMore ? 'more' : 'less') + ' play since the split was judged wrong (gems ' + g + ')');
+  b.pump();
+  b.put();
+  a.put();
+  expect(a.gems() === b.gems(), 'the two devices did not end on one game after the iPhone came back (' + a.gems() + ' and ' + b.gems() + ')');
 }
 
 // regulars, mission claims and the daily streak are progress too
