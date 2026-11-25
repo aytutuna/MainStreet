@@ -22,7 +22,7 @@
 //   {t: 'cloudState', state}               'available', 'signedOut', 'pending' (signed in, first sync not done) or 'unavailable';
 //                                          answers {cmd: 'cloudState'}, skips the queue. The page sends {cmd: 'cloudPut', json, at, dev}
 //   {t: 'notify', state}                   'granted' or 'denied', answering the notify handler's {cmd: 'ask'}; the page does not use it
-//   {t: 'radio', state, url, title?}     the stream being played: state is 'buffering', 'playing', 'paused' (headphones
+//   {t: 'radio', state, url, title?}       the stream being played: state is 'buffering', 'playing', 'paused' (headphones
 //                                          unplugged) or 'error' (it gave out), url the one
 //                                          the page asked for, title what the station says is on (ICY metadata)
 //   {t: 'other', on}                       whether another app is playing music (answers 'radio' check, and comes by itself

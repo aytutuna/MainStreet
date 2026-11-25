@@ -1049,10 +1049,12 @@ function reminders() {
   if (!started()) return out;
   var phone = Date.now() - now;
   out.push({ id: 'full', at: now + maxAway() * 1000 + phone, body: tl('notify.full') });
-  var d = new Date(now);
-  var at = daily().can ? new Date(d.getFullYear(), d.getMonth(), d.getDate(), 10).getTime() : Math.max(new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1, 10).getTime(), S.day.t + DAILY_GAP);
+  var o = (S.tz ? S.tz.o : new Date(now).getTimezoneOffset()) * 60000;
+  var ten = function (n) { return n * 86400000 + o + 10 * 3600000; };
+  var today = dayNum(now);
+  var at = daily().can ? ten(today) : Math.max(ten(today + 1), S.day.t + DAILY_GAP);
   // a reward already waiting is mentioned at the next 10:00, not at once
-  if (at <= now) at = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1, 10).getTime();
+  if (at <= now) at = ten(today + 1);
   out.push({ id: 'daily', at: at + phone, body: tl('notify.daily') });
   return out;
 }
