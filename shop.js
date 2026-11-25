@@ -66,6 +66,7 @@ var cloudShown = false;
 var cloudPend = null;
 var cloudMet = false;
 var cloudRet = null;
+var cloudOut = false;   // a return's cloudGet is unanswered: nothing is written, even after the wait timed out
 var cloudAt = -CLOUD_EVERY;
 var devKey = '';
 
@@ -166,7 +167,7 @@ function cloudReady() {
 function cloudPut(erase) {
   clearTimeout(cloudTimer);
   cloudTimer = 0;
-  if (!native() || !loaded || blocked || !(erase === true || cloudReady())) return;
+  if (!native() || !loaded || blocked || !(erase === true || (cloudReady() && !cloudOut))) return;
   cloudAt = performance.now();
   cloudMet = true;
   cloudTs = S.ts;
@@ -221,7 +222,13 @@ function cloudBack() {
   if (!native()) return;
   if (cloudRet) clearTimeout(cloudRet.t);
   cloudRet = { got: false, run: null, t: setTimeout(cloudGot, CLOUD_BACK) };
+  cloudOut = true;
   post({ cmd: 'cloudGet' });
+}
+
+// the game stands still while the return waits for the cloud
+function cloudHeld() {
+  return !!cloudRet && !cloudRet.got;
 }
 
 function cloudGot() {
@@ -268,7 +275,10 @@ function cloudEvent(ev) {
       }
     }
   }
-  if (ev.t === 'cloud') cloudGot();
+  if (ev.t === 'cloud') {
+    cloudOut = false;
+    cloudGot();
+  }
   if (cloudFind && (cloudFound || (cloudSeen && cloudState && cloudState !== 'pending'))) cloudEnd();
 }
 

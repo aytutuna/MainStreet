@@ -2585,7 +2585,7 @@ function onTap(h) {
 
 function loop(t) {
   requestAnimationFrame(loop);
-  if (timeHeld) {
+  if (timeHeld || cloudHeld()) {
     lastTick = t;
     return;
   }
@@ -2816,7 +2816,7 @@ function begin(fromCloud) {
     }
     lastTick = performance.now();
     requestAnimationFrame(loop);
-    setInterval(function () { if (!timeHeld && !document.hidden) save(); }, 5000);
+    setInterval(function () { if (!timeHeld && !cloudHeld() && !document.hidden) save(); }, 5000);
     if (location.protocol !== 'file:') {
       // file:// blocks the manifest fetch and logs an error
       var man = document.createElement('link');

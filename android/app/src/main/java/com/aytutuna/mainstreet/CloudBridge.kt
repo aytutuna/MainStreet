@@ -12,6 +12,7 @@ import org.json.JSONObject
 // Play Games signs the player in by itself at launch; a player who is not in is asked once per launch, and declining keeps the
 // game on the local save. Nothing tells this device that another one wrote, so the page asks again when it comes back.
 // The state stays "pending" until a read has got through, so the page does not start a fresh game over a save it could not see.
+// A read that cannot open the snapshot gets no answer at all (a null copy would read as "no save"); the page's timers cover it.
 class CloudBridge(private val activity: MainActivity) {
     private val signIn by lazy { PlayGames.getGamesSignInClient(activity) }
     private val snapshots by lazy { PlayGames.getSnapshotsClient(activity) }
@@ -23,7 +24,11 @@ class CloudBridge(private val activity: MainActivity) {
     private var waiting: JSONObject? = null
 
     init {
-        PlayGamesSdk.initialize(activity.applicationContext)
+        try {
+            PlayGamesSdk.initialize(activity.applicationContext)
+        } catch (e: Exception) {
+            // an app id that is not set up yet: the calls below then fail and the page keeps the local save
+        }
     }
 
     // true when signed in, false when not, null when Play Games cannot be reached at all
