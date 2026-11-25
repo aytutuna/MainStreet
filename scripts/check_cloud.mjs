@@ -95,7 +95,7 @@ function device(cloud, st = {}) {
   };
   // the page starts: what is saved here is loaded, the cloud is asked, and play waits for the first answer
   dev.launch = () => dev.run('cloudLook(function () { load(); loaded = true; onSaved = cloudSoon; })');
-  dev.change = (gems, pt) => dev.run('S.gems += ' + gems + '; S.ads.pt += ' + (pt || 0) + '; save()');
+  dev.change = (gems, ap) => dev.run('S.gems += ' + gems + '; S.ads.ap += ' + (ap || 0) + '; save()');
   dev.put = () => dev.run('cloudPut()');
   dev.puts = () => dev.posts.filter(m => m.cmd === 'cloudPut');
   dev.gems = () => dev.run('S.gems');
@@ -112,7 +112,7 @@ function pair(setup) {
   const cloud = newCloud();
   now = T9;
   const a = device(cloud);
-  a.run('S = fresh(); S.gems = 100; S.ads.pt = 1000; ' + (setup || '') + 'save()');
+  a.run('S = fresh(); S.gems = 100; S.ads.ap = 1000; ' + (setup || '') + 'save()');
   a.launch();
   a.put();
   const b = device(cloud);
@@ -154,6 +154,18 @@ for (const hide of [false, true]) {
   if (hide) expect(b.gems() === gems && b.base() === c.stamp && !b.dirty(), 'the iPad does not agree with the copy it wrote last');
   a.put();
   expect(c.stamp === a.base() && JSON.parse(c.json).gems === gems, 'the iPhone wrote over the iPad copy it had just taken');
+}
+
+// time on screen is not play: a device that only watched its cash grow does not outrank one that played for 20 minutes
+{
+  const [a, b, c] = pair();
+  b.change(50, 1200);
+  b.put();
+  const gems = b.gems();
+  a.run('S.ads.pt += 1800');
+  a.change(1, 3);
+  a.ask();
+  expect(a.gems() === gems && a.base() === c.stamp, 'minutes of play lost to a device that only had the game on screen (gems ' + a.gems() + ')');
 }
 
 // scenario B: the cache answer at launch is the copy the game already agrees with, the real one comes after
@@ -377,7 +389,7 @@ for (const putFirst of [false, true]) {
   d.hold = true;
   d.launch();
   d.run('cloudEnd()');
-  expect(d.run('S.ads.pt') === 0 && d.base() === '', 'the new game did not start empty');
+  expect(d.run('S.ads.ap') === 0 && d.base() === '', 'the new game did not start empty');
   d.change(2, 30);
   if (putFirst) d.put();
   expect(JSON.parse(c.json).gems === 109, 'the new game was written over the cloud copy');

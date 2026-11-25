@@ -102,7 +102,7 @@ var S = fresh();
 function fresh() {
   var s = { v: 11, cash: START_CASH, gems: 0, rep: 0, pk: {}, store: 1, run: 0, all: 0, pend: 0, ps: 0, x2: 0, call: 0, vt: rnd(VIP.first), b: {}, ms: {},
     st: { srv: 0, lost: 0, sr: 0, t: 0 }, goal: [0, 1, 2], gn: 3, gd: {}, day: { n: 0, d: -1, t: 0 }, tz: { o: zone(), at: clock() }, mi: { d: -1, m: [], b: 0 }, rg: { o: {}, days: 0, gifts: 0, combo: 0 }, lk: { on: 'classic', own: {} }, ac: { o: {}, m: {} },
-    ask: 0, clk: START_H * CLOCK / 24, iap: { noads: 0, x2: 0, starter: 0, noadsTx: '', x2Tx: '', noadsUser: '', x2User: '', wait: {}, tx: [], rf: [], paid: [] }, cl: { base: '', sig: '', bpt: 0, old: [], erased: 0, force: 0, fly: null }, ads: { d: -1, n: {}, pt: 0, li: 0, sd: 0 }, ts: clock() };
+    ask: 0, clk: START_H * CLOCK / 24, iap: { noads: 0, x2: 0, starter: 0, noadsTx: '', x2Tx: '', noadsUser: '', x2User: '', wait: {}, tx: [], rf: [], paid: [] }, cl: { base: '', sig: '', bap: 0, old: [], erased: 0, force: 0, fly: null }, ads: { d: -1, n: {}, pt: 0, ap: 0, li: 0, sd: 0 }, ts: clock() };
   noPlaces(s);
   s.b.produce = atLevel('produce', 1);
   return s;
@@ -1577,10 +1577,10 @@ function validate(o) {
   var cl = o.cl || {};
   var fl = cl.fly;
   s.cl = { base: typeof cl.base === 'string' ? cl.base : '', sig: typeof cl.sig === 'string' ? cl.sig : '',
-    bpt: num(cl.bpt, 0), erased: cl.erased ? 1 : 0, force: cl.force ? 1 : 0, old: (Array.isArray(cl.old) ? cl.old : []).filter(function (t) { return typeof t === 'string'; }).slice(-8),
-    fly: fl && typeof fl.stamp === 'string' && typeof fl.sig === 'string' ? { stamp: fl.stamp, sig: fl.sig, pt: num(fl.pt, 0), force: fl.force ? 1 : 0 } : null };
+    bap: num(cl.bap, 0), erased: cl.erased ? 1 : 0, force: cl.force ? 1 : 0, old: (Array.isArray(cl.old) ? cl.old : []).filter(function (t) { return typeof t === 'string'; }).slice(-8),
+    fly: fl && typeof fl.stamp === 'string' && typeof fl.sig === 'string' ? { stamp: fl.stamp, sig: fl.sig, ap: num(fl.ap, 0), force: fl.force ? 1 : 0 } : null };
   var ad = o.ads || {};
-  s.ads = { d: Math.floor(num(ad.d, -1)), n: {}, pt: num(ad.pt, 0), li: num(ad.li, 0), sd: num(ad.sd, 0) };
+  s.ads = { d: Math.floor(num(ad.d, -1)), n: {}, pt: num(ad.pt, 0), ap: num(ad.ap, 0), li: num(ad.li, 0), sd: num(ad.sd, 0) };
   for (var k in AD_CAP) s.ads.n[k] = Math.min(AD_CAP[k], Math.floor(num(ad.n && ad.n[k], 0)));
   var pl = o.pl && typeof o.pl === 'object' ? o.pl : {};
   PLACES.forEach(function (p) {
@@ -1745,7 +1745,7 @@ function cloudSeed(raw, stamp) {
     }
     var o = validate(j);
     if (!o) return false;
-    o.cl = { base: stamp || '', sig: cloudSig(o), bpt: o.ads.pt, erased: 0, force: 0, old: [], fly: null };
+    o.cl = { base: stamp || '', sig: cloudSig(o), bap: o.ads.ap, erased: 0, force: 0, old: [], fly: null };
     localStorage.setItem(KEY, JSON.stringify(o));
     return true;
   } catch (e) {
@@ -1759,7 +1759,7 @@ function joinTx(a, b) {
   return a.concat(b).filter(function (t) { return seen[t] ? false : (seen[t] = 1); }).slice(-100);
 }
 
-// play seconds within which two games count as played equally
+// play seconds (time on screen with a touch in the last minute) within which two games count as played equally
 var CLOUD_TIE = 45;
 
 // the away summary of the last copy taken, and whether one was taken since the app went to the background
@@ -1840,18 +1840,19 @@ function meet(k, l, lMine) {
     c.n = a.n;
   }
   c.pt = Math.max(c.pt, a.pt);
+  c.ap = Math.max(c.ap, a.ap);
   // a started starter window is not restarted
   c.sd = c.sd && a.sd ? Math.min(c.sd, a.sd) : c.sd || a.sd;
 }
 
 // the game now agrees with the cloud copy under stamp, whose signature and play time are given; the base it leaves is
 // remembered, so a read that was slow and comes late is known to be old news
-function agree(stamp, sig, pt) {
+function agree(stamp, sig, ap) {
   var c = S.cl;
   if (c.base && c.base !== stamp) c.old = c.old.concat([c.base]).slice(-8);
   c.base = stamp;
   c.sig = sig;
-  c.bpt = pt;
+  c.bap = ap;
   c.erased = 0;
   c.force = 0;
 }
@@ -1879,18 +1880,18 @@ function takeCloud(raw, stamp, current) {
   if (stamp && (stamp === c.base || (!current && c.old.indexOf(stamp) >= 0))) return false;
   // the copy is this device's own last put, which landed without its answer reaching the game
   if (stamp && c.fly && stamp === c.fly.stamp) {
-    agree(stamp, c.fly.sig, c.fly.pt);
+    agree(stamp, c.fly.sig, c.fly.ap);
     c.fly = null;
     return false;
   }
   // an erase that has not reached the cloud yet is the player's last word: nothing replaces it, and its forced put follows
   if (c.force) return false;
   var theirs = cloudSig(o);
-  var their = o.ads.pt;
-  var follows = cloudSig(S) === c.sig && (their >= c.bpt || o.cl.erased === 1);
+  var their = o.ads.ap;
+  var follows = cloudSig(S) === c.sig && (their >= c.bap || o.cl.erased === 1);
   if (!follows) {
-    var mine = S.ads.pt - c.bpt;
-    var other = their - c.bpt;
+    var mine = S.ads.ap - c.bap;
+    var other = their - c.bap;
     // two devices open at once each get the other's copy after a put and have played about as long; a gap that small is
     // latency, not play, so the device that stays is the one with the larger id on both of them, and nobody flips back
     var gap = mine - other;
@@ -1905,7 +1906,7 @@ function takeCloud(raw, stamp, current) {
   }
   meet(o, S, true);
   var joined = cloudSig(o);
-  o.cl = { base: stamp, sig: theirs, bpt: their, erased: 0, force: 0, old: c.base && c.base !== stamp ? c.old.concat([c.base]).slice(-8) : c.old, fly: null };
+  o.cl = { base: stamp, sig: theirs, bap: their, erased: 0, force: 0, old: c.base && c.base !== stamp ? c.old.concat([c.base]).slice(-8) : c.old, fly: null };
   S = o;
   clearShoppers();
   // the copy was saved when the other device last ran: the time since is time away

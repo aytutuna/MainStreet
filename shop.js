@@ -83,6 +83,7 @@ var cloudShown = false;
 var cloudPend = null;
 var cloudRet = null;
 var cloudAt = -CLOUD_EVERY;
+var lastTouch = -60000;
 var devKey = '';
 
 // the time comes from the server (the native apps ask alazy.app, a plain browser asks it itself); the game starts and
@@ -189,7 +190,7 @@ function cloudPut(erase) {
   // an erase stays forced until a forced put has landed
   var force = erase === true || !!cl.force;
   var stamp = devId() + ':' + stampNext();
-  cl.fly = { stamp: stamp, sig: sig, pt: S.ads.pt, force: force ? 1 : 0 };
+  cl.fly = { stamp: stamp, sig: sig, ap: S.ads.ap, force: force ? 1 : 0 };
   cloudLive = stamp;
   cloudAt = performance.now();
   post({ cmd: 'cloudPut', json: saved(), at: Math.round(clock()), dev: devId(), stamp: stamp, base: cl.base, force: force });
@@ -212,7 +213,7 @@ function cloudAck(ev) {
   var f = S.cl.fly;
   if (!f || f.stamp !== ev.stamp) return;
   S.cl.fly = null;
-  if (ev.ok) agree(f.stamp, f.sig, f.pt);
+  if (ev.ok) agree(f.stamp, f.sig, f.ap);
   save();
 }
 
@@ -628,9 +629,11 @@ function shopStart() {
   if (S.iap.noads) post({ cmd: 'adStop' });
   if (S.ads.pt >= AD_START) adBegin();
   $('b-shop').hidden = false;
-  // play time counts only while the game is in front
+  // play time counts only while the game is in front, and active play only with a touch in the last minute
+  document.addEventListener('pointerdown', function () { lastTouch = performance.now(); }, true);
   setInterval(function () {
     if (document.hidden) return;
+    if (performance.now() - lastTouch < 60000) S.ads.ap++;
     S.ads.pt++;
     if (S.ads.pt >= AD_START) adBegin();
   }, 1000);
