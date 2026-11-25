@@ -17,6 +17,8 @@ final class AdsBridge: NSObject, FullScreenContentDelegate {
     private var reward: RewardedAd?
     private var started = false
     private var stopped = false
+    private var loading = false
+    private var retry: DispatchWorkItem?
     private var loadedAt = Date.distantPast
     private var muted = false
     private var monitor: NWPathMonitor?
@@ -58,6 +60,8 @@ final class AdsBridge: NSObject, FullScreenContentDelegate {
         monitor?.cancel()
         monitor = nil
         reward = nil
+        retry?.cancel()
+        retry = nil
         ConsentInformation.shared.requestConsentInfoUpdate(with: RequestParameters()) { [weak self] _ in self?.privacy() }
     }
 
@@ -148,17 +152,25 @@ final class AdsBridge: NSObject, FullScreenContentDelegate {
     }
 
     private func loadReward() {
-        guard !stopped else { return }
+        guard !stopped, !loading else { return }
+        // a load asked for now replaces the retry that was waiting
+        retry?.cancel()
+        retry = nil
+        loading = true
         RewardedAd.load(with: rewardUnit, request: Request()) { [weak self] ad, _ in
             DispatchQueue.main.async {
-                guard self?.stopped == false else { return }
-                self?.reward = ad
+                guard let self = self else { return }
+                self.loading = false
+                guard !self.stopped else { return }
+                self.reward = ad
                 if ad != nil {
-                    self?.loadedAt = Date()
+                    self.loadedAt = Date()
                     DispatchQueue.main.asyncAfter(deadline: .now() + 50 * 60) { [weak self] in self?.resume() }
-                    self?.send("reward", "ready")
+                    self.send("reward", "ready")
                 } else {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 60) { self?.loadReward() }
+                    let work = DispatchWorkItem { [weak self] in self?.loadReward() }
+                    self.retry = work
+                    DispatchQueue.main.asyncAfter(deadline: .now() + 60, execute: work)
                 }
             }
         }
