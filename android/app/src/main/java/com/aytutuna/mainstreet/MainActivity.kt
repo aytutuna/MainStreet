@@ -230,6 +230,7 @@ class MainActivity : ComponentActivity() {
     }
 
     private companion object {
+        // the saved game lives under this origin; changing it would start every player over
         const val HOST = "appassets.androidplatform.net"
         const val MAX_WIDTH_DP = 480
         const val MIN_WEBVIEW = 89

@@ -54,6 +54,7 @@ private final class NotifyHandler: NSObject, WKScriptMessageHandler {
     }
 }
 
+// The origin app://game holds the saved game in local storage; changing it would start every player over.
 // Serves the bundle under app://game/ so module scripts and .glb files load with real MIME types (file:// is unreliable for them).
 // Media elements ask for byte ranges, so those are answered too.
 private final class BundleHandler: NSObject, WKURLSchemeHandler {
