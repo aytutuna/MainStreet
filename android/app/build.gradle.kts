@@ -64,11 +64,9 @@ android {
         debug {
             buildConfigField("boolean", "TESTER", "true")
             buildConfigField("String", "AD_REWARD", "\"ca-app-pub-3940256099942544/5224354917\"")
-            buildConfigField("String", "AD_INTER", "\"ca-app-pub-3940256099942544/1033173712\"")
         }
         release {
             buildConfigField("String", "AD_REWARD", "\"ca-app-pub-8985801196261971/6757412125\"")
-            buildConfigField("String", "AD_INTER", "\"ca-app-pub-8985801196261971/6205701600\"")
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
@@ -79,7 +77,6 @@ android {
             matchingFallbacks += "release"
             buildConfigField("boolean", "TESTER", "true")
             buildConfigField("String", "AD_REWARD", "\"ca-app-pub-3940256099942544/5224354917\"")
-            buildConfigField("String", "AD_INTER", "\"ca-app-pub-3940256099942544/1033173712\"")
         }
     }
 

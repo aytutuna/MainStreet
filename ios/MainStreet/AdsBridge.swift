@@ -6,17 +6,14 @@ import UserMessagingPlatform
 
 #if DEBUG || TESTER
 private let rewardUnit = "ca-app-pub-3940256099942544/1712485313"
-private let interUnit = "ca-app-pub-3940256099942544/4411468910"
 #else
 private let rewardUnit = "ca-app-pub-8985801196261971/4925455704"
-private let interUnit = "ca-app-pub-8985801196261971/5084191623"
 #endif
 
-// Rewarded and interstitial ads, loaded ahead. Order at launch: the consent form where the region needs one, then the
+// Rewarded ads, loaded ahead. Order at launch: the consent form where the region needs one, then the
 // tracking prompt, then the SDK starts and the first ads load.
 final class AdsBridge: NSObject, FullScreenContentDelegate {
     private var reward: RewardedAd?
-    private var inter: InterstitialAd?
     private var started = false
     private let presenter: () -> UIViewController?
     private let emit: ([String: Any]) -> Void
@@ -60,7 +57,6 @@ final class AdsBridge: NSObject, FullScreenContentDelegate {
             MobileAds.shared.audioVideoManager.isAudioSessionApplicationManaged = true
             MobileAds.shared.start { [weak self] _ in
                 self?.loadReward()
-                self?.loadInter()
             }
         }
         if ATTrackingManager.trackingAuthorizationStatus == .notDetermined {
@@ -83,60 +79,34 @@ final class AdsBridge: NSObject, FullScreenContentDelegate {
         }
     }
 
-    private func loadInter() {
-        InterstitialAd.load(with: interUnit, request: Request()) { [weak self] ad, _ in
-            DispatchQueue.main.async {
-                self?.inter = ad
-                if ad != nil {
-                    self?.send("inter", "ready")
-                } else {
-                    DispatchQueue.main.asyncAfter(deadline: .now() + 60) { self?.loadInter() }
-                }
-            }
-        }
-    }
-
     func report() {
         send("reward", reward != nil ? "ready" : "none")
-        send("inter", inter != nil ? "ready" : "none")
     }
 
     func show(_ kind: String) {
-        guard let vc = presenter() else { return send(kind, "failed") }
-        if kind == "reward" {
-            guard let ad = reward else { return send(kind, "failed") }
-            reward = nil
-            send(kind, "none")
-            ad.fullScreenContentDelegate = self
-            ad.present(from: vc) { [weak self] in self?.send("reward", "rewarded") }
-        } else {
-            guard let ad = inter else { return send(kind, "failed") }
-            inter = nil
-            send(kind, "none")
-            ad.fullScreenContentDelegate = self
-            ad.present(from: vc)
-        }
+        guard kind == "reward" else { return }
+        guard let vc = presenter(), let ad = reward else { return send(kind, "failed") }
+        reward = nil
+        send(kind, "none")
+        ad.fullScreenContentDelegate = self
+        ad.present(from: vc) { [weak self] in self?.send("reward", "rewarded") }
     }
 
     private func send(_ kind: String, _ state: String) {
         emit(["t": "ad", "kind": kind, "state": state])
     }
 
-    private func kind(of ad: FullScreenPresentingAd) -> String {
-        ad is RewardedAd ? "reward" : "inter"
-    }
-
     func adWillPresentFullScreenContent(_ ad: FullScreenPresentingAd) {
-        send(kind(of: ad), "open")
+        send("reward", "open")
     }
 
     func adDidDismissFullScreenContent(_ ad: FullScreenPresentingAd) {
-        send(kind(of: ad), "closed")
-        if ad is RewardedAd { loadReward() } else { loadInter() }
+        send("reward", "closed")
+        loadReward()
     }
 
     func ad(_ ad: FullScreenPresentingAd, didFailToPresentFullScreenContentWithError error: Error) {
-        send(kind(of: ad), "failed")
-        if ad is RewardedAd { loadReward() } else { loadInter() }
+        send("reward", "failed")
+        loadReward()
     }
 }

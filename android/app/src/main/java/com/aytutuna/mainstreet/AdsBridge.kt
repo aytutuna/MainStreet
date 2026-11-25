@@ -8,8 +8,6 @@ import com.google.android.gms.ads.identifier.AdvertisingIdClient
 import com.google.android.gms.ads.FullScreenContentCallback
 import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.MobileAds
-import com.google.android.gms.ads.interstitial.InterstitialAd
-import com.google.android.gms.ads.interstitial.InterstitialAdLoadCallback
 import com.google.android.gms.ads.rewarded.RewardedAd
 import com.google.android.gms.ads.rewarded.RewardedAdLoadCallback
 import com.google.android.ump.ConsentInformation
@@ -17,10 +15,9 @@ import com.google.android.ump.ConsentRequestParameters
 import com.google.android.ump.UserMessagingPlatform
 import org.json.JSONObject
 
-// Rewarded and interstitial ads, loaded ahead and only once the consent step allows requests.
+// Rewarded ads, loaded ahead and only once the consent step allows requests.
 class AdsBridge(private val activity: MainActivity) {
     private var reward: RewardedAd? = null
-    private var inter: InterstitialAd? = null
     private var started = false
     private var stopped = false
     private val retry = Handler(Looper.getMainLooper())
@@ -42,7 +39,6 @@ class AdsBridge(private val activity: MainActivity) {
         stopped = true
         retry.removeCallbacksAndMessages(null)
         reward = null
-        inter = null
     }
 
     private fun privacy() {
@@ -67,7 +63,6 @@ class AdsBridge(private val activity: MainActivity) {
         started = true
         MobileAds.initialize(activity) {
             loadReward()
-            loadInter()
         }
     }
 
@@ -86,56 +81,34 @@ class AdsBridge(private val activity: MainActivity) {
         })
     }
 
-    private fun loadInter() {
-        InterstitialAd.load(activity, BuildConfig.AD_INTER, AdRequest.Builder().build(), object : InterstitialAdLoadCallback() {
-            override fun onAdLoaded(ad: InterstitialAd) {
-                if (stopped) return
-                inter = ad
-                state("inter", "ready")
-            }
-
-            override fun onAdFailedToLoad(error: LoadAdError) {
-                inter = null
-                if (!stopped) retry.postDelayed({ loadInter() }, RETRY)
-            }
-        })
-    }
-
     fun report() {
         state("reward", if (reward != null) "ready" else "none")
-        state("inter", if (inter != null) "ready" else "none")
     }
 
     fun show(kind: String) {
-        val callback = object : FullScreenContentCallback() {
+        if (kind != "reward") return
+        val ad = reward ?: return state(kind, "failed")
+        reward = null
+        state(kind, "none")
+        ad.fullScreenContentCallback = object : FullScreenContentCallback() {
             override fun onAdShowedFullScreenContent() = state(kind, "open")
 
             override fun onAdDismissedFullScreenContent() {
                 state(kind, "closed")
-                again(kind)
+                again()
             }
 
             override fun onAdFailedToShowFullScreenContent(error: AdError) {
                 state(kind, "failed")
-                again(kind)
+                again()
             }
         }
-        if (kind == "reward") {
-            val ad = reward ?: return state(kind, "failed")
-            reward = null
-            state(kind, "none")
-            ad.fullScreenContentCallback = callback
-            ad.show(activity) { state(kind, "rewarded") }
-        } else {
-            val ad = inter ?: return state(kind, "failed")
-            inter = null
-            state(kind, "none")
-            ad.fullScreenContentCallback = callback
-            ad.show(activity)
-        }
+        ad.show(activity) { state(kind, "rewarded") }
     }
 
-    private fun again(kind: String) = if (stopped) Unit else if (kind == "reward") loadReward() else loadInter()
+    private fun again() {
+        if (!stopped) loadReward()
+    }
 
     private fun state(kind: String, state: String) {
         activity.emit(JSONObject().put("t", "ad").put("kind", kind).put("state", state))

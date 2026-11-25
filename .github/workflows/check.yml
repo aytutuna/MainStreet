@@ -28,3 +28,8 @@ jobs:
         run: node scripts/check_lang.mjs --all
       - name: Simulation and saves
         run: node scripts/check_sim.mjs
+      - name: No interstitials
+        run: |
+          if git grep -n -i -E 'interstitial|5084191623|6205701600' -- . ':!.github' ':!vendor' ':!CLAUDE.local.md'; then
+            exit 1
+          fi
