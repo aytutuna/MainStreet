@@ -294,6 +294,18 @@ run('cloudPut()');
 if (puts().length !== 1) fail('the waiting change was not put');
 now = T17;
 
+// 10b. a put the native side could not write is sent again on the next put, as when the game goes to the background
+device(T9);
+change();
+run('cloudPut()');
+if (puts().length !== 1) fail('the change was not put');
+run('cloudPut()');
+if (puts().length !== 1) fail('an unchanged game was put again');
+nativeEv({ t: 'cloudPut', ok: false });
+run('cloudPut()');
+if (puts().length !== 2) fail('a put that failed natively was not sent again');
+run('clearTimeout(cloudTimer); cloudTimer = 0');
+
 // 11. launch with a local save: play waits for the cloud's first answer, the fresh copy is taken
 device(T9);
 store['mainstreet.v11'] = copy(T9);

@@ -92,17 +92,19 @@ class CloudBridge(private val activity: MainActivity) {
         }
         writing = true
         signedIn { ok ->
-            if (ok != true) return@signedIn done()
-            open(::done) { snap ->
+            if (ok != true) return@signedIn done(false)
+            open({ done(false) }) { snap ->
                 val body = JSONObject().put("json", msg.optString("json")).put("at", msg.optLong("at")).put("dev", msg.optString("dev"))
                 snap.snapshotContents.writeBytes(body.toString().toByteArray())
                 snapshots.commitAndClose(snap, SnapshotMetadataChange.Builder().setDescription(activity.getString(R.string.notification_title)).build())
-                    .addOnCompleteListener { done() }
+                    .addOnCompleteListener { done(it.isSuccessful) }
             }
         }
     }
 
-    private fun done() {
+    // a write that did not land is reported so the page sends the save again
+    private fun done(ok: Boolean = true) {
+        if (!ok) activity.emit(JSONObject().put("t", "cloudPut").put("ok", false))
         writing = false
         waiting?.let {
             waiting = null

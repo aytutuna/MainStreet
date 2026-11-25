@@ -23,7 +23,8 @@
 //                                          synced yet (iPhone): the page may take it but does not write until a fresh one comes
 //   {t: 'cloudState', state}               'available', 'signedOut', 'pending' (signed in, first sync not done) or 'unavailable';
 //                                          answers {cmd: 'cloudState'}, skips the queue. The page sends {cmd: 'cloudPut', json, at, dev}
-//   {t: 'notify', state}                   'granted' or 'denied', answering the notify handler's {cmd: 'ask'}; the page does not use it
+//   {t: 'cloudPut', ok: false}             a put that could not be written (Android); skips the queue, and the page sends it again
+//   {t: 'notify', state}                'granted' or 'denied', answering the notify handler's {cmd: 'ask'}; the page does not use it
 //   {t: 'radio', state, url, title?}       the stream being played: state is 'buffering', 'playing', 'paused' (headphones
 //                                          unplugged) or 'error' (it gave out), url the one
 //                                          the page asked for, title what the station says is on (ICY metadata)
@@ -180,6 +181,12 @@ function cloudPut(erase) {
   cloudAt = performance.now();
   if (erase === true) cloudTs = S.ts;
   post({ cmd: 'cloudPut', json: saved(), at: Math.round(clock()), dev: devId() });
+}
+
+// the native side could not write the last put: the save counts as unsent, so the next put or the hide sends it again
+function cloudFailed() {
+  cloudSent = '';
+  cloudSoon();
 }
 
 function cloudSoon() {
@@ -598,6 +605,7 @@ function adBegin() {
 
 window.nativeStore = function (ev) {
   if (ev.t === 'time') gotTime(ev);
+  else if (ev.t === 'cloudPut') cloudFailed();
   else if (ev.t === 'cloud' || ev.t === 'cloudState') cloudEvent(ev);
   else if (loaded) handle(ev);
   else queued.push(ev);
