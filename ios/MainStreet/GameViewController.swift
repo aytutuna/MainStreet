@@ -122,6 +122,9 @@ final class GameViewController: UIViewController, WKNavigationDelegate, WKUIDele
         config.userContentController.add(BuzzHandler(), name: "buzz")
         config.userContentController.add(NotifyHandler(), name: "notify")
         config.userContentController.add(store, name: "store")
+        #if DEBUG || TESTER
+        config.userContentController.addUserScript(WKUserScript(source: "window.TESTER = 1;", injectionTime: .atDocumentStart, forMainFrameOnly: true))
+        #endif
         config.setURLSchemeHandler(BundleHandler(), forURLScheme: "app")
         let web = WKWebView(frame: .zero, configuration: config)
         web.isOpaque = true

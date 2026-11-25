@@ -18,7 +18,8 @@ jobs:
     runs-on: xcode-27
     timeout-minutes: 60
     env:
-      TESTER_CONDITIONS: ${{ inputs.tester && '$(inherited) TESTER' || '$(inherited)' }}
+      TESTER_CONDITIONS: ${{ inputs.tester && 'TESTER' || '' }}
+      MS_TESTER: ${{ inputs.tester && '1' || '' }}
     steps:
       - uses: actions/checkout@v7.0.1
       - name: Show Xcode
@@ -73,7 +74,27 @@ jobs:
             -destination "platform=iOS Simulator,id=$UDID" \
             -derivedDataPath "$RUNNER_TEMP/build" \
             SWIFT_ACTIVE_COMPILATION_CONDITIONS="$TESTER_CONDITIONS" \
+            MS_TESTER="$MS_TESTER" \
             CODE_SIGNING_ALLOWED=NO
+      # The app counts a Debug build as a tester build, so the condition above leaves DEBUG out: a run without the
+      # tester switch must carry the live ad units, and a tester run the test ones.
+      - name: Check the tester switch
+        run: |
+          set -euo pipefail
+          app="$RUNNER_TEMP/build/Build/Products/Debug-iphonesimulator/MainStreet.app"
+          stamp=$(plutil -extract MSTester raw "$app/Info.plist")
+          live='ca-app-pub-8985801196261971/4925455704'
+          test='ca-app-pub-3940256099942544/1712485313'
+          find "$app" -maxdepth 1 -type f \( -name MainStreet -o -name '*.dylib' \) -exec strings -a {} + > "$RUNNER_TEMP/strings.txt"
+          if [ "${{ inputs.tester }}" = "true" ]; then
+            [ "$stamp" = "1" ]
+            grep -q "$test" "$RUNNER_TEMP/strings.txt"
+            ! grep -q "$live" "$RUNNER_TEMP/strings.txt"
+          else
+            [ -z "$stamp" ]
+            grep -q "$live" "$RUNNER_TEMP/strings.txt"
+            ! grep -q "$test" "$RUNNER_TEMP/strings.txt"
+          fi
       - name: Boot
         run: |
           xcrun simctl boot "$UDID"

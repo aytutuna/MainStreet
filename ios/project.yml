@@ -78,6 +78,7 @@ targets:
     settings:
       base:
         PRODUCT_NAME: MainStreet
+        MS_TESTER: ""
         PRODUCT_BUNDLE_IDENTIFIER: com.aytutuna.mainstreet
         INFOPLIST_FILE: MainStreet/Info.plist
         GENERATE_INFOPLIST_FILE: NO

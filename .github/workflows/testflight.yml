@@ -32,6 +32,7 @@ jobs:
     timeout-minutes: 60
     env:
       TESTER_CONDITIONS: ${{ inputs.tester && '$(inherited) TESTER' || '$(inherited)' }}
+      MS_TESTER: ${{ inputs.tester && '1' || '' }}
       EXPORT_DESTINATION: ${{ inputs.upload && 'upload' || 'export' }}
       APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
       APPSTORE_ISSUER_ID: ${{ secrets.APPSTORE_ISSUER_ID }}
@@ -90,8 +91,14 @@ jobs:
             -archivePath "$RUNNER_TEMP/MainStreet.xcarchive" \
             CURRENT_PROJECT_VERSION=$((${{ github.run_number }} * 10 + ${{ github.run_attempt }})) \
             SWIFT_ACTIVE_COMPILATION_CONDITIONS="$TESTER_CONDITIONS" \
+            MS_TESTER="$MS_TESTER" \
             DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
             CODE_SIGNING_ALLOWED=NO
+      - name: Check the tester switch
+        run: |
+          app="$RUNNER_TEMP/MainStreet.xcarchive/Products/Applications/MainStreet.app"
+          stamp=$(plutil -extract MSTester raw "$app/Info.plist")
+          if [ "${{ inputs.tester }}" = "true" ]; then [ "$stamp" = "1" ]; else [ -z "$stamp" ]; fi
       # An unsigned archive leaves the ads frameworks it embeds without a valid signature, and the export only
       # re-signs code that is signed already, so they get an ad hoc signature first and the export signs them for real.
       - name: Sign the embedded frameworks ad hoc

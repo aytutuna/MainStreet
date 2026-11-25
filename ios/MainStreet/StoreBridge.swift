@@ -42,6 +42,8 @@ final class StoreBridge: NSObject, WKScriptMessageHandler, PurchasesDelegate {
             ads.report()
         case "privacy":
             ads.options()
+        case "adId":
+            ads.adId()
         case "ad":
             ads.show(msg["kind"] as? String ?? "")
         case "radio":

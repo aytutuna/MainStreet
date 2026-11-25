@@ -1,9 +1,10 @@
+import AdSupport
 import AppTrackingTransparency
 import GoogleMobileAds
 import UIKit
 import UserMessagingPlatform
 
-#if DEBUG
+#if DEBUG || TESTER
 private let rewardUnit = "ca-app-pub-3940256099942544/1712485313"
 private let interUnit = "ca-app-pub-3940256099942544/4411468910"
 #else
@@ -39,6 +40,11 @@ final class AdsBridge: NSObject, FullScreenContentDelegate {
     // the menu shows "Privacy choices" only where the consent SDK says the player must be able to reopen the form
     private func privacy() {
         emit(["t": "privacy", "required": ConsentInformation.shared.privacyOptionsRequirementStatus == .required])
+    }
+
+    func adId() {
+        let allowed = ATTrackingManager.trackingAuthorizationStatus == .authorized
+        emit(["t": "adId", "id": allowed ? ASIdentifierManager.shared().advertisingIdentifier.uuidString : ""])
     }
 
     func options() {
