@@ -96,7 +96,8 @@ class RadioBridge(private val activity: MainActivity) {
         other = on
     }
 
-    // the web view's sounds play as USAGE_GAME as well, so only media and unknown usages count as another app's music
+    // the web view's output plays as media too and cannot be told from another app's, so the page holds its audio
+    // context while it asks (ui.js askOther); the radio's own player is USAGE_GAME and does not count
     private fun music(c: AudioPlaybackConfiguration): Boolean {
         val usage = c.audioAttributes.usage
         return usage == android.media.AudioAttributes.USAGE_MEDIA || usage == android.media.AudioAttributes.USAGE_UNKNOWN

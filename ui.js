@@ -429,16 +429,18 @@ function rest() {
   }, 2500);
 }
 
-// Whether another app plays is not known after coming to the front until the app answers, so the radio waits for it
+// Whether another app plays is not known after coming to the front until the app answers, so the radio waits for it.
+// The web view's own output plays as media too, so the context is held while the app looks; the answer lets it go on
 function askOther() {
   if (!native()) return;
+  if (ac && ac.state === 'running') ac.suspend();
   unsure = true;
   clearTimeout(unsureT);
   unsureT = setTimeout(function () {
     unsure = false;
     radioSync();
   }, 2000);
-  post({ cmd: 'radio', check: true });
+  setTimeout(function () { post({ cmd: 'radio', check: true }); }, 400);
 }
 
 function radioEvent(ev) {
@@ -2327,7 +2329,6 @@ function wire() {
       cloudTook = false;
       return;
     }
-    if (ac && snd) ac.resume();
     askOther();
     radioSync();
     if (!hiddenAt) return;
