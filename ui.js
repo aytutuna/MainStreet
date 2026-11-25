@@ -1407,6 +1407,7 @@ function meter(id, v, k, val, why, more) {
   set(k, id + 'w', b.querySelector('.why'), 'textContent', why);
   set(k, id + 'm', b.querySelector('.more'), 'textContent', more);
   flag(k, id + 'f', b.querySelector('.fix'), 'alt', v >= 0.8);
+  set(k, id + 'h', b.querySelector('.fix').style, 'display', METERS.filter(function (m) { return m.id === id; })[0].left() ? '' : 'none');
 }
 
 // the first time a meter runs red, once ever, and not over a box or before the first purchase
@@ -1599,9 +1600,9 @@ function openItem(id, first, then) {
   openPlace(id, S.pi[id][first] < p.items[first].at.length ? first : then);
 }
 
-// the first item of a place with levels left, or -1
+// the first item of an open place with levels left, or -1
 function firstLeft(id) {
-  for (var j = 0; j < PL[id].items.length; j++) if (placePiece(id, j) >= 0) return j;
+  for (var j = 0; j < PL[id].items.length; j++) if (placePiece(id, j) >= 0 && placeCost(id, j) > 0) return j;
   return -1;
 }
 
@@ -1621,7 +1622,7 @@ function perCoin(id, j, f) {
 
 // a meter of tills or shelves: its own place, unless a level of the Break Room does more for the price
 function tapMeter(id, f) {
-  var j = S.pi[id][0] < PL[id].items[0].at.length ? 0 : 1;
+  var j = firstLeft(id);
   var lj = firstLeft('lounge');
   if (perCoin('lounge', lj, f) > perCoin(id, j, f)) openPlace('lounge', lj);
   else openPlace(id, j);
