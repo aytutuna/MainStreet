@@ -558,6 +558,7 @@ LANG['en'] = {
   // Banner when the game on this device was replaced by a newer one from another device: the bold line, then the small line.
   'cloud.loaded': 'Saved game loaded',
   'cloud.loaded_note': 'Your latest progress came from your other device.',
+  'cloud.back_note': 'Your saved game was brought back.',
   // Small line in the menu on Android when the game cannot reach Google Play Games, so the save stays on the phone.
   'cloud.local_only': 'Saved on this phone only',
   'menu.erase': 'Erase all progress',

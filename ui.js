@@ -2307,6 +2307,7 @@ function wire() {
       cloudPut();
       tell({ cmd: 'set', list: reminders() });
       if (!hiddenAt) hiddenAt = clock();
+      cloudTook = false;
       return;
     }
     if (ac && snd) ac.resume();
@@ -2318,7 +2319,8 @@ function wire() {
       var sec = (clock() - hiddenAt) / 1000;
       hiddenAt = 0;
       lastTick = performance.now();
-      if (sec > 60) {
+      // a copy taken meanwhile already paid the time since it was saved
+      if (sec > 60 && !cloudTook) {
         var a = away(sec);
         if (showAway(a)) updateBest();
       }
@@ -2801,8 +2803,13 @@ function begin(fromCloud) {
     updateBest();
     View.focusNow();
     updateGoals();
-    showAway(gone);
-    if (fromCloud) banner('<b>' + tl('cloud.loaded') + '</b><small>' + tl('cloud.loaded_note') + '</small>', 0);
+    if (cloudTaken) {
+      showAway(cloudAway);
+      banner('<b>' + tl('cloud.loaded') + '</b><small>' + tl('cloud.loaded_note') + '</small>', 0);
+    } else {
+      showAway(gone);
+      if (fromCloud) banner('<b>' + tl('cloud.loaded') + '</b><small>' + tl('cloud.back_note') + '</small>', 0);
+    }
     lastTick = performance.now();
     requestAnimationFrame(loop);
     setInterval(function () { if (!timeHeld && !document.hidden) save(); }, 5000);

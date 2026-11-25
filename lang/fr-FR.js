@@ -343,6 +343,7 @@ LANG['fr-FR'] = {
   'save.looking': 'Looking for your saved game',
   'cloud.loaded': 'Saved game loaded',
   'cloud.loaded_note': 'Your latest progress came from your other device.',
+  'cloud.back_note': 'Your saved game was brought back.',
   'cloud.local_only': 'Saved on this phone only',
   'menu.erase': 'Effacer toute la progression',
   'num.suffixes': ',k,M,Md,B,Bd,T,Td,Qa,Qd,Qi,Qid',

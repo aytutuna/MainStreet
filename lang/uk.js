@@ -364,6 +364,7 @@ LANG['uk'] = {
   'save.looking': 'Looking for your saved game',
   'cloud.loaded': 'Saved game loaded',
   'cloud.loaded_note': 'Your latest progress came from your other device.',
+  'cloud.back_note': 'Your saved game was brought back.',
   'cloud.local_only': 'Saved on this phone only',
   'menu.erase': 'Стерти весь прогрес',
 

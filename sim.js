@@ -1735,6 +1735,9 @@ function joinTx(a, b) {
 
 // a game under this many seconds of play is replaced by any save from the cloud
 var YOUNG = 600;
+// the away summary of the last copy taken, and whether one was taken since the app went to the background
+var cloudAway = null;
+var cloudTook = false;
 
 // the save of another device meets this game: the newer one is kept, a young game always gives way. True when it replaced this game
 function takeCloud(raw) {
@@ -1757,9 +1760,27 @@ function takeCloud(raw) {
     c.n = a.n;
   }
   c.pt = Math.max(c.pt, a.pt);
-  o.iap.tx = tx;
+  // what was bought on either device stays bought
+  var i = S.iap;
+  var p = o.iap;
+  ['noads', 'x2'].forEach(function (f) {
+    if (i[f] && !p[f]) {
+      p[f] = 1;
+      p[f + 'Tx'] = i[f + 'Tx'];
+      p[f + 'User'] = i[f + 'User'];
+    }
+  });
+  p.starter = Math.max(p.starter, i.starter);
+  p.offered = p.offered || i.offered;
+  p.deal = p.deal || i.deal;
+  p.held = p.held || i.held;
+  p.tx = tx;
   S = o;
   clearShoppers();
+  // the copy was saved when the other device last ran: the time since is time away
+  var sec = (clock() - o.ts) / 1000;
+  cloudAway = sec > 60 ? away(sec) : null;
+  cloudTook = true;
   try {
     localStorage.setItem(KEY, saved());
   } catch (e) {}

@@ -60,6 +60,7 @@ var cloudFind = null;
 var cloudFound = null;
 var cloudTimer = 0;
 var cloudLate = 0;
+var cloudTaken = false;
 var cloudAt = -CLOUD_EVERY;
 var devKey = '';
 
@@ -152,9 +153,9 @@ function devId() {
   return devKey || 'x';
 }
 
-// what a game this young would write must not replace a save the cloud has not told us about yet
+// nothing is written before the cloud has answered, and a game this young waits for a signed-in cloud's first sync
 function cloudReady() {
-  return S.ads.pt >= YOUNG || (cloudSeen && cloudState !== 'pending');
+  return cloudSeen && (cloudState !== 'pending' || S.ads.pt >= YOUNG);
 }
 
 function cloudPut(erase) {
@@ -202,8 +203,14 @@ function cloudEvent(ev) {
     cloudSeen = true;
     if (cloudFind) cloudFound = ev.json || cloudFound;
     else if (ev.json && loaded && ev.dev !== devId() && takeCloud(ev.json)) {
-      afterLoad();
-      banner('<b>' + tl('cloud.loaded') + '</b><small>' + tl('cloud.loaded_note') + '</small>', 0);
+      $('away').hidden = true;
+      if (S.iap.noads) post({ cmd: 'adStop' });
+      // the scene is not built yet while the models load: the launch shows it all once the view is ready
+      if (View.ready()) {
+        afterLoad();
+        showAway(cloudAway);
+        banner('<b>' + tl('cloud.loaded') + '</b><small>' + tl('cloud.loaded_note') + '</small>', 0);
+      } else cloudTaken = true;
     }
   }
   if (cloudFind && (cloudFound || (cloudSeen && cloudState && cloudState !== 'pending'))) cloudEnd();
