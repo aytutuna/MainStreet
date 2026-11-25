@@ -565,6 +565,7 @@ LANG['en'] = {
   'cloud.back_note': 'Your saved game was brought back.',
   // Small line in the menu on Android when the game cannot reach Google Play Games, so the save stays on the phone.
   'cloud.local_only': 'Saved on this phone only',
+  'cloud.sign_in': 'Sign in',
   'menu.erase': 'Erase all progress',
 
   // Compact number suffixes, comma separated and in order: none, thousand, million, billion, trillion, then the short names

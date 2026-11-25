@@ -366,6 +366,7 @@ LANG['da'] = {
   'cloud.loaded_note': 'Dine seneste fremskridt kom fra din anden enhed.',
   'cloud.back_note': 'Dit gemte spil er hentet tilbage.',
   'cloud.local_only': 'Kun gemt på denne telefon',
+  'cloud.sign_in': 'Sign in',
   'menu.erase': 'Slet alle fremskridt',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

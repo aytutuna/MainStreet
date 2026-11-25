@@ -368,6 +368,7 @@ LANG['ca'] = {
   'cloud.loaded_note': 'El teu últim progrés ve de l\'altre dispositiu.',
   'cloud.back_note': 'S\'ha recuperat la teva partida desada.',
   'cloud.local_only': 'Desada només en aquest telèfon',
+  'cloud.sign_in': 'Sign in',
   'menu.erase': 'Esborra tot el progrés',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

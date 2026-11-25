@@ -366,6 +366,7 @@ LANG['de'] = {
   'cloud.loaded_note': 'Dein letzter Fortschritt kam von deinem anderen Gerät.',
   'cloud.back_note': 'Dein Spielstand wurde wiederhergestellt.',
   'cloud.local_only': 'Nur auf diesem Telefon gespeichert',
+  'cloud.sign_in': 'Sign in',
   'menu.erase': 'Alles zurücksetzen',
 
   'num.suffixes': ',K,Mio,Mrd,Bio,Brd,Trl,Trd,Qa,Qad,Qi,Qid',

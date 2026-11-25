@@ -368,6 +368,7 @@ LANG['ro'] = {
   'cloud.loaded_note': 'Cel mai recent progres a venit de pe celălalt dispozitiv.',
   'cloud.back_note': 'Jocul tău salvat a fost recuperat.',
   'cloud.local_only': 'Salvat doar pe acest telefon',
+  'cloud.sign_in': 'Sign in',
   'menu.erase': 'Șterge tot progresul',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

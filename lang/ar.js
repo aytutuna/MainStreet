@@ -341,6 +341,7 @@ LANG['ar'] = {
   "cloud.loaded_note": "جاء آخر تقدم لك من جهازك الآخر.",
   "cloud.back_note": "تمت استعادة لعبتك المحفوظة.",
   "cloud.local_only": "محفوظة على هذا الهاتف فقط",
+  "cloud.sign_in": "Sign in",
   "menu.erase": "محو كل التقدم",
   "num.suffixes": ",K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc",
   "goal.open": "افتح {dept}",

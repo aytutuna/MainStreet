@@ -366,6 +366,7 @@ LANG['hu'] = {
   'cloud.loaded_note': 'A legutóbbi haladásod a másik eszközödről érkezett.',
   'cloud.back_note': 'A mentett játékod visszaállt.',
   'cloud.local_only': 'Csak ezen a telefonon mentve',
+  'cloud.sign_in': 'Sign in',
   'menu.erase': 'Minden haladás törlése',
 
   'num.suffixes': ',E,M,Mrd,B,Qa,Qi,Sx,Sp,Oc,No,Dc',

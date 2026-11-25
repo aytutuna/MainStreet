@@ -435,6 +435,7 @@ LANG['pl'] = {
   'cloud.loaded_note': 'Twój najnowszy postęp pochodzi z drugiego urządzenia.',
   'cloud.back_note': 'Twoja zapisana gra została przywrócona.',
   'cloud.local_only': 'Zapisano tylko na tym telefonie',
+  'cloud.sign_in': 'Sign in',
   'menu.erase': 'Usuń cały postęp',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

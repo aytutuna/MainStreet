@@ -360,6 +360,7 @@ LANG['ja'] = {
   'cloud.loaded_note': '最新の進行状況は、もう一方の端末から届きました。',
   'cloud.back_note': 'セーブデータを復元しました。',
   'cloud.local_only': 'この端末にのみ保存',
+  'cloud.sign_in': 'Sign in',
   'menu.erase': '全データを消去',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

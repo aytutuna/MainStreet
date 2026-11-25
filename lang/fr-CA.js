@@ -368,6 +368,7 @@ LANG['fr-CA'] = {
   'cloud.loaded_note': 'Ta plus récente progression venait de ton autre appareil.',
   'cloud.back_note': 'Ta partie sauvegardée a été récupérée.',
   'cloud.local_only': 'Sauvegardée sur ce téléphone seulement',
+  'cloud.sign_in': 'Sign in',
   'menu.erase': 'Effacer toute la progression',
 
   'num.suffixes': ',k,M,Md,Bn,Bd,Tn,Qa,Qi,Sx,Sp,Oc',

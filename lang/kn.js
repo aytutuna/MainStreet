@@ -347,6 +347,7 @@ LANG['kn'] = {
   'cloud.loaded_note': 'ನಿಮ್ಮ ಇತ್ತೀಚಿನ ಪ್ರಗತಿ ನಿಮ್ಮ ಇನ್ನೊಂದು ಸಾಧನದಿಂದ ಬಂದಿದೆ.',
   'cloud.back_note': 'ನಿಮ್ಮ ಉಳಿಸಿದ ಆಟವನ್ನು ಮರಳಿ ತರಲಾಗಿದೆ.',
   'cloud.local_only': 'ಈ ಫೋನ್‌ನಲ್ಲಿ ಮಾತ್ರ ಉಳಿಸಲಾಗಿದೆ',
+  'cloud.sign_in': 'Sign in',
   'menu.erase': 'ಎಲ್ಲಾ ಪ್ರಗತಿ ಅಳಿಸಿ',
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',
   'goal.open': '{dept} ತೆರೆಯಿರಿ',

@@ -366,6 +366,7 @@ LANG['ml'] = {
   'cloud.loaded_note': 'നിങ്ങളുടെ ഏറ്റവും പുതിയ പുരോഗതി മറ്റേ ഉപകരണത്തിൽ നിന്നാണ് വന്നത്.',
   'cloud.back_note': 'നിങ്ങളുടെ സേവ് ചെയ്ത ഗെയിം തിരികെ കൊണ്ടുവന്നു.',
   'cloud.local_only': 'ഈ ഫോണിൽ മാത്രം സേവ് ചെയ്തു',
+  'cloud.sign_in': 'Sign in',
   'menu.erase': 'എല്ലാ പുരോഗതിയും മായ്ക്കൂ',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

@@ -366,6 +366,7 @@ LANG['tr'] = {
   'cloud.loaded_note': 'En son ilerlemen diğer cihazından geldi.',
   'cloud.back_note': 'Kayıtlı oyunun geri getirildi.',
   'cloud.local_only': 'Yalnızca bu telefonda kayıtlı',
+  'cloud.sign_in': 'Sign in',
   'menu.erase': 'Tüm ilerlemeyi sil',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

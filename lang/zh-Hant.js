@@ -360,6 +360,7 @@ LANG['zh-Hant'] = {
   'cloud.loaded_note': '你最新的進度來自另一部裝置。',
   'cloud.back_note': '已找回你的存檔。',
   'cloud.local_only': '僅儲存在這支手機上',
+  'cloud.sign_in': 'Sign in',
   'menu.erase': '清除所有進度',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

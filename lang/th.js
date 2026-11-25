@@ -364,6 +364,7 @@ LANG['th'] = {
   'cloud.loaded_note': 'ความคืบหน้าล่าสุดของคุณมาจากอุปกรณ์เครื่องอื่น',
   'cloud.back_note': 'นำเกมที่บันทึกไว้ของคุณกลับมาแล้ว',
   'cloud.local_only': 'บันทึกไว้ในโทรศัพท์เครื่องนี้เท่านั้น',
+  'cloud.sign_in': 'Sign in',
   'menu.erase': 'ลบความคืบหน้าทั้งหมด',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

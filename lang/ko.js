@@ -341,6 +341,7 @@ LANG['ko'] = {
   'cloud.loaded_note': '최신 진행 상황이 다른 기기에서 왔습니다.',
   'cloud.back_note': '저장된 게임을 되찾았습니다.',
   'cloud.local_only': '이 휴대전화에만 저장됨',
+  'cloud.sign_in': 'Sign in',
   'menu.erase': '모든 진행 지우기',
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',
   'goal.open': '{dept} 열기',

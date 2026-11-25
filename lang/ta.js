@@ -366,6 +366,7 @@ LANG['ta'] = {
   'cloud.loaded_note': 'உங்கள் சமீபத்திய முன்னேற்றம் மற்றொரு சாதனத்திலிருந்து வந்தது.',
   'cloud.back_note': 'உங்கள் சேமித்த ஆட்டம் மீட்கப்பட்டது.',
   'cloud.local_only': 'இந்த ஃபோனில் மட்டும் சேமிக்கப்பட்டது',
+  'cloud.sign_in': 'Sign in',
   'menu.erase': 'முன்னேற்றம் முழுதும் அழி',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

@@ -366,6 +366,7 @@ LANG['hi'] = {
   'cloud.loaded_note': 'आपकी नवीनतम प्रगति आपके दूसरे डिवाइस से आई है।',
   'cloud.back_note': 'आपका सेव किया गेम वापस लाया गया।',
   'cloud.local_only': 'केवल इस फ़ोन पर सेव है',
+  'cloud.sign_in': 'Sign in',
   'menu.erase': 'सारी प्रगति मिटाएँ',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

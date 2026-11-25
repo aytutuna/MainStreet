@@ -102,7 +102,7 @@ var S = fresh();
 function fresh() {
   var s = { v: 11, cash: START_CASH, gems: 0, rep: 0, pk: {}, store: 1, run: 0, all: 0, pend: 0, ps: 0, x2: 0, call: 0, vt: rnd(VIP.first), b: {}, ms: {},
     st: { srv: 0, lost: 0, sr: 0, t: 0 }, goal: [0, 1, 2], gn: 3, gd: {}, day: { n: 0, d: -1, t: 0 }, tz: { o: zone(), at: clock() }, mi: { d: -1, m: [], b: 0 }, rg: { o: {}, days: 0, gifts: 0, combo: 0 }, lk: { on: 'classic', own: {} }, ac: { o: {}, m: {} },
-    ask: 0, clk: START_H * CLOCK / 24, iap: { noads: 0, x2: 0, starter: 0, noadsTx: '', x2Tx: '', noadsUser: '', x2User: '', wait: {}, tx: [], rf: [] }, ads: { d: -1, n: {}, pt: 0, li: 0, sd: 0 }, ts: clock() };
+    ask: 0, clk: START_H * CLOCK / 24, iap: { noads: 0, x2: 0, starter: 0, noadsTx: '', x2Tx: '', noadsUser: '', x2User: '', wait: {}, tx: [], rf: [], paid: [] }, cl: { base: '', sig: '', fly: null }, ads: { d: -1, n: {}, pt: 0, li: 0, sd: 0 }, ts: clock() };
   noPlaces(s);
   s.b.produce = atLevel('produce', 1);
   return s;
@@ -1505,7 +1505,6 @@ function warp(free) {
 
 function save() {
   if (blocked) return;
-  cloudNote();
   S.ts = clock();
   try {
     localStorage.setItem(KEY, saved());
@@ -1570,8 +1569,15 @@ function validate(o) {
     wait: waits(ip.wait),
     tx: (Array.isArray(ip.tx) ? ip.tx : []).filter(function (t) { return typeof t === 'string'; }).slice(-100),
     rf: (Array.isArray(ip.rf) ? ip.rf : []).filter(function (t) { return typeof t === 'string'; }).slice(-20),
+    paid: (Array.isArray(ip.paid) ? ip.paid : []).filter(function (e) { return e && typeof e.tx === 'string'; }).map(function (e) {
+      return { tx: e.tx, gems: Math.floor(num(e.gems, 0)), x2: num(e.x2, 0), rep: Math.floor(num(e.rep, 0)) };
+    }).slice(-100),
     deal: ip.deal && typeof ip.deal.id === 'string' && num(ip.deal.bonus, 0) > 0 ? { id: ip.deal.id, bonus: Math.floor(num(ip.deal.bonus, 0)), until: num(ip.deal.until, 0) } : null,
     held: ip.held && typeof ip.held.id === 'string' && num(ip.held.bonus, 0) > 0 ? { id: ip.held.id, bonus: Math.floor(num(ip.held.bonus, 0)), until: num(ip.held.until, 0) } : null };
+  var cl = o.cl || {};
+  var fl = cl.fly;
+  s.cl = { base: typeof cl.base === 'string' ? cl.base : '', sig: typeof cl.sig === 'string' ? cl.sig : '',
+    fly: fl && typeof fl.stamp === 'string' && typeof fl.sig === 'string' ? { stamp: fl.stamp, sig: fl.sig } : null };
   var ad = o.ads || {};
   s.ads = { d: Math.floor(num(ad.d, -1)), n: {}, pt: num(ad.pt, 0), li: num(ad.li, 0), sd: num(ad.sd, 0) };
   for (var k in AD_CAP) s.ads.n[k] = Math.min(AD_CAP[k], Math.floor(num(ad.n && ad.n[k], 0)));
@@ -1707,13 +1713,11 @@ function load() {
     if (!o && !mall) S = fresh();
     if (o) {
       S = o;
-      cloudTs = o.ts;
-      cloudSent = cloudLast = cloudSig(o);
-      cloudMine = 0;
+      var edited = cloudSig(o) !== o.cl.sig;
       var sec = (clock() - o.ts) / 1000;
       if (sec > 60) back = away(sec);
-      // what the away pay unlocks is not a change of the player's, so it must not outrank a newer copy
-      cloudLast = cloudSig(S);
+      // what the away pay unlocks is not a change of the player's
+      if (!edited) S.cl.sig = cloudSig(S);
       if (old) save();
     }
   } catch (e) {}
@@ -1728,118 +1732,75 @@ function hasSave() {
   }
 }
 
-// the save another device kept, as the first save of this one. A newer one than this build reads is stored as it is,
-// so load() blocks on it and nothing overwrites it
-function cloudSeed(raw) {
+// the save another device kept, as the first save of this one: it agrees with the cloud copy it came from. A newer one than
+// this build reads is stored as it is, so load() blocks on it and nothing overwrites it
+function cloudSeed(raw, stamp) {
   try {
     var j = JSON.parse(raw);
-    if (!j || typeof j.v !== 'number' || (j.v <= SAVE_V && !validate(j))) return false;
-    localStorage.setItem(KEY, raw);
-    if (j.v <= SAVE_V) cloudSent = cloudLast = cloudSig(validate(JSON.parse(raw)));
-    cloudMine = 0;
+    if (!j || typeof j.v !== 'number') return false;
+    if (j.v > SAVE_V) {
+      localStorage.setItem(KEY, raw);
+      return true;
+    }
+    var o = validate(j);
+    if (!o) return false;
+    o.cl = { base: stamp || '', sig: cloudSig(o), fly: null };
+    localStorage.setItem(KEY, JSON.stringify(o));
     return true;
   } catch (e) {
     return false;
   }
 }
 
-// refunds of both copies are listed in whichever one is kept. Purchase ids are not: the ids of a copy say what that copy
-// has paid, so the copy kept keeps its own and the rest are paid again by recover()
+// refunds of both copies are listed in whichever one is kept
 function joinTx(a, b) {
   var seen = {};
   return a.concat(b).filter(function (t) { return seen[t] ? false : (seen[t] = 1); }).slice(-100);
 }
 
-// a game under this many seconds of play is replaced by any save from the cloud
-var YOUNG = 600;
 // the away summary of the last copy taken, and whether one was taken since the app went to the background
 var cloudAway = null;
 var cloudTook = false;
-// the time of the newest save this device has read from the cloud: the one on disk at launch, then the last copy taken. A
-// copy counts as newer only against this, not against the autosave and not against what this device itself put, since a put
-// can have overwritten a copy that had not reached it yet
-var cloudTs = 0;
-// what this device last wrote to the cloud or read from it, so an open game that only earns income does not write over
-// the other device's play with a copy that merely has a later time
-var cloudSent = '';
-// the time of this device's latest change of its own, which no copy older than it may replace: puts are throttled and reads can
-// be late, so a copy newer than the last one read can still be older than what the player has just done here
-var cloudMine = 0;
-var cloudLast = '';
-// whether the cloud has answered fresh since the launch or the last return
-var cloudSure = false;
 
-function cloudNote() {
-  var sig = cloudSig(S);
-  if (sig === cloudLast) return;
-  cloudLast = sig;
-  // before the cloud has answered this launch or return, a change sits on a base that may be older than the copy, so it
-  // does not outrank one
-  if (cloudSure) cloudMine = clock();
-}
-
+// what counts as a change of the player's: income that only piles up cash is none
 function cloudSig(o) {
   return JSON.stringify([o.gems, o.rep, o.store, o.b, o.pl, o.pi, o.ms, o.goal, o.gn, o.gd, o.lk, o.ac, o.pk, o.iap, o.ads && o.ads.n]);
 }
 
-// what was bought on one copy stays bought on the other, unless it was refunded. True when Skip ads or x2 was added
-function boughtIn(from, to, rf) {
-  var added = false;
+// two copies of one game meet and k is the one kept. What l bought and k never credited is paid to k once, by transaction
+// id; a refund listed by either takes the purchase away; what only grows never goes back
+function meet(k, l) {
+  var ki = k.iap;
+  var li = l.iap;
+  var rf = joinTx(ki.rf, li.rf);
+  li.paid.forEach(function (e) {
+    if (ki.tx.indexOf(e.tx) >= 0) return;
+    k.gems += e.gems;
+    k.x2 += e.x2;
+    k.rep += e.rep;
+    ki.tx = joinTx(ki.tx, [e.tx]);
+    ki.paid = ki.paid.concat([e]).slice(-100);
+  });
+  ki.rf = rf;
   ['noads', 'x2'].forEach(function (f) {
-    if (from[f] && !to[f] && rf.indexOf(from[f + 'Tx']) < 0) {
-      to[f] = 1;
-      added = true;
-      to[f + 'Tx'] = from[f + 'Tx'];
-      to[f + 'User'] = from[f + 'User'];
+    if (ki[f] && rf.indexOf(ki[f + 'Tx']) >= 0) {
+      ki[f] = 0;
+      ki[f + 'Tx'] = ki[f + 'User'] = '';
+    }
+    if (!ki[f] && li[f] && rf.indexOf(li[f + 'Tx']) < 0) {
+      ki[f] = 1;
+      ki[f + 'Tx'] = li[f + 'Tx'];
+      ki[f + 'User'] = li[f + 'User'];
     }
   });
-  to.starter = Math.max(to.starter, from.starter);
-  to.offered = to.offered || from.offered;
-  to.deal = to.deal || from.deal;
-  to.held = to.held || from.held;
-  for (var w in from.wait) to.wait[w] = Math.max(to.wait[w] || 0, from.wait[w]);
-  return added;
-}
-
-// the save of another device meets this game: the newer one is kept, a young game always gives way. True when it replaced this game
-function takeCloud(raw) {
-  var o = null;
-  try {
-    var j = JSON.parse(raw);
-    // a copy from a newer build is left in the cloud; this build stops writing so it cannot be overwritten
-    if (j && j.v > SAVE_V) blocked = true;
-    o = validate(j);
-  } catch (e) {}
-  if (!o) return false;
-  cloudNote();
-  var i = S.iap;
-  var p = o.iap;
-  var rf = joinTx(i.rf, p.rf);
-  var mine = o.ts < cloudMine;
-  if (S.ads.pt >= YOUNG && (!(o.ts > cloudTs) || mine)) {
-    // this game is newer than the copy, so the cloud gets it again
-    if (mine) cloudSent = '';
-    i.rf = rf;
-    ['noads', 'x2'].forEach(function (f) {
-      if (i[f] && rf.indexOf(i[f + 'Tx']) >= 0) i[f] = 0;
-    });
-    // what the other device bought stays bought here too, and is written back
-    if (boughtIn(p, i, rf)) cloudSent = '';
-    return false;
-  }
-  // what the merge adds to or takes from the copy kept is not in the cloud yet
-  var merged = rf.length > p.rf.length;
-  // a refund listed in either copy takes the purchase away from the copy kept
-  ['noads', 'x2'].forEach(function (f) {
-    if (p[f] && rf.indexOf(p[f + 'Tx']) >= 0) {
-      p[f] = 0;
-      merged = true;
-    }
-  });
-  // ad counts of the day and play time never go back
-  var a = S.ads;
-  var c = o.ads;
-  if (c.d === a.d) for (var k in c.n) c.n[k] = Math.max(c.n[k], a.n[k] || 0);
+  ki.starter = Math.max(ki.starter, li.starter);
+  ki.offered = ki.offered || li.offered;
+  ki.deal = ki.deal || li.deal;
+  ki.held = ki.held || li.held;
+  for (var w in li.wait) ki.wait[w] = Math.max(ki.wait[w] || 0, li.wait[w]);
+  var a = l.ads;
+  var c = k.ads;
+  if (c.d === a.d) for (var n in c.n) c.n[n] = Math.max(c.n[n], a.n[n] || 0);
   else if (a.d > c.d) {
     c.d = a.d;
     c.n = a.n;
@@ -1847,17 +1808,51 @@ function takeCloud(raw) {
   c.pt = Math.max(c.pt, a.pt);
   // a started starter window is not restarted
   c.sd = c.sd && a.sd ? Math.min(c.sd, a.sd) : c.sd || a.sd;
-  if (boughtIn(i, p, rf)) merged = true;
-  p.rf = rf;
+}
+
+// the save of another device (written under stamp) meets this game. Each side keeps the stamp of the cloud copy it last
+// agreed with and the signature of the game then: a game that has not changed since simply takes the copy, one that has
+// changed on both sides keeps whichever has more play, and the one kept gets the other's purchases. True when the copy
+// replaced this game
+function takeCloud(raw, stamp) {
+  var o = null;
+  try {
+    var j = JSON.parse(raw);
+    // a copy from a newer build is left in the cloud; this build stops writing so it cannot be overwritten
+    if (j && j.v > SAVE_V) {
+      blocked = true;
+      return false;
+    }
+    o = validate(j);
+  } catch (e) {}
+  if (!o) return false;
+  stamp = stamp || '';
+  var c = S.cl;
+  if (stamp && stamp === c.base) return false;
+  // the copy is this device's own last put, which landed without its answer reaching the game
+  if (stamp && c.fly && stamp === c.fly.stamp) {
+    c.base = stamp;
+    c.sig = c.fly.sig;
+    c.fly = null;
+    return false;
+  }
+  var theirs = cloudSig(o);
+  var changed = cloudSig(S) !== c.sig;
+  if (changed && (S.ads.pt > o.ads.pt || (S.ads.pt === o.ads.pt && S.ts >= o.ts))) {
+    meet(S, o);
+    c.base = stamp;
+    c.sig = theirs;
+    return false;
+  }
+  meet(o, S);
+  var joined = cloudSig(o);
+  o.cl = { base: stamp, sig: theirs, fly: null };
   S = o;
-  cloudTs = o.ts;
-  cloudSent = merged ? '' : cloudSig(S);
-  cloudMine = 0;
   clearShoppers();
   // the copy was saved when the other device last ran: the time since is time away
   var sec = (clock() - o.ts) / 1000;
   cloudAway = sec > 60 ? away(sec) : null;
-  cloudLast = cloudSig(S);
+  if (joined === theirs) S.cl.sig = cloudSig(S);
   cloudTook = true;
   try {
     localStorage.setItem(KEY, saved());

@@ -364,6 +364,7 @@ LANG['vi'] = {
   'cloud.loaded_note': 'Tiến trình mới nhất của bạn đến từ thiết bị khác.',
   'cloud.back_note': 'Trò chơi đã lưu của bạn đã được khôi phục.',
   'cloud.local_only': 'Chỉ lưu trên điện thoại này',
+  'cloud.sign_in': 'Sign in',
   'menu.erase': 'Xóa toàn bộ tiến trình',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

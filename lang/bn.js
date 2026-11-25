@@ -366,6 +366,7 @@ LANG['bn'] = {
   'cloud.loaded_note': 'আপনার সর্বশেষ অগ্রগতি অন্য ডিভাইস থেকে এসেছে।',
   'cloud.back_note': 'আপনার সংরক্ষিত গেম ফিরিয়ে আনা হয়েছে।',
   'cloud.local_only': 'শুধু এই ফোনে সংরক্ষিত',
+  'cloud.sign_in': 'Sign in',
   'menu.erase': 'সব অগ্রগতি মুছুন',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

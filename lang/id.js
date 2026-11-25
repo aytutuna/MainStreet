@@ -364,6 +364,7 @@ LANG['id'] = {
   'cloud.loaded_note': 'Progres terbarumu berasal dari perangkat lainmu.',
   'cloud.back_note': 'Gim tersimpanmu telah dikembalikan.',
   'cloud.local_only': 'Hanya disimpan di ponsel ini',
+  'cloud.sign_in': 'Sign in',
   'menu.erase': 'Hapus semua progres',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

@@ -364,6 +364,7 @@ LANG['ms'] = {
   'cloud.loaded_note': 'Kemajuan terbaharu anda datang daripada peranti anda yang lain.',
   'cloud.back_note': 'Permainan tersimpan anda telah dipulihkan.',
   'cloud.local_only': 'Disimpan pada telefon ini sahaja',
+  'cloud.sign_in': 'Sign in',
   'menu.erase': 'Padam semua kemajuan',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

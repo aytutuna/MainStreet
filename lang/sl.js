@@ -435,6 +435,7 @@ LANG['sl'] = {
   'cloud.loaded_note': 'Tvoj najnovejši napredek je prišel z druge naprave.',
   'cloud.back_note': 'Tvoja shranjena igra je obnovljena.',
   'cloud.local_only': 'Shranjeno samo v tem telefonu',
+  'cloud.sign_in': 'Sign in',
   'menu.erase': 'Izbriši ves napredek',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

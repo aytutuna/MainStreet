@@ -368,6 +368,7 @@ LANG['he'] = {
   'cloud.loaded_note': 'ההתקדמות האחרונה שלך הגיעה מהמכשיר האחר.',
   'cloud.back_note': 'המשחק השמור שלך שוחזר.',
   'cloud.local_only': 'נשמר בטלפון הזה בלבד',
+  'cloud.sign_in': 'Sign in',
   'menu.erase': 'מחיקת כל ההתקדמות',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

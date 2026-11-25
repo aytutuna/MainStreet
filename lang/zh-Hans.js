@@ -364,6 +364,7 @@ LANG['zh-Hans'] = {
   'cloud.loaded_note': '你最新的进度来自另一台设备。',
   'cloud.back_note': '已找回你的存档。',
   'cloud.local_only': '仅保存在这部手机上',
+  'cloud.sign_in': 'Sign in',
   'menu.erase': '清除所有进度',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

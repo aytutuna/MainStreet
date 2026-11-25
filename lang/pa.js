@@ -366,6 +366,7 @@ LANG['pa'] = {
   'cloud.loaded_note': 'ਤੁਹਾਡੀ ਤਾਜ਼ਾ ਤਰੱਕੀ ਤੁਹਾਡੇ ਦੂਜੇ ਡੀਵਾਈਸ ਤੋਂ ਆਈ ਹੈ।',
   'cloud.back_note': 'ਤੁਹਾਡੀ ਸੇਵ ਕੀਤੀ ਗੇਮ ਵਾਪਸ ਲਿਆਂਦੀ ਗਈ।',
   'cloud.local_only': 'ਸਿਰਫ਼ ਇਸ ਫ਼ੋਨ ਉੱਤੇ ਸੇਵ ਹੈ',
+  'cloud.sign_in': 'Sign in',
   'menu.erase': 'ਸਾਰੀ ਤਰੱਕੀ ਮਿਟਾਓ',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

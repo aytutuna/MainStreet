@@ -349,6 +349,7 @@ LANG['it'] = {
   'cloud.loaded_note': 'Il tuo ultimo progresso arrivava dall\'altro dispositivo.',
   'cloud.back_note': 'La tua partita salvata è stata ripristinata.',
   'cloud.local_only': 'Salvata solo su questo telefono',
+  'cloud.sign_in': 'Sign in',
   'menu.erase': 'Cancella tutti i progressi',
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',
   'goal.open': 'Apri {dept}',

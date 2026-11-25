@@ -370,6 +370,7 @@ LANG['ru'] = {
   'cloud.loaded_note': 'Твой последний прогресс пришёл с другого устройства.',
   'cloud.back_note': 'Твоя сохранённая игра восстановлена.',
   'cloud.local_only': 'Сохранено только на этом телефоне',
+  'cloud.sign_in': 'Sign in',
   'menu.erase': 'Стереть весь прогресс',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

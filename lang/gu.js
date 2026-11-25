@@ -366,6 +366,7 @@ LANG['gu'] = {
   'cloud.loaded_note': 'તમારી તાજેતરની પ્રગતિ તમારા બીજા ડિવાઇસથી આવી.',
   'cloud.back_note': 'તમારી સાચવેલી ગેમ પાછી લાવવામાં આવી.',
   'cloud.local_only': 'ફક્ત આ ફોન પર સાચવેલ',
+  'cloud.sign_in': 'Sign in',
   'menu.erase': 'બધી પ્રગતિ ભૂંસો',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

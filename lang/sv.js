@@ -366,6 +366,7 @@ LANG['sv'] = {
   'cloud.loaded_note': 'Dina senaste framsteg kom från din andra enhet.',
   'cloud.back_note': 'Ditt sparade spel har hämtats tillbaka.',
   'cloud.local_only': 'Sparat bara på den här telefonen',
+  'cloud.sign_in': 'Sign in',
   'menu.erase': 'Radera alla framsteg',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

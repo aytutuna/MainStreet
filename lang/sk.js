@@ -370,6 +370,7 @@ LANG['sk'] = {
   'cloud.loaded_note': 'Tvoj najnovší postup prišiel z druhého zariadenia.',
   'cloud.back_note': 'Tvoja uložená hra bola obnovená.',
   'cloud.local_only': 'Uložené len v tomto telefóne',
+  'cloud.sign_in': 'Sign in',
   'menu.erase': 'Zmazať všetok postup',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

@@ -366,6 +366,7 @@ LANG['or'] = {
   'cloud.loaded_note': 'ଆପଣଙ୍କ ସର୍ବଶେଷ ଅଗ୍ରଗତି ଅନ୍ୟ ଡିଭାଇସରୁ ଆସିଛି।',
   'cloud.back_note': 'ଆପଣଙ୍କ ସେଭ୍ ଗେମ୍ ଫେରାଇ ଆଣାଗଲା।',
   'cloud.local_only': 'କେବଳ ଏହି ଫୋନ୍‌ରେ ସେଭ୍',
+  'cloud.sign_in': 'Sign in',
   'menu.erase': 'ସବୁ ଅଗ୍ରଗତି ଲିଭାଅ',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

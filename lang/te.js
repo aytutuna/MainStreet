@@ -366,6 +366,7 @@ LANG['te'] = {
   'cloud.loaded_note': 'మీ తాజా ప్రోగ్రెస్ మీ మరో పరికరం నుండి వచ్చింది.',
   'cloud.back_note': 'మీ సేవ్ చేసిన గేమ్ తిరిగి తీసుకురాబడింది.',
   'cloud.local_only': 'ఈ ఫోన్‌లో మాత్రమే సేవ్ చేయబడింది',
+  'cloud.sign_in': 'Sign in',
   'menu.erase': 'అన్ని పురోగతిని తొలగించండి',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

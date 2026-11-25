@@ -349,6 +349,7 @@ LANG['es-MX'] = {
   'cloud.loaded_note': 'Tu último progreso venía de tu otro dispositivo.',
   'cloud.back_note': 'Se recuperó tu partida guardada.',
   'cloud.local_only': 'Guardada solo en este teléfono',
+  'cloud.sign_in': 'Sign in',
   'menu.erase': 'Borrar todo el progreso',
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',
   'goal.open': 'Abre {dept}',

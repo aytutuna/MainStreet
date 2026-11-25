@@ -370,6 +370,7 @@ LANG['cs'] = {
   'cloud.loaded_note': 'Tvůj nejnovější postup přišel z druhého zařízení.',
   'cloud.back_note': 'Tvá uložená hra byla obnovena.',
   'cloud.local_only': 'Uloženo jen v tomto telefonu',
+  'cloud.sign_in': 'Sign in',
   'menu.erase': 'Smazat veškerý postup',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

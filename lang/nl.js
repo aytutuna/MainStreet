@@ -366,6 +366,7 @@ LANG['nl'] = {
   'cloud.loaded_note': 'Je laatste voortgang kwam van je andere apparaat.',
   'cloud.back_note': 'Je opgeslagen spel is teruggehaald.',
   'cloud.local_only': 'Alleen op deze telefoon opgeslagen',
+  'cloud.sign_in': 'Sign in',
   'menu.erase': 'Alle voortgang wissen',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

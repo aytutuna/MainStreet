@@ -366,6 +366,7 @@ LANG['fi'] = {
   'cloud.loaded_note': 'Viimeisin edistymisesi tuli toisesta laitteestasi.',
   'cloud.back_note': 'Tallennettu pelisi palautettiin.',
   'cloud.local_only': 'Tallennettu vain tähän puhelimeen',
+  'cloud.sign_in': 'Sign in',
   'menu.erase': 'Poista kaikki edistyminen',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

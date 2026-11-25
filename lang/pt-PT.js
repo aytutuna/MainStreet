@@ -349,6 +349,7 @@ LANG['pt-PT'] = {
   'cloud.loaded_note': 'O teu progresso mais recente veio do teu outro dispositivo.',
   'cloud.back_note': 'O teu jogo guardado foi recuperado.',
   'cloud.local_only': 'Guardado apenas neste telemóvel',
+  'cloud.sign_in': 'Sign in',
   'menu.erase': 'Apagar todo o progresso',
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',
   'goal.open': 'Abre {dept}',

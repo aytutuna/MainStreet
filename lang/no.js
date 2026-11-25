@@ -345,6 +345,7 @@ LANG['no'] = {
   'cloud.loaded_note': 'Den siste fremgangen din kom fra den andre enheten din.',
   'cloud.back_note': 'Det lagrede spillet ditt er hentet tilbake.',
   'cloud.local_only': 'Bare lagret på denne telefonen',
+  'cloud.sign_in': 'Sign in',
   'menu.erase': 'Slett all framgang',
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',
   'goal.open': 'Åpne {dept}',

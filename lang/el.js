@@ -366,6 +366,7 @@ LANG['el'] = {
   'cloud.loaded_note': 'Η πιο πρόσφατη πρόοδός σου προήλθε από την άλλη συσκευή σου.',
   'cloud.back_note': 'Το αποθηκευμένο παιχνίδι σου επανήλθε.',
   'cloud.local_only': 'Αποθηκεύτηκε μόνο σε αυτό το τηλέφωνο',
+  'cloud.sign_in': 'Sign in',
   'menu.erase': 'Διαγραφή όλης της προόδου',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

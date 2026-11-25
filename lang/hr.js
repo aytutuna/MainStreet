@@ -368,6 +368,7 @@ LANG['hr'] = {
   'cloud.loaded_note': 'Tvoj najnoviji napredak stigao je s drugog uređaja.',
   'cloud.back_note': 'Tvoja spremljena igra je vraćena.',
   'cloud.local_only': 'Spremljeno samo na ovom telefonu',
+  'cloud.sign_in': 'Sign in',
   'menu.erase': 'Obriši cijeli napredak',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',

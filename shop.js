@@ -17,13 +17,19 @@
 //   {t: 'time', n, ms, sent, recv}         the server time, answering {cmd: 'time', n}: ms is the server's clock, sent and recv
 //                                          the device's Date.now() when the request left and the answer came; ms is null
 //                                          when nothing answered. It skips the queue, since the game waits for it
-//   {t: 'cloud', json, at, dev}            the save the other devices share (json is null when there is none), kept at server time
-//                                          at by device dev; answers {cmd: 'cloudGet'} and comes again when another device changes it.
-//                                          Like 'time' it skips the queue. fresh: false marks an answer from a cache that has not
-//                                          synced yet (iPhone): the page may take it but does not write until a fresh one comes
-//   {t: 'cloudState', state}               'available', 'signedOut', 'pending' (signed in, first sync not done) or 'unavailable';
-//                                          answers {cmd: 'cloudState'}, skips the queue. The page sends {cmd: 'cloudPut', json, at, dev}
-//   {t: 'cloudPut', ok: false}             a put that could not be written (Android); skips the queue, and the page sends it again
+//   {t: 'cloud', json, at, dev, stamp, refused?}   the save the other devices share (json is null when there is none), written at
+//                                          server time at by device dev under stamp, a string the writer made up. Answers
+//                                          {cmd: 'cloudGet'} and comes again when another device changes it (iPhone). refused is
+//                                          true when it answers a {cmd: 'cloudPut'} that was not written because the cloud holds
+//                                          another stamp than the put's base. Like 'time' it skips the queue; the page judges
+//                                          every copy whenever it comes, so nothing about its age is promised
+//   {t: 'cloudState', state}               'available', 'signedOut', 'pending' (signed in, first sync not done) or 'unavailable'
+//                                          (Play Games cannot be reached: no copy comes with it); answers {cmd: 'cloudState'}, skips the queue
+//   {t: 'cloudPut', ok, stamp}             the put with this stamp was written (ok true) or could not be (ok false, Android);
+//                                          skips the queue. The page sends {cmd: 'cloudPut', json, at, dev, stamp, base, force}: base is
+//                                          the stamp of the copy the game last agreed with, and unless force is true (erasing) the
+//                                          native side writes only while the cloud still holds that stamp, else it refuses
+//   {cmd: 'cloudSignIn'}                   Android: opens Play Games sign-in, then answers cloudState and cloud
 //   {t: 'notify', state}                   'granted' or 'denied', answering the notify handler's {cmd: 'ask'}; the page does not use it
 //   {t: 'radio', state, url, title?}       the stream being played: state is 'buffering', 'playing', 'paused' (headphones
 //                                          unplugged) or 'error' (it gave out), url the one
@@ -59,9 +65,10 @@ var loaded = false;
 var CLOUD_EVERY = 30000;
 var CLOUD_WAIT = 10000;
 var CLOUD_BACK = 4000;
-var CLOUD_RETRY = 10000;
+var CLOUD_POLL = 180000;
 var cloudState = '';
-var cloudSeen = false;
+var cloudAnswered = false;
+var cloudLive = '';
 var cloudFind = null;
 var cloudFound = null;
 var cloudTimer = 0;
@@ -164,29 +171,45 @@ function devId() {
   return devKey || 'x';
 }
 
-// nothing is written before the cloud has answered since the launch or the last return (cloudSeen), and a game this young
-// waits for a signed-in cloud's first sync
-function cloudReady() {
-  return cloudSeen && (cloudState !== 'pending' || S.ads.pt >= YOUNG);
-}
-
+// one put at a time: its answer moves the base the next one is checked against. A put is only sent for a game that
+// differs from the copy it last agreed with, so an open game that only earns cash writes nothing
 function cloudPut(erase) {
   clearTimeout(cloudTimer);
   cloudTimer = 0;
-  // a copy that waits for the time answer has not been judged yet, so it is not written over
-  if (!native() || !loaded || blocked || !(erase === true || (cloudReady() && !cloudPend && !timeHeld))) return;
+  // the time is stamped on the copy, so nothing is put while it is unknown
+  if (!native() || !loaded || blocked || timeHeld) return;
+  var cl = S.cl;
   var sig = cloudSig(S);
-  if (erase !== true && sig === cloudSent) return;
-  cloudSent = sig;
+  if (erase !== true && (sig === cl.sig || cl.fly)) return;
+  var stamp = devId() + ':' + stampNext();
+  cl.fly = { stamp: stamp, sig: sig };
+  cloudLive = stamp;
   cloudAt = performance.now();
-  if (erase === true) cloudTs = S.ts;
-  post({ cmd: 'cloudPut', json: saved(), at: Math.round(clock()), dev: devId() });
+  post({ cmd: 'cloudPut', json: saved(), at: Math.round(clock()), dev: devId(), stamp: stamp, base: cl.base, force: erase === true });
+  save();
 }
 
-// the native side could not write the last put: the save counts as unsent, so the next put or the hide sends it again
-function cloudFailed() {
-  cloudSent = '';
-  cloudSoon();
+// a counter that outlives the save, so an erased game never reuses a stamp another device may still hold as its base
+function stampNext() {
+  var n = 0;
+  try {
+    n = (+localStorage.getItem('mainstreet.stamp') || 0) + 1;
+    localStorage.setItem('mainstreet.stamp', n);
+  } catch (e) {}
+  return n || Date.now();
+}
+
+// the native side answers a put: written, or not written (a failed one is sent again with the next change or hide).
+// One that was refused comes back as a 'cloud' event instead
+function cloudAck(ev) {
+  var f = S.cl.fly;
+  if (!f || f.stamp !== ev.stamp) return;
+  S.cl.fly = null;
+  if (ev.ok) {
+    S.cl.base = f.stamp;
+    S.cl.sig = f.sig;
+  }
+  save();
 }
 
 function cloudSoon() {
@@ -197,14 +220,14 @@ function cloudMenu() {
   $('m-cloud').hidden = !(/Android/i.test(navigator.userAgent) && (cloudState === 'signedOut' || cloudState === 'unavailable'));
 }
 
-// runs done(true) when the cloud's save became this device's first one. With a save here nothing waits
+// runs done(true) when the cloud's save became this device's first one. With a save here the game waits for the first
+// answer, as on return, and a copy that comes later is judged whenever it comes
 function cloudLook(done) {
   if (!native()) return done(false);
-  setInterval(cloudRetry, CLOUD_RETRY);
+  setInterval(cloudPoll, CLOUD_POLL);
   post({ cmd: 'cloudState' });
   post({ cmd: 'cloudGet' });
   if (hasSave()) {
-    // the game stands still until the cloud has answered, as on return, so nothing is changed on top of an older copy
     cloudRet = { got: false, run: null, t: setTimeout(cloudGot, CLOUD_BACK) };
     return done(false);
   }
@@ -213,9 +236,11 @@ function cloudLook(done) {
   cloudLate = setTimeout(cloudEnd, CLOUD_WAIT);
 }
 
-// a read that got no answer (a snapshot that would not open) is asked again until it has one; nothing is put meanwhile
-function cloudRetry() {
-  if (loaded && !cloudSeen && !document.hidden) post({ cmd: 'cloudGet' });
+// Play Games has no change push, so the cloud is read again every few minutes; a put that never got an answer is given up
+function cloudPoll() {
+  if (!loaded || document.hidden || timeHeld) return;
+  if (S.cl.fly && performance.now() - cloudAt > 60000) S.cl.fly = null;
+  post({ cmd: 'cloudGet' });
 }
 
 function cloudEnd() {
@@ -223,19 +248,20 @@ function cloudEnd() {
   clearTimeout(cloudLate);
   $('find').hidden = true;
   var done = cloudFind;
-  var raw = cloudFound;
+  var ev = cloudFound;
   cloudFind = cloudFound = null;
-  done(!!raw && cloudSeed(raw));
+  done(!!ev && cloudSeed(ev.json, ev.stamp));
 }
 
-// a copy replaces this game and the screen shows it, or waits for the launch reveal while the models load
-function cloudTake(raw) {
-  var took = takeCloud(raw);
+// a copy meets this game; if it replaced it the screen shows it, or waits for the launch reveal while the models load
+function cloudTake(ev) {
+  var took = takeCloud(ev.json, ev.stamp);
+  // a put of an earlier page that is not this copy did not land
+  if (S.cl.fly && S.cl.fly.stamp !== cloudLive) S.cl.fly = null;
   if (blocked) return loadFail(tl('save.newer'), true);
-  // a pack bought on either side that the game kept does not hold is paid again from the store's list
-  if (native()) askProducts();
   // Skip ads can arrive in a game that was kept, too
   if (S.iap.noads) post({ cmd: 'adStop' });
+  cloudSoon();
   if (!took) return;
   $('away').hidden = true;
   if (View.ready()) {
@@ -247,12 +273,11 @@ function cloudTake(raw) {
 }
 
 // on return the cloud is asked again, and the return waits for its answer (at most CLOUD_BACK) so another device's copy is
-// taken before this one plays on and writes over it
+// taken before this one plays on
 function cloudBack() {
   if (!native()) return;
   if (cloudRet) clearTimeout(cloudRet.t);
   cloudRet = { got: false, run: null, t: setTimeout(cloudGot, CLOUD_BACK) };
-  cloudSeen = cloudSure = false;
   post({ cmd: 'cloudGet' });
 }
 
@@ -280,38 +305,33 @@ function cloudAfter(fn) {
   } else r.run = fn;
 }
 
-// the copy that came while the game was being played, taken now that the app is back and the time is known
+// the copy that came while the server time was unknown, taken now that it is known
 function cloudApply() {
-  var raw = cloudPend;
+  var ev = cloudPend;
   cloudPend = null;
-  if (raw) cloudTake(raw);
-}
-
-function stampOf(raw) {
-  try {
-    return JSON.parse(raw).ts || 0;
-  } catch (e) {
-    return 0;
-  }
+  if (ev) cloudTake(ev);
 }
 
 function cloudEvent(ev) {
   if (ev.t === 'cloudState') {
     cloudState = ev.state;
     cloudMenu();
+    // a put that failed while signed out goes again; with no cloud to read, nothing is coming to wait for
+    if (ev.state === 'available') cloudSoon();
+    else if (ev.state === 'signedOut' || ev.state === 'unavailable') cloudGot();
   } else {
-    // an answer from a cache that iCloud has not refreshed yet (fresh false) can be taken but does not open the puts
-    if (cloudFind) cloudFound = ev.json || cloudFound;
-    else if (ev.json && loaded && ev.dev !== devId()) {
-      // a copy is judged by its own time whenever it comes; only while the server time is unknown does it wait
-      if (!timeHeld) cloudTake(ev.json);
-      else if (!cloudPend || stampOf(ev.json) >= stampOf(cloudPend)) cloudPend = ev.json;
+    cloudAnswered = true;
+    // a refused put did not land: the copy that came with the refusal is judged like any other
+    if (loaded && ev.refused && S.cl.fly) S.cl.fly = null;
+    if (cloudFind) cloudFound = ev.json ? ev : cloudFound;
+    else if (ev.json && loaded) {
+      // only while the server time is unknown does a copy wait
+      if (timeHeld) cloudPend = ev;
+      else cloudTake(ev);
     }
+    cloudGot();
   }
-  // set after the copy is judged, so what the player did while waiting is not taken as newer than it
-  if (ev.t === 'cloud' && ev.fresh !== false) cloudSeen = cloudSure = true;
-  if (ev.t === 'cloud') cloudGot();
-  if (cloudFind && (cloudFound || (cloudSeen && cloudState && cloudState !== 'pending'))) cloudEnd();
+  if (cloudFind && (cloudFound || (cloudState && cloudState !== 'pending' && (cloudAnswered || cloudState !== 'available')))) cloudEnd();
 }
 
 function product(id) {
@@ -349,12 +369,16 @@ function credit(p, tx) {
   if (seen(tx)) return false;
   note(tx);
   delete S.iap.wait[p.id];
+  var e = { tx: tx, gems: p.gems || 0, x2: 0, rep: 0 };
   if (p.id === 'starter1') {
     S.iap.starter = 1;
-    S.gems += STARTER.gems;
-    S.x2 += STARTER.x2;
-    S.rep += STARTER.rep;
-  } else S.gems += p.gems;
+    e = { tx: tx, gems: STARTER.gems, x2: STARTER.x2, rep: STARTER.rep };
+  }
+  S.gems += e.gems;
+  S.x2 += e.x2;
+  S.rep += e.rep;
+  // what was paid for stays with the game wherever it goes: a copy that meets this one takes the entries it lacks
+  S.iap.paid = S.iap.paid.concat([e]).slice(-100);
   return true;
 }
 
@@ -376,7 +400,7 @@ function recover(list) {
     if (!p || p.once || t.id === PID + buying) return;
     if (p.id === 'starter1') {
       if (credit(p, t.tx)) n += STARTER.gems;
-    } else if (clock() - t.at >= -TIME_SKEW && clock() - t.at < RECOVER * 1000 && credit(p, t.tx)) n += p.gems + dealBonus(p.id, t.at);
+    } else if (clock() - t.at >= -TIME_SKEW && clock() - t.at < RECOVER * 1000 && credit(p, t.tx)) n += p.gems + dealBonus(p.id, t.at, t.tx);
   });
   return n;
 }
@@ -419,12 +443,13 @@ function refunds(ev) {
 }
 
 // the bonus of the deal the player tapped, paid once to the purchase it was tapped for
-function dealBonus(id, at) {
+function dealBonus(id, at, tx) {
   var key = S.iap.deal && S.iap.deal.id === id ? 'deal' : 'held';
   var d = S.iap[key];
   if (!d || d.id !== id || at > d.until || at > clock() + TIME_SKEW) return 0;
   S.iap[key] = null;
   S.gems += d.bonus;
+  S.iap.paid.forEach(function (e) { if (e.tx === tx) e.gems += d.bonus; });
   save();
   return d.bonus;
 }
@@ -580,6 +605,7 @@ function shopStart() {
   if (!native()) return;
   loaded = true;
   onSaved = cloudSoon;
+  $('m-signin').addEventListener('click', function () { post({ cmd: 'cloudSignIn' }); });
   queued.splice(0).forEach(handle);
   askOther();
   askProducts();
@@ -605,7 +631,7 @@ function adBegin() {
 
 window.nativeStore = function (ev) {
   if (ev.t === 'time') gotTime(ev);
-  else if (ev.t === 'cloudPut') cloudFailed();
+  else if (ev.t === 'cloudPut') cloudAck(ev);
   else if (ev.t === 'cloud' || ev.t === 'cloudState') cloudEvent(ev);
   else if (loaded) handle(ev);
   else queued.push(ev);
@@ -631,7 +657,7 @@ function handle(ev) {
   } else if (ev.t === 'bought') {
     var bid = ev.id.slice(PID.length);
     buyDone(bid);
-    var extra = grant(bid, ev.tx) && product(bid).gems ? dealBonus(bid, ev.at) : 0;
+    var extra = grant(bid, ev.tx) && product(bid).gems ? dealBonus(bid, ev.at, ev.tx) : 0;
     sfx('done');
     buzz('success');
     banner('<b>' + tl('shop.thanks') + '</b><small>' + (extra ? tl('shop.thanks_bonus', { name: product(bid).name, n: extra }) : product(bid).name) + '</small>', 0, true);

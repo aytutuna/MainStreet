@@ -368,6 +368,7 @@ LANG['pt-BR'] = {
   'cloud.loaded_note': 'Seu progresso mais recente veio do seu outro dispositivo.',
   'cloud.back_note': 'Seu jogo salvo foi recuperado.',
   'cloud.local_only': 'Salvo somente neste celular',
+  'cloud.sign_in': 'Sign in',
   'menu.erase': 'Apagar todo o progresso',
 
   'num.suffixes': ',K,M,B,T,Qa,Qi,Sx,Sp,Oc,No,Dc',
