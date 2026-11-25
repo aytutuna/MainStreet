@@ -251,6 +251,7 @@ LANG['ar'] = {
   "daily.day": "اليوم {n}",
   "daily.streak": "اليوم {n} من 7. عُد كل يوم لتحافظ على السلسلة.",
   "daily.claimed": "استلمتَ مكافأة اليوم. عُد غدًا لتحافظ على السلسلة.",
+  "daily.wait": "Come back a little later to claim the next reward.",
   "boost.have": { zero: "عندك {n} جوهرة.", one: "عندك جوهرة واحدة.", two: "عندك جوهرتان.", few: "عندك {n} جواهر.", many: "عندك {n} جوهرة.", other: "عندك {n} جوهرة." },
   "boost.x2.active": "يعمل: بقي {t}. الشراء يضيف 30 د.",
   "boost.x2.idle": "كل الدخل x2 لمدة 30 دقيقة.",
