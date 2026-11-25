@@ -1811,11 +1811,12 @@ function meet(k, l, lMine) {
   ki.paid = ki.paid.slice(-100);
   ki.rf = rf;
   ['noads', 'x2'].forEach(function (f) {
-    if (ki[f] && rf.indexOf(ki[f + 'Tx']) >= 0) {
+    // a refund is the pair of transaction and user, so a purchase restored under another user stays
+    if (ki[f] && rf.indexOf(ki[f + 'Tx'] + ' ' + ki[f + 'User']) >= 0) {
       ki[f] = 0;
       ki[f + 'Tx'] = ki[f + 'User'] = '';
     }
-    if (!ki[f] && li[f] && rf.indexOf(li[f + 'Tx']) < 0) {
+    if (!ki[f] && li[f] && rf.indexOf(li[f + 'Tx'] + ' ' + li[f + 'User']) < 0) {
       ki[f] = 1;
       ki[f + 'Tx'] = li[f + 'Tx'];
       ki[f + 'User'] = li[f + 'User'];

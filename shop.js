@@ -460,6 +460,8 @@ function own(id, tx) {
     S.iap[id + 'Tx'] = tx;
     S.iap[id + 'User'] = lastUser;
   }
+  // a restored purchase is no refund, whatever an earlier answer made of it
+  if (tx) S.iap.rf = S.iap.rf.filter(function (e) { return e.split(' ')[0] !== tx; });
   if (S.iap[id]) return false;
   S.iap[id] = 1;
   delete S.iap.wait[id];
@@ -548,7 +550,8 @@ function refunds(ev) {
       return;
     }
     S.iap[id] = 0;
-    S.iap.rf = joinTx(S.iap.rf, [t]);
+    // the pair of transaction and user: a purchase that moved to another RevenueCat user (a restore) is not refunded
+    S.iap.rf = joinTx(S.iap.rf, [t + ' ' + ev.user]);
     S.iap[id + 'Tx'] = '';
     S.iap[id + 'User'] = '';
     if (id === 'noads') {

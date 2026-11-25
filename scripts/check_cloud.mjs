@@ -475,7 +475,7 @@ for (const aMore of [false, true]) {
 {
   const flags = f => 'S.iap.' + f + ' = 1; S.iap.' + f + "Tx = 'N1'; S.iap." + f + "User = 'U1'; ";
   for (const f of ['noads', 'x2']) {
-    const refund = d => d.run('S.iap.' + f + " = 0; S.iap." + f + "Tx = ''; S.iap.rf = ['N1']");
+    const refund = d => d.run('S.iap.' + f + " = 0; S.iap." + f + "Tx = ''; S.iap." + f + "User = ''; S.iap.rf = ['N1 U1']");
     const on = d => d.run('S.iap.' + f);
     // the other device had no flag and keeps its game: it gets the flag
     {
@@ -495,7 +495,7 @@ for (const aMore of [false, true]) {
       b.change(1, 100);
       b.put();
       a.ask();
-      expect(on(a) === 0 && a.run('S.iap.rf.indexOf("N1") >= 0'), f + ' came back from a copy that still carried the refunded purchase (kept here: ' + mine + ')');
+      expect(on(a) === 0 && a.run('S.iap.rf.indexOf("N1 U1") >= 0'), f + ' came back from a copy that still carried the refunded purchase (kept here: ' + mine + ')');
       a.put();
       expect(!JSON.parse(c.json).iap[f], 'the refunded ' + f + ' was written to the cloud (kept here: ' + mine + ')');
     }
@@ -523,6 +523,38 @@ for (const aMore of [false, true]) {
   a.run("window.nativeStore({ t: 'owned', ids: [], tx: [], user: 'U1' })");
   a.run("window.nativeStore({ t: 'owned', ids: [], tx: [], user: 'U1', sync: true })");
   expect(a.run('S.iap.noads') === 1 && b.run('S.iap.noads') === 1, 'a restore on the second device took Skip ads away');
+}
+
+// the finding's sequence: B restores under its own user, A's list no longer has the purchase and A strips it, then the copies
+// meet. Neither device may end without it; a real refund on B's user takes it from both
+{
+  const own = (d, user, ids, tx, how) => d.run("window.nativeStore({ t: 'owned', ids: " + JSON.stringify(ids) + ', tx: ' + JSON.stringify(tx) + ", user: '" + user + "', " + how + ': true })');
+  const listed = [{ id: PID + 'noads', tx: 'N1', at: 1 }];
+  const [a, b, c] = pair("S.iap.noads = 1; S.iap.noadsTx = 'N1'; S.iap.noadsUser = 'U1'; ");
+  b.run("refundDoubt = {}");
+  own(b, 'U2', [PID + 'noads'], listed, 'restore');
+  b.put();
+  a.run("refundDoubt = {}");
+  a.run("window.nativeStore({ t: 'owned', ids: [], tx: [], user: 'U1' })");
+  own(a, 'U1', [], [], 'sync');
+  // its put on the old base is refused and the restored copy that comes with the refusal brings the purchase back
+  expect(a.run('S.iap.rf.indexOf("N1 U1") >= 0') && a.run('S.iap.noads') === 1 && a.run('S.iap.noadsUser') === 'U2', 'the first device did not get Skip ads back from the restored copy');
+  a.put();
+  b.ask();
+  expect(b.run('S.iap.noads') === 1, 'a restore was taken as a refund on the device that restored');
+  // a restore again gives it back for good
+  own(b, 'U2', [PID + 'noads'], listed, 'restore');
+  expect(b.run('S.iap.rf.every(function (e) { return e.indexOf("N1 ") !== 0 || e === "N1 U1"; })'), 'a restore left its own transaction in the refunds');
+  b.put();
+  a.ask();
+  expect(a.run('S.iap.noads') === 1 && b.run('S.iap.noads') === 1, 'the restored purchase was switched off again');
+  // a real refund: B's user no longer lists it
+  b.run("refundDoubt = {}");
+  own(b, 'U2', [], [], 'sync');
+  expect(b.run('S.iap.noads') === 0, 'a refund on the restoring user did not strip B');
+  b.put();
+  a.ask();
+  expect(a.run('S.iap.noads') === 0, 'a refund did not reach the other device');
 }
 
 // erase all progress is a forced put: it replaces the copy whatever the base, and the other device takes the erased game
