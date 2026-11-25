@@ -35,7 +35,7 @@ function newCloud() {
 // one device: its own page (vm), its own local storage, and the native side answering its messages one pump later, as the
 // real bridges do. hold keeps the answers back, fail makes puts fail, drop loses them without a word, stale is what a cache that has not synced answers to a read
 function device(cloud, st = {}) {
-  const dev = { st, cloud, posts: [], inbox: [], hold: false, fail: false, drop: false, stale: null, out: false, fails: [] };
+  const dev = { st, cloud, posts: [], inbox: [], hold: false, fail: false, drop: false, stale: null, out: false, unavail: false, fails: [] };
   const ctx = {
     console,
     localStorage: {
@@ -68,13 +68,14 @@ function device(cloud, st = {}) {
   vm.runInContext('clock = function () { return __now(); };', ctx);
 
   const native = m => {
+    if (dev.unavail && (m.cmd === 'cloudState' || m.cmd === 'cloudGet')) return dev.inbox.push({ t: 'cloudState', state: 'unavailable' });
     if (m.cmd === 'cloudState') dev.inbox.push({ t: 'cloudState', state: 'available' });
     else if (m.cmd === 'cloudGet') dev.inbox.push(dev.stale || cloud.ev());
     else if (m.cmd === 'cloudPut') {
       if (dev.drop) return;
       if (dev.fail) dev.inbox.push({ t: 'cloudPut', ok: false, stamp: m.stamp });
       else if (dev.out) dev.inbox.push({ t: 'cloudPut', ok: false, stamp: m.stamp });
-      else if (!m.force && (dev.stale || cloud).json !== null && (dev.stale || cloud).stamp !== (m.base || '')) dev.inbox.push({ ...(dev.stale || cloud.ev()), refused: true });
+      else if (!m.force && (dev.stale || cloud).json !== null && (dev.stale || cloud).stamp !== (m.base || '')) dev.inbox.push({ ...(dev.stale || cloud.ev()), refused: true, put: m.stamp });
       else {
         cloud.json = m.json;
         cloud.at = m.at;
@@ -555,6 +556,148 @@ for (const more of [false, true]) {
   b.put();
   a.ask();
   expect(a.run('JSON.stringify(S.iap.held)') === 'null' && a.run('S.iap.wait.gems2') === undefined, 'a used deal came back to the device that used it');
+}
+
+// the iPhone's read answers from its local copy and cannot refuse a write: the first put after a return or a launch waits, so the
+// copy iCloud is still bringing from the iPad is not written over before it arrives
+{
+  const [a, b, c] = pair();
+  const s0 = c.ev();
+  now = T12;
+  b.change(50, 10800);
+  b.put();
+  const gems = b.gems();
+  now = T17;
+  tick += 100000;
+  a.stale = s0;
+  a.run('cloudBack()');
+  a.change(1, 3);
+  expect(a.run('cloudAt + CLOUD_EVERY - performance.now()') > 0, 'the first put after a return is not delayed');
+  expect(c.stamp !== a.base() && JSON.parse(c.json).gems === gems, 'a put went out on the cached base');
+  a.stale = null;
+  a.push(c.ev());
+  expect(a.gems() === gems && a.base() === c.stamp, 'the iPad copy that came before the delayed put was not taken');
+  const w = device(c, a.st);
+  w.launch();
+  expect(w.run('cloudAt + CLOUD_EVERY - performance.now()') > 0, 'the first put after a launch is not delayed');
+}
+
+// two devices open at once and played about alike: the copy does not swap between the two games on every round
+{
+  const [a, b, c] = pair();
+  a.run("devKey = 'z'");
+  b.run("devKey = 'b'");
+  for (let k = 0; k < 6; k++) {
+    now += 30000;
+    a.change(1, 30);
+    a.put();
+    b.change(1, 30);
+    a.change(1, 0);
+    b.ask();
+    b.put();
+    a.ask();
+    a.put();
+  }
+  expect(a.gems() === 112 && a.base() === c.stamp, 'the device with the larger id lost play to one that played about the same (gems ' + a.gems() + ')');
+  b.ask();
+  expect(a.gems() === b.gems(), 'the two devices did not settle on one game (' + a.gems() + ' and ' + b.gems() + ')');
+}
+
+// a ledger that is full has forgotten old entries: meeting a copy that lists them pays nothing again
+{
+  const [a, b, c] = pair();
+  for (let i = 0; i < 100; i++) {
+    now += 1000;
+    a.run('grant("gems1", "T' + i + '")');
+  }
+  a.put();
+  b.ask();
+  expect(b.run('S.iap.paid.length') === 100, 'the copy with a full ledger was not taken');
+  for (let i = 0; i < 2; i++) {
+    now += 1000;
+    b.run('grant("gems1", "X' + i + '")');
+  }
+  b.change(0, 9000);
+  a.change(1, 10);
+  a.put();
+  const g = b.gems();
+  b.ask();
+  expect(b.gems() === g, 'a full ledger paid ' + (b.gems() - g) + ' gems again');
+  expect(b.run('S.iap.paid.length') === 100 && b.run('new Set(S.iap.paid.map(function (e) { return e.tx; })).size') === 100, 'the ledger holds the same purchase twice');
+}
+
+// both devices met the deal of the day: a deal held for approval here survives the other device's purchase of the same pack
+{
+  const [a, b] = pair();
+  a.run("S.iap.deal = { id: 'gems2', bonus: 100, until: clock() + 86400000, at: clock() + 5 }; grant('gems2', 'TA'); dealBonus('gems2', clock(), 'TA')");
+  b.run("S.iap.held = { id: 'gems2', bonus: 100, until: clock() + 86400000, at: clock() }; S.iap.wait.gems2 = clock() + 86400000");
+  a.change(0, 9000);
+  b.change(0, 100);
+  a.put();
+  b.ask();
+  expect(b.run('S.iap.held && S.iap.held.id') === 'gems2' && b.run('S.iap.wait.gems2 > 0'), 'the deal held for approval was dropped by the other device\'s purchase');
+  const g = b.gems();
+  b.run('grant("gems2", "TB"); dealBonus("gems2", clock(), "TB")');
+  expect(b.gems() === g + 500 + 100, 'the approved purchase lost its bonus (gems ' + (b.gems() - g) + ')');
+}
+
+// Play Games cannot be reached: the first launch stops waiting without a copy, and the game is not told there is none
+{
+  const cloud = newCloud();
+  cloud.json = JSON.stringify({ ...good, ts: T9 });
+  const d = device(cloud);
+  d.unavail = true;
+  d.launch();
+  expect(d.run('loaded') === true && d.run('cloudState') === 'unavailable', 'an unreachable cloud did not end the wait');
+  expect(d.gems() !== good.gems, 'a copy was taken from an unreachable cloud');
+}
+
+// an erase whose forced put failed stays an erase: the copy the cloud holds does not replace it, and the put is forced when it goes
+{
+  const [a, b, c] = pair();
+  b.change(40, 80000);
+  b.put();
+  a.fail = true;
+  a.run('reset()');
+  a.run('cloudPut(true)');
+  a.ask();
+  expect(a.gems() === 0, 'a copy with more play undid an erase that had not reached the cloud');
+  const w = device(c, a.st);
+  w.fail = true;
+  w.launch();
+  expect(w.run('S.cl.force') === 1 && w.gems() === 0, 'the erase was forgotten across a reload');
+  a.fail = false;
+  a.put();
+  const sent = a.puts()[a.puts().length - 1];
+  expect(sent.force === true && JSON.parse(c.json).gems === 0, 'the erase did not reach the cloud with force on its next put');
+  expect(a.run('S.cl.force') === 0 && a.base() === c.stamp, 'the erase is still pending after its forced put landed');
+  b.ask();
+  expect(b.gems() === 0, 'the other device did not take the erased game');
+}
+
+// a refusal of an earlier put does not end the put that is in flight now
+{
+  const [a, b, c] = pair();
+  b.change(40, 80000);
+  b.put();
+  a.drop = true;
+  a.change(1, 1);
+  a.put();
+  const p = a.puts()[0].stamp;
+  a.run('reset()');
+  a.run('cloudPut(true)');
+  const e = a.run('S.cl.fly.stamp');
+  expect(e !== p, 'the erase did not become the put in flight');
+  a.push({ ...c.ev(true), put: p });
+  expect(a.run('S.cl.fly && S.cl.fly.stamp') === e, 'the refusal of an earlier put ended the one in flight');
+  a.push({ t: 'cloudPut', ok: true, stamp: e });
+  expect(a.base() === e && !a.run('S.cl.fly'), 'the answer of the erase was ignored');
+}
+
+// the iPhone never gates a put on the iCloud identity, which is nil with iCloud Drive off while the key-value store still syncs
+{
+  const swift = fs.readFileSync(path.join(root, 'ios', 'MainStreet', 'CloudBridge.swift'), 'utf8');
+  expect(!/ubiquityIdentityToken\s*==\s*nil/.test(swift), 'CloudBridge.swift still reads the iCloud identity token');
 }
 
 if (failed) process.exit(1);

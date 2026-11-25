@@ -102,7 +102,7 @@ var S = fresh();
 function fresh() {
   var s = { v: 11, cash: START_CASH, gems: 0, rep: 0, pk: {}, store: 1, run: 0, all: 0, pend: 0, ps: 0, x2: 0, call: 0, vt: rnd(VIP.first), b: {}, ms: {},
     st: { srv: 0, lost: 0, sr: 0, t: 0 }, goal: [0, 1, 2], gn: 3, gd: {}, day: { n: 0, d: -1, t: 0 }, tz: { o: zone(), at: clock() }, mi: { d: -1, m: [], b: 0 }, rg: { o: {}, days: 0, gifts: 0, combo: 0 }, lk: { on: 'classic', own: {} }, ac: { o: {}, m: {} },
-    ask: 0, clk: START_H * CLOCK / 24, iap: { noads: 0, x2: 0, starter: 0, noadsTx: '', x2Tx: '', noadsUser: '', x2User: '', wait: {}, tx: [], rf: [], paid: [] }, cl: { base: '', sig: '', bpt: 0, old: [], erased: 0, fly: null }, ads: { d: -1, n: {}, pt: 0, li: 0, sd: 0 }, ts: clock() };
+    ask: 0, clk: START_H * CLOCK / 24, iap: { noads: 0, x2: 0, starter: 0, noadsTx: '', x2Tx: '', noadsUser: '', x2User: '', wait: {}, tx: [], rf: [], paid: [] }, cl: { base: '', sig: '', bpt: 0, old: [], erased: 0, force: 0, fly: null }, ads: { d: -1, n: {}, pt: 0, li: 0, sd: 0 }, ts: clock() };
   noPlaces(s);
   s.b.produce = atLevel('produce', 1);
   return s;
@@ -1570,15 +1570,15 @@ function validate(o) {
     tx: (Array.isArray(ip.tx) ? ip.tx : []).filter(function (t) { return typeof t === 'string'; }).slice(-100),
     rf: (Array.isArray(ip.rf) ? ip.rf : []).filter(function (t) { return typeof t === 'string'; }).slice(-20),
     paid: (Array.isArray(ip.paid) ? ip.paid : []).filter(function (e) { return e && typeof e.tx === 'string'; }).map(function (e) {
-      return { tx: e.tx, id: typeof e.id === 'string' ? e.id : '', at: num(e.at, 0), gems: Math.floor(num(e.gems, 0)), x2: num(e.x2, 0), rep: Math.floor(num(e.rep, 0)) };
+      return { tx: e.tx, id: typeof e.id === 'string' ? e.id : '', at: num(e.at, 0), gems: Math.floor(num(e.gems, 0)), x2: num(e.x2, 0), rep: Math.floor(num(e.rep, 0)), deal: num(e.deal, 0), ask: num(e.ask, 0) };
     }).slice(-100),
     deal: ip.deal && typeof ip.deal.id === 'string' && num(ip.deal.bonus, 0) > 0 ? { id: ip.deal.id, bonus: Math.floor(num(ip.deal.bonus, 0)), until: num(ip.deal.until, 0), at: num(ip.deal.at, 0) } : null,
     held: ip.held && typeof ip.held.id === 'string' && num(ip.held.bonus, 0) > 0 ? { id: ip.held.id, bonus: Math.floor(num(ip.held.bonus, 0)), until: num(ip.held.until, 0), at: num(ip.held.at, 0) } : null };
   var cl = o.cl || {};
   var fl = cl.fly;
   s.cl = { base: typeof cl.base === 'string' ? cl.base : '', sig: typeof cl.sig === 'string' ? cl.sig : '',
-    bpt: num(cl.bpt, 0), erased: cl.erased ? 1 : 0, old: (Array.isArray(cl.old) ? cl.old : []).filter(function (t) { return typeof t === 'string'; }).slice(-8),
-    fly: fl && typeof fl.stamp === 'string' && typeof fl.sig === 'string' ? { stamp: fl.stamp, sig: fl.sig, pt: num(fl.pt, 0) } : null };
+    bpt: num(cl.bpt, 0), erased: cl.erased ? 1 : 0, force: cl.force ? 1 : 0, old: (Array.isArray(cl.old) ? cl.old : []).filter(function (t) { return typeof t === 'string'; }).slice(-8),
+    fly: fl && typeof fl.stamp === 'string' && typeof fl.sig === 'string' ? { stamp: fl.stamp, sig: fl.sig, pt: num(fl.pt, 0), force: fl.force ? 1 : 0 } : null };
   var ad = o.ads || {};
   s.ads = { d: Math.floor(num(ad.d, -1)), n: {}, pt: num(ad.pt, 0), li: num(ad.li, 0), sd: num(ad.sd, 0) };
   for (var k in AD_CAP) s.ads.n[k] = Math.min(AD_CAP[k], Math.floor(num(ad.n && ad.n[k], 0)));
@@ -1745,7 +1745,7 @@ function cloudSeed(raw, stamp) {
     }
     var o = validate(j);
     if (!o) return false;
-    o.cl = { base: stamp || '', sig: cloudSig(o), bpt: o.ads.pt, erased: 0, old: [], fly: null };
+    o.cl = { base: stamp || '', sig: cloudSig(o), bpt: o.ads.pt, erased: 0, force: 0, old: [], fly: null };
     localStorage.setItem(KEY, JSON.stringify(o));
     return true;
   } catch (e) {
@@ -1759,6 +1759,9 @@ function joinTx(a, b) {
   return a.concat(b).filter(function (t) { return seen[t] ? false : (seen[t] = 1); }).slice(-100);
 }
 
+// play seconds within which two games count as played equally
+var CLOUD_TIE = 45;
+
 // the away summary of the last copy taken, and whether one was taken since the app went to the background
 var cloudAway = null;
 var cloudTook = false;
@@ -1770,11 +1773,12 @@ function cloudSig(o) {
   return JSON.stringify([o.gems, o.rep, o.store, o.b, o.pl, o.pi, o.ms, o.goal, o.gn, o.gd, o.lk, o.ac, o.pk, o.iap, o.ads && o.ads.n, rg, mi, o.day && o.day.n]);
 }
 
-// a deal that is still open and that the other side's ledger does not show as used up, the one set on this device first
+// a deal that is still open and that the other side's ledger does not show as used up (by that very tap, not by another
+// device's purchase of the same pack), the one set on this device first
 function openDeal(list, paid) {
   for (var i = 0; i < list.length; i++) {
     var d = list[i];
-    if (d && d.until > clock() && !(d.at && paid.some(function (e) { return e.id === d.id && e.at >= d.at; }))) return d;
+    if (d && d.until > clock() && !(d.at && paid.some(function (e) { return e.deal === d.at; }))) return d;
   }
   return null;
 }
@@ -1787,14 +1791,22 @@ function meet(k, l, lMine) {
   var li = l.iap;
   var rf = joinTx(ki.rf, li.rf);
   var had = ki.paid.slice();
+  // known by id in either list; a ledger that is full has forgotten what it dropped, so an entry older than all it holds was
+  // credited long ago
+  var known = {};
+  ki.tx.concat(ki.paid.map(function (e) { return e.tx; })).forEach(function (t) { known[t] = 1; });
+  var full = ki.paid.length >= 100 ? ki.paid[0].at : 0;
   li.paid.forEach(function (e) {
-    if (ki.tx.indexOf(e.tx) >= 0) return;
+    if (known[e.tx] || e.at < full) return;
+    known[e.tx] = 1;
     k.gems += e.gems;
     k.x2 += e.x2;
     k.rep += e.rep;
-    ki.tx = joinTx(ki.tx, [e.tx]);
-    ki.paid = ki.paid.concat([e]).slice(-100);
+    ki.tx.push(e.tx);
+    ki.paid.push(e);
   });
+  ki.tx = ki.tx.slice(-100);
+  ki.paid = ki.paid.slice(-100);
   ki.rf = rf;
   ['noads', 'x2'].forEach(function (f) {
     if (ki[f] && rf.indexOf(ki[f + 'Tx']) >= 0) {
@@ -1817,7 +1829,7 @@ function meet(k, l, lMine) {
   var lh = openDeal([li.held], had);
   ki.held = lMine ? lh || kh : kh || lh;
   for (var w in li.wait) {
-    var gone = had.some(function (e) { return e.id === w && e.at >= li.wait[w] - ASK_WAIT * 1000; });
+    var gone = had.some(function (e) { return e.id === w && e.ask === li.wait[w]; });
     if (!gone && li.wait[w] > clock()) ki.wait[w] = Math.max(ki.wait[w] || 0, li.wait[w]);
   }
   var a = l.ads;
@@ -1841,6 +1853,7 @@ function agree(stamp, sig, pt) {
   c.sig = sig;
   c.bpt = pt;
   c.erased = 0;
+  c.force = 0;
 }
 
 // the save of another device (written under stamp) meets this game. Each side keeps the stamp of the cloud copy it last
@@ -1870,13 +1883,21 @@ function takeCloud(raw, stamp, current) {
     c.fly = null;
     return false;
   }
+  // an erase that has not reached the cloud yet is the player's last word: nothing replaces it, and its forced put follows
+  if (c.force) return false;
   var theirs = cloudSig(o);
   var their = o.ads.pt;
   var follows = cloudSig(S) === c.sig && (their >= c.bpt || o.cl.erased === 1);
   if (!follows) {
     var mine = S.ads.pt - c.bpt;
     var other = their - c.bpt;
-    if (mine > other || (mine === other && S.ts >= o.ts)) {
+    // two devices open at once each get the other's copy after a put and have played about as long; a gap that small is
+    // latency, not play, so the device that stays is the one with the larger id on both of them, and nobody flips back
+    var gap = mine - other;
+    var mid = stamp.split(':')[0];
+    var me = typeof devId === 'function' ? devId() : '';
+    var tie = Math.abs(gap) <= CLOUD_TIE && mid && me && mid !== me ? me > mid : S.ts >= o.ts;
+    if (Math.abs(gap) > CLOUD_TIE ? gap > 0 : tie) {
       meet(S, o, false);
       agree(stamp, theirs, their);
       return false;
@@ -1884,7 +1905,7 @@ function takeCloud(raw, stamp, current) {
   }
   meet(o, S, true);
   var joined = cloudSig(o);
-  o.cl = { base: stamp, sig: theirs, bpt: their, erased: 0, old: c.base && c.base !== stamp ? c.old.concat([c.base]).slice(-8) : c.old, fly: null };
+  o.cl = { base: stamp, sig: theirs, bpt: their, erased: 0, force: 0, old: c.base && c.base !== stamp ? c.old.concat([c.base]).slice(-8) : c.old, fly: null };
   S = o;
   clearShoppers();
   // the copy was saved when the other device last ran: the time since is time away
@@ -1916,6 +1937,7 @@ function reset() {
   // stamps from before the erase stay known, so a late read of the erased game's copy is not taken back
   S.cl.old = cl.old.concat(cl.base ? [cl.base] : []).slice(-8);
   S.cl.erased = 1;
+  S.cl.force = 1;
   clearShoppers();
   try {
     localStorage.removeItem(KEY);

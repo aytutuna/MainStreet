@@ -17,19 +17,19 @@
 //   {t: 'time', n, ms, sent, recv}         the server time, answering {cmd: 'time', n}: ms is the server's clock, sent and recv
 //                                          the device's Date.now() when the request left and the answer came; ms is null
 //                                          when nothing answered. It skips the queue, since the game waits for it
-//   {t: 'cloud', json, at, dev, stamp, refused?}   the save the other devices share (json is null when there is none), written at
+//   {t: 'cloud', json, at, dev, stamp, refused?, put?}   the save the other devices share (json is null when there is none), written at
 //                                          server time at by device dev under stamp, a string the writer made up. Answers
 //                                          {cmd: 'cloudGet'} and comes again when another device changes it (iPhone). refused is
 //                                          true when it answers a {cmd: 'cloudPut'} that was not written because the cloud holds
-//                                          another stamp than the put's base. Like 'time' it skips the queue; the page judges
+//                                          another stamp than the put's base; put is then the stamp of that put. Like 'time' it skips the queue; the page judges
 //                                          every copy whenever it comes, so nothing about its age is promised
 //   {t: 'cloudState', state}               'available', 'signedOut', 'pending' (signed in, first sync not done) or 'unavailable'
 //                                          (Play Games cannot be reached: no copy comes with it); answers {cmd: 'cloudState'}, skips the queue
 //   {t: 'cloudPut', ok, stamp}             the put with this stamp was written (ok true) or could not be (ok false: Android not signed in or
-//                                          a failed write, iPhone signed out of iCloud);
+//                                          a failed write; the iPhone always writes, its store keeps the copy until an account can sync it);
 //                                          skips the queue. The page sends {cmd: 'cloudPut', json, at, dev, stamp, base, force}: base is
 //                                          the stamp of the copy the game last agreed with, and unless force is true (erasing) the
-//                                          native side writes only while the cloud still holds that stamp, else it refuses. iCloud's
+//                                          native side writes only while the cloud still holds that stamp, else it refuses. An erase keeps force until a forced put has landed. iCloud's
 //                                          store cannot refuse for real, so a copy that came after a write on an old base is judged
 //                                          by the page too (a copy with less play than the game's base cannot have grown from it)
 //   {cmd: 'cloudSignIn'}                   Android: opens Play Games sign-in, then answers cloudState and cloud
@@ -183,12 +183,14 @@ function cloudPut(erase) {
   if (!native() || !loaded || blocked || timeHeld) return;
   var cl = S.cl;
   var sig = cloudSig(S);
-  if (erase !== true && (sig === cl.sig || cl.fly)) return;
+  if (erase !== true && (cl.fly || (!cl.force && sig === cl.sig))) return;
+  // an erase stays forced until a forced put has landed
+  var force = erase === true || !!cl.force;
   var stamp = devId() + ':' + stampNext();
-  cl.fly = { stamp: stamp, sig: sig, pt: S.ads.pt };
+  cl.fly = { stamp: stamp, sig: sig, pt: S.ads.pt, force: force ? 1 : 0 };
   cloudLive = stamp;
   cloudAt = performance.now();
-  post({ cmd: 'cloudPut', json: saved(), at: Math.round(clock()), dev: devId(), stamp: stamp, base: cl.base, force: erase === true });
+  post({ cmd: 'cloudPut', json: saved(), at: Math.round(clock()), dev: devId(), stamp: stamp, base: cl.base, force: force });
   save();
 }
 
@@ -228,10 +230,12 @@ function cloudLook(done) {
   post({ cmd: 'cloudState' });
   post({ cmd: 'cloudGet' });
   if (hasSave()) {
+    cloudAt = performance.now();
     cloudRet = { got: false, run: null, t: setTimeout(cloudGot, CLOUD_BACK) };
     return done(false);
   }
   cloudFind = done;
+  cloudAt = performance.now();
   $('find').hidden = false;
   cloudLate = setTimeout(cloudEnd, CLOUD_WAIT);
 }
@@ -276,6 +280,9 @@ function cloudTake(ev) {
 // taken before this one plays on
 function cloudBack() {
   if (!native()) return;
+  // iCloud answers a read from its local copy at once and brings other devices' changes later, and it cannot refuse a write,
+  // so the first put waits for them
+  cloudAt = performance.now();
   if (cloudRet) clearTimeout(cloudRet.t);
   cloudRet = { got: false, run: null, t: setTimeout(cloudGot, CLOUD_BACK) };
   post({ cmd: 'cloudGet' });
@@ -322,7 +329,7 @@ function cloudEvent(ev) {
   } else {
     cloudAnswered = true;
     // a refused put did not land: the copy that came with the refusal is what the cloud holds now
-    if (loaded && ev.refused && S.cl.fly) S.cl.fly = null;
+    if (loaded && ev.refused && S.cl.fly && ev.put === S.cl.fly.stamp) S.cl.fly = null;
     if (cloudFind) cloudFound = ev.json ? ev : cloudFound;
     else if (ev.json && loaded) {
       // only while the server time is unknown does a copy wait
@@ -368,11 +375,12 @@ function note(tx) {
 function credit(p, tx) {
   if (seen(tx)) return false;
   note(tx);
+  var ask = S.iap.wait[p.id] || 0;
   delete S.iap.wait[p.id];
-  var e = { tx: tx, id: p.id, at: clock(), gems: p.gems || 0, x2: 0, rep: 0 };
+  var e = { tx: tx, id: p.id, at: clock(), gems: p.gems || 0, x2: 0, rep: 0, deal: 0, ask: ask };
   if (p.id === 'starter1') {
     S.iap.starter = 1;
-    e = { tx: tx, id: p.id, at: clock(), gems: STARTER.gems, x2: STARTER.x2, rep: STARTER.rep };
+    e = { tx: tx, id: p.id, at: clock(), gems: STARTER.gems, x2: STARTER.x2, rep: STARTER.rep, deal: 0, ask: ask };
   }
   S.gems += e.gems;
   S.x2 += e.x2;
@@ -449,7 +457,12 @@ function dealBonus(id, at, tx) {
   if (!d || d.id !== id || at > d.until || at > clock() + TIME_SKEW) return 0;
   S.iap[key] = null;
   S.gems += d.bonus;
-  S.iap.paid.forEach(function (e) { if (e.tx === tx) e.gems += d.bonus; });
+  S.iap.paid.forEach(function (e) {
+    if (e.tx === tx) {
+      e.gems += d.bonus;
+      e.deal = d.at;
+    }
+  });
   save();
   return d.bonus;
 }
