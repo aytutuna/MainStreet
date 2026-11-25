@@ -765,6 +765,26 @@ for (const bMore of [true, false]) {
   expect(a.gems() === b.gems(), 'the two devices did not end on one game after the iPhone came back (' + a.gems() + ' and ' + b.gems() + ')');
 }
 
+// an iPhone reinstall gets a new device id, so its game is written to a key of its own and the old install's key is still
+// there when iCloud delivers it: the game started meanwhile is judged against it by play
+{
+  const [a, , c] = pairIos();
+  a.change(9, 4000);
+  a.put();
+  const d = device(c);
+  d.seen = {};
+  d.lag = true;
+  d.lagged.push(c.keys[a.id()]);
+  d.launch();
+  d.run('cloudEnd()');
+  expect(d.run('S.ads.ap') === 0 && d.base() === '', 'the new game did not start empty');
+  d.change(2, 30);
+  d.put();
+  expect(JSON.parse(c.keys[a.id()].json).gems === 109, 'the new install wrote over the key of the old install');
+  d.catchUp();
+  expect(d.gems() === 109 && d.base() === c.keys[a.id()].stamp, 'the old install copy did not win over a game started before it arrived (gems ' + d.gems() + ')');
+}
+
 // erasing, on the key-value store: the erased game replaces the other device's game whatever it played since, and a copy written
 // before the erase that iCloud delivers late does not bring the erased game back
 {
