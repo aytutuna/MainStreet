@@ -79,4 +79,11 @@ for (const code of codes) {
   if (r.errors.length > 40) console.log(`  ... ${r.errors.length - 40} more`);
   if (r.errors.length) bad++;
 }
+// A text that is still English in every language was added without being translated; the per-language check only sees missing keys.
+if (args.includes('--all')) {
+  const same = Object.keys(en).filter(k => typeof en[k] === 'string' && /\p{L}{3}/u.test(en[k].replace(/\{\w+\}/g, ''))
+    && !/^(native\.|app\.title$|reg\.vip\.name$)/.test(k) && codes.every(c => load(c)[k] === en[k]));
+  for (const k of same) console.log(`untranslated in every language: ${k}`);
+  if (same.length) bad++;
+}
 process.exit(bad ? 1 : 0);
