@@ -65,7 +65,7 @@ function device(ts) {
   posts.length = 0;
   run('S = fresh()');
   run('S.ads.pt = 700; S.ts = ' + ts + '; cloudTs = ' + ts);
-  run("loaded = true; blocked = false; cloudSeen = true; cloudState = 'available'; cloudPend = null; cloudRet = null; timeHeld = false; cloudTaken = false");
+  run("loaded = true; blocked = false; cloudSeen = cloudSure = true; cloudState = 'available'; cloudPend = null; cloudRet = null; timeHeld = false; cloudTaken = false");
   run('cloudAt = -1e9; cloudSent = cloudLast = cloudSig(S); cloudMine = 0');
 }
 
@@ -225,7 +225,7 @@ for (const f of ['noads', 'x2']) {
   if (run('S.iap.' + f) !== 0 || run('S.ts') !== T12) fail(f + ' survived a taken copy that lists its refund');
 }
 
-// 9. the player keeps changing things here while the read has no answer: the copy that comes late is older than them
+// 9. changes made here while the read has no answer sit on a base the copy may be newer than: the newer copy wins
 device(T9);
 now = T9 + 2 * H;
 run('cloudBack()');
@@ -237,6 +237,24 @@ now = T17;
 run('save()');
 run('cloudPut()');
 if (puts().length) fail('a put went out while the read had no answer');
+nativeEv(ipad(T12));
+if (run('S.ts') !== T12) fail('changes made before the read answered outranked a newer copy (S.ts ' + run('S.ts') + ')');
+
+// 9b. the same copy is refused once it is older than the base
+device(T12);
+run('cloudBack()');
+change();
+nativeEv(ipad(T9));
+if (run('S.ts') === T9) fail('a copy older than the base replaced the game');
+
+// 9c. changes made after a fresh answer outrank a copy that comes later and is older than them
+device(T9);
+run('cloudBack()');
+nativeEv({ t: 'cloud', json: null, at: 0, dev: '' });
+now = T17 - 60000;
+change();
+now = T17;
+run('save()');
 const mine = run('S.gems');
 nativeEv(ipad(T12));
 if (run('S.gems') !== mine) fail('the hours played here were dropped for an older copy (gems ' + run('S.gems') + ')');
@@ -253,31 +271,34 @@ run('cloudPut()');
 if (puts().length !== 1) fail('the waiting change was not put');
 now = T17;
 
-// 11. launch with a local save: play waits for the cloud, a cache answer does not end the wait, the fresh copy is taken
+// 11. launch with a local save: play waits for the cloud's first answer, the fresh copy is taken
 device(T9);
 store['mainstreet.v11'] = copy(T9);
 run('cloudRet = null; cloudSeen = false; cloudLook(function () {})');
 if (!run('cloudHeld()')) fail('a launch with a local save did not wait for the cloud');
 nativeEv({ t: 'cloud', json: copy(T9 - H), at: 0, dev: 'ipad', fresh: false });
-if (!run('cloudHeld()')) fail('the cache answer ended the wait');
+if (run('cloudHeld()')) fail('the cache answer did not end the wait');
 nativeEv(ipad(T12));
-if (run('cloudHeld()')) fail('the fresh answer did not end the wait');
 if (run('S.ts') !== T12) fail('the newer copy was refused at launch (S.ts ' + run('S.ts') + ')');
 
-// 11b. the same on return: the cache answer keeps the hold, so nothing is changed before the fresh copy
+// 11b. on return a cache answer ends the hold; a tap before the fresh copy does not outrank it
 device(T9);
 run('cloudBack()');
 nativeEv({ t: 'cloud', json: copy(T9 - H), at: 0, dev: 'ipad', fresh: false });
-if (!run('cloudHeld()')) fail('the return was released by a cache answer');
+if (run('cloudHeld()')) fail('the cache answer kept the return waiting');
+now = T17 - 1000;
+change();
+now = T17;
+nativeEv(ipad(T12));
+if (run('S.ts') !== T12) fail('a tap before the fresh copy kept the old game (S.ts ' + run('S.ts') + ')');
 
-// 11c. what the away pay unlocks is not a change of the player's: the newer copy still wins
+// 11c. an achievement unlocked after the away pay, before the cloud answers, is not a change that outranks a newer copy
 device(T9);
 store['mainstreet.v11'] = copy(T9);
-run('cloudSent = cloudLast = ""; cloudMine = 0; load()');
-if (run('cloudLast !== cloudSig(S)')) fail('load left the away pay to count as a change of the player\'s');
-run('save()');
+run('cloudSure = cloudSeen = false; load()');
+run('S.ac.o.zz = 1; save()');
 nativeEv(ipad(T12));
-if (run('S.ts') !== T12) fail('the away pay made the old game win over a newer copy (S.ts ' + run('S.ts') + ')');
+if (run('S.ts') !== T12) fail('an unlock before the answer made the old game win over a newer copy (S.ts ' + run('S.ts') + ')');
 
 // a copy older than what this device read is still refused
 device(T12);

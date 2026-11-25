@@ -242,7 +242,7 @@ function cloudBack() {
   if (!native()) return;
   if (cloudRet) clearTimeout(cloudRet.t);
   cloudRet = { got: false, run: null, t: setTimeout(cloudGot, CLOUD_BACK) };
-  cloudSeen = false;
+  cloudSeen = cloudSure = false;
   post({ cmd: 'cloudGet' });
 }
 
@@ -291,7 +291,6 @@ function cloudEvent(ev) {
     cloudMenu();
   } else {
     // an answer from a cache that iCloud has not refreshed yet (fresh false) can be taken but does not open the puts
-    if (ev.fresh !== false) cloudSeen = true;
     if (cloudFind) cloudFound = ev.json || cloudFound;
     else if (ev.json && loaded && ev.dev !== devId()) {
       // a copy is judged by its own time whenever it comes; only while the server time is unknown does it wait
@@ -299,8 +298,9 @@ function cloudEvent(ev) {
       else if (!cloudPend || stampOf(ev.json) >= stampOf(cloudPend)) cloudPend = ev.json;
     }
   }
-  // the cache answer of a return can lack the other device's write, so only a fresh one ends the wait
-  if (ev.t === 'cloud' && ev.fresh !== false) cloudGot();
+  // set after the copy is judged, so what the player did while waiting is not taken as newer than it
+  if (ev.t === 'cloud' && ev.fresh !== false) cloudSeen = cloudSure = true;
+  if (ev.t === 'cloud') cloudGot();
   if (cloudFind && (cloudFound || (cloudSeen && cloudState && cloudState !== 'pending'))) cloudEnd();
 }
 

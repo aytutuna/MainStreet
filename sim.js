@@ -1766,12 +1766,16 @@ var cloudSent = '';
 // be late, so a copy newer than the last one read can still be older than what the player has just done here
 var cloudMine = 0;
 var cloudLast = '';
+// whether the cloud has answered fresh since the launch or the last return
+var cloudSure = false;
 
 function cloudNote() {
   var sig = cloudSig(S);
   if (sig === cloudLast) return;
   cloudLast = sig;
-  cloudMine = clock();
+  // before the cloud has answered this launch or return, a change sits on a base that may be older than the copy, so it
+  // does not outrank one
+  if (cloudSure) cloudMine = clock();
 }
 
 function cloudSig(o) {
