@@ -765,6 +765,37 @@ for (const bMore of [true, false]) {
   expect(a.gems() === b.gems(), 'the two devices did not end on one game after the iPhone came back (' + a.gems() + ' and ' + b.gems() + ')');
 }
 
+// erasing, on the key-value store: the erased game replaces the other device's game whatever it played since, and a copy written
+// before the erase that iCloud delivers late does not bring the erased game back
+{
+  const [a, b] = pairIos();
+  now = T12;
+  b.change(40, 80000);
+  b.put();
+  a.pump();
+  now = T17;
+  b.change(1, 1);
+  a.run('reset()');
+  a.run('cloudPut(true)');
+  b.pump();
+  expect(b.gems() === 0, 'a game erased on the other device did not replace the one with more play (gems ' + b.gems() + ')');
+  expect(b.run('S.er') === T17 && a.run('S.er') === T17, 'the erase time did not reach both devices');
+}
+{
+  const [a, b] = pairIos();
+  a.lag = true;
+  now = T12;
+  b.change(40, 80000);
+  b.put();
+  now = T17;
+  a.run('reset()');
+  a.run('cloudPut(true)');
+  a.catchUp();
+  expect(a.gems() === 0 && !a.run('cloudShown') && a.run('S.er') === T17, 'a copy written before the erase brought the erased game back (gems ' + a.gems() + ')');
+  b.pump();
+  expect(b.gems() === 0, 'the other device did not take the erased game');
+}
+
 // regulars, mission claims and the daily streak are progress too
 {
   const [a, b] = pair();
