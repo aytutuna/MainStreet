@@ -4,6 +4,7 @@ import android.os.Handler
 import android.os.Looper
 import com.google.android.gms.ads.AdError
 import com.google.android.gms.ads.AdRequest
+import com.google.android.gms.ads.identifier.AdvertisingIdClient
 import com.google.android.gms.ads.FullScreenContentCallback
 import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.MobileAds
@@ -48,6 +49,13 @@ class AdsBridge(private val activity: MainActivity) {
         val required = UserMessagingPlatform.getConsentInformation(activity).privacyOptionsRequirementStatus ==
             ConsentInformation.PrivacyOptionsRequirementStatus.REQUIRED
         activity.emit(JSONObject().put("t", "privacy").put("required", required))
+    }
+
+    fun adId() {
+        Thread {
+            val id = try { AdvertisingIdClient.getAdvertisingIdInfo(activity).id } catch (e: Exception) { null }
+            activity.emit(JSONObject().put("t", "adId").put("id", id ?: ""))
+        }.start()
     }
 
     fun options() {

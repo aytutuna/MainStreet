@@ -37,6 +37,7 @@ class Bridge(private val activity: MainActivity) {
                 "adStart" -> activity.ads.start()
                 "adReady" -> activity.ads.report()
                 "privacy" -> activity.ads.options()
+                "adId" -> activity.ads.adId()
                 "ad" -> activity.ads.show(msg.optString("kind"))
                 "radio" -> activity.radio.command(msg)
             }
@@ -58,6 +59,6 @@ class Bridge(private val activity: MainActivity) {
               } };
               Object.defineProperty(Navigator.prototype, 'vibrate', { value: undefined });
             })();
-        """.trimIndent()
+        """.trimIndent() + if (BuildConfig.TESTER) "\nwindow.TESTER = 1;" else ""
     }
 }

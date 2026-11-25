@@ -40,6 +40,7 @@ android {
         versionCode = 1
         versionName = "1.0"
         buildConfigField("String", "RC_KEY", "\"goog_nHCOIYdmsGqpubsJiIwMEGqMvYI\"")
+        buildConfigField("boolean", "TESTER", "false")
     }
 
     signingConfigs {
@@ -58,9 +59,10 @@ android {
         buildConfig = true
     }
 
-    // Debug builds show Google's test ads; the real units only go in the release build
+    // Debug and tester builds show Google's test ads and the game's test menu; the real units only go in the release build
     buildTypes {
         debug {
+            buildConfigField("boolean", "TESTER", "true")
             buildConfigField("String", "AD_REWARD", "\"ca-app-pub-3940256099942544/5224354917\"")
             buildConfigField("String", "AD_INTER", "\"ca-app-pub-3940256099942544/1033173712\"")
         }
@@ -71,6 +73,13 @@ android {
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
             signingConfigs.findByName("release")?.let { signingConfig = it }
+        }
+        create("qa") {
+            initWith(getByName("release"))
+            matchingFallbacks += "release"
+            buildConfigField("boolean", "TESTER", "true")
+            buildConfigField("String", "AD_REWARD", "\"ca-app-pub-3940256099942544/5224354917\"")
+            buildConfigField("String", "AD_INTER", "\"ca-app-pub-3940256099942544/1033173712\"")
         }
     }
 
