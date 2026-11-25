@@ -158,13 +158,25 @@ final class GameViewController: UIViewController, WKNavigationDelegate, WKUIDele
         loadGame()
     }
 
+    private var reloads: [Date] = []
+
     private func loadGame() {
         webView.load(URLRequest(url: URL(string: "app://game/index.html")!))
     }
 
     // iOS can kill the web process in the background, which leaves a blank page
+    // a page that keeps dying would loop forever, so after three in a minute it stops and says so
     func webViewWebContentProcessDidTerminate(_ webView: WKWebView) {
-        loadGame()
+        let now = Date()
+        reloads = reloads.filter { now.timeIntervalSince($0) < 60 } + [now]
+        if reloads.count <= 3 {
+            loadGame()
+            return
+        }
+        let message = NSLocalizedString("reload_failed", value: "The game stopped. Close Main Street and open it again.", comment: "")
+        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
+        alert.addAction(UIAlertAction(title: NSLocalizedString("ok", comment: ""), style: .default))
+        present(alert, animated: true)
     }
 
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction, decisionHandler: @escaping (WKNavigationActionPolicy) -> Void) {
@@ -174,21 +186,5 @@ final class GameViewController: UIViewController, WKNavigationDelegate, WKUIDele
         } else {
             decisionHandler(.allow)
         }
-    }
-
-    func webView(_ webView: WKWebView, runJavaScriptAlertPanelWithMessage message: String, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping () -> Void) {
-        let alert = UIAlertController(title: nil, message: message, preferredStyle: .alert)
-        alert.addAction(UIAlertAction(title: NSLocalizedString("ok", comment: ""), style: .default) { _ in completionHandler() })
-        present(alert, animated: true)
-    }
-
-    func webView(_ webView: WKWebView, runJavaScriptTextInputPanelWithPrompt prompt: String, defaultText: String?, initiatedByFrame frame: WKFrameInfo, completionHandler: @escaping (String?) -> Void) {
-        let alert = UIAlertController(title: nil, message: prompt, preferredStyle: .alert)
-        alert.addTextField { field in field.text = defaultText }
-        alert.addAction(UIAlertAction(title: NSLocalizedString("cancel", comment: ""), style: .cancel) { _ in completionHandler(nil) })
-        alert.addAction(UIAlertAction(title: NSLocalizedString("ok", comment: ""), style: .default) { _ in
-            completionHandler(alert.textFields?.first?.text ?? "")
-        })
-        present(alert, animated: true)
     }
 }
