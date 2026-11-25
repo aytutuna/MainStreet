@@ -1676,27 +1676,6 @@ function saved() {
   return out;
 }
 
-function exportCode() {
-  return btoa(saved());
-}
-
-function importCode(code) {
-  try {
-    var o = validate(JSON.parse(atob(code.trim())));
-    if (!o) return false;
-    // purchases belong to the store account, not to the code
-    o.iap = S.iap;
-    o.ads = S.ads;
-    S = o;
-    S.ts = clock();
-    clearShoppers();
-    save();
-    return true;
-  } catch (e) {
-    return false;
-  }
-}
-
 function reset() {
   var iap = S.iap;
   var ads = S.ads;

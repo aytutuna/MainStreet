@@ -2081,19 +2081,6 @@ function setSound() {
   $('m-buzz').textContent = tl(vib ? 'menu.vibration_on' : 'menu.vibration_off');
 }
 
-function codeOk(code) {
-  try {
-    return !!validate(JSON.parse(atob(code.trim())));
-  } catch (e) {
-    return false;
-  }
-}
-
-function flash(id, text, old) {
-  $(id).textContent = text;
-  setTimeout(function () { $(id).textContent = old; }, 1500);
-}
-
 function afterLoad() {
   saleAvg = 0;
   goalHold = -1;
@@ -2268,45 +2255,6 @@ function wire() {
     } catch (e) {}
     setSound();
     buzz();
-  });
-  $('m-copy').addEventListener('click', function () {
-    var code = exportCode();
-    $('m-code').value = code;
-    if (navigator.clipboard && navigator.clipboard.writeText) {
-      navigator.clipboard.writeText(code).then(function () {
-        flash('m-copy', tl('menu.copied'), tl('menu.copy_code'));
-      }, function () {
-        $('m-code').select();
-      });
-    } else {
-      $('m-code').select();
-    }
-  });
-  var loadArmed = false;
-  var help = $('m-help').textContent;
-  $('m-load').addEventListener('click', function () {
-    if (!codeOk($('m-code').value)) {
-      loadArmed = false;
-      flash('m-load', tl('menu.not_code'), tl('menu.load_code'));
-      return;
-    }
-    if (!loadArmed) {
-      loadArmed = true;
-      $('m-load').textContent = tl('menu.tap_again');
-      $('m-help').textContent = tl('menu.load_warn');
-      setTimeout(function () {
-        loadArmed = false;
-        $('m-load').textContent = tl('menu.load_code');
-        $('m-help').textContent = help;
-      }, 3000);
-      return;
-    }
-    loadArmed = false;
-    importCode($('m-code').value);
-    $('m-load').textContent = tl('menu.load_code');
-    $('m-help').textContent = help;
-    afterLoad();
-    $('menu').hidden = true;
   });
   var armed = false;
   $('m-reset').addEventListener('click', function () {

@@ -132,10 +132,6 @@ LANG['en'] = {
   'menu.achievements': 'Achievements',
   // Menu button that reopens the privacy/ads consent form. Shown only in some regions.
   'menu.privacy': 'Privacy choices',
-  // Placeholder of the text box where the player pastes a backup code.
-  'menu.paste_ph': 'Paste a code',
-  // "Copy code" here means the menu button of that name; keep the two consistent.
-  'menu.help': 'Copy code is your backup. Paste it on another device to move the game.',
   // Credits. Translate only the labels (Models, Sounds, Store models, ...) and the connecting words; keep every name, company, URL and the <br> tags exactly.
   'menu.credits': 'Models: Kenney (www.kenney.nl)<br>Sounds: Kenney; recordings by Membrans, G4F SFX, The Chris Alan, Gamemaster Audio, SoundBits, 3maze, Mechanical Wave, Shapeforms, Airborne Sound, Soundrangers, SmartSoundFX, Kpow Sounds and Creative Audio Pool, from the Sonniss GameAudioGDC bundles<br>Store models: Pipework packs<br>Pizza props: Vira Voloshyn<br>Tools: mekmeesk<br>Nature: Kay Lousberg (KayKit, www.kaylousberg.com), Quaternius, Elijah Cobden<br>Icons: LimeZu (https://limezu.itch.io/)<br>Font: Lilita One by Juan Montoreano (SIL Open Font License)<br>3D: three.js (threejs.org)',
   // Music and radio credits. Translate only the label words ("Music, from Pixabay:", "by") and the last sentence; keep every title, artist name and the <br> tags exactly.
@@ -548,16 +544,6 @@ LANG['en'] = {
   'menu.sound_off': 'Sound: off',
   'menu.vibration_on': 'Vibration: on',
   'menu.vibration_off': 'Vibration: off',
-  // Copy code is a backup code of the game that the player can paste on another device.
-  'menu.copy_code': 'Copy code',
-  // Shown for a moment on the button after the code was copied.
-  'menu.copied': 'Copied',
-  'menu.load_code': 'Load code',
-  // Shown for a moment when the pasted text is not a game code.
-  'menu.not_code': 'Not a code',
-  // The first tap on Load code asks for a second one.
-  'menu.tap_again': 'Tap again',
-  'menu.load_warn': 'Loading replaces this game with the one in the code.',
   'menu.erase_armed': 'Tap again: erases gems, stores and streak',
   'menu.erase': 'Erase all progress',
 
