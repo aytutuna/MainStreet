@@ -89,11 +89,11 @@ jobs:
           if [ "${{ inputs.tester }}" = "true" ]; then
             [ "$stamp" = "1" ]
             grep -q "$test" "$RUNNER_TEMP/strings.txt"
-            ! grep -q "$live" "$RUNNER_TEMP/strings.txt"
+            if grep -q "$live" "$RUNNER_TEMP/strings.txt"; then exit 1; fi
           else
             [ -z "$stamp" ]
             grep -q "$live" "$RUNNER_TEMP/strings.txt"
-            ! grep -q "$test" "$RUNNER_TEMP/strings.txt"
+            if grep -q "$test" "$RUNNER_TEMP/strings.txt"; then exit 1; fi
           fi
       - name: Boot
         run: |

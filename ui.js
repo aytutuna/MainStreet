@@ -2341,6 +2341,7 @@ function wire() {
   document.addEventListener('visibilitychange', function () {
     if (document.hidden) {
       if (ac) ac.suspend();
+      if (sweep) sweep.redo = true;
       radioSync();
       save();
       tell({ cmd: 'set', list: reminders() });
@@ -2435,8 +2436,9 @@ function testAdId(id) {
   testOut('Ad test id: ' + (id || 'none'));
 }
 
-// each pool size runs for ten minutes at normal speed; the table shows frames per second and what the store served and
-// earned per minute
+// each pool size runs for a set time at normal speed; the table shows frames per second, the income rate the HUD shows,
+// what the store really earned per minute, earned over shown, and shoppers served per minute. A step that was in the
+// background starts over, since the away income and the frame gap would skew it
 function startSweep() {
   if (sweep) return;
   speed = 1;
@@ -2451,17 +2453,31 @@ function sweepStart(t) {
   sweep.frames = 0;
   sweep.srv = S.st.srv;
   sweep.all = S.all;
+  sweep.shown = 0;
+  sweep.last = t;
+  sweep.said = -1;
+  sweep.redo = false;
 }
 
 function sweepFrame(t) {
+  if (sweep.redo) return sweepStart(t);
   sweep.frames++;
+  sweep.shown += rate() * (t - sweep.last) / 1000;
+  sweep.last = t;
   var secs = (t - sweep.t) / 1000;
   if (secs < SWEEP_SECS) {
-    testOut('Pool ' + SWEEP[sweep.i] + ': ' + Math.ceil(SWEEP_SECS - secs) + ' s left\n' + sweep.rows.join('\n'));
+    var left = Math.ceil(SWEEP_SECS - secs);
+    if (left !== sweep.said) {
+      sweep.said = left;
+      testOut('Pool ' + SWEEP[sweep.i] + ': ' + left + ' s left\n' + sweep.rows.join('\n'));
+    }
     return;
   }
+  var earned = S.all - sweep.all;
   sweep.rows.push(SWEEP[sweep.i] + ' figures: ' + (sweep.frames / secs).toFixed(1) + ' fps, ' +
-    ((S.st.srv - sweep.srv) * 60 / secs).toFixed(1) + ' shown/min, ' + short((S.all - sweep.all) * 60 / secs) + ' earned/min');
+    short(sweep.shown * 60 / secs) + ' shown/min, ' + short(earned * 60 / secs) + ' earned/min, ' +
+    (sweep.shown > 0 ? (earned / sweep.shown).toFixed(2) : '-') + ' earned/shown, ' +
+    ((S.st.srv - sweep.srv) * 60 / secs).toFixed(1) + ' served/min');
   if (++sweep.i < SWEEP.length) return sweepStart(t);
   testOut(sweep.rows.join('\n'));
   View.pool(64);
