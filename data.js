@@ -196,9 +196,10 @@ var VIP = { first: [300, 720], gap: [600, 900], tip: [40, 60], gems: 0.1, gemN: 
 RG.vip = { id: 'vip', name: tl('reg.vip.name'), ref: 'chars/character-male-b@9,2>15,2', hat: 'top', hc: 0xf2c230, vip: true };
 
 // Things sold in the shop, under the ids com.aytutuna.mainstreet.<id> in both stores. A one-time product is kept as a
-// flag in S.iap; a gem pack pays its gems every time. The starter pack adds STARTER to a store's first move
+// flag in S.iap; a gem pack pays its gems every time. The starter pack is a consumable that pays STARTER once per
+// transaction, and S.iap.starter keeps a second one from being bought
 var PRODUCTS = [
-  { id: 'starter', once: 1, ic: 'ui_gift', name: tl('product.starter.name'), text: tl('product.starter.text') },
+  { id: 'starter1', ic: 'ui_gift', name: tl('product.starter.name'), text: tl('product.starter.text') },
   { id: 'noads', once: 1, ic: 'ui_star', name: tl('product.noads.name'), line: tl('product.noads.line') },
   { id: 'x2', once: 1, ic: 'ui_bolt', name: tl('product.x2.name'), line: tl('product.x2.line') },
   { id: 'gems1', gems: 80, usd: 0.99, ic: 'ui_gem', name: tl('shop.gems', { n: 80 }) },

@@ -45,20 +45,12 @@ function product(id) {
   return null;
 }
 
-// a one-time product is flagged when the store says the player owns it. The starter pack's extras are only for a new
-// purchase, which makes the flag 2; a restore leaves it at 1
-function own(id, fresh) {
+// a one-time product is flagged when the store says the player owns it
+function own(id) {
   var p = product(id);
-  if (!p || !p.once) return false;
-  var extras = id === 'starter' && fresh && S.iap.starter !== 2;
-  if (!extras && S.iap[id]) return false;
-  S.iap[id] = extras ? 2 : 1;
+  if (!p || !p.once || S.iap[id]) return false;
+  S.iap[id] = 1;
   if (id === 'noads') post({ cmd: 'adStop' });
-  if (extras) {
-    S.gems += STARTER.gems;
-    S.x2 += STARTER.x2;
-    S.rep += STARTER.rep;
-  }
   return true;
 }
 
@@ -71,34 +63,38 @@ function note(tx) {
   if (S.iap.tx.length > 100) S.iap.tx.shift();
 }
 
-// a gem pack pays once per transaction id, even if the store reports it again
+// a consumable pays once per transaction id, even if the store reports it again, and whenever it happened
 function credit(p, tx) {
   if (seen(tx)) return false;
   note(tx);
-  S.gems += p.gems;
+  if (p.id === 'starter1') {
+    S.iap.starter = 1;
+    S.gems += STARTER.gems;
+    S.x2 += STARTER.x2;
+    S.rep += STARTER.rep;
+  } else S.gems += p.gems;
   return true;
 }
 
-// a purchase is new when its transaction is unseen and just happened; the App Store answers a second buy of a
-// one-time product with the old transaction
-function grant(id, tx, at) {
+function grant(id, tx) {
   var p = product(id);
   if (!p) return false;
-  var fresh = !seen(tx) && Math.abs(clock() - at) < 300000;
-  var done = p.once ? own(id, fresh) : credit(p, tx);
-  if (done && p.once && fresh) note(tx);
+  var done = p.once ? own(id) : credit(p, tx);
   if (done) save();
   return done;
 }
 
-// gem packs the store lists that the page may not have credited, say because the app died after the charge. Only recent
-// ones count, so a reinstall does not pay old packs again
+// consumables the store lists that the page may not have credited, say because the app died after the charge. Gem packs
+// count only when recent, so a reinstall does not pay old packs again; the starter pack counts whenever it was bought
 function recover(list) {
   var n = 0;
   (list || []).forEach(function (t) {
     var p = product(t.id.slice(PID.length));
     // the pack being bought right now is credited by its own answer
-    if (p && p.gems && t.id !== PID + buying && clock() - t.at < RECOVER * 1000 && credit(p, t.tx)) n += p.gems + dealBonus(p.id, t.at);
+    if (!p || p.once || t.id === PID + buying) return;
+    if (p.id === 'starter1') {
+      if (credit(p, t.tx)) n += STARTER.gems;
+    } else if (clock() - t.at < RECOVER * 1000 && credit(p, t.tx)) n += p.gems + dealBonus(p.id, t.at);
   });
   return n;
 }
@@ -179,7 +175,7 @@ function gemTile(p, i, base, deal) {
 }
 
 function paintShop() {
-  var starter = product('starter');
+  var starter = product('starter1');
   var gems = PRODUCTS.filter(function (p) { return p.gems; });
   var base = gems[0].gems / gems[0].usd;
   var deal = dealNow();
@@ -203,7 +199,7 @@ function openShop(at) {
 }
 
 function buyProduct(id) {
-  if (buying || !prices[PID + id]) return;
+  if (buying || !prices[PID + id] || (id === 'starter1' && S.iap.starter)) return;
   buying = id;
   var d = dealNow();
   // the deal is fixed when the player taps, so a day change during the purchase does not lose it
@@ -251,7 +247,7 @@ function handle(ev) {
     (ev.list || []).forEach(function (p) { prices[p.id] = p.price; });
     storeUp = !!(ev.list && ev.list.length);
   } else if (ev.t === 'owned') {
-    (ev.ids || []).forEach(function (id) { own(id.slice(PID.length), false); });
+    (ev.ids || []).forEach(function (id) { own(id.slice(PID.length)); });
     var back = recover(ev.tx);
     if (back) banner('<b>' + tl('shop.recovered', { n: back, count: short(back) }) + '</b><small>' + tl('shop.recovered_note') + '</small>', 0);
     if (ev.restore) banner('<b>' + tl(S.iap.noads + S.iap.x2 + S.iap.starter > restoreWas ? 'shop.restored' : 'shop.nothing_to_restore') + '</b>', 0);
@@ -259,7 +255,7 @@ function handle(ev) {
   } else if (ev.t === 'bought') {
     buying = '';
     var bid = ev.id.slice(PID.length);
-    var extra = grant(bid, ev.tx, ev.at) && product(bid).gems ? dealBonus(bid, ev.at) : 0;
+    var extra = grant(bid, ev.tx) && product(bid).gems ? dealBonus(bid, ev.at) : 0;
     sfx('done');
     buzz('success');
     banner('<b>' + tl('shop.thanks') + '</b><small>' + (extra ? tl('shop.thanks_bonus', { name: product(bid).name, n: extra }) : product(bid).name) + '</small>', 0, true);
@@ -409,7 +405,7 @@ function paintAds() {
 function updateDeals() {
   var on = native() && loaded && S.ads.pt >= AD_START;
   var dl = on ? dealNow() : null;
-  var want = [on && !S.iap.starter && !!priceOf(product('starter')) && starterLeft(false) >= 0, !!dl, canWatch('gems'),
+  var want = [on && !S.iap.starter && !!priceOf(product('starter1')) && starterLeft(false) >= 0, !!dl, canWatch('gems'),
     S.x2 <= 0 && (canWatch('x2') || S.gems >= X2_COST)];
   var cap = innerHeight < 700 ? 2 : 3;
   var n = 0;
@@ -435,10 +431,10 @@ function paintAwayAd() {
 
 // the starter pack is offered once, after the first store move
 function offerStarter() {
-  if (!native() || S.iap.starter || S.iap.offered || S.store < 2 || !priceOf(product('starter'))) return;
+  if (!native() || S.iap.starter || S.iap.offered || S.store < 2 || !priceOf(product('starter1'))) return;
   S.iap.offered = 1;
-  $('pack-txt').textContent = tl('pack.once', { text: product('starter').text });
-  $('pack-buy').textContent = tl('pack.get', { price: priceOf(product('starter')) });
+  $('pack-txt').textContent = tl('pack.once', { text: product('starter1').text });
+  $('pack-buy').textContent = tl('pack.get', { price: priceOf(product('starter1')) });
   $('pack').hidden = false;
 }
 
