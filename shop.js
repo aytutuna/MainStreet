@@ -679,7 +679,7 @@ function handle(ev) {
     buyDone(wid);
     S.iap.wait[wid] = clock() + ASK_WAIT * 1000;
     // a held deal is kept apart, so the deal of another day can still be tapped meanwhile
-    if (S.iap.deal && S.iap.deal.id === wid) {
+    if (S.iap.deal && S.iap.deal.id === wid && !(S.iap.held && S.iap.held.until > clock())) {
       S.iap.held = S.iap.deal;
       S.iap.held.until = S.iap.wait[wid];
       S.iap.deal = null;

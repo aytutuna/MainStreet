@@ -63,7 +63,7 @@ ev({ t: 'bought', id: pid + 'gems1', tx: 'b', at: now + 2000 });
 if (run('buying') !== '') fail('the answer of the pack in flight did not free the buttons');
 
 // the deal of the next day, for another pack, is tapped while the first answer is still to come
-run("S = fresh(); buying = ''; DEAL.packs = ['gems2', 'gems1']; prices[PID + 'gems3'] = '$9.99'");
+run("S = fresh(); buying = ''; prices[PID + 'gems3'] = '$9.99'");
 run("DEAL.packs = ['gems2']");
 run("buyProduct('gems2')");
 run("buying = ''; DEAL.packs = ['gems3']");
