@@ -221,9 +221,6 @@ var AD_GEMS = 3;
 var RECOVER = 3 * 86400;
 // seconds of play before the ads, and with them the consent and tracking prompts, start
 var AD_START = 180;
-// an interstitial waits this long after the player's first play and after any other ad, in seconds
-var AD_NEW = 600;
-var AD_GAP = 600;
 
 // How a store can look: a multiplying tint for the floors, the walls and the steel trim, the colours of the sign over the
 // doors and of the pylon by the street. A look opens at store `store` or with the achievement `ach`, and then costs

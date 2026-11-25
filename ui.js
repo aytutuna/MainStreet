@@ -1736,7 +1736,6 @@ function showAway(a) {
     if (a.real > maxAway()) txt += ' ' + tl('away.cap', { n: maxAway() / 3600 });
   }
   $('away-txt').innerHTML = txt;
-  awaySecs = a ? a.real : 0;
   $('away').hidden = false;
   awayBtn();
   var c = centerOf($('away-amt'));
@@ -1776,7 +1775,6 @@ function takeAway(dbl, from, free) {
   if (dbl) buzz('success');
   askNotify();
   nudge();
-  shopAwayDone();
 }
 
 function dayText(d) {
@@ -2244,7 +2242,6 @@ function wire() {
     buzz('success');
     moveParty(rep);
     nudge();
-    shopMoved();
   });
   $('gear').addEventListener('click', function () {
     setSound();

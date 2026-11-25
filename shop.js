@@ -6,7 +6,7 @@
 //                                          the store knows (at is ms since 1970); answers 'products' and 'restore'
 //   {t: 'bought', id, tx, at}              a purchase went through; tx is the store's transaction id, at its time
 //   {t: 'failed', id, why}                 why is 'cancel' or 'error'
-//   {t: 'ad', kind, state}                 kind is 'reward' or 'inter'; state is 'ready' or 'none' (whether one can be
+//   {t: 'ad', kind, state}                 kind is 'reward'; state is 'ready' or 'none' (whether one can be
 //                                          shown now), 'open', 'rewarded' (the player earned it), 'closed' or 'failed'
 //   {t: 'privacy', required}               whether the consent SDK wants a "Privacy choices" item in the menu
 //   {t: 'radio', state, url, title?}       the stream being played: state is 'buffering', 'playing', 'paused' (headphones
@@ -26,9 +26,8 @@ var PID = 'com.aytutuna.mainstreet.';
 var prices = {};
 var storeUp = false;
 var buying = '';
-var adOk = { reward: false, inter: false };
+var adOk = { reward: false };
 var watching = null;
-var awaySecs = 0;
 var restoreWas = 0;
 var queued = [];
 var loaded = false;
@@ -340,7 +339,6 @@ function watch(k, give) {
 function adEvent(ev) {
   if (ev.state === 'ready' || ev.state === 'none') adOk[ev.kind] = ev.state === 'ready';
   else if (ev.state === 'open') {
-    S.ads.li = clock();
     adOpen = true;
     radioSync();
     if (ac) ac.suspend();
@@ -363,25 +361,6 @@ function adEvent(ev) {
       banner('<b>' + tl('ads.no_reward') + '</b><small>' + tl(ev.state === 'failed' ? 'ads.unavailable' : 'ads.unfinished') + '</small>', 0);
     }, ev.state === 'failed' ? 0 : 1500);
   }
-}
-
-// an interstitial only at a natural break, never in a new player's first minutes and not twice close together
-function interBreak() {
-  if (!native() || S.iap.noads || !adOk.inter || watching) return;
-  if (S.ads.pt < AD_NEW || clock() - S.ads.li < AD_GAP * 1000) return;
-  S.ads.li = clock();
-  post({ cmd: 'ad', kind: 'inter' });
-}
-
-// right after a store move, and after collecting what a long absence earned
-function shopMoved() {
-  setTimeout(interBreak, 1500);
-}
-
-function shopAwayDone() {
-  var long = awaySecs >= 3600;
-  awaySecs = 0;
-  if (long) setTimeout(interBreak, 800);
 }
 
 function adLabel() {
