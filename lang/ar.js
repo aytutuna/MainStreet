@@ -378,6 +378,8 @@ LANG['ar'] = {
   "shop.thanks": "شكرًا لك",
   "shop.thanks_bonus": { zero: "{name} · +{n} جوهرة إضافية", one: "{name} · +جوهرة واحدة إضافية", two: "{name} · +جوهرتين إضافية", few: "{name} · +{n} جواهر إضافية", many: "{name} · +{n} جوهرة إضافية", other: "{name} · +{n} جوهرة إضافية" },
   "shop.failed": "لم تكتمل عملية الشراء.",
+  "shop.late": "Payment received",
+  "shop.late_note": "Your purchase will arrive shortly.",
   "shop.pending": "Waiting for approval",
   "shop.pending_note": "It arrives once the purchase is approved.",
   "shop.restore_failed": "Restore failed. Try again later.",
