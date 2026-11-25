@@ -40,3 +40,13 @@ jobs:
           if git grep -n -i -E 'tagForChildDirected|tagForUnderAgeOfConsent|TagForChildDirectedTreatment' -- ios android; then
             exit 1
           fi
+      - name: Privacy manifest
+        run: |
+          python3 - <<'PY'
+          import plistlib, sys
+          m = plistlib.load(open('ios/MainStreet/PrivacyInfo.xcprivacy', 'rb'))
+          if m.get('NSPrivacyTracking') and not m.get('NSPrivacyTrackingDomains'):
+              sys.exit('NSPrivacyTracking is true with no tracking domains')
+          if 'NSPrivacyAccessedAPITypes' in m and not m['NSPrivacyAccessedAPITypes']:
+              sys.exit('NSPrivacyAccessedAPITypes is an empty array')
+          PY
