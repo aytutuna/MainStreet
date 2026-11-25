@@ -24,7 +24,7 @@
 //   {t: 'cloudState', state}               'available', 'signedOut', 'pending' (signed in, first sync not done) or 'unavailable';
 //                                          answers {cmd: 'cloudState'}, skips the queue. The page sends {cmd: 'cloudPut', json, at, dev}
 //   {t: 'cloudPut', ok: false}             a put that could not be written (Android); skips the queue, and the page sends it again
-//   {t: 'notify', state}                'granted' or 'denied', answering the notify handler's {cmd: 'ask'}; the page does not use it
+//   {t: 'notify', state}                   'granted' or 'denied', answering the notify handler's {cmd: 'ask'}; the page does not use it
 //   {t: 'radio', state, url, title?}       the stream being played: state is 'buffering', 'playing', 'paused' (headphones
 //                                          unplugged) or 'error' (it gave out), url the one
 //                                          the page asked for, title what the station says is on (ICY metadata)
