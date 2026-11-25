@@ -213,7 +213,7 @@ var STARTER = { gems: 150, x2: 7200, rep: 10 };
 var STARTER_HOURS = 24;
 var DEAL = { bonus: 0.2, packs: ['gems2', 'gems3', 'gems1', 'gems4'] };
 
-// Ads the player chooses to watch: what each one gives and how many a day. Without ads (noads) the same rewards come
+// Ads the player chooses to watch: what each one gives and how many a day. With Skip ads (noads) the same rewards come
 // for free, up to the same number
 var AD_CAP = { x2: 4, away: 3, warp: 2, gems: 3, rush: 2 };
 var AD_GEMS = 3;

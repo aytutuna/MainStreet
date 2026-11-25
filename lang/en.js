@@ -637,7 +637,7 @@ LANG['en'] = {
   'ads.no_reward': 'No reward',
   'ads.unavailable': 'No ad was available.',
   'ads.unfinished': 'The ad was not finished.',
-  // Button of a free reward: no ads bought, an ad ready, or none loaded yet. Keep short.
+  // Button of a free reward: Skip ads owned, an ad ready, or none loaded yet. Keep short.
   'ads.free': 'Free',
   'ads.watch': 'Watch',
   'ads.none_yet': 'No ad yet',
