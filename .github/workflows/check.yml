@@ -47,6 +47,9 @@ jobs:
           m = plistlib.load(open('ios/MainStreet/PrivacyInfo.xcprivacy', 'rb'))
           if m.get('NSPrivacyTracking') and not m.get('NSPrivacyTrackingDomains'):
               sys.exit('NSPrivacyTracking is true with no tracking domains')
+          for d in m.get('NSPrivacyTrackingDomains', []):
+              if 'doubleclick.net' in d or 'googlesyndication.com' in d:
+                  sys.exit('ad serving host listed as tracking domain: ' + d)
           if 'NSPrivacyAccessedAPITypes' in m and not m['NSPrivacyAccessedAPITypes']:
               sys.exit('NSPrivacyAccessedAPITypes is an empty array')
           PY
