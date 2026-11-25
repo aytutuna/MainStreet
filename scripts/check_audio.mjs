@@ -19,7 +19,7 @@ function fn(name) {
 const posts = [];
 const ac = {
   state: 'running',
-  suspend() { this.state = 'suspended'; },
+  suspend() { this.state = 'suspended'; return Promise.resolve(); },
   resume() { this.state = 'running'; }
 };
 const ctx = {
@@ -48,6 +48,7 @@ is('a tap resumed the context while asking', ac.state === 'suspended');
 vm.runInContext('setTimeout = function (f, t) { if (t === 400) f(); return 1; }', ctx);
 ctx.unsure = false;
 ctx.askOther();
+await null;
 const sent = posts.filter(p => p.m.check).pop();
 is('the check was not posted', !!sent);
 is('the check was posted with the context running', sent && sent.state === 'suspended');
