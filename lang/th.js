@@ -483,6 +483,7 @@ LANG['th'] = {
 
   'scene.no_webgl': 'อุปกรณ์นี้เปิดภาพ 3D ไม่ได้ (ไม่มี WebGL)',
   'scene.build_failed': 'สร้างร้านไม่สำเร็จ โปรดโหลดใหม่',
+  'scene.reload': 'Reload',
 
   'dept.produce': 'ผักผลไม้',
   'dept.bakery': 'เบเกอรี่',

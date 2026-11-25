@@ -462,6 +462,7 @@ LANG['it'] = {
   'tag.bonus.aria': 'Tocca per un bonus',
   'scene.no_webgl': 'Questo dispositivo non riesce ad avviare la vista 3D (WebGL non è disponibile).',
   'scene.build_failed': 'Non è stato possibile costruire il negozio. Ricarica la pagina.',
+  'scene.reload': 'Reload',
   'dept.produce': 'Frutta e verdura',
   'dept.bakery': 'Panetteria',
   'dept.dairy': 'Latticini',

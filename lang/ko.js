@@ -454,6 +454,7 @@ LANG['ko'] = {
   'tag.bonus.aria': '탭해서 보너스 받기',
   'scene.no_webgl': '이 기기에서는 3D 화면을 시작할 수 없어요 (WebGL 사용 불가).',
   'scene.build_failed': '매장을 만들지 못했어요. 새로고침해 주세요.',
+  'scene.reload': 'Reload',
   'dept.produce': '청과',
   'dept.bakery': '베이커리',
   'dept.dairy': '유제품',

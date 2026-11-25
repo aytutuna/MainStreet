@@ -489,6 +489,7 @@ LANG['cs'] = {
 
   'scene.no_webgl': 'Toto zařízení neumí spustit 3D zobrazení (WebGL není k dispozici).',
   'scene.build_failed': 'Obchod se nepodařilo postavit. Načti hru znovu.',
+  'scene.reload': 'Reload',
 
   'dept.produce': 'Ovoce a zelenina',
   'dept.bakery': 'Pekárna',

@@ -460,6 +460,7 @@ LANG['kn'] = {
   'tag.bonus.aria': 'ಬೋನಸ್‌ಗಾಗಿ ಟ್ಯಾಪ್ ಮಾಡಿ',
   'scene.no_webgl': 'ಈ ಸಾಧನ 3D ನೋಟವನ್ನು ಶುರು ಮಾಡಲಾಗದು (WebGL ಲಭ್ಯವಿಲ್ಲ).',
   'scene.build_failed': 'ಅಂಗಡಿಯನ್ನು ಕಟ್ಟಲಾಗಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಮತ್ತೆ ಲೋಡ್ ಮಾಡಿ.',
+  'scene.reload': 'Reload',
   'dept.produce': 'ಹಣ್ಣು ಮತ್ತು ತರಕಾರಿ',
   'dept.bakery': 'ಬೇಕರಿ',
   'dept.dairy': 'ಹಾಲು ಉತ್ಪನ್ನ',

@@ -485,6 +485,7 @@ LANG['ur'] = {
 
   'scene.no_webgl': 'یہ آلہ 3D منظر شروع نہیں کر سکتا (WebGL دستیاب نہیں)۔',
   'scene.build_failed': 'اسٹور نہیں بن سکا۔ براہ کرم دوبارہ لوڈ کریں۔',
+  'scene.reload': 'Reload',
 
   'dept.produce': 'پھل سبزی',
   'dept.bakery': 'بیکری',

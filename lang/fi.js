@@ -485,6 +485,7 @@ LANG['fi'] = {
 
   'scene.no_webgl': 'Tämä laite ei voi käynnistää 3D-näkymää (WebGL ei ole käytettävissä).',
   'scene.build_failed': 'Kauppaa ei voitu rakentaa. Lataa sivu uudelleen.',
+  'scene.reload': 'Reload',
 
   'dept.produce': 'Tuoretuotteet',
   'dept.bakery': 'Leipomo',

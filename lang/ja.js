@@ -479,6 +479,7 @@ LANG['ja'] = {
 
   'scene.no_webgl': 'この端末では3D表示を開始できません (WebGLが使えません)。',
   'scene.build_failed': '店を作れませんでした。再読み込みしてください。',
+  'scene.reload': 'Reload',
 
   'dept.produce': '青果',
   'dept.bakery': 'ベーカリー',

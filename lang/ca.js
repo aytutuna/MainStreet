@@ -487,6 +487,7 @@ LANG['ca'] = {
 
   'scene.no_webgl': 'Aquest dispositiu no pot iniciar la vista 3D (WebGL no està disponible).',
   'scene.build_failed': 'No s’ha pogut construir la botiga. Torna a carregar.',
+  'scene.reload': 'Reload',
 
   'dept.produce': 'Fruita i verdura',
   'dept.bakery': 'Forn de pa',

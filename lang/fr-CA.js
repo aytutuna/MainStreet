@@ -487,6 +487,7 @@ LANG['fr-CA'] = {
 
   'scene.no_webgl': 'Cet appareil ne peut pas afficher la 3D (WebGL n’est pas disponible).',
   'scene.build_failed': 'Le magasin n’a pas pu être construit. Recharge la page.',
+  'scene.reload': 'Reload',
 
   'dept.produce': 'Fruits et légumes',
   'dept.bakery': 'Boulangerie',

@@ -228,6 +228,21 @@
     </div>
   </div>
 </div>
+<script>
+// a script that fails to load or throws before the store is up would leave the loading card for good; it says so instead
+function loadFail(msg) {
+  var el = document.getElementById('loading');
+  if (!el || el.classList.contains('done') || el.querySelector('button')) return;
+  var t = typeof tl === 'function' ? tl : function (k) { return { 'scene.build_failed': 'The store could not be built. Please reload.', 'scene.reload': 'Reload' }[k] || 'Main Street'; };
+  el.firstChild.innerHTML = '<b></b><p></p><button type="button" class="btn"></button>';
+  el.firstChild.firstChild.textContent = t('app.title');
+  el.firstChild.children[1].textContent = msg || t('scene.build_failed');
+  var b = el.firstChild.lastChild;
+  b.textContent = t('scene.reload');
+  b.addEventListener('click', function () { location.reload(); });
+}
+window.addEventListener('error', function (e) { if (e.target === window || e.target.tagName === 'SCRIPT') loadFail(); }, true);
+</script>
 <script src="i18n.js"></script>
 <script src="data.js"></script>
 <script src="sim.js"></script>

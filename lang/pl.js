@@ -589,6 +589,7 @@ LANG['pl'] = {
 
   'scene.no_webgl': 'To urządzenie nie uruchomi widoku 3D (brak WebGL).',
   'scene.build_failed': 'Nie udało się zbudować sklepu. Wczytaj grę ponownie.',
+  'scene.reload': 'Reload',
 
   'dept.produce': 'Owoce i warzywa',
   'dept.bakery': 'Piekarnia',

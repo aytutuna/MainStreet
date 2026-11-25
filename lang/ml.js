@@ -485,6 +485,7 @@ LANG['ml'] = {
 
   'scene.no_webgl': 'ഈ ഉപകരണത്തിൽ 3D കാഴ്ച തുടങ്ങാൻ കഴിയില്ല (WebGL ലഭ്യമല്ല).',
   'scene.build_failed': 'കട പണിയാൻ കഴിഞ്ഞില്ല. ദയവായി റീലോഡ് ചെയ്യൂ.',
+  'scene.reload': 'Reload',
 
   'dept.produce': 'പഴം-പച്ചക്കറി',
   'dept.bakery': 'ബേക്കറി',

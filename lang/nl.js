@@ -485,6 +485,7 @@ LANG['nl'] = {
 
   'scene.no_webgl': 'Dit apparaat kan de 3D-weergave niet starten (WebGL is niet beschikbaar).',
   'scene.build_failed': 'De winkel kon niet worden gebouwd. Laad opnieuw.',
+  'scene.reload': 'Reload',
 
   'dept.produce': 'Groente & fruit',
   'dept.bakery': 'Bakkerij',

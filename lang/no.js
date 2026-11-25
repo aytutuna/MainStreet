@@ -458,6 +458,7 @@ LANG['no'] = {
   'tag.bonus.aria': 'Trykk for en bonus',
   'scene.no_webgl': 'Denne enheten kan ikke starte 3D-visningen (WebGL er ikke tilgjengelig).',
   'scene.build_failed': 'Butikken kunne ikke bygges. Last inn på nytt.',
+  'scene.reload': 'Reload',
   'dept.produce': 'Frukt og grønt',
   'dept.bakery': 'Bakeri',
   'dept.dairy': 'Meieri',

@@ -487,6 +487,7 @@ LANG['he'] = {
 
   'scene.no_webgl': 'המכשיר הזה לא מצליח להפעיל את התצוגה התלת-ממדית (WebGL לא זמין).',
   'scene.build_failed': 'לא הצלחנו לבנות את החנות. נא לטעון מחדש.',
+  'scene.reload': 'Reload',
 
   'dept.produce': 'ירקות ופירות',
   'dept.bakery': 'מאפייה',

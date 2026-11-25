@@ -485,6 +485,7 @@ LANG['hu'] = {
 
   'scene.no_webgl': 'Ez az eszköz nem tudja elindítani a 3D nézetet (a WebGL nem érhető el).',
   'scene.build_failed': 'Az áruházat nem sikerült felépíteni. Töltsd újra.',
+  'scene.reload': 'Reload',
 
   'dept.produce': 'Zöldség-gyümölcs',
   'dept.bakery': 'Pékség',

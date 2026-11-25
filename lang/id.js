@@ -483,6 +483,7 @@ LANG['id'] = {
 
   'scene.no_webgl': 'Perangkat ini tidak bisa menjalankan tampilan 3D (WebGL tidak tersedia).',
   'scene.build_failed': 'Toko gagal dibangun. Silakan muat ulang.',
+  'scene.reload': 'Reload',
 
   'dept.produce': 'Buah & Sayur',
   'dept.bakery': 'Toko Roti',

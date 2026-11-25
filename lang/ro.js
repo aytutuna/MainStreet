@@ -487,6 +487,7 @@ LANG['ro'] = {
 
   'scene.no_webgl': 'Acest dispozitiv nu poate porni vederea 3D (WebGL nu este disponibil).',
   'scene.build_failed': 'Magazinul nu a putut fi construit. Reîncarcă pagina.',
+  'scene.reload': 'Reload',
 
   'dept.produce': 'Fructe și legume',
   'dept.bakery': 'Brutărie',

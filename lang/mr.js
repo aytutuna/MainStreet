@@ -485,6 +485,7 @@ LANG['mr'] = {
 
   'scene.no_webgl': 'हे डिव्हाइस 3D व्ह्यू सुरू करू शकत नाही (WebGL उपलब्ध नाही).',
   'scene.build_failed': 'स्टोअर बांधता आले नाही. कृपया पुन्हा लोड करा.',
+  'scene.reload': 'Reload',
 
   'dept.produce': 'फळे आणि भाज्या',
   'dept.bakery': 'बेकरी',

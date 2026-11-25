@@ -483,6 +483,7 @@ LANG['ms'] = {
 
   'scene.no_webgl': 'Peranti ini tidak dapat memulakan paparan 3D (WebGL tidak tersedia).',
   'scene.build_failed': 'Kedai tidak dapat dibina. Sila muat semula.',
+  'scene.reload': 'Reload',
 
   'dept.produce': 'Buah & Sayur',
   'dept.bakery': 'Bakeri',

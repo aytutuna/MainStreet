@@ -454,6 +454,7 @@ LANG['ar'] = {
   "tag.bonus.aria": "اضغط لتحصل على مكافأة",
   "scene.no_webgl": "لا يستطيع هذا الجهاز تشغيل العرض ثلاثي الأبعاد (WebGL غير متاح).",
   "scene.build_failed": "تعذّر بناء الفرع. أعد التحميل من فضلك.",
+  "scene.reload": "Reload",
   "dept.produce": "خضار وفواكه",
   "dept.bakery": "المخبوزات",
   "dept.dairy": "الألبان",

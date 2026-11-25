@@ -485,6 +485,7 @@ LANG['tr'] = {
 
   'scene.no_webgl': 'Bu cihaz 3D görünümü başlatamıyor (WebGL yok).',
   'scene.build_failed': 'Mağaza kurulamadı. Lütfen yeniden yükle.',
+  'scene.reload': 'Reload',
 
   'dept.produce': 'Manav',
   'dept.bakery': 'Fırın',

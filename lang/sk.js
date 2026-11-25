@@ -489,6 +489,7 @@ LANG['sk'] = {
 
   'scene.no_webgl': 'Toto zariadenie nevie spustiť 3D zobrazenie (WebGL nie je dostupné).',
   'scene.build_failed': 'Obchod sa nepodarilo postaviť. Načítaj hru znova.',
+  'scene.reload': 'Reload',
 
   'dept.produce': 'Ovocie a zelenina',
   'dept.bakery': 'Pekáreň',

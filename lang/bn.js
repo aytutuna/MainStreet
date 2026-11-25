@@ -485,6 +485,7 @@ LANG['bn'] = {
 
   'scene.no_webgl': 'এই ডিভাইসে 3D ভিউ চালু হচ্ছে না (WebGL নেই)।',
   'scene.build_failed': 'স্টোর বানানো যায়নি। অনুগ্রহ করে আবার লোড করুন।',
+  'scene.reload': 'Reload',
 
   'dept.produce': 'শাকসবজি-ফল',
   'dept.bakery': 'বেকারি',

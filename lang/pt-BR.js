@@ -487,6 +487,7 @@ LANG['pt-BR'] = {
 
   'scene.no_webgl': 'Este aparelho não consegue abrir a vista 3D (sem WebGL).',
   'scene.build_failed': 'Não foi possível montar a loja. Recarregue.',
+  'scene.reload': 'Reload',
 
   'dept.produce': 'Hortifrúti',
   'dept.bakery': 'Padaria',

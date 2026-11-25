@@ -2107,6 +2107,10 @@ a.btn {
   font-size: 15px;
 }
 
+#loading .btn {
+  margin-top: 14px;
+}
+
 #mtoast {
   position: absolute;
   z-index: 15;

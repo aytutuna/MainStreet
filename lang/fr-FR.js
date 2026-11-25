@@ -462,6 +462,7 @@ LANG['fr-FR'] = {
   'tag.bonus.aria': 'Touche pour un bonus',
   'scene.no_webgl': 'Cet appareil ne peut pas lancer la vue 3D (WebGL n’est pas disponible).',
   'scene.build_failed': 'Impossible de construire le magasin. Recharge la page.',
+  'scene.reload': 'Reload',
   'dept.produce': 'Fruits & légumes',
   'dept.bakery': 'Boulangerie',
   'dept.dairy': 'Produits laitiers',

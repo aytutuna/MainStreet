@@ -462,6 +462,7 @@ LANG['pt-PT'] = {
   'tag.bonus.aria': 'Toca para um bónus',
   'scene.no_webgl': 'Este dispositivo não consegue iniciar a vista 3D (o WebGL não está disponível).',
   'scene.build_failed': 'Não foi possível construir a loja. Volta a carregar.',
+  'scene.reload': 'Reload',
   'dept.produce': 'Frutas e Legumes',
   'dept.bakery': 'Padaria',
   'dept.dairy': 'Laticínios',

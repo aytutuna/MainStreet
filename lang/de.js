@@ -485,6 +485,7 @@ LANG['de'] = {
 
   'scene.no_webgl': 'Dieses Gerät kann die 3D-Ansicht nicht starten (WebGL ist nicht verfügbar).',
   'scene.build_failed': 'Der Markt konnte nicht gebaut werden. Bitte neu laden.',
+  'scene.reload': 'Reload',
 
   'dept.produce': 'Obst & Gemüse',
   'dept.bakery': 'Bäckerei',

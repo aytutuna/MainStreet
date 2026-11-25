@@ -589,6 +589,7 @@ LANG['sl'] = {
 
   'scene.no_webgl': 'Ta naprava ne more zagnati 3D prikaza (WebGL ni na voljo).',
   'scene.build_failed': 'Trgovine ni bilo mogoče zgraditi. Naloži znova.',
+  'scene.reload': 'Reload',
 
   'dept.produce': 'Sadje in zelenjava',
   'dept.bakery': 'Pekarna',

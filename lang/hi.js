@@ -485,6 +485,7 @@ LANG['hi'] = {
 
   'scene.no_webgl': 'यह डिवाइस 3D व्यू शुरू नहीं कर सकता (WebGL उपलब्ध नहीं है)।',
   'scene.build_failed': 'स्टोर नहीं बन सका। कृपया दोबारा लोड करें।',
+  'scene.reload': 'Reload',
 
   'dept.produce': 'फल और सब्ज़ी',
   'dept.bakery': 'बेकरी',

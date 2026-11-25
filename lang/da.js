@@ -485,6 +485,7 @@ LANG['da'] = {
 
   'scene.no_webgl': 'Denne enhed kan ikke starte 3D-visningen (WebGL er ikke tilgængelig).',
   'scene.build_failed': 'Butikken kunne ikke bygges. Genindlæs venligst.',
+  'scene.reload': 'Reload',
 
   'dept.produce': 'Frugt og grønt',
   'dept.bakery': 'Bageri',

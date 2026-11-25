@@ -483,6 +483,7 @@ LANG['zh-Hans'] = {
 
   'scene.no_webgl': '此设备无法启动3D视图（不支持 WebGL）。',
   'scene.build_failed': '商店建造失败，请重新加载。',
+  'scene.reload': 'Reload',
 
   'dept.produce': '生鲜果蔬',
   'dept.bakery': '烘焙',

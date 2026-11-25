@@ -489,6 +489,7 @@ LANG['uk'] = {
 
   'scene.no_webgl': 'Цей пристрій не може запустити 3D-вигляд (WebGL недоступний).',
   'scene.build_failed': 'Не вдалося збудувати магазин. Перезавантаж гру.',
+  'scene.reload': 'Reload',
 
   'dept.produce': 'Овочі й фрукти',
   'dept.bakery': 'Пекарня',

@@ -483,6 +483,7 @@ LANG['vi'] = {
 
   'scene.no_webgl': 'Thiết bị này không chạy được khung nhìn 3D (không có WebGL).',
   'scene.build_failed': 'Không dựng được siêu thị. Vui lòng tải lại.',
+  'scene.reload': 'Reload',
 
   'dept.produce': 'Rau củ quả',
   'dept.bakery': 'Tiệm bánh',

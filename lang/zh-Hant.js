@@ -479,6 +479,7 @@ LANG['zh-Hant'] = {
 
   'scene.no_webgl': '這台裝置無法啟動 3D 畫面（不支援 WebGL）。',
   'scene.build_failed': '賣場建造失敗，請重新載入。',
+  'scene.reload': 'Reload',
 
   'dept.produce': '蔬果',
   'dept.bakery': '烘焙坊',

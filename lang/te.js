@@ -485,6 +485,7 @@ LANG['te'] = {
 
   'scene.no_webgl': 'ఈ పరికరం 3D వ్యూను ప్రారంభించలేదు (WebGL అందుబాటులో లేదు).',
   'scene.build_failed': 'స్టోర్‌ను నిర్మించలేకపోయాం. దయచేసి రీలోడ్ చేయండి.',
+  'scene.reload': 'Reload',
 
   'dept.produce': 'కూరగాయలు, పండ్లు',
   'dept.bakery': 'బేకరీ',

@@ -485,6 +485,7 @@ LANG['gu'] = {
 
   'scene.no_webgl': 'આ ઉપકરણ 3D દૃશ્ય શરૂ કરી શકતું નથી (WebGL ઉપલબ્ધ નથી).',
   'scene.build_failed': 'સ્ટોર બની શક્યો નહીં. કૃપા કરીને ફરી લોડ કરો.',
+  'scene.reload': 'Reload',
 
   'dept.produce': 'શાકભાજી-ફળ',
   'dept.bakery': 'બેકરી',

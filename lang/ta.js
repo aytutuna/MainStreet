@@ -485,6 +485,7 @@ LANG['ta'] = {
 
   'scene.no_webgl': 'இந்தச் சாதனத்தில் 3D காட்சியைத் தொடங்க முடியவில்லை (WebGL இல்லை).',
   'scene.build_failed': 'கடையைக் கட்ட முடியவில்லை. மீண்டும் ஏற்றுங்கள்.',
+  'scene.reload': 'Reload',
 
   'dept.produce': 'காய்கறி, பழம்',
   'dept.bakery': 'பேக்கரி',

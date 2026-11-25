@@ -485,6 +485,7 @@ LANG['pa'] = {
 
   'scene.no_webgl': 'ਇਹ ਡਿਵਾਈਸ 3D ਦ੍ਰਿਸ਼ ਚਲਾ ਨਹੀਂ ਸਕਦਾ (WebGL ਉਪਲਬਧ ਨਹੀਂ)।',
   'scene.build_failed': 'ਸਟੋਰ ਬਣ ਨਹੀਂ ਸਕਿਆ। ਕਿਰਪਾ ਕਰਕੇ ਦੁਬਾਰਾ ਲੋਡ ਕਰੋ।',
+  'scene.reload': 'Reload',
 
   'dept.produce': 'ਫਲ ਤੇ ਸਬਜ਼ੀਆਂ',
   'dept.bakery': 'ਬੇਕਰੀ',

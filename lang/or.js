@@ -485,6 +485,7 @@ LANG['or'] = {
 
   'scene.no_webgl': 'ଏହି ଡିଭାଇସ୍ 3D ଦୃଶ୍ୟ ଚଲାଇ ପାରୁନାହିଁ (WebGL ନାହିଁ)।',
   'scene.build_failed': 'ଦୋକାନ ତିଆରି ହେଲା ନାହିଁ। ଦୟାକରି ପୁଣି ଲୋଡ୍ କର।',
+  'scene.reload': 'Reload',
 
   'dept.produce': 'ପନିପରିବା ଓ ଫଳ',
   'dept.bakery': 'ବେକେରୀ',

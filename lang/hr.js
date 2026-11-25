@@ -487,6 +487,7 @@ LANG['hr'] = {
 
   'scene.no_webgl': 'Ovaj uređaj ne može pokrenuti 3D prikaz (WebGL nije dostupan).',
   'scene.build_failed': 'Trgovina se nije mogla izgraditi. Učitaj ponovo.',
+  'scene.reload': 'Reload',
 
   'dept.produce': 'Voće i povrće',
   'dept.bakery': 'Pekarnica',

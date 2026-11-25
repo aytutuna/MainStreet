@@ -485,6 +485,7 @@ LANG['sv'] = {
 
   'scene.no_webgl': 'Den här enheten kan inte starta 3D-vyn (WebGL saknas).',
   'scene.build_failed': 'Butiken kunde inte byggas. Ladda om sidan.',
+  'scene.reload': 'Reload',
 
   'dept.produce': 'Frukt & grönt',
   'dept.bakery': 'Bageri',

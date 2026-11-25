@@ -757,6 +757,8 @@ LANG['en'] = {
   'scene.no_webgl': 'This device cannot start the 3D view (WebGL is not available).',
   // Shown on the loading screen when building the store failed.
   'scene.build_failed': 'The store could not be built. Please reload.',
+  // Button on the loading screen when the store could not start; it reloads the page.
+  'scene.reload': 'Reload',
 
   // Department names. A department is a section of the player's supermarket (Produce, Bakery...). Shown on the Upgrades list and on the 3D store sign (uppercased). Max about 18 characters.
   'dept.produce': 'Produce',
