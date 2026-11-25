@@ -1,0 +1,30 @@
+name: Check
+
+# Fast checks on Linux, with no Xcode or Android SDK. TestFlight runs it first.
+on:
+  push:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7.0.1
+      - uses: actions/setup-node@v7.1.0
+        with:
+          node-version: 24
+      - name: Syntax of the game scripts
+        run: |
+          for f in *.js lang/*.js scripts/*.mjs; do
+            node --check "$f"
+          done
+      - name: Bundle lists
+        run: node scripts/check_bundle.mjs
+      - name: Language files
+        run: node scripts/check_lang.mjs --all
+      - name: Simulation and saves
+        run: node scripts/check_sim.mjs
