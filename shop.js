@@ -358,7 +358,10 @@ function cloudTake(ev) {
   if (blocked) return loadFail(tl('save.newer'), true);
   // Skip ads can arrive in a game that was kept, too
   if (S.iap.noads) post({ cmd: 'adStop' });
-  cloudSoon();
+  // a game kept over a refused put goes out at once: the other device keeps writing on its own base, and waiting would
+  // get this one refused again every round
+  if (!took && ev.refused && claim) cloudPut();
+  else cloudSoon();
   if (!took) return;
   $('away').hidden = true;
   if (View.ready()) {

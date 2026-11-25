@@ -1794,10 +1794,10 @@ function meet(k, l, lMine) {
   var rf = joinTx(ki.rf, li.rf);
   var had = ki.paid.slice();
   // known by id in either list; a ledger that is full has forgotten what it dropped, so an entry older than all it holds was
-  // credited long ago
+  // credited long ago (the list is not in time order: meeting a copy appends its older entries at the end)
   var known = {};
   ki.tx.concat(ki.paid.map(function (e) { return e.tx; })).forEach(function (t) { known[t] = 1; });
-  var full = ki.paid.length >= 100 ? ki.paid[0].at : 0;
+  var full = ki.paid.length >= 100 ? Math.min.apply(null, ki.paid.map(function (e) { return e.at; })) : 0;
   li.paid.forEach(function (e) {
     if (known[e.tx] || e.at < full) return;
     known[e.tx] = 1;

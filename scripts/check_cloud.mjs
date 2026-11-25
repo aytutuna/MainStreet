@@ -394,9 +394,8 @@ for (const aMore of [false, true]) {
   const g = a.gems();
   if (aMore) {
     expect(g === 103 && a.base() === c.stamp, 'the game with more play did not keep itself over a late copy (gems ' + g + ')');
-    expect(a.dirty(), 'the game kept was not marked for a put');
-    a.put();
-    expect(JSON.parse(c.json).gems === 103, 'the game kept was not written over the older copy');
+    // the put it kept itself over was refused, so it goes out again at once, not after the next throttle
+    expect(!a.dirty() && JSON.parse(c.json).gems === 103, 'the game kept was not written over the older copy');
     now = T17 + 60000;
     b.ask();
     expect(b.gems() === 103, 'the other device did not take the game kept');
@@ -432,9 +431,8 @@ for (const aMore of [false, true]) {
   a.put();
   expect(!a.run('S.cl.fly'), 'the refused put is still in flight');
   if (aMore) {
-    expect(c.stamp === s1 && a.base() === s1 && a.dirty() && a.gems() === 105, 'the game with more play was not kept after the refusal (gems ' + a.gems() + ')');
-    a.put();
-    expect(c.stamp !== s1 && JSON.parse(c.json).gems === 105 && a.base() === c.stamp, 'the game kept was not written on the new base');
+    // kept after the refusal and put at once on the base the refusal brought, with no throttle in between
+    expect(c.stamp !== s1 && JSON.parse(c.json).gems === 105 && a.base() === c.stamp && !a.dirty(), 'the game kept was not written on the new base (gems ' + a.gems() + ')');
   } else {
     expect(a.gems() === 140 && a.base() === s1 && !a.dirty(), 'the copy with more play was not taken after the refusal (gems ' + a.gems() + ')');
   }
@@ -850,10 +848,12 @@ for (const more of [false, true]) {
   a.put();
   b.ask();
   expect(b.run('S.iap.paid.length') === 100, 'the copy with a full ledger was not taken');
+  b.fail = true;
   for (let i = 0; i < 2; i++) {
     now += 1000;
     b.run('grant("gems1", "X' + i + '")');
   }
+  b.fail = false;
   b.change(0, 9000);
   a.change(1, 10);
   a.put();
@@ -861,6 +861,24 @@ for (const more of [false, true]) {
   b.ask();
   expect(b.gems() === g, 'a full ledger paid ' + (b.gems() - g) + ' gems again');
   expect(b.run('S.iap.paid.length') === 100 && b.run('new Set(S.iap.paid.map(function (e) { return e.tx; })).size') === 100, 'the ledger holds the same purchase twice');
+}
+
+// a full ledger is not sorted: meeting a copy appends its older entries at the end, and the cutoff is the oldest entry held
+{
+
+  const [a, b] = pair();
+  a.run(`S.iap.paid = []; S.iap.tx = [];
+    for (var i = 0; i < 99; i++) S.iap.paid.push({ tx: 'K' + i, id: 'gems1', at: 100 + i, gems: 1, x2: 0, rep: 0, deal: 0, ask: 0 });
+    var other = fresh();
+    other.iap.paid = [{ tx: 'L50', id: 'gems1', at: 50, gems: 1, x2: 0, rep: 0, deal: 0, ask: 0 }];
+    meet(S, other, false);
+    credit(product('gems1'), 'K99');`);
+  expect(a.run('S.iap.paid.length') === 100 && a.run('S.iap.paid[0].at') !== 50, 'the ledger of the finding was not built');
+  const g = a.gems();
+  a.run(`var m = fresh();
+    m.iap.paid = [{ tx: 'M60', id: 'gems1', at: 60, gems: 7, x2: 0, rep: 0, deal: 0, ask: 0 }];
+    meet(S, m, false)`);
+  expect(a.gems() === g + 7, 'a purchase older than the first entry of a full ledger was dropped (gems ' + (a.gems() - g) + ')');
 }
 
 // both devices met the deal of the day: a deal held for approval here survives the other device's purchase of the same pack
