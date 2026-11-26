@@ -1,4 +1,5 @@
 import RevenueCat
+import StoreKit
 import UIKit
 import WebKit
 
@@ -64,6 +65,10 @@ final class StoreBridge: NSObject, WKScriptMessageHandler, PurchasesDelegate {
             ads.show(msg["kind"] as? String ?? "", mute: msg["mute"] as? Bool ?? false)
         case "music":
             music.command(msg)
+        case "review":
+            DispatchQueue.main.async {
+                if let scene = self.web?.window?.windowScene { AppStore.requestReview(in: scene) }
+            }
         default:
             break
         }

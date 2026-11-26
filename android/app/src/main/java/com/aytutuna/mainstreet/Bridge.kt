@@ -3,6 +3,7 @@ package com.aytutuna.mainstreet
 import android.os.Build
 import android.view.HapticFeedbackConstants
 import android.webkit.JavascriptInterface
+import com.google.android.play.core.review.ReviewManagerFactory
 import org.json.JSONObject
 
 // The game talks to iOS through window.webkit.messageHandlers.<name>.postMessage; the shim keeps that call shape.
@@ -50,6 +51,10 @@ class Bridge(private val activity: MainActivity) {
                 "cloudState" -> activity.cloud.state()
                 "cloudSignIn" -> activity.cloud.signIn()
                 "music" -> activity.music.command(msg)
+                "review" -> {
+                    val reviews = ReviewManagerFactory.create(activity)
+                    reviews.requestReviewFlow().addOnSuccessListener { reviews.launchReviewFlow(activity, it) }
+                }
             }
         }
     }

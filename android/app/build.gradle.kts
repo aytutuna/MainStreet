@@ -109,6 +109,7 @@ dependencies {
     implementation(libs.play.ads)
     implementation(libs.ump)
     implementation(libs.play.games)
+    implementation(libs.play.review)
 }
 
 // a release or qa bundle without the upload key would be rejected by Play; stop early

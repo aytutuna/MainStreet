@@ -8,6 +8,7 @@ purchases = "11.4.3"
 playServicesAds = "25.5.0"
 ump = "4.0.0"
 playGames = "22.1.0"
+playReview = "2.0.2"
 
 [libraries]
 core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
@@ -17,6 +18,7 @@ webkit = { module = "androidx.webkit:webkit", version.ref = "webkit" }
 purchases = { module = "com.revenuecat.purchases:purchases", version.ref = "purchases" }
 play-ads = { module = "com.google.android.gms:play-services-ads", version.ref = "playServicesAds" }
 ump = { module = "com.google.android.ump:user-messaging-platform", version.ref = "ump" }
+play-review = { module = "com.google.android.play:review", version.ref = "playReview" }
 play-games = { module = "com.google.android.gms:play-services-games-v2", version.ref = "playGames" }
 
 [plugins]
