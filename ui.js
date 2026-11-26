@@ -24,6 +24,7 @@ var ac = null;
 var snd = true;
 var vib = true;
 var remindOn = true;
+var REMIND_DENIED_KEY = 'mainstreet.remind_denied';
 var remindDenied = false;
 var rateWant = false;
 var cardId = null;
@@ -1109,8 +1110,12 @@ function moveParty(rep) {
   rain(28);
   banner('<b>' + tl('banner.store_open', { n: S.store }) + '</b><small>' + tl('banner.income_x', { n: storeMul(S.store) }) + '</small>', 0.2, true);
   banner('<b>' + tl('banner.rep', { n: rep }) + '</b><small>' + tl('banner.rep.line') + '</small>', 0.1);
-  setTimeout(function () { if (!veilUp() && !sheetOpen && !cardId && !document.hidden) openSell(); }, 4500);
-  if (S.store === 2) rateWant = true;
+  var ask = S.store === 2;
+  if (ask) try { if (!localStorage.getItem(RATED_KEY)) localStorage.setItem(RATED_KEY, 'want'); } catch (e) {}
+  setTimeout(function () {
+    if (!veilUp() && !sheetOpen && !cardId && !document.hidden) openSell();
+    if (ask) rateWant = true;
+  }, 4500);
 }
 
 // the system review prompt, once per install, after the move's banners and cards are gone
@@ -1118,7 +1123,7 @@ function autoRate() {
   if (!rateWant || bqBusy || veilUp() || cardId || sheetOpen || document.hidden || window.TESTER || !native()) return;
   rateWant = false;
   try {
-    if (localStorage.getItem(RATED_KEY)) return;
+    if (localStorage.getItem(RATED_KEY) === '1') return;
     localStorage.setItem(RATED_KEY, '1');
   } catch (e) {}
   post({ cmd: 'review' });
@@ -1126,6 +1131,7 @@ function autoRate() {
 
 function notifyState(state) {
   remindDenied = state === 'denied';
+  try { localStorage.setItem(REMIND_DENIED_KEY, remindDenied ? '1' : '0'); } catch (e) {}
   setSound();
 }
 
@@ -2618,6 +2624,8 @@ function start() {
     snd = localStorage.getItem(SND_KEY) !== '0';
     vib = localStorage.getItem(BUZZ_KEY) !== '0';
     remindOn = localStorage.getItem(REMIND_KEY) !== '0';
+    remindDenied = localStorage.getItem(REMIND_DENIED_KEY) === '1';
+    rateWant = localStorage.getItem(RATED_KEY) === 'want';
     if (window.TESTER) free = localStorage.getItem(FREE_KEY) === '1';
     else localStorage.removeItem(FREE_KEY);
     hinted = JSON.parse(localStorage.getItem(HINT_KEY)) || {};
