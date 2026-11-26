@@ -1122,6 +1122,81 @@ for (const bMore of [true, false]) {
   expect(b.gems() === 0, 'the other device did not take the erased game');
 }
 
+// the answer of a forced erase put that landed comes after another device took over: the erase is done, so Play here judges the
+// newest copy and the claim put does not write over it
+for (const ios of [false, true]) {
+  const name = ios ? 'iPhone' : 'Android';
+  const { sync, a, b } = claimPair(ios);
+  a.launch();
+  now = T9 + 60000;
+  a.run('reset()');
+  a.noAck = true;
+  a.run('cloudPut(true)');
+  const e = a.puts()[a.puts().length - 1].stamp;
+  now = T9 + 120000;
+  b.launch();
+  sync(a);
+  expect(a.run('cloudOff'), name + ': the erasing device was not stopped');
+  b.change(40, 600);
+  b.put();
+  a.push({ t: 'cloudPut', ok: true, stamp: e });
+  expect(a.run('S.cl.force') === 0, name + ': the answer of a landed erase after the takeover was dropped');
+  now += 60000;
+  a.run('cloudHere()');
+  elapse(10000, a, b);
+  expect(a.gems() === 40 && b.gems() === 40, name + ': Play here wrote over the newest copy after an erase (a ' + a.gems() + ', b ' + b.gems() + ', want 40)');
+}
+// an erase put that did not land stays pending, and Play here puts it again
+for (const ios of [false, true]) {
+  const name = ios ? 'iPhone' : 'Android';
+  const { sync, a, b } = claimPair(ios);
+  a.launch();
+  now = T9 + 60000;
+  a.run('reset()');
+  a.noAck = true;
+  a.run('cloudPut(true)');
+  const e = a.puts()[a.puts().length - 1].stamp;
+  now = T9 + 120000;
+  b.launch();
+  sync(a);
+  a.push({ t: 'cloudPut', ok: false, stamp: e });
+  a.noAck = false;
+  expect(a.run('S.cl.force') === 1, name + ': an erase that did not land was forgotten after the takeover');
+  now += 60000;
+  a.run('cloudHere()');
+  elapse(10000, a, b);
+  const sent = a.puts()[a.puts().length - 1];
+  expect(a.run('S.cl.force') === 0 && sent.force === true && sent.stamp !== e, name + ': Play here did not put the pending erase again');
+}
+
+// copies that wait for the server time are not taken once the first of them has taken this device over
+{
+  const { cloud, a, b } = claimPair(true);
+  a.launch();
+  now = T9 + 60000;
+  b.launch();
+  const first = cloud.keys[b.id()];
+  const other = JSON.parse(first.json);
+  other.gems = 999;
+  other.ads.ap += 5000;
+  other.hold = { dev: 'zz', at: T9 + 90000 };
+  a.run('timeHeld = true');
+  a.push({ t: 'cloud', json: first.json, at: first.at, dev: first.dev, stamp: first.stamp, more: true });
+  a.push({ t: 'cloud', json: JSON.stringify(other), at: first.at, dev: 'zz', stamp: 'zz:1', more: false });
+  a.run('timeHeld = false; cloudApply()');
+  expect(a.run('cloudOff') && a.gems() === 100, 'a pending copy was taken into a game that was already taken over (gems ' + a.gems() + ')');
+}
+
+// a wait for an approval that another device saw come through is over here too, and only that one
+{
+  const [a] = pair();
+  const e = { tx: 'TW', id: 'gems2', at: 1, gems: 500, x2: 0, rep: 0, deal: 0, ask: 777 };
+  a.run('var K = fresh(); K.iap.wait = { gems2: 777, gems3: 888 }; var L = fresh(); L.iap.paid = [' + JSON.stringify(e) + ']; L.iap.tx = ["TW"]; meet(K, L, false)');
+  expect(a.run('K.gems') === 500 && a.run('K.iap.wait.gems2') === undefined && a.run('K.iap.wait.gems3') === 888, 'a wait stayed after a purchase made elsewhere settled it (wait ' + a.run('JSON.stringify(K.iap.wait)') + ')');
+  a.run('K = fresh(); K.iap.wait = { gems2: 999 }; meet(K, L, false)');
+  expect(a.run('K.iap.wait.gems2') === 999, 'a wait of another ask was cleared by an older purchase');
+}
+
 // regulars, mission claims and the daily streak are progress too
 {
   const [a, b] = pair();
@@ -1332,6 +1407,9 @@ for (const more of [false, true]) {
 {
   const swift = fs.readFileSync(path.join(root, 'ios', 'MainStreet', 'CloudBridge.swift'), 'utf8');
   expect(!/ubiquityIdentityToken\s*==\s*nil/.test(swift), 'CloudBridge.swift still reads the iCloud identity token');
+  // the key of earlier builds is read only while no per-device key exists, or it could shadow the old install's newer key
+  const get = swift.slice(swift.indexOf('func get('), swift.indexOf('func state('));
+  expect(/forKey: "save"/.test(get) && /allSatisfy\(\{\s*!\$0\.hasPrefix\(prefix\)\s*\}\)/.test(get) && !/legacyRead/.test(swift), 'CloudBridge.swift reads the legacy key beside per-device keys');
 }
 
 {

@@ -8,14 +8,13 @@ import Foundation
 // another device made comes the same way, one key at a time. {cmd: "cloudState", dev} answers {t: "cloudState", state}: "pending"
 // until iCloud has delivered a change or another device's key is held, then "available".
 // The whole store holds 1 MB, so keys of devices that have not written for 90 days are removed with each write.
-// The key "save" of earlier builds is read once as one more copy and never written.
+// The key "save" of earlier builds is read as one more copy while no per-device key exists, and never written.
 final class CloudBridge: NSObject {
     private let prefix = "save."
     private let store = NSUbiquitousKeyValueStore.default
     private let emit: ([String: Any]) -> Void
     private var dev = ""
     private var synced = false
-    private var legacyRead = false
 
     init(emit: @escaping ([String: Any]) -> Void) {
         self.emit = emit
@@ -41,8 +40,7 @@ final class CloudBridge: NSObject {
         if let id = id, !id.isEmpty { dev = id }
         store.synchronize()
         var copies = others().compactMap { store.dictionary(forKey: $0) }
-        if !legacyRead {
-            legacyRead = true
+        if store.dictionaryRepresentation.keys.allSatisfy({ !$0.hasPrefix(prefix) }) {
             if let old = store.dictionary(forKey: "save"), old["dev"] as? String != dev { copies.append(old) }
         }
         if copies.isEmpty {

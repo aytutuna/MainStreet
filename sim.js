@@ -1810,6 +1810,7 @@ function meet(k, l, lMine) {
   var li = l.iap;
   var rf = joinTx(ki.rf, li.rf);
   var had = ki.paid.slice();
+  var added = [];
   // known by id in either list; a ledger that is full has forgotten what it dropped, so an entry older than all it holds was
   // credited long ago (the list is not in time order: meeting a copy appends its older entries at the end)
   var known = {};
@@ -1828,6 +1829,7 @@ function meet(k, l, lMine) {
     }
     if (e.at < full) return;
     known[e.tx] = 1;
+    added.push(e);
     k.gems += e.gems;
     k.x2 += e.x2;
     k.rep += e.rep;
@@ -1837,6 +1839,10 @@ function meet(k, l, lMine) {
   ki.tx = ki.tx.slice(-100);
   ki.paid = ki.paid.slice(-100);
   ki.rf = rf;
+  // a purchase l's ledger brings in settles the wait k still holds for it
+  for (var kw in ki.wait) {
+    if (added.some(function (e) { return e.id === kw && e.ask === ki.wait[kw]; })) delete ki.wait[kw];
+  }
   ['noads', 'x2'].forEach(function (f) {
     if (ki[f] && refunded(ki, f, rf)) {
       ki[f] = 0;

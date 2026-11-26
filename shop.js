@@ -95,6 +95,7 @@ var claimDue = false;
 var cloudOff = false;
 // a purchase credited while a put was in flight waits for its answer
 var nowDue = false;
+var forcedLost = null;
 var devKey = '';
 
 // the time comes from the server (the native apps ask alazy.app, a plain browser asks it itself); the game starts and
@@ -231,7 +232,15 @@ function stampNext() {
 // One that was refused comes back as a 'cloud' event instead
 function cloudAck(ev) {
   var f = S.cl.fly;
-  if (!f || f.stamp !== ev.stamp) return;
+  if (!f || f.stamp !== ev.stamp) {
+    // a forced put that a takeover dropped still ended the erase if it landed
+    if (ev.ok && forcedLost && forcedLost.stamp === ev.stamp) {
+      agree(forcedLost.stamp, forcedLost.sig, forcedLost.ap);
+      forcedLost = null;
+      save();
+    }
+    return;
+  }
   S.cl.fly = null;
   if (ev.ok) {
     agree(f.stamp, f.sig, f.ap);
@@ -275,6 +284,7 @@ function cloudLost() {
   claimDue = false;
   cloudOff = true;
   // a put that never got its answer must not keep Play here's claim from going out
+  forcedLost = S.cl.fly && S.cl.fly.force ? S.cl.fly : null;
   S.cl.fly = null;
   clearTimeout(cloudTimer);
   cloudTimer = 0;
@@ -359,6 +369,8 @@ function cloudEnd() {
 
 // a copy meets this game; if it replaced it the screen shows it, or waits for the launch reveal while the models load
 function cloudTake(ev) {
+  // a game that was taken over stays as it was, also against copies that waited for the time
+  if (cloudOff) return;
   var h = copyHold(ev);
   if (claim && h.dev !== devId() && (h.at > claim.at || (h.at === claim.at && h.dev > claim.dev))) return cloudLost();
   // a put of an earlier page that is not this copy did not land
