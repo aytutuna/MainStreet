@@ -37,7 +37,7 @@
 //                                          its key
 //   {cmd: 'cloudSignIn'}                   Android: opens Play Games sign-in, then answers cloudState and cloud
 // Every copy carries hold {dev, at}: the device that claimed the game and the server time it did so, at launch, on coming back
-// and on Play here. A device that sees a later claim than its own stops and shows the taken-over card; one with no claim puts nothing,
+// and on Play here. A device that sees a later claim than its own stops and shows the taken-over card; one with no claim puts nothing.
 // A device that was taken over keeps its game as it was and puts nothing; what it credited meanwhile reaches the cloud when the player
 // comes back to it (return or Play here judges the newest copy, and the claim put sends this device's ledger).
 //   {t: 'notify', state}                   'granted' or 'denied', answering the notify handler's {cmd: 'ask'}; the page does not use it
