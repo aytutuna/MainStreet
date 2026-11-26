@@ -302,24 +302,25 @@ for (const ios of [false, true]) {
     expect(a.puts().length === 2, name + ': a credited purchase did not go out at once');
     b.launch();
     expect(b.gems() === 600, name + ': the other device did not get the purchase (gems ' + b.gems() + ')');
-    // and one that comes in on the device that was taken over goes out as a hand-off: the newest game with that purchase joined in
+    // one that comes in on the device that was taken over stays on it until the player comes back to it
     sync(a);
     expect(a.run('cloudOff'), name + ': the first device did not stop');
     const n = a.puts().length;
     a.run('grant("gems3", "TB")');
-    expect(a.puts().length === n + 1 && a.run('cloudOff') && a.gems() === 600 + 1200, name + ': a purchase on a taken-over device did not go out as a hand-off (gems ' + a.gems() + ')');
+    expect(a.puts().length === n && a.run('cloudOff') && a.gems() === 600 + 1200, name + ': a purchase on a taken-over device was put (gems ' + a.gems() + ')');
     sync(b);
-    expect(b.gems() === 600 + 1200 && !b.run('cloudOff'), name + ': the holder did not take the hand-off (gems ' + b.gems() + ')');
+    expect(b.gems() === 600 && !b.run('cloudOff'), name + ': the holder got a purchase from a taken-over device (gems ' + b.gems() + ')');
     b.change(5, 800);
     b.put();
     now += 60000;
     a.run('cloudHere()');
-    expect(a.gems() === 600 + 1200 + 5 && !a.run('cloudOff'), name + ': the newest game was not loaded after the hand-off (gems ' + a.gems() + ')');
+    elapse(10000, a, b);
+    expect(a.gems() === 600 + 1200 + 5 && !a.run('cloudOff'), name + ': the newest game with the purchase was not loaded on return (gems ' + a.gems() + ')');
     sync(b);
     b.run('cloudHere()');
     expect(b.gems() === a.gems(), name + ': the other device did not get the joined game (gems ' + b.gems() + ' and ' + a.gems() + ')');
   }
-  // the same when the holder has played on since: it keeps its game and gets the purchase
+  // the same when the holder has played on since: it keeps its game and gets the purchase once the first device is back
   for (const played of [false, true]) {
     const { cloud, sync, a, b } = claimPair(ios);
     a.launch();
@@ -331,12 +332,20 @@ for (const ios of [false, true]) {
     if (played) b.change(7, 90);
     sync(b);
     if (!ios) b.ask();
-    expect(b.gems() === 100 + 500 + (played ? 7 : 0), name + ': the hand-off purchase did not reach the holder (played ' + played + ', gems ' + b.gems() + ')');
+    expect(b.gems() === 100 + (played ? 7 : 0) && !b.run('cloudOff'), name + ': the holder got the purchase early (played ' + played + ', gems ' + b.gems() + ')');
+    if (played) b.put();
+    now += 60000;
+    a.run('cloudHere()');
+    elapse(10000, a, b);
+    sync(b);
+    b.run('cloudHere()');
+    elapse(10000, a, b);
+    expect(a.gems() === 100 + 500 + (played ? 7 : 0) && b.gems() === a.gems(), name + ': the purchase did not reach the cloud on return (played ' + played + ', a ' + a.gems() + ', b ' + b.gems() + ')');
   }
 }
 
-// a purchase credited on the Android device that has not yet learned of the other's claim is refused with the claim's copy, and
-// goes out as a hand-off on that copy
+// a purchase credited on the Android device that has not yet learned of the other's claim is refused with the claim's copy; it stays
+// on that device, and reaches the cloud when the player comes back to it
 {
   const { cloud, a, b } = claimPair(false);
   a.launch();
@@ -344,9 +353,14 @@ for (const ios of [false, true]) {
   b.launch();
   a.run('grant("gems2", "TA")');
   expect(a.run('cloudOff') && a.shown('taken'), 'Android: the refusal of a purchase did not stop the first device');
-  expect(JSON.parse(cloud.json).gems === 600 && JSON.parse(cloud.json).hold.dev === 'bb', 'Android: the purchase did not reach the cloud copy of the holder (gems ' + JSON.parse(cloud.json).gems + ')');
-  b.ask();
-  expect(b.gems() === 600 && !b.run('cloudOff'), 'Android: the holder did not get the purchase (gems ' + b.gems() + ')');
+  expect(JSON.parse(cloud.json).gems === 100 && JSON.parse(cloud.json).hold.dev === 'bb', 'Android: the purchase reached the cloud copy of the holder (gems ' + JSON.parse(cloud.json).gems + ')');
+  now += 60000;
+  a.run('cloudHere()');
+  elapse(10000, a, b);
+  expect(JSON.parse(cloud.json).gems === 600 && JSON.parse(cloud.json).hold.dev === 'aa', 'Android: the purchase did not reach the cloud on return (gems ' + JSON.parse(cloud.json).gems + ')');
+  b.run('cloudHere()');
+  elapse(10000, a, b);
+  expect(b.gems() === 600, 'Android: the holder did not get the purchase after the return (gems ' + b.gems() + ')');
 }
 
 // a purchase credited while a put is in flight goes out as soon as that put is answered
@@ -1354,7 +1368,7 @@ function installVis(d) {
   d.away = () => d.run('awayLog');
 }
 
-// a hand-off never replaces the game of the device that was taken over: the first device holds a purchase and a game far ahead of
+// the fresh copy another device starts never replaces the game of the device that was taken over: the first device holds a purchase and a game far ahead of
 // the fresh copy another device started when its first iCloud sync was slow, and Play here still brings its own game back
 {
   const { cloud, a, b } = claimPair(true);
@@ -1371,7 +1385,7 @@ function installVis(d) {
   elapse(11000, a, b);
   a.pump();
   expect(a.run('cloudOff'), 'iPhone: the first device did not stop under the fresh game');
-  expect(a.run('S.store') === 3 && a.run('S.rep') === 77 && a.run('S.ads.ap') > 50000, 'iPhone: a hand-off replaced the game of the device that was taken over');
+  expect(a.run('S.store') === 3 && a.run('S.rep') === 77 && a.run('S.ads.ap') > 50000, 'iPhone: the fresh copy replaced the game of the device that was taken over');
   b.lagged = Object.keys(cloud.keys).filter(k => k !== b.id()).map(k => cloud.keys[k]);
   b.catchUp();
   elapse(5000, a, b);
@@ -1415,12 +1429,15 @@ function installVis(d) {
       buyDeal(a, 'gems2', 'TA', 100);
       sync(b);
       if (!ios) b.ask();
-      expect(b.gems() === 700, name + ': the holder did not get the bonus of a late purchase (gems ' + b.gems() + ', want 700)');
+      expect(b.gems() === 100, name + ': the holder got a late purchase before the first device was back (gems ' + b.gems() + ')');
       elapse(120000, a, b);
       b.change(3, 600);
       b.put();
       now += 60000;
       a.run('cloudHere()');
+      elapse(10000, a, b);
+      sync(b);
+      b.run('cloudHere()');
       elapse(10000, a, b);
       expect(a.gems() === 703 && b.gems() === 703, name + ': the bonus of a late purchase was lost after Play here (a ' + a.gems() + ', b ' + b.gems() + ', want 703)');
     }
@@ -1440,8 +1457,8 @@ function installVis(d) {
   expect(a.run('K.gems') === 105 && a.run('K.iap.paid[0].gems') === 600, 'meet did not pay the bonus of a known purchase (gems ' + a.run('K.gems') + ')');
 }
 
-// a Restore answer that comes late on a taken-over device is handed off too: it moves Skip ads to the restoring user, and the
-// holder, whose user no longer lists it, must not strip it
+// a Restore answer that comes late on a taken-over device stays on it until the player is back: it moves Skip ads to the restoring
+// user, and the holder, whose user no longer lists it, strips its own flag but not the restored one
 {
   const owned = (d, user, ids, tx, how) => d.run("refundDoubt = {}; window.nativeStore({ t: 'owned', ids: " + JSON.stringify(ids) + ', tx: ' + JSON.stringify(tx) + ", user: '" + user + "'" + (how ? ', ' + how + ': true' : '') + ' })');
   for (const ios of [false, true]) {
@@ -1457,7 +1474,7 @@ function installVis(d) {
     now += 5000;
     const n = a.puts().length;
     owned(a, 'U1', [PID + 'noads'], [{ id: PID + 'noads', tx: 'N1', at: 1 }], 'restore');
-    expect(a.puts().length === n + 1, name + ': a late restore was not handed off');
+    expect(a.puts().length === n, name + ': a late restore was put by a device that was taken over');
     now += 5000;
     owned(b, 'U2', [], []);
     owned(b, 'U2', [], [], 'sync');
@@ -1465,12 +1482,16 @@ function installVis(d) {
     b.put();
     elapse(5 * 60000, a, b);
     if (!ios) b.ask();
-    expect(b.run('S.iap.noads') === 1, name + ': the holder stripped Skip ads that the account owns');
+    a.run('cloudHere()');
+    elapse(10000, a, b);
+    sync(b);
+    b.run('cloudHere()');
+    elapse(10000, a, b);
+    expect(a.run('S.iap.noads') === 1 && b.run('S.iap.noads') === 1, name + ': Skip ads that the account owns was stripped after the return (a ' + a.run('S.iap.noads') + ', b ' + b.run('S.iap.noads') + ')');
   }
 }
 
-// a hand-off does not carry the play of the device that was taken over: the holder keeps its own game and gets the purchase, and
-// its play time does not jump to the other device's
+// a purchase credited on the device that was taken over reaches the cloud on its return, and the game with more play is the one kept
 for (const ios of [false, true]) {
   const name = ios ? 'iPhone' : 'Android';
   const { sync, a, b } = claimPair(ios);
@@ -1484,11 +1505,17 @@ for (const ios of [false, true]) {
   a.run('grant("gems2", "TA")');
   sync(b);
   if (!ios) b.ask();
-  expect(b.gems() === 100 + 500 + 7, name + ': the holder did not keep its game and get the purchase (gems ' + b.gems() + ')');
-  expect(b.run('S.ads.ap') < 2000, name + ': the hand-off carried the play of the device that was taken over (ap ' + b.run('S.ads.ap') + ')');
+  expect(b.gems() === 100 + 7 && b.run('S.ads.ap') < 2000, name + ': the holder changed before the first device was back (gems ' + b.gems() + ')');
+  now += 60000;
+  a.run('cloudHere()');
+  elapse(10000, a, b);
+  sync(b);
+  b.run('cloudHere()');
+  elapse(10000, a, b);
+  expect(b.gems() === 100 + 500 && a.gems() === b.gems() && b.run('S.ads.ap') > 5000, name + ': the game with more play did not reach the other device with the purchase (a ' + a.gems() + ', b ' + b.gems() + ', ap ' + b.run('S.ads.ap') + ')');
 }
 
-// the holder that played a little since the copy it was built on keeps its game, whatever the device ids
+// whichever device id is larger, the purchase of the device that was taken over reaches both on its return
 for (const ios of [false, true]) {
   for (const ids of [['zz', 'bb'], ['aa', 'bb']]) {
     const name = (ios ? 'iPhone' : 'Android') + ' ' + ids.join('/');
@@ -1504,7 +1531,14 @@ for (const ios of [false, true]) {
     a.run('grant("gems2", "TA")');
     sync(b);
     if (!ios) b.ask();
-    expect(b.gems() === 607 && !b.run('cloudOff'), name + ': the holder lost its play to a hand-off (gems ' + b.gems() + ', want 607)');
+    expect(b.gems() === 107 && !b.run('cloudOff'), name + ': the holder changed before the first device was back (gems ' + b.gems() + ')');
+    now += 60000;
+    a.run('cloudHere()');
+    elapse(10000, a, b);
+    sync(b);
+    b.run('cloudHere()');
+    elapse(10000, a, b);
+    expect(a.gems() >= 600 && b.gems() >= 600, name + ': the purchase did not reach both devices whichever id is larger (a ' + a.gems() + ', b ' + b.gems() + ')');
   }
 }
 

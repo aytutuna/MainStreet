@@ -38,7 +38,8 @@
 //   {cmd: 'cloudSignIn'}                   Android: opens Play Games sign-in, then answers cloudState and cloud
 // Every copy carries hold {dev, at}: the device that claimed the game and the server time it did so, at launch, on coming back
 // and on Play here. A device that sees a later claim than its own stops and shows the taken-over card; one with no claim puts nothing,
-// except a purchase it holds that the copy lacks, which goes out once as the copy's game with that purchase joined in (a hand-off).
+// A device that was taken over keeps its game as it was and puts nothing; what it credited meanwhile reaches the cloud when the player
+// comes back to it (return or Play here judges the newest copy, and the claim put sends this device's ledger).
 //   {t: 'notify', state}                   'granted' or 'denied', answering the notify handler's {cmd: 'ask'}; the page does not use it
 //   {t: 'other', on}                       whether another app is playing music (answers the 'music' check, and comes by itself
 //                                          when it starts or stops); the page keeps its music and the store murmur quiet
@@ -92,9 +93,8 @@ var claim = null;
 var claimNeeded = false;
 var claimDue = false;
 var cloudOff = false;
-// a purchase credited while a put was in flight waits for its answer; tookCopy is the copy that took this device over, for a hand-off
+// a purchase credited while a put was in flight waits for its answer
 var nowDue = false;
-var tookCopy = null;
 var devKey = '';
 
 // the time comes from the server (the native apps ask alazy.app, a plain browser asks it itself); the game starts and
@@ -190,23 +190,21 @@ function devId() {
 
 // one put at a time: its answer moves the base the next one is checked against. A put is only sent for a game that
 // differs from the copy it last agreed with, so an open game that only earns cash writes nothing
-// hand is {json, base} for a hand-off: the copy that took this device over with a purchase joined in, put on that copy's stamp
-// while this game stays as it is
-function cloudPut(erase, hand) {
+function cloudPut(erase) {
   clearTimeout(cloudTimer);
   cloudTimer = 0;
-  // the time is stamped on the copy, so nothing is put while it is unknown; a device that was taken over puts only a hand-off
-  if (!native() || !loaded || blocked || timeHeld || (!claim && !hand)) return;
+  // the time is stamped on the copy, so nothing is put while it is unknown; a device that was taken over puts nothing
+  if (!native() || !loaded || blocked || timeHeld || !claim) return;
   var cl = S.cl;
   // a put of an earlier page whose answer never came does not count: it must not keep the claim and every later put back
   if (erase !== true && cl.fly && cl.fly.stamp === cloudLive) return;
   nowDue = false;
   var sig = cloudSig(S);
-  if (!hand && erase !== true && !cl.force && !claimDue && sig === cl.sig) return;
+  if (erase !== true && !cl.force && !claimDue && sig === cl.sig) return;
   // an erase stays forced until a forced put has landed
-  var force = erase === true || (!hand && !!cl.force);
+  var force = erase === true || !!cl.force;
   var stamp = devId() + ':' + stampNext();
-  cl.fly = { stamp: stamp, sig: sig, ap: S.ads.ap, force: force ? 1 : 0, claim: claimDue, hand: hand ? 1 : 0 };
+  cl.fly = { stamp: stamp, sig: sig, ap: S.ads.ap, force: force ? 1 : 0, claim: claimDue };
   cloudLive = stamp;
   cloudAt = performance.now();
   // the claim goes with the first put after it, which also lifts the taken-over card
@@ -215,7 +213,7 @@ function cloudPut(erase, hand) {
     $('taken').hidden = true;
     S.hold = { dev: claim.dev, at: claim.at };
   }
-  post({ cmd: 'cloudPut', json: hand ? hand.json : saved(), at: Math.round(clock()), dev: devId(), stamp: stamp, base: hand ? hand.base : cl.base, force: force });
+  post({ cmd: 'cloudPut', json: saved(), at: Math.round(clock()), dev: devId(), stamp: stamp, base: cl.base, force: force });
   save();
 }
 
@@ -236,28 +234,16 @@ function cloudAck(ev) {
   if (!f || f.stamp !== ev.stamp) return;
   S.cl.fly = null;
   if (ev.ok) {
-    if (!f.hand) agree(f.stamp, f.sig, f.ap);
+    agree(f.stamp, f.sig, f.ap);
   } else if (f.claim) claimDue = true;
   save();
   if (ev.ok && (claimDue || nowDue)) cloudNow();
 }
 
-// a purchase that was credited goes out at once, or once the put in flight is answered. A device that was taken over has no claim:
-// its game becomes the newest copy with the purchase joined in, put for the holder to judge
+// a purchase that was credited goes out at once, or once the put in flight is answered
 function cloudNow() {
   nowDue = true;
   if (claim) cloudPut();
-  else if (cloudOff) cloudHand();
-}
-
-function cloudHand() {
-  if (!tookCopy || claim || !native() || !loaded || timeHeld) return;
-  var json = cloudHandOff(tookCopy.json);
-  if (!json) {
-    nowDue = false;
-    return;
-  }
-  cloudPut(false, { json: json, base: tookCopy.stamp });
 }
 
 function cloudClaim() {
@@ -284,7 +270,7 @@ function copyHold(ev) {
 }
 
 // another device claimed after this one: this one stops and shows the card, and its game is left as it is
-function cloudLost(ev) {
+function cloudLost() {
   claim = null;
   claimDue = false;
   cloudOff = true;
@@ -293,8 +279,6 @@ function cloudLost(ev) {
   clearTimeout(cloudTimer);
   cloudTimer = 0;
   $('taken').hidden = false;
-  tookCopy = ev;
-  cloudHand();
 }
 
 function cloudHere() {
@@ -376,7 +360,7 @@ function cloudEnd() {
 // a copy meets this game; if it replaced it the screen shows it, or waits for the launch reveal while the models load
 function cloudTake(ev) {
   var h = copyHold(ev);
-  if (claim && h.dev !== devId() && (h.at > claim.at || (h.at === claim.at && h.dev > claim.dev))) return cloudLost(ev);
+  if (claim && h.dev !== devId() && (h.at > claim.at || (h.at === claim.at && h.dev > claim.dev))) return cloudLost();
   // a put of an earlier page that is not this copy did not land
   if (S.cl.fly && S.cl.fly.stamp !== cloudLive && S.cl.fly.stamp !== ev.stamp) S.cl.fly = null;
   // iCloud sends every other device's key again with each read: a copy judged once is not judged again
@@ -483,10 +467,6 @@ function cloudEvent(ev) {
       // only while the server time is unknown does a copy wait
       if (timeHeld) cloudPend.push(ev);
       else cloudTake(ev);
-    } else if (ev.json && loaded && ev.refused) {
-      // a hand-off written on an older copy than the cloud holds goes again on the newer one
-      tookCopy = ev;
-      cloudHand();
     }
     if (!ev.more) cloudGot();
   }

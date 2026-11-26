@@ -1914,7 +1914,7 @@ function takeCloud(raw, stamp, current) {
   if (stamp && (stamp === c.base || (!current && c.old.indexOf(stamp) >= 0))) return false;
   // the copy is this device's own last put, which landed without its answer reaching the game
   if (stamp && c.fly && stamp === c.fly.stamp) {
-    if (!c.fly.hand) agree(stamp, c.fly.sig, c.fly.ap);
+    agree(stamp, c.fly.sig, c.fly.ap);
     c.fly = null;
     return false;
   }
@@ -1933,13 +1933,6 @@ function takeCloud(raw, stamp, current) {
     var gap = mine - other;
     var mid = stamp.split(':')[0];
     var me = typeof devId === 'function' ? devId() : '';
-    // a copy that names this device as the holder and was written by another is a hand-off of this game's own copy with a
-    // purchase joined in: it carries no play of its own and never beats the game it was made from
-    if (o.hold.dev === me && mid && me && mid !== me) {
-      meet(S, o, false);
-      agree(stamp, theirs, their);
-      return false;
-    }
     var tie = Math.abs(gap) <= CLOUD_TIE && mid && me && mid !== me ? me > mid : S.ts >= o.ts;
     if (Math.abs(gap) > CLOUD_TIE ? gap > 0 : tie) {
       meet(S, o, false);
@@ -1961,25 +1954,6 @@ function takeCloud(raw, stamp, current) {
     localStorage.setItem(KEY, saved());
   } catch (e) {}
   return true;
-}
-
-// this game was taken over and holds a purchase, flag or restore the other's copy lacks: the copy with this ledger and these flags
-// joined in, as text to be put for the holder to judge. This game itself stays as it is. The copy's play stays, or the hand-off
-// would outrank the game it joins. Empty when the copy has it all
-function cloudHandOff(raw) {
-  var o = null;
-  try {
-    var j = JSON.parse(raw);
-    if (j && j.v > SAVE_V) return '';
-    o = validate(j);
-  } catch (e) {}
-  if (!o) return '';
-  var ap = o.ads.ap;
-  var had = JSON.stringify(o.iap) + [o.gems, o.x2, o.rep].join();
-  meet(o, S, true);
-  if (JSON.stringify(o.iap) + [o.gems, o.x2, o.rep].join() === had) return '';
-  o.ads.ap = ap;
-  return JSON.stringify(o);
 }
 
 function saved() {
