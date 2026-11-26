@@ -1889,8 +1889,11 @@ function meet(k, l, lMine) {
 // goes out with them. The erase time stays as it is
 function payOnly(o) {
   var er = S.er;
+  // the copy's play is not this game's, so it stays out of the next comparison
+  var ap = S.ads.ap;
   meet(S, o, false);
   S.er = er;
+  S.ads.ap = ap;
   return false;
 }
 
