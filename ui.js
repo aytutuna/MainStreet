@@ -16,11 +16,16 @@ var VOL = { till: 0.3, stock: 0.4, tap: 0.5, buy: 0.6, done: 0.6, unlock: 0.6, m
 var VARY = { till: 1, stock: 1, tap: 1, coins: 1, gems: 1 };
 var hum = null;
 var BUZZ_KEY = 'mainstreet.buzz';
+var REMIND_KEY = 'mainstreet.remind';
+var RATED_KEY = 'mainstreet.rated';
 var buf = {};
 var out = null;
 var ac = null;
 var snd = true;
 var vib = true;
+var remindOn = true;
+var remindDenied = false;
+var rateWant = false;
 var cardId = null;
 var cardRow = null;
 var cardSel = -1;
@@ -153,11 +158,11 @@ function tell(msg) {
 var askWant = false;
 
 function askNotify() {
-  if (!S.ask) askWant = true;
+  if (!S.ask && remindOn) askWant = true;
 }
 
 function autoAsk() {
-  if (!askWant || S.ask || !started() || veilUp() || cardId || sheetOpen) return;
+  if (!askWant || S.ask || !remindOn || !started() || veilUp() || cardId || sheetOpen) return;
   askWant = false;
   S.ask = 1;
   $('remind').hidden = false;
@@ -1105,6 +1110,23 @@ function moveParty(rep) {
   banner('<b>' + tl('banner.store_open', { n: S.store }) + '</b><small>' + tl('banner.income_x', { n: storeMul(S.store) }) + '</small>', 0.2, true);
   banner('<b>' + tl('banner.rep', { n: rep }) + '</b><small>' + tl('banner.rep.line') + '</small>', 0.1);
   setTimeout(function () { if (!veilUp() && !sheetOpen && !cardId && !document.hidden) openSell(); }, 4500);
+  if (S.store === 2) rateWant = true;
+}
+
+// the system review prompt, once per install, after the move's banners and cards are gone
+function autoRate() {
+  if (!rateWant || bqBusy || veilUp() || cardId || sheetOpen || document.hidden || window.TESTER || !native()) return;
+  rateWant = false;
+  try {
+    if (localStorage.getItem(RATED_KEY)) return;
+    localStorage.setItem(RATED_KEY, '1');
+  } catch (e) {}
+  post({ cmd: 'review' });
+}
+
+function notifyState(state) {
+  remindDenied = state === 'denied';
+  setSound();
 }
 
 function claimGoalAt(i, el) {
@@ -1911,6 +1933,8 @@ function paintLook() {
 function setSound() {
   $('m-snd').textContent = tl(snd ? 'menu.sound_on' : 'menu.sound_off');
   $('m-buzz').textContent = tl(vib ? 'menu.vibration_on' : 'menu.vibration_off');
+  $('m-remind').textContent = tl(remindOn ? 'menu.remind_on' : 'menu.remind_off');
+  $('m-remind-note').hidden = !(remindOn && remindDenied);
 }
 
 function afterLoad() {
@@ -2102,6 +2126,14 @@ function wire() {
     setSound();
     buzz();
   });
+  $('m-remind').addEventListener('click', function () {
+    remindOn = !remindOn;
+    try {
+      localStorage.setItem(REMIND_KEY, remindOn ? '1' : '0');
+    } catch (e) {}
+    if (!remindOn) tell({ cmd: 'set', list: [] });
+    setSound();
+  });
   $('m-reset').addEventListener('click', function () {
     $('menu').hidden = true;
     $('erase').hidden = false;
@@ -2135,7 +2167,7 @@ function wire() {
       musicSync();
       save();
       cloudPut();
-      tell({ cmd: 'set', list: reminders() });
+      tell({ cmd: 'set', list: remindOn ? reminders() : [] });
       if (!hiddenAt) hiddenAt = clock();
       cloudTook = false;
       return;
@@ -2436,6 +2468,7 @@ function loop(t) {
     checkAch();
     autoDaily();
     autoAsk();
+    autoRate();
     updateMeters();
     if (!$('stats').hidden) paintStats();
     updateHint();
@@ -2584,6 +2617,7 @@ function start() {
   try {
     snd = localStorage.getItem(SND_KEY) !== '0';
     vib = localStorage.getItem(BUZZ_KEY) !== '0';
+    remindOn = localStorage.getItem(REMIND_KEY) !== '0';
     if (window.TESTER) free = localStorage.getItem(FREE_KEY) === '1';
     else localStorage.removeItem(FREE_KEY);
     hinted = JSON.parse(localStorage.getItem(HINT_KEY)) || {};

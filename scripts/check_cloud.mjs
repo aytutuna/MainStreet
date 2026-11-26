@@ -1504,7 +1504,7 @@ const visCode = uiSrc.slice(visFrom, visTo).replace('var a = away(sec);', 'var a
 expect(visFrom >= 0 && visCode.indexOf('uiAway') > 0, 'the return handler of ui.js was not found');
 function installVis(d) {
   d.run('var visH = null; var awayLog = []; var ac = null; var sweep = null; var lastTick = 0;' +
-    'function musicSync() {} function tell() {} function askOther() {} function updateBest() {}' +
+    'var remindOn = true; function musicSync() {} function tell() {} function askOther() {} function updateBest() {}' +
     'function uiAway(s) { awayLog.push(Math.round(s)); return away(s); }' +
     "document.addEventListener = function (t, f) { if (t === 'visibilitychange') visH = f; };");
   d.run(visCode);
