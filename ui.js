@@ -2335,11 +2335,14 @@ function wire() {
     }
     askOther();
     radioSync();
+    if (claimNeeded) cloudMaybeClaim();
     if (!hiddenAt) return;
     // the game waits for the server time, so the time away comes from two server answers
     cloudBack();
     timeWait(function () {
       cloudAfter(function () {
+        // left again before the cloud answered: the next return does it all
+        if (document.hidden) return;
         cloudApply();
         var sec = (clock() - hiddenAt) / 1000;
         hiddenAt = 0;

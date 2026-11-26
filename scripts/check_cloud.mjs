@@ -123,7 +123,7 @@ function device(cloud, st = {}, opts = {}) {
       dev.seen[m.dev] = e;
       if (dev.offline) dev.late = e;
       else dev.out_(e);
-      dev.inbox.push({ t: 'cloudPut', ok: true, stamp: m.stamp });
+      if (!dev.noAck) dev.inbox.push({ t: 'cloudPut', ok: true, stamp: m.stamp });
     }
   };
   // the write reaches the store and is delivered to the other devices, each unless it lags
@@ -172,7 +172,7 @@ function device(cloud, st = {}, opts = {}) {
         cloud.at = m.at;
         cloud.dev = m.dev;
         cloud.stamp = m.stamp;
-        dev.inbox.push({ t: 'cloudPut', ok: true, stamp: m.stamp });
+        if (!dev.noAck) dev.inbox.push({ t: 'cloudPut', ok: true, stamp: m.stamp });
       }
     }
   };
@@ -1334,6 +1334,275 @@ for (const more of [false, true]) {
   expect(kt.includes('if (saved == null) return@open state("unavailable")') && kt.includes('return@open done(stamp, false)'), 'CloudBridge.kt does not stop on a saved game it cannot read');
   expect(kt.includes('if (lastState != "available") state("available")'), 'CloudBridge.kt does not send available after a failed read');
 }
+
+
+// the return handler of ui.js, cut out as it is and run in the device's page; the time away it pays is logged
+const uiSrc = fs.readFileSync(path.join(root, 'ui.js'), 'utf8').split('\r\n').join('\n');
+const visFrom = uiSrc.indexOf('  var hiddenAt = 0;');
+const visTo = uiSrc.indexOf('\n  });\n}', visFrom) + '\n  });'.length;
+const visCode = uiSrc.slice(visFrom, visTo).replace('var a = away(sec);', 'var a = uiAway(sec);');
+expect(visFrom >= 0 && visCode.indexOf('uiAway') > 0, 'the return handler of ui.js was not found');
+function installVis(d) {
+  d.run('var visH = null; var awayLog = []; var ac = null; var sweep = null; var lastTick = 0;' +
+    'function radioSync() {} function tell() {} function askOther() {} function updateBest() {}' +
+    'function uiAway(s) { awayLog.push(Math.round(s)); return away(s); }' +
+    "document.addEventListener = function (t, f) { if (t === 'visibilitychange') visH = f; };");
+  d.run(visCode);
+  d.hide = () => d.run('document.hidden = true; visH()');
+  d.show = () => d.run('document.hidden = false; visH()');
+  d.time = () => d.run('gotTime({ n: timeN, ms: __now(), sent: Date.now(), recv: Date.now() })');
+  d.away = () => d.run('awayLog');
+}
+
+// a hand-off never replaces the game of the device that was taken over: the first device holds a purchase and a game far ahead of
+// the fresh copy another device started when its first iCloud sync was slow, and Play here still brings its own game back
+{
+  const { cloud, a, b } = claimPair(true);
+  a.launch();
+  a.run('S.store = 3; S.rep = 77; S.ads.ap += 50000; save()');
+  a.run('grant("gems2", "TA")');
+  elapse(CLOUD_EVERY + 1000, a, b);
+  a.put();
+  b.seen = {};
+  b.lag = true;
+  b.lagged = [];
+  now += 60000;
+  b.launch();
+  elapse(11000, a, b);
+  a.pump();
+  expect(a.run('cloudOff'), 'iPhone: the first device did not stop under the fresh game');
+  expect(a.run('S.store') === 3 && a.run('S.rep') === 77 && a.run('S.ads.ap') > 50000, 'iPhone: a hand-off replaced the game of the device that was taken over');
+  b.lagged = Object.keys(cloud.keys).filter(k => k !== b.id()).map(k => cloud.keys[k]);
+  b.catchUp();
+  elapse(5000, a, b);
+  now += 60000;
+  a.run('cloudHere()');
+  elapse(10000, a, b);
+  expect(a.run('S.store') === 3 && a.run('S.rep') === 77 && a.gems() >= 600, 'iPhone: Play here did not bring the first device\'s own game back (store ' + a.run('S.store') + ', rep ' + a.run('S.rep') + ')');
+}
+
+// the bonus of a deal is paid inside the credit, so every copy of the purchase carries it
+{
+  const stub = 'sfx = function () {}; buzz = function () {}; ';
+  const buyDeal = (d, id, tx, bonus) => d.run(stub + "S.iap.deal = { id: '" + id + "', bonus: " + bonus + ', until: clock() + 3600000, at: clock() }; window.nativeStore({ t: "bought", id: "' + PID + id + '", tx: "' + tx + '", at: clock() })');
+  for (const ios of [false, true]) {
+    const name = ios ? 'iPhone' : 'Android';
+    // the holder buys on a deal and the other device opens within the throttle
+    {
+      const { sync, a, b } = claimPair(ios);
+      a.launch();
+      elapse(CLOUD_EVERY + 1000, a, b);
+      buyDeal(a, 'gems2', 'TA', 100);
+      expect(a.gems() === 700, name + ': the deal bonus was not paid (gems ' + a.gems() + ')');
+      elapse(10000, a, b);
+      b.launch();
+      elapse(5000, a, b);
+      sync(a);
+      b.change(2, 600);
+      b.put();
+      elapse(60000, a, b);
+      a.run('cloudHere()');
+      elapse(10000, a, b);
+      expect(a.gems() === 702 && b.gems() === 702, name + ': a deal bonus was lost to the takeover (a ' + a.gems() + ', b ' + b.gems() + ', want 702)');
+    }
+    // a late purchase answer on the device that was taken over
+    {
+      const { sync, a, b } = claimPair(ios);
+      a.launch();
+      now = T9 + 60000;
+      b.launch();
+      sync(a);
+      buyDeal(a, 'gems2', 'TA', 100);
+      sync(b);
+      if (!ios) b.ask();
+      expect(b.gems() === 700, name + ': the holder did not get the bonus of a late purchase (gems ' + b.gems() + ', want 700)');
+      elapse(120000, a, b);
+      b.change(3, 600);
+      b.put();
+      now += 60000;
+      a.run('cloudHere()');
+      elapse(10000, a, b);
+      expect(a.gems() === 703 && b.gems() === 703, name + ': the bonus of a late purchase was lost after Play here (a ' + a.gems() + ', b ' + b.gems() + ', want 703)');
+    }
+  }
+  // a purchase on a deal while the other device plays on: every copy ends with the bonus
+  const [a, b, c] = pair();
+  b.change(1, 5000);
+  buyDeal(a, 'gems2', 'TA', 100);
+  b.ask();
+  b.put();
+  elapse(CLOUD_EVERY + 1000, a, b);
+  a.ask();
+  expect(a.gems() === 701 && b.gems() === 701 && JSON.parse(c.json).gems === 701, 'Android: a deal bonus did not reach every copy (a ' + a.gems() + ', b ' + b.gems() + ', cloud ' + JSON.parse(c.json).gems + ', want 701)');
+  // a bonus that went out late joins a copy that already has the purchase
+  const k = { tx: 'TX', id: 'gems2', at: 1, gems: 500, x2: 0, rep: 0, deal: 0, ask: 0 };
+  a.run('var K = fresh(); K.gems = 5; K.iap.paid = [' + JSON.stringify(k) + ']; K.iap.tx = ["TX"]; var L = fresh(); L.iap.paid = [' + JSON.stringify({ ...k, gems: 600, deal: 7 }) + ']; meet(K, L, true)');
+  expect(a.run('K.gems') === 105 && a.run('K.iap.paid[0].gems') === 600, 'meet did not pay the bonus of a known purchase (gems ' + a.run('K.gems') + ')');
+}
+
+// a Restore answer that comes late on a taken-over device is handed off too: it moves Skip ads to the restoring user, and the
+// holder, whose user no longer lists it, must not strip it
+{
+  const owned = (d, user, ids, tx, how) => d.run("refundDoubt = {}; window.nativeStore({ t: 'owned', ids: " + JSON.stringify(ids) + ', tx: ' + JSON.stringify(tx) + ", user: '" + user + "'" + (how ? ', ' + how + ': true' : '') + ' })');
+  for (const ios of [false, true]) {
+    const name = ios ? 'iPhone' : 'Android';
+    const { sync, a, b } = claimPair(ios);
+    a.launch();
+    a.run("S.iap.noads = 1; S.iap.noadsTx = 'N1'; S.iap.noadsUser = 'U2'; S.iap.noadsAt = clock(); save()");
+    a.put();
+    now += 60000;
+    b.launch();
+    sync(a);
+    expect(a.run('cloudOff') && b.run('S.iap.noads') === 1, name + ': the first device did not stop');
+    now += 5000;
+    const n = a.puts().length;
+    owned(a, 'U1', [PID + 'noads'], [{ id: PID + 'noads', tx: 'N1', at: 1 }], 'restore');
+    expect(a.puts().length === n + 1, name + ': a late restore was not handed off');
+    now += 5000;
+    owned(b, 'U2', [], []);
+    owned(b, 'U2', [], [], 'sync');
+    b.change(1, 200);
+    b.put();
+    elapse(5 * 60000, a, b);
+    if (!ios) b.ask();
+    expect(b.run('S.iap.noads') === 1, name + ': the holder stripped Skip ads that the account owns');
+  }
+}
+
+// a hand-off does not carry the play of the device that was taken over: the holder keeps its own game and gets the purchase, and
+// its play time does not jump to the other device's
+for (const ios of [false, true]) {
+  const name = ios ? 'iPhone' : 'Android';
+  const { sync, a, b } = claimPair(ios);
+  a.launch();
+  a.change(0, 5000);
+  now = T9 + 60000;
+  b.launch();
+  sync(a);
+  expect(a.run('cloudOff') && a.run('S.ads.ap') > 5000, name + ': the first device did not stop with its play');
+  b.change(7, 20);
+  a.run('grant("gems2", "TA")');
+  sync(b);
+  if (!ios) b.ask();
+  expect(b.gems() === 100 + 500 + 7, name + ': the holder did not keep its game and get the purchase (gems ' + b.gems() + ')');
+  expect(b.run('S.ads.ap') < 2000, name + ': the hand-off carried the play of the device that was taken over (ap ' + b.run('S.ads.ap') + ')');
+}
+
+// the holder that played a little since the copy it was built on keeps its game, whatever the device ids
+for (const ios of [false, true]) {
+  for (const ids of [['zz', 'bb'], ['aa', 'bb']]) {
+    const name = (ios ? 'iPhone' : 'Android') + ' ' + ids.join('/');
+    const { sync, a, b } = claimPair(ios);
+    a.run("devKey = '" + ids[0] + "'");
+    b.run("devKey = '" + ids[1] + "'");
+    a.launch();
+    now = T9 + 60000;
+    b.launch();
+    sync(a);
+    expect(a.run('cloudOff'), name + ': the first device did not stop');
+    b.change(7, 20);
+    a.run('grant("gems2", "TA")');
+    sync(b);
+    if (!ios) b.ask();
+    expect(b.gems() === 607 && !b.run('cloudOff'), name + ': the holder lost its play to a hand-off (gems ' + b.gems() + ', want 607)');
+  }
+}
+
+// Play here tapped while the return waits for the cloud keeps the return: the time away is paid once, and the next short
+// absence is not paid for the play in between
+for (const ios of [false, true]) {
+  const name = ios ? 'iPhone' : 'Android';
+  const { sync, a, b } = claimPair(ios);
+  a.launch();
+  installVis(a);
+  now = T9 + 60000;
+  b.launch();
+  sync(a);
+  now += 60000;
+  a.hide();
+  now += H;
+  a.hold = true;
+  a.show();
+  a.time();
+  a.run('cloudHere()');
+  a.hold = false;
+  a.pump();
+  expect(a.run('hiddenAt') === 0 && a.away().length <= 1, name + ': the return was dropped by Play here (hiddenAt ' + a.run('hiddenAt') + ')');
+  now += 2 * H;
+  a.hide();
+  now += 120000;
+  a.show();
+  a.time();
+  a.pump();
+  expect(a.away().length > 0 && a.away()[a.away().length - 1] === 120, name + ': the next return paid played time as away time ' + JSON.stringify(a.away()));
+}
+
+// leaving again before the cloud answers does not finish the return or claim from the background; the next return runs it all
+for (const ios of [false, true]) {
+  const name = ios ? 'iPhone' : 'Android';
+  const { sync, a, b } = claimPair(ios);
+  a.launch();
+  installVis(a);
+  b.launch();
+  now = T9 + 60000;
+  sync(a);
+  now += 60000;
+  a.hide();
+  now += H;
+  a.hold = true;
+  a.show();
+  a.time();
+  now += 1000;
+  a.hide();
+  a.hold = false;
+  a.pump();
+  elapse(5000, a);
+  sync(b);
+  expect(a.run('hiddenAt') > 0 && !b.run('cloudOff'), name + ': a device in the background finished its return and claimed (hiddenAt ' + a.run('hiddenAt') + ', b off ' + b.run('cloudOff') + ')');
+  const posts = a.posts.length;
+  now += 8 * H;
+  a.show();
+  a.time();
+  a.pump();
+  const sent = a.posts.slice(posts).map(m => m.cmd);
+  expect(sent.includes('cloudGet') && sent.includes('time') && a.run('hiddenAt') === 0 && a.run('claim') !== null, name + ': the next return did not run in full (' + sent.join(',') + ', hiddenAt ' + a.run('hiddenAt') + ')');
+}
+
+// a put whose answer never reached the page (the app was killed) must not keep the next launch from claiming and putting
+for (const ios of [false, true]) {
+  const name = ios ? 'iPhone' : 'Android';
+  const cloud = ios ? newKeys() : newCloud();
+  now = T9;
+  const a = device(cloud, {}, { claim: true });
+  a.run('S = fresh(); S.gems = 100; S.ads.ap = 1000; save()');
+  a.launch();
+  now = T9 + 60000;
+  a.change(5, 100);
+  a.noAck = true;
+  a.put();
+  expect(a.run('S.cl.fly') !== null, name + ': the put in flight is not there');
+  now = T12;
+  const a2 = device(cloud, a.st, { claim: true });
+  a2.launch();
+  expect(a2.puts().length >= 1 && a2.run('claim') !== null, name + ': the launch after a lost answer did not claim and put (puts ' + a2.puts().length + ')');
+  a2.change(50, 600);
+  elapse(CLOUD_EVERY, a2);
+  a2.put();
+  const key = ios ? JSON.parse(cloud.keys[a2.id()].json) : JSON.parse(cloud.json);
+  expect(key.gems === a2.gems(), name + ': a later put did not go out after a lost answer (cloud ' + key.gems + ', local ' + a2.gems() + ')');
+}
+{
+  const [, b, c] = pairIos();
+  now = T9 + 60000;
+  b.change(5, 100);
+  b.noAck = true;
+  b.put();
+  now = T12;
+  const b2 = device(c, b.st, { claim: true });
+  b2.launch();
+  expect(b2.puts().length >= 1, 'iPhone: with a second device, the launch after a lost answer did not put');
+}
+
 
 if (failed) process.exit(1);
 console.log('cloud ok');

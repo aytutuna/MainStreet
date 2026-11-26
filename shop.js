@@ -97,11 +97,9 @@ var claim = null;
 var claimNeeded = false;
 var claimDue = false;
 var cloudOff = false;
-// a purchase credited while a put was in flight waits for its answer; tookCopy is the copy that took this device over and handed
-// the stamp of the copy this game was last made from, for a hand-off
+// a purchase credited while a put was in flight waits for its answer; tookCopy is the copy that took this device over, for a hand-off
 var nowDue = false;
 var tookCopy = null;
-var handed = '';
 var devKey = '';
 
 // the time comes from the server (the native apps ask alazy.app, a plain browser asks it itself); the game starts and
@@ -197,20 +195,23 @@ function devId() {
 
 // one put at a time: its answer moves the base the next one is checked against. A put is only sent for a game that
 // differs from the copy it last agreed with, so an open game that only earns cash writes nothing
+// hand is {json, base} for a hand-off: the copy that took this device over with a purchase joined in, put on that copy's stamp
+// while this game stays as it is
 function cloudPut(erase, hand) {
   clearTimeout(cloudTimer);
   cloudTimer = 0;
   // the time is stamped on the copy, so nothing is put while it is unknown; a device that was taken over puts only a hand-off
-  if (!native() || !loaded || blocked || timeHeld || (!claim && hand !== true)) return;
+  if (!native() || !loaded || blocked || timeHeld || (!claim && !hand)) return;
   var cl = S.cl;
-  if (erase !== true && cl.fly) return;
+  // a put of an earlier page whose answer never came does not count: it must not keep the claim and every later put back
+  if (erase !== true && cl.fly && cl.fly.stamp === cloudLive) return;
   nowDue = false;
   var sig = cloudSig(S);
-  if (erase !== true && !cl.force && !claimDue && sig === cl.sig) return;
+  if (!hand && erase !== true && !cl.force && !claimDue && sig === cl.sig) return;
   // an erase stays forced until a forced put has landed
-  var force = erase === true || !!cl.force;
+  var force = erase === true || (!hand && !!cl.force);
   var stamp = devId() + ':' + stampNext();
-  cl.fly = { stamp: stamp, sig: sig, ap: S.ads.ap, force: force ? 1 : 0, claim: claimDue };
+  cl.fly = { stamp: stamp, sig: sig, ap: S.ads.ap, force: force ? 1 : 0, claim: claimDue, hand: hand ? 1 : 0 };
   cloudLive = stamp;
   cloudAt = performance.now();
   // the claim goes with the first put after it, which also lifts the taken-over card
@@ -219,7 +220,7 @@ function cloudPut(erase, hand) {
     $('taken').hidden = true;
     S.hold = { dev: claim.dev, at: claim.at };
   }
-  post({ cmd: 'cloudPut', json: saved(), at: Math.round(clock()), dev: devId(), stamp: stamp, base: cl.base, force: force });
+  post({ cmd: 'cloudPut', json: hand ? hand.json : saved(), at: Math.round(clock()), dev: devId(), stamp: stamp, base: hand ? hand.base : cl.base, force: force });
   save();
 }
 
@@ -239,8 +240,9 @@ function cloudAck(ev) {
   var f = S.cl.fly;
   if (!f || f.stamp !== ev.stamp) return;
   S.cl.fly = null;
-  if (ev.ok) agree(f.stamp, f.sig, f.ap);
-  else if (f.claim) claimDue = true;
+  if (ev.ok) {
+    if (!f.hand) agree(f.stamp, f.sig, f.ap);
+  } else if (f.claim) claimDue = true;
   save();
   if (ev.ok && (claimDue || nowDue)) cloudNow();
 }
@@ -255,15 +257,12 @@ function cloudNow() {
 
 function cloudHand() {
   if (!tookCopy || claim || !native() || !loaded || timeHeld) return;
-  if (handed !== tookCopy.stamp) {
-    if (!cloudHandOff(tookCopy.json, tookCopy.stamp)) {
-      nowDue = false;
-      return;
-    }
-    handed = tookCopy.stamp;
-    afterLoad();
+  var json = cloudHandOff(tookCopy.json);
+  if (!json) {
+    nowDue = false;
+    return;
   }
-  cloudPut(false, true);
+  cloudPut(false, { json: json, base: tookCopy.stamp });
 }
 
 function cloudClaim() {
@@ -275,7 +274,7 @@ function cloudClaim() {
 
 // the claim is made once the cloud has answered and the time is known, so a copy that came first was judged first
 function cloudMaybeClaim() {
-  if (!claimNeeded || timeHeld || cloudHeld() || cloudFind) return;
+  if (!claimNeeded || timeHeld || cloudHeld() || cloudFind || document.hidden) return;
   claimNeeded = false;
   cloudClaim();
 }
@@ -300,7 +299,6 @@ function cloudLost(ev) {
   cloudTimer = 0;
   $('taken').hidden = false;
   tookCopy = ev;
-  handed = '';
   cloudHand();
 }
 
@@ -384,12 +382,12 @@ function cloudEnd() {
 function cloudTake(ev) {
   var h = copyHold(ev);
   if (claim && h.dev !== devId() && (h.at > claim.at || (h.at === claim.at && h.dev > claim.dev))) return cloudLost(ev);
+  // a put of an earlier page that is not this copy did not land
+  if (S.cl.fly && S.cl.fly.stamp !== cloudLive && S.cl.fly.stamp !== ev.stamp) S.cl.fly = null;
   // iCloud sends every other device's key again with each read: a copy judged once is not judged again
   if (!ev.refused && ev.dev && ev.stamp && S.cl.seen[ev.dev] === ev.stamp) return;
   var took = takeCloud(ev.json, ev.stamp, !!ev.refused);
   cloudSeen(ev);
-  // a put of an earlier page that is not this copy did not land
-  if (S.cl.fly && S.cl.fly.stamp !== cloudLive) S.cl.fly = null;
   if (blocked) return loadFail(tl('save.newer'), true);
   // Skip ads can arrive in a game that was kept, too
   if (S.iap.noads) post({ cmd: 'adStop' });
@@ -427,8 +425,10 @@ function cloudBack() {
   cloudOff = false;
   claim = null;
   claimNeeded = true;
+  // a return still waiting for the cloud stays pending when this one restarts the wait
+  var run = cloudRet && !cloudRet.got ? cloudRet.run : null;
   if (cloudRet) clearTimeout(cloudRet.t);
-  cloudRet = { got: false, run: null, t: setTimeout(cloudGot, CLOUD_BACK) };
+  cloudRet = { got: false, run: run, t: setTimeout(cloudGot, CLOUD_BACK) };
   cloudAsk();
 }
 
@@ -530,8 +530,10 @@ function note(tx) {
   if (S.iap.tx.length > 100) S.iap.tx.shift();
 }
 
+var bonusGot = 0;
+
 // a consumable pays once per transaction id, even if the store reports it again, and whenever it happened
-function credit(p, tx) {
+function credit(p, tx, at) {
   if (seen(tx)) return false;
   note(tx);
   var ask = S.iap.wait[p.id] || 0;
@@ -546,13 +548,16 @@ function credit(p, tx) {
   S.rep += e.rep;
   // what was paid for stays with the game wherever it goes: a copy that meets this one takes the entries it lacks
   S.iap.paid = S.iap.paid.concat([e]).slice(-100);
+  // the deal's bonus is part of the credit, so it is in the ledger entry before the purchase goes to the cloud
+  bonusGot = p.gems ? dealBonus(p.id, at, tx) : 0;
   return true;
 }
 
-function grant(id, tx) {
+function grant(id, tx, at) {
   var p = product(id);
   if (!p) return false;
-  var done = p.once ? own(id, tx, true) : credit(p, tx);
+  bonusGot = 0;
+  var done = p.once ? own(id, tx, true) : credit(p, tx, at);
   if (done) {
     save();
     cloudNow();
@@ -570,7 +575,7 @@ function recover(list) {
     if (!p || p.once || t.id === PID + buying) return;
     if (p.id === 'starter1') {
       if (credit(p, t.tx)) n += STARTER.gems;
-    } else if (clock() - t.at >= -TIME_SKEW && clock() - t.at < RECOVER * 1000 && credit(p, t.tx)) n += p.gems + dealBonus(p.id, t.at, t.tx);
+    } else if (clock() - t.at >= -TIME_SKEW && clock() - t.at < RECOVER * 1000 && credit(p, t.tx, t.at)) n += p.gems + bonusGot;
   });
   return n;
 }
@@ -841,7 +846,7 @@ function handle(ev) {
   } else if (ev.t === 'bought') {
     var bid = ev.id.slice(PID.length);
     buyDone(bid);
-    var extra = grant(bid, ev.tx) && product(bid).gems ? dealBonus(bid, ev.at, ev.tx) : 0;
+    var extra = grant(bid, ev.tx, ev.at) ? bonusGot : 0;
     sfx('done');
     buzz('success');
     banner('<b>' + tl('shop.thanks') + '</b><small>' + (extra ? tl('shop.thanks_bonus', { name: product(bid).name, n: extra }) : product(bid).name) + '</small>', 0, true);
