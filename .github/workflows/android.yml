@@ -21,7 +21,7 @@ jobs:
       - name: SDK platform
         run: |
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null
-          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-37"
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" "platforms;android-37.0"
       - name: Lint and debug build
         working-directory: android
         run: ./gradlew lint assembleDebug
