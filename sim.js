@@ -1824,6 +1824,7 @@ function meet(k, l, lMine) {
         k.gems += e.gems - mine.gems;
         mine.gems = e.gems;
         mine.deal = e.deal;
+        added.push(mine);
       }
       return;
     }
@@ -1860,10 +1861,10 @@ function meet(k, l, lMine) {
   ki.starter = Math.max(ki.starter, li.starter);
   ki.offered = ki.offered || li.offered;
   // what k holds is its own to judge; only l's entries can be old news
-  var kd = openDeal([ki.deal], []);
+  var kd = openDeal([ki.deal], added);
   var ld = openDeal([li.deal], had);
   ki.deal = lMine ? ld || kd : kd || ld;
-  var kh = openDeal([ki.held], []);
+  var kh = openDeal([ki.held], added);
   var lh = openDeal([li.held], had);
   ki.held = lMine ? lh || kh : kh || lh;
   for (var w in li.wait) {

@@ -331,7 +331,10 @@ function cloudLook(done) {
 // the cloud is read again every few seconds on Android; a put that never got an answer is given up
 function cloudPoll() {
   if (!loaded || document.hidden || timeHeld || cloudOff) return;
-  if (S.cl.fly && performance.now() - cloudAt > 60000) S.cl.fly = null;
+  if (S.cl.fly && performance.now() - cloudAt > 60000) {
+    if (S.cl.fly.claim) claimDue = true;
+    S.cl.fly = null;
+  }
   cloudAsk();
 }
 
@@ -377,7 +380,10 @@ function cloudTake(ev) {
   if (S.cl.fly && S.cl.fly.stamp !== cloudLive && S.cl.fly.stamp !== ev.stamp) S.cl.fly = null;
   // iCloud sends every other device's key again with each read: a copy judged once is not judged again
   if (!ev.refused && ev.dev && ev.stamp && S.cl.seen[ev.dev] === ev.stamp) return;
+  // a claim put still in flight is not this game's any more once a copy replaces it: the claim goes out again
+  var fc = S.cl.fly && S.cl.fly.claim;
   var took = takeCloud(ev.json, ev.stamp, !!ev.refused);
+  if (took && fc) claimDue = true;
   cloudSeen(ev);
   if (blocked) return loadFail(tl('save.newer'), true);
   // Skip ads can arrive in a game that was kept, too
