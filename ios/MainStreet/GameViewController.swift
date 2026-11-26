@@ -18,7 +18,7 @@ private final class BuzzHandler: NSObject, WKScriptMessageHandler {
 }
 
 // The game sends {cmd: "ask"} or {cmd: "set", list: [{id, at (ms since 1970), body}]}. Coming to the foreground drops
-// every reminder, pending or delivered. The answer to "ask", and the current setting on every return, goes to the page as {t: "notify", state}.
+// every reminder, pending or delivered. The answer to "ask", and the current setting on every return and on "state", goes to the page as {t: "notify", state}.
 private final class NotifyHandler: NSObject, WKScriptMessageHandler {
     private let center = UNUserNotificationCenter.current()
     weak var web: WKWebView?
@@ -31,6 +31,15 @@ private final class NotifyHandler: NSObject, WKScriptMessageHandler {
     @objc private func clear() {
         center.removeAllPendingNotificationRequests()
         center.removeAllDeliveredNotifications()
+        report()
+    }
+            DispatchQueue.main.async {
+                self?.web?.evaluateJavaScript("window.nativeStore && window.nativeStore({t: 'notify', state: '\(state)'})")
+            }
+        }
+    }
+
+    private func report() {
         center.getNotificationSettings { [weak self] settings in
             let state: String
             switch settings.authorizationStatus {
@@ -38,15 +47,12 @@ private final class NotifyHandler: NSObject, WKScriptMessageHandler {
             case .denied: state = "denied"
             default: return
             }
-            DispatchQueue.main.async {
-                self?.web?.evaluateJavaScript("window.nativeStore && window.nativeStore({t: 'notify', state: '\(state)'})")
-            }
-        }
-    }
 
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         guard let msg = message.body as? [String: Any] else { return }
         switch msg["cmd"] as? String {
+        case "state":
+            report()
         case "ask":
             center.requestAuthorization(options: [.alert, .sound]) { [weak self] granted, _ in
                 DispatchQueue.main.async {

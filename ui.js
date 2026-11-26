@@ -25,6 +25,7 @@ var snd = true;
 var vib = true;
 var remindOn = true;
 var REMIND_DENIED_KEY = 'mainstreet.remind_denied';
+var REMIND_ASKED_KEY = 'mainstreet.remind_asked';
 var remindDenied = false;
 var rateWant = false;
 var cardId = null;
@@ -158,14 +159,19 @@ function tell(msg) {
 // the system asks once, the first time the player has something to be told about, and only after a card says why
 var askWant = false;
 
+// per install, not in the save: 'card' once the explanation was shown, '1' once the system prompt was requested
+function remindAsked() {
+  try { return localStorage.getItem(REMIND_ASKED_KEY) || ''; } catch (e) { return ''; }
+}
+
 function askNotify() {
-  if (!S.ask && remindOn) askWant = true;
+  if (!remindAsked() && remindOn) askWant = true;
 }
 
 function autoAsk() {
-  if (!askWant || S.ask || !remindOn || !started() || veilUp() || cardId || sheetOpen) return;
+  if (!askWant || remindAsked() || !remindOn || !started() || veilUp() || cardId || sheetOpen) return;
   askWant = false;
-  S.ask = 1;
+  try { localStorage.setItem(REMIND_ASKED_KEY, 'card'); } catch (e) {}
   $('remind').hidden = false;
 }
 
@@ -1130,7 +1136,7 @@ function autoRate() {
 }
 
 function notifyState(state) {
-  if (!S.ask) return;
+  if (remindAsked() !== '1') return;
   remindDenied = state === 'denied';
   try { localStorage.setItem(REMIND_DENIED_KEY, remindDenied ? '1' : '0'); } catch (e) {}
   setSound();
@@ -2044,6 +2050,7 @@ function wire() {
   $('remind-x').addEventListener('click', function () { $('remind').hidden = true; });
   $('remind-ok').addEventListener('click', function () {
     $('remind').hidden = true;
+    try { localStorage.setItem(REMIND_ASKED_KEY, '1'); } catch (e) {}
     tell({ cmd: 'ask' });
   });
   $('daily-ok').addEventListener('click', function () {

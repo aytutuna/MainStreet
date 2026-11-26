@@ -40,7 +40,7 @@
 // and on Play here. A device that sees a later claim than its own stops and shows the taken-over card; one with no claim puts nothing.
 // A device that was taken over keeps its game as it was and puts nothing; what it credited meanwhile reaches the cloud when the player
 // comes back to it (return or Play here judges the newest copy, and the claim put sends this device's ledger).
-//   {t: 'notify', state}                   'granted' or 'denied', answering the notify handler's {cmd: 'ask'} and sent again on every return to the app (not before an ask); the menu's Reminders row notes a denial
+//   {t: 'notify', state}                   'granted' or 'denied', answering the notify handler's {cmd: 'ask'} and sent again on every return to the app; the page also asks once at start with {cmd: 'state'} when the prompt was requested on this install (nothing is sent before that); the menu's Reminders row notes a denial
 //   {cmd: 'review'}                        asks for the system review prompt, once per install after the second store opens; no answer
 //   {t: 'other', on}                       whether another app is playing music (answers the 'music' check, and comes by itself
 //                                          when it starts or stops); the page keeps its music and the store murmur quiet
@@ -785,6 +785,7 @@ function shopStart() {
   $('m-signin').addEventListener('click', function () { post({ cmd: 'cloudSignIn' }); });
   queued.splice(0).forEach(handle);
   askOther();
+  if (remindAsked() === '1') post({ cmd: 'state' });
   askProducts();
   document.addEventListener('visibilitychange', function () { if (!document.hidden) askAgain(); });
   if (S.iap.noads) post({ cmd: 'adStop' });

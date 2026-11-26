@@ -1851,18 +1851,22 @@ for (const slowPutFails of [false, true]) {
   expect(!a.run('claimDue') && cloud.stamp !== before && JSON.parse(cloud.json).hold.dev === 'aa', 'Android: a claim put that was given up was never sent again');
 }
 
-// the reminders note follows the system setting, but only once the player was asked: a refusal and a later allow clears it
+// the reminders note follows the system setting, but only once the prompt was requested on this install
 {
-  const code = uiSrc.slice(uiSrc.indexOf('function notifyState('), uiSrc.indexOf('function claimGoalAt('));
-  const box = { S: {}, remindDenied: false, REMIND_DENIED_KEY: 'k', setSound() {}, localStorage: { v: null, setItem(k, v) { this.v = v; } } };
+  const code = uiSrc.slice(uiSrc.indexOf('function remindAsked('), uiSrc.indexOf('function askNotify(')) + uiSrc.slice(uiSrc.indexOf('function notifyState('), uiSrc.indexOf('function claimGoalAt('));
+  const ls = { v: null, a: null, getItem() { return this.a; }, setItem(k, v) { if (k === 'k') this.v = v; } };
+  const box = { remindDenied: false, REMIND_DENIED_KEY: 'k', REMIND_ASKED_KEY: 'a', setSound() {}, localStorage: ls };
   vm.runInNewContext(code, box);
+  for (const asked of [null, 'card']) {
+    ls.a = asked;
+    box.notifyState('denied');
+    expect(!box.remindDenied && ls.v === null, 'reminders: a notify state was taken with the key at ' + asked);
+  }
+  ls.a = '1';
   box.notifyState('denied');
-  expect(!box.remindDenied && box.localStorage.v === null, 'reminders: a notify state before the first ask was taken');
-  box.S.ask = 1;
-  box.notifyState('denied');
-  expect(box.remindDenied && box.localStorage.v === '1', 'reminders: a refusal was not kept');
+  expect(box.remindDenied && ls.v === '1', 'reminders: a refusal was not kept');
   box.notifyState('granted');
-  expect(!box.remindDenied && box.localStorage.v === '0', 'reminders: allowing in Settings did not clear the refusal');
+  expect(!box.remindDenied && ls.v === '0', 'reminders: allowing in Settings did not clear the refusal');
 }
 
 if (failed) process.exit(1);

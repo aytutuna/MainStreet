@@ -23,6 +23,7 @@ class Bridge(private val activity: MainActivity) {
         val msg = JSONObject(json)
         when (msg.optString("cmd")) {
             "ask" -> activity.runOnUiThread { activity.askNotifications() }
+            "state" -> activity.runOnUiThread { activity.reportNotifications() }
             "set" -> Reminders.set(activity.applicationContext, msg.optJSONArray("list") ?: return)
         }
     }

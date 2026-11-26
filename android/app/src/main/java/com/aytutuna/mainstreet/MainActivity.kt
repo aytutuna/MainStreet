@@ -2,6 +2,7 @@ package com.aytutuna.mainstreet
 
 import android.Manifest
 import android.annotation.SuppressLint
+import android.app.NotificationManager
 import android.content.ActivityNotFoundException
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -158,6 +159,15 @@ class MainActivity : ComponentActivity() {
         }
     }
 
+    // before Android 13 the app can only switch off its reminders channel, which areNotificationsEnabled does not see
+    fun reportNotifications() {
+        val channel = getSystemService(NotificationManager::class.java).getNotificationChannel("reminders")
+        notified(
+            NotificationManagerCompat.from(this).areNotificationsEnabled() &&
+                (channel == null || channel.importance != NotificationManager.IMPORTANCE_NONE)
+        )
+    }
+
     private fun notified(granted: Boolean) =
         emit(JSONObject().put("t", "notify").put("state", if (granted) "granted" else "denied"))
 
@@ -205,7 +215,7 @@ class MainActivity : ComponentActivity() {
         ads.resume()
         webView.onResume()
         Reminders.clear(this)
-        notified(NotificationManagerCompat.from(this).areNotificationsEnabled())
+        reportNotifications()
     }
 
     override fun onPause() {
