@@ -1183,6 +1183,52 @@ for (const ios of [false, true]) {
   expect(a.gems() === erased + 500 && b.gems() === erased + 500, name + ': the devices did not end on the erased game with the purchase kept (a ' + a.gems() + ', b ' + b.gems() + ', want ' + (erased + 500) + ')');
 }
 
+// the erased game stays, but what the other device bought still reaches it and the cloud, though that device never plays again
+{
+  const { cloud, sync, a, b } = claimPair(false);
+  a.launch();
+  now = T9 + 60000;
+  a.run('reset()');
+  const erased = a.gems();
+  a.fail = true;
+  a.run('cloudPut(true)');
+  a.fail = false;
+  now = T9 + 120000;
+  b.launch();
+  sync(a);
+  b.run('grant("gems2", "TB")');
+  b.put();
+  now += 60000;
+  a.run('cloudHere()');
+  elapse(10000, a);
+  expect(a.gems() === erased + 500 && a.run('S.er') === T9 + 60000, 'Android: a purchase in the copy a pending erase kept out was not paid (gems ' + a.gems() + ')');
+  expect(JSON.parse(cloud.json).gems === erased + 500, 'Android: the erased game was put over the purchase of the other device (cloud gems ' + JSON.parse(cloud.json).gems + ')');
+}
+// a copy from before the erase that carries a purchase: it is paid into the erased game, which stays erased
+for (const flag of [false, true]) {
+  const [a, b] = pairIos();
+  a.lag = true;
+  now = T12;
+  b.change(40, 80000);
+  if (flag) b.run('S.iap.noads = 1; S.iap.noadsTx = "TN"; S.iap.noadsUser = "u"; S.iap.noadsAt = ' + T12);
+  else b.run('grant("gems2", "TB")');
+  b.put();
+  now = T17;
+  a.run('reset()');
+  a.run('cloudPut(true)');
+  const erased = a.gems();
+  const game = 'JSON.stringify([S.b, S.pl, S.store, S.gn, S.ms])';
+  const before = a.run(game);
+  a.catchUp();
+  elapse(CLOUD_EVERY * 2, a);
+  const what = flag ? 'Skip ads' : 'gems';
+  expect(a.run('S.er') === T17 && a.run(game) === before, 'iPhone: a copy from before the erase brought its game back (' + what + ')');
+  if (flag) expect(a.run('S.iap.noads') === 1, 'iPhone: Skip ads in a copy from before the erase was not paid');
+  else expect(a.gems() === erased + 500, 'iPhone: gems in a copy from before the erase were not paid (gems ' + a.gems() + ')');
+  const sent = a.puts()[a.puts().length - 1];
+  expect(JSON.parse(sent.json)[flag ? 'iap' : 'gems'] && (flag ? JSON.parse(sent.json).iap.noads === 1 : JSON.parse(sent.json).gems === erased + 500), 'iPhone: the paid ' + what + ' did not reach the cloud');
+}
+
 // copies that wait for the server time are not taken once the first of them has taken this device over
 {
   const { cloud, a, b } = claimPair(true);

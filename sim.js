@@ -1885,6 +1885,15 @@ function meet(k, l, lMine) {
   c.sd = c.sd && a.sd ? Math.min(c.sd, a.sd) : c.sd || a.sd;
 }
 
+// a copy that cannot replace this game still holds purchases made on another device: they are paid here, once, and the game
+// goes out with them. The erase time stays as it is
+function payOnly(o) {
+  var er = S.er;
+  meet(S, o, false);
+  S.er = er;
+  return false;
+}
+
 // the game now agrees with the cloud copy under stamp, whose signature and play time are given; the base it leaves is
 // remembered, so a read that was slow and comes late is known to be old news
 function agree(stamp, sig, ap) {
@@ -1916,7 +1925,7 @@ function takeCloud(raw, stamp, current) {
   stamp = stamp || '';
   var c = S.cl;
   // written before this game was erased, or by a claim from before it: it cannot bring the erased game back
-  if (o.ts < S.er || (o.hold.at < S.er && o.er < S.er)) return false;
+  if (o.ts < S.er || (o.hold.at < S.er && o.er < S.er)) return payOnly(o);
   // nothing new: the copy this game agrees with, or one it has agreed with before and moved on from
   if (stamp && (stamp === c.base || (!current && c.old.indexOf(stamp) >= 0))) return false;
   // the copy is this device's own last put, which landed without its answer reaching the game
@@ -1926,7 +1935,7 @@ function takeCloud(raw, stamp, current) {
     return false;
   }
   // an erase that has not reached the cloud yet is the player's last word: nothing replaces it, and its forced put follows
-  if (c.force) return false;
+  if (c.force) return payOnly(o);
   var theirs = cloudSig(o);
   var their = o.ads.ap;
   // a game erased on the other device is the player's last word there, whatever was played here
