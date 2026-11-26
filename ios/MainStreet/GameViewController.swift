@@ -33,11 +33,6 @@ private final class NotifyHandler: NSObject, WKScriptMessageHandler {
         center.removeAllDeliveredNotifications()
         report()
     }
-            DispatchQueue.main.async {
-                self?.web?.evaluateJavaScript("window.nativeStore && window.nativeStore({t: 'notify', state: '\(state)'})")
-            }
-        }
-    }
 
     private func report() {
         center.getNotificationSettings { [weak self] settings in
@@ -47,6 +42,11 @@ private final class NotifyHandler: NSObject, WKScriptMessageHandler {
             case .denied: state = "denied"
             default: return
             }
+            DispatchQueue.main.async {
+                self?.web?.evaluateJavaScript("window.nativeStore && window.nativeStore({t: 'notify', state: '\(state)'})")
+            }
+        }
+    }
 
     func userContentController(_ userContentController: WKUserContentController, didReceive message: WKScriptMessage) {
         guard let msg = message.body as? [String: Any] else { return }

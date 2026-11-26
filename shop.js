@@ -785,7 +785,7 @@ function shopStart() {
   $('m-signin').addEventListener('click', function () { post({ cmd: 'cloudSignIn' }); });
   queued.splice(0).forEach(handle);
   askOther();
-  if (remindAsked() === '1') post({ cmd: 'state' });
+  if (remindAsked() === '1') tell({ cmd: 'state' });
   askProducts();
   document.addEventListener('visibilitychange', function () { if (!document.hidden) askAgain(); });
   if (S.iap.noads) post({ cmd: 'adStop' });
