@@ -39,10 +39,7 @@ final class CloudBridge: NSObject {
     func get(dev id: String?) {
         if let id = id, !id.isEmpty { dev = id }
         store.synchronize()
-        var copies = others().compactMap { store.dictionary(forKey: $0) }
-        if store.dictionaryRepresentation.keys.allSatisfy({ !$0.hasPrefix(prefix) }) {
-            if let old = store.dictionary(forKey: "save"), old["dev"] as? String != dev { copies.append(old) }
-        }
+        let copies = copiesIn(Array(store.dictionaryRepresentation.keys))
         if copies.isEmpty {
             send(nil, more: false)
             return
@@ -52,7 +49,21 @@ final class CloudBridge: NSObject {
 
     func state(dev id: String?) {
         if let id = id, !id.isEmpty { dev = id }
-        emit(["t": "cloudState", "state": synced || !others().isEmpty ? "available" : "pending"])
+        emit(["t": "cloudState", "state": synced || !others().isEmpty || legacy() != nil ? "available" : "pending"])
+    }
+
+    // the key "save" of earlier builds, while no per-device key exists at all and it is not this device's own
+    private func legacy() -> [String: Any]? {
+        guard store.dictionaryRepresentation.keys.allSatisfy({ !$0.hasPrefix(prefix) }) else { return nil }
+        guard let old = store.dictionary(forKey: "save"), old["dev"] as? String != dev else { return nil }
+        return old
+    }
+
+    // what the given keys hold of other devices' games, the legacy key included when it is one of them
+    private func copiesIn(_ keys: [String]) -> [[String: Any]] {
+        var list = keys.filter { $0.hasPrefix(prefix) && $0 != prefix + dev }.compactMap { store.dictionary(forKey: $0) }
+        if keys.contains("save"), let old = legacy() { list.append(old) }
+        return list
     }
 
     private func others() -> [String] {
@@ -65,11 +76,11 @@ final class CloudBridge: NSObject {
 
     // an initial sync after a reinstall or a change from another device ends up here
     @objc private func changed(_ note: Notification) {
-        let keys = (note.userInfo?[NSUbiquitousKeyValueStoreChangedKeysKey] as? [String] ?? []).filter { $0.hasPrefix(prefix) && $0 != prefix + dev }
+        let keys = note.userInfo?[NSUbiquitousKeyValueStoreChangedKeysKey] as? [String] ?? []
         DispatchQueue.main.async {
             self.synced = true
             // the copies come first: the state ends the page's wait for a new install, so it must not arrive with no copy yet
-            let copies = keys.compactMap { self.store.dictionary(forKey: $0) }
+            let copies = self.copiesIn(keys)
             for (i, copy) in copies.enumerated() { self.send(copy, more: i < copies.count - 1) }
             self.state(dev: nil)
         }
