@@ -26,6 +26,7 @@ import androidx.activity.OnBackPressedCallback
 import androidx.activity.SystemBarStyle
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.app.NotificationManagerCompat
 import androidx.webkit.WebViewAssetLoader
 import androidx.webkit.WebViewCompat
 import androidx.webkit.WebViewFeature
@@ -204,6 +205,7 @@ class MainActivity : ComponentActivity() {
         ads.resume()
         webView.onResume()
         Reminders.clear(this)
+        notified(NotificationManagerCompat.from(this).areNotificationsEnabled())
     }
 
     override fun onPause() {

@@ -1130,6 +1130,7 @@ function autoRate() {
 }
 
 function notifyState(state) {
+  if (!S.ask) return;
   remindDenied = state === 'denied';
   try { localStorage.setItem(REMIND_DENIED_KEY, remindDenied ? '1' : '0'); } catch (e) {}
   setSound();
