@@ -59,7 +59,7 @@ short; a button says what it does.
 ## Do not translate
 
 * The game name "Main Street" (a brand); `app.title` and the `native.*` names may keep it. A language may use an established local form if one exists.
-* Radio station names and song titles and artists, and the credits (names of asset makers). Only the label words around them.
+* Song titles and artists, and the credits (names of asset makers). Only the label words around them.
 * Currency: the game uses a made-up "$" (money) and the compact suffixes K, M, B, T. Translators may change the suffix list in
   `num.suffixes` and the position of the sign in `num.money`, but every number must stay Latin digits.
 * Placeholders in braces, tags such as `<b>`, and `\n` line breaks. Keep the same number of line breaks.

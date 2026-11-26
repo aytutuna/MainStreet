@@ -637,7 +637,6 @@ button.pill:active,
 }
 
 #call,
-#np,
 #deals button {
   pointer-events: auto;
   position: relative;
@@ -650,16 +649,6 @@ button.pill:active,
   align-items: center;
   justify-content: center;
   box-shadow: 0 3px 0 var(--edge), inset 0 2px 0 rgba(255, 255, 255, 0.7), 0 6px 10px rgba(20, 10, 0, 0.25);
-}
-
-#np {
-  background: linear-gradient(#9b6b3c, #5c3a1c 52%, #6b4425);
-  color: var(--paper);
-}
-
-#np svg {
-  width: 26px;
-  height: 26px;
 }
 
 #rush {
@@ -1778,26 +1767,10 @@ a.btn {
   gap: 8px;
 }
 
-#r-list {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-#r-list .rg {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
 #lang-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
-}
-
-#r-list .rg i {
-  font-style: normal;
 }
 
 .vol span {
@@ -2810,24 +2783,6 @@ svg.pk {
   .hero::after,
   #sell-ok.ready {
     animation: none;
-  }
-}
-
-.spin {
-  display: inline-block;
-  width: 0.8em;
-  height: 0.8em;
-  margin-inline-end: 6px;
-  vertical-align: -0.1em;
-  border: 2px solid currentColor;
-  border-right-color: transparent;
-  border-radius: 50%;
-  animation: spin 0.8s linear infinite;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
   }
 }
 

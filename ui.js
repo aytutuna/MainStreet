@@ -44,8 +44,7 @@ var goalUntil = 0;
 var HINT_KEY = 'mainstreet.hints';
 var hinted = {};
 var dailyAsked = -1;
-var RADIO_KEY = 'mainstreet.radio';
-var radio = { sel: 'mix', vol: 0.5, tip: 0 };
+var OLD_RADIO_KEY = 'mainstreet.radio';
 var mus = null;
 var cur = null;
 var nxt = null;
@@ -54,21 +53,15 @@ var skips = 0;
 var unsure = false;
 var unsureT = 0;
 var restT = 0;
-var streamOn = false;
-var stUrl = 0;
-var stEl = null;
-var stState = '';
-var stTitle = '';
 var otherOn = false;
 var adOpen = false;
 var duck = 1;
-var radioOpen = '';
 var MIXER_KEY = 'mainstreet.mixer';
-// store sounds and effects as the mixer sliders hold them; the music level is radio.vol
-var lvl = { amb: 1 / 3, fx: 0.8 };
+// the three levels as the mixer sliders hold them
+var lvl = { mus: 0.5, amb: 1 / 3, fx: 0.8 };
 var humG = null;
 // the button that closes each panel a tap outside or a swipe can dismiss; the away box is left out since it pays out
-var CLOSE = { remind: 'remind-x', pack: 'pack-x', shop: 'shop-x', daily: 'daily-x', sell: 'sell-x', regs: 'regs-x', boost: 'boost-x', radio: 'radio-x', langs: 'langs-x',
+var CLOSE = { remind: 'remind-x', pack: 'pack-x', shop: 'shop-x', daily: 'daily-x', sell: 'sell-x', regs: 'regs-x', boost: 'boost-x', langs: 'langs-x',
   sound: 'sound-x', erase: 'erase-x', stats: 'stats-x', menu: 'm-ok', ach: 'ach-x', look: 'look-x', notices: 'notices-x' };
 var dragging = false;
 var IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
@@ -91,13 +84,13 @@ function wake() {
     out = ac.createGain();
     out.connect(ac.destination);
     mus = ac.createGain();
-    mus.gain.value = radio.vol * duck;
+    mus.gain.value = lvl.mus * duck;
     mus.connect(ac.destination);
     Object.keys(VOL).forEach(loadSound);
   }
   if (ac && ac.state !== 'running' && !unsure) ac.resume();
   ambience();
-  radioSync();
+  musicSync();
 }
 
 function loadSound(name) {
@@ -205,7 +198,7 @@ function saveMixer() {
 }
 
 var SLIDERS = [
-  ['sv-mus', function () { return radio.vol; }, function (v) { radio.vol = v; radioVol(); }],
+  ['sv-mus', function () { return lvl.mus; }, function (v) { lvl.mus = v; musicVol(); }],
   ['sv-amb', function () { return lvl.amb; }, function (v) { lvl.amb = v; ambVol(); }],
   ['sv-fx', function () { return lvl.fx; }, function (v) { lvl.fx = v; }]
 ];
@@ -233,8 +226,7 @@ function wireSound() {
       $(s[0] + '-n').textContent = this.value + '%';
     });
     el.addEventListener('change', function () {
-      if (s[0] === 'sv-mus') saveRadio();
-      else saveMixer();
+      saveMixer();
       if (s[0] === 'sv-fx') sfx('buy');
     });
   });
@@ -243,51 +235,18 @@ function wireSound() {
     $('menu').hidden = true;
     openSound();
   });
-  $('r-mix').addEventListener('click', function () {
-    $('radio').hidden = true;
-    openSound();
-  });
 }
 
-function station(id) {
-  for (var i = 0; i < RADIO.length; i++) if (RADIO[i].id === id) return RADIO[i];
-  return null;
+function musicVol() {
+  if (mus) mus.gain.setTargetAtTime(lvl.mus * duck, ac.currentTime, 0.2);
 }
 
-function langGroup() {
-  var l = (navigator.language || 'en').toLowerCase();
-  return RADIO_LANG[l] || RADIO_LANG[l.slice(0, 2)] || '';
-}
-
-// the phone's group comes first, the rest stay in the order of data.js
-function radioGroups() {
-  var groups = [];
-  RADIO.forEach(function (s) { if (groups.indexOf(s.g) < 0) groups.push(s.g); });
-  var mine = groups.indexOf(langGroup());
-  if (mine > 0) groups.unshift(groups.splice(mine, 1)[0]);
-  return groups;
-}
-
-function saveRadio() {
-  try {
-    localStorage.setItem(RADIO_KEY, JSON.stringify(radio));
-  } catch (e) {}
-}
-
-function radioVol() {
-  var v = radio.vol * duck;
-  if (mus) mus.gain.setTargetAtTime(v, ac.currentTime, 0.2);
-  if (!streamOn) return;
-  if (native()) post({ cmd: 'radio', vol: v });
-  else if (stEl) stEl.volume = v;
-}
-
-// a rush plays over the radio a little quieter
-function duckRadio() {
+// a rush plays over the music a little quieter
+function duckMusic() {
   var d = rush ? 0.6 : 1;
   if (d === duck) return;
   duck = d;
-  radioVol();
+  musicVol();
 }
 
 function mixPick() {
@@ -343,57 +302,12 @@ function mixNext() {
   nxt = mixEl();
   if (a.bad) return mixSkip();
   go(a, function () { if (a === cur) mixSkip(); });
-  radioPaint();
 }
 
-function streamPlay() {
-  var u = station(radio.sel).urls[stUrl];
-  stState = 'buffering';
-  if (native()) post({ cmd: 'radio', url: u, vol: radio.vol * duck });
-  else if (/\.m3u8/.test(u) && !new Audio().canPlayType('application/vnd.apple.mpegurl')) return streamFail();
-  else {
-    if (!stEl) {
-      stEl = new Audio();
-      stEl.addEventListener('playing', function () { streamEvent('playing'); });
-      stEl.addEventListener('waiting', function () { streamEvent('buffering'); });
-      stEl.addEventListener('error', function () { if (streamOn) streamFail(); });
-    }
-    stEl.src = u;
-    stEl.volume = radio.vol * duck;
-    go(stEl);
-  }
-  radioPaint();
-}
-
-function streamEvent(state) {
-  stState = state;
-  radioPaint();
-}
-
-// the alternate url is tried next, then the station is given up on
-function streamFail() {
-  if (++stUrl < station(radio.sel).urls.length) return streamPlay();
-  stState = 'error';
-  radioPaint();
-}
-
-function streamStop() {
-  streamOn = false;
-  stState = '';
-  stTitle = '';
-  if (native()) post({ cmd: 'radio', stop: true });
-  else if (stEl) {
-    stEl.pause();
-    stEl.removeAttribute('src');
-    stEl.load();
-  }
-}
-
-// the radio only plays while the game is in front, sound is on, no ad is open and no other music is playing
-function radioSync() {
-  var on = snd && !document.hidden && !adOpen && !otherOn && !unsure && radio.sel !== 'off';
-  var mix = on && radio.sel === 'mix';
-  if (mix && ac) {
+// the music only plays while the game is in front, sound is on, no ad is open and no other music is playing
+function musicSync() {
+  var on = snd && !document.hidden && !adOpen && !otherOn && !unsure;
+  if (on && ac) {
     if (!cur) mixNext();
     else if (cur.paused) {
       cur.hold = false;
@@ -403,21 +317,9 @@ function radioSync() {
     cur.hold = true;
     cur.pause();
   }
-  var st = on && !mix;
-  if (st && !streamOn) {
-    streamOn = true;
-    stUrl = 0;
-    streamPlay();
-  } else if (!st && streamOn) streamStop();
   ambience();
-  radioPaint();
   if (otherOn) rest();
   else if (ac && ac.state === 'suspended' && snd && !unsure && !adOpen && !document.hidden) ac.resume();
-  if (mix && cur && !radio.tip && langGroup()) {
-    radio.tip = 1;
-    saveRadio();
-    banner('<b>' + tl('radio.mix.name') + '</b><small>' + tl('radio.try', { group: tl('radio.group.' + langGroup()) }) + '</small>', 0);
-  }
 }
 
 // While another app plays, the audio context idles between effects so the app can tell that music from the game's own
@@ -429,7 +331,7 @@ function rest() {
   }, 2500);
 }
 
-// Whether another app plays is not known after coming to the front until the app answers, so the radio waits for it.
+// Whether another app plays is not known after coming to the front until the app answers, so the music waits for it.
 // The web view's own output plays as media too, so the context is held while the app looks; the answer lets it go on
 function askOther() {
   if (!native()) return;
@@ -438,91 +340,22 @@ function askOther() {
   clearTimeout(unsureT);
   unsureT = setTimeout(function () {
     unsure = false;
-    radioSync();
+    musicSync();
   }, 2500);
   // the stream leaves the system's list a moment after the context has stopped (about 150 ms on the emulator)
-  function ask() { setTimeout(function () { post({ cmd: 'radio', check: true }); }, 400); }
+  function ask() { setTimeout(function () { post({ cmd: 'music', check: true }); }, 400); }
   held.then(ask, ask);
 }
 
-function radioEvent(ev) {
-  if (ev.t === 'other' && ev.recheck) {
+function musicEvent(ev) {
+  if (ev.recheck) {
     if (!unsure && !otherOn) askOther();
-  } else if (ev.t === 'other') {
-    otherOn = !!ev.on;
-    unsure = false;
-    clearTimeout(unsureT);
-    radioSync();
-  } else if (streamOn && ev.url === station(radio.sel).urls[stUrl]) {
-    if (ev.state === 'error') return streamFail();
-    stState = ev.state;
-    stTitle = ev.title || stTitle;
-    radioPaint();
+    return;
   }
-}
-
-// a stream that gave out, or that the system paused, can be started again from the panel
-function stOff() {
-  return stState === 'error' || stState === 'paused';
-}
-
-function nowText() {
-  if (otherOn) return tl('radio.now.other');
-  if (radio.sel === 'off') return tl('radio.now.off');
-  if (!snd) return tl('radio.now.sound_off');
-  if (radio.sel === 'mix') return cur ? (MIX[cur.n].a ? tl('radio.now.song', { title: MIX[cur.n].t, artist: MIX[cur.n].a }) : MIX[cur.n].t) : tl('radio.mix.name');
-  var s = station(radio.sel);
-  if (stState === 'error') return tl('radio.now.error');
-  if (stState === 'paused') return tl('radio.now.paused', { name: s.name });
-  if (stState === 'buffering') return tl('radio.now.connecting', { name: s.name });
-  return stTitle ? tl('radio.now.playing', { name: s.name, title: stTitle }) : s.name;
-}
-
-function radioPaint() {
-  var t = nowText();
-  set(shown, 'npt', $('np'), 'title', t);
-  set(shown, 'nph', $('np'), 'hidden', radio.sel === 'off' || !snd);
-  set(shown, 'rnow', $('r-now'), 'textContent', t);
-  var st = stOff() && streamOn ? 'bad' : streamOn && stState === 'buffering' ? 'load' : '';
-  if (set(shown, 'rbad', {}, 'x', st) && !$('radio').hidden) paintRadio();
-}
-
-function radioRow(id, name, line, pick, done) {
-  var on = radio.sel === id && !(stOff() && streamOn);
-  // a station takes a few seconds to connect, so its button says so until the sound starts
-  var load = on && streamOn && stState === 'buffering';
-  var label = load ? '<i class="spin"></i>' + tl('radio.loading') : on ? done : radio.sel === id ? tl(stState === 'paused' ? 'radio.resume' : 'radio.retry') : pick;
-  return '<div class="offer"><div><b>' + name + '</b><span>' + line + '</span></div><button type="button" class="btn' + (on ? '' : ' alt') + '" data-r="' + id + '"' +
-    (on ? ' disabled' : '') + '>' + label + '</button></div>';
-}
-
-function paintRadio() {
-  $('r-vol').value = Math.round(radio.vol * 100);
-  var h = radioRow('off', tl('radio.off.name'), tl('radio.off.line'), tl('radio.turn_off'), tl('radio.off.state')) +
-    radioRow('mix', tl('radio.mix.name'), tl('radio.mix.line', { n: MIX.length }), tl('radio.play'), tl('radio.on'));
-  radioGroups().forEach(function (g) {
-    var open = g === radioOpen;
-    h += '<button type="button" class="btn alt rg" data-g="' + g + '">' + tl('radio.group.' + g) + '<i>' + (open ? '-' : '+') + '</i></button>';
-    if (open) RADIO.forEach(function (s) { if (s.g === g) h += radioRow(s.id, s.name, s.line, tl('radio.play'), tl('radio.on')); });
-  });
-  $('r-list').innerHTML = h;
-}
-
-function openRadio() {
-  var s = station(radio.sel);
-  radioOpen = s ? s.g : radioGroups()[0];
-  paintRadio();
-  radioPaint();
-  $('radio').hidden = false;
-  sfx('card');
-}
-
-function pickRadio(id) {
-  if (streamOn) streamStop();
-  radio.sel = id;
-  saveRadio();
-  radioSync();
-  paintRadio();
+  otherOn = !!ev.on;
+  unsure = false;
+  clearTimeout(unsureT);
+  musicSync();
 }
 
 function openLangs() {
@@ -546,32 +379,6 @@ function wireLangs() {
   $('lang-list').addEventListener('click', function (e) {
     var b = e.target.closest('button');
     if (b) setLang(b.dataset.l);
-  });
-}
-
-function wireRadio() {
-  $('m-radio').addEventListener('click', function () {
-    $('menu').hidden = true;
-    openRadio();
-  });
-  $('np').addEventListener('click', openRadio);
-  $('radio-x').addEventListener('click', function () { $('radio').hidden = true; });
-  $('r-vol').addEventListener('input', function () {
-    radio.vol = this.value / 100;
-    radioVol();
-  });
-  $('r-vol').addEventListener('change', saveRadio);
-  $('r-list').addEventListener('click', function (e) {
-    var b = e.target.closest('button');
-    var d = b && b.dataset;
-    if (!d) return;
-    if (d.r) {
-      sfx('tap');
-      pickRadio(d.r);
-    } else if (d.g) {
-      radioOpen = radioOpen === d.g ? '' : d.g;
-      paintRadio();
-    }
   });
 }
 
@@ -1385,7 +1192,7 @@ function updateHud() {
     set(shown, 'rt', r.firstChild, 'textContent', tl(rush.kind === 'bus' ? 'hud.rush.bus' : 'hud.rush.flash'));
     set(shown, 'rw', r.querySelector('u').style, 'width', Math.round(rush.left / rush.len * 100) + '%');
   }
-  duckRadio();
+  duckMusic();
 }
 
 // whether an unmaxed item is left that the meter's fix button would send the player to
@@ -2284,7 +2091,7 @@ function wire() {
     } catch (e) {}
     wake();
     ambience();
-    radioSync();
+    musicSync();
     setSound();
   });
   $('m-buzz').addEventListener('click', function () {
@@ -2325,7 +2132,7 @@ function wire() {
     if (document.hidden) {
       if (ac) ac.suspend();
       if (sweep) sweep.redo = true;
-      radioSync();
+      musicSync();
       save();
       cloudPut();
       tell({ cmd: 'set', list: reminders() });
@@ -2334,7 +2141,7 @@ function wire() {
       return;
     }
     askOther();
-    radioSync();
+    musicSync();
     if (claimNeeded) cloudMaybeClaim();
     if (!hiddenAt) return;
     // the game waits for the server time, so the time away comes from two server answers
@@ -2780,13 +2587,12 @@ function start() {
     if (window.TESTER) free = localStorage.getItem(FREE_KEY) === '1';
     else localStorage.removeItem(FREE_KEY);
     hinted = JSON.parse(localStorage.getItem(HINT_KEY)) || {};
-    radio = JSON.parse(localStorage.getItem(RADIO_KEY)) || radio;
+    localStorage.removeItem(OLD_RADIO_KEY);
     var mx = JSON.parse(localStorage.getItem(MIXER_KEY)) || {};
+    if (+mx.mus >= 0 && +mx.mus <= 1) lvl.mus = +mx.mus;
     if (+mx.amb >= 0 && +mx.amb <= 1) lvl.amb = +mx.amb;
     if (+mx.fx >= 0 && +mx.fx <= 1) lvl.fx = +mx.fx;
   } catch (e) {}
-  if (radio.sel !== 'off' && radio.sel !== 'mix' && !station(radio.sel)) radio.sel = 'mix';
-  radio.vol = +radio.vol === +radio.vol ? Math.min(1, Math.max(0, +radio.vol)) : 0.5;
   timeWait(launch);
 }
 
@@ -2809,7 +2615,6 @@ function begin(fromCloud) {
   paintSpeed();
   wire();
   wireShop();
-  wireRadio();
   wireLangs();
   fitWire();
   wireSound();

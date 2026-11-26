@@ -1,5 +1,5 @@
 // Purchases and ads. The native app takes {cmd: 'products', ids}, {cmd: 'buy', id}, {cmd: 'restore'}, {cmd: 'sync'}, {cmd: 'adStart'}, {cmd: 'adStop'},
-// {cmd: 'adReady'}, {cmd: 'ad', kind}, {cmd: 'privacy'} and {cmd: 'radio', ...} on window.webkit.messageHandlers.store and
+// {cmd: 'adReady'}, {cmd: 'ad', kind}, {cmd: 'privacy'} and {cmd: 'music', check} on window.webkit.messageHandlers.store and
 // answers through window.nativeStore(ev), ev being one of
 //   {t: 'products', list: [{id, price, amount, currency}]}   the products the store knows, price already in the player's currency
 //   {t: 'owned', ids, tx, user, restore, sync}   one-time products the player owns, and tx: [{id, tx, at}] for everything
@@ -40,19 +40,14 @@
 // and on Play here. A device that sees a later claim than its own stops and shows the taken-over card; one with no claim puts nothing,
 // except a purchase it holds that the copy lacks, which goes out once as the copy's game with that purchase joined in (a hand-off).
 //   {t: 'notify', state}                   'granted' or 'denied', answering the notify handler's {cmd: 'ask'}; the page does not use it
-//   {t: 'radio', state, url, title?}       the stream being played: state is 'buffering', 'playing', 'paused' (headphones
-//                                          unplugged) or 'error' (it gave out), url the one
-//                                          the page asked for, title what the station says is on (ICY metadata)
-//   {t: 'other', on}                       whether another app is playing music (answers 'radio' check, and comes by itself
-//                                          when it starts or stops); the page keeps its radio and the store murmur quiet
+//   {t: 'other', on}                       whether another app is playing music (answers the 'music' check, and comes by itself
+//                                          when it starts or stops); the page keeps its music and the store murmur quiet
 //                                          while it is, and waits for the answer after coming to the front;
 //                                          {t: 'other', recheck: true} (Android) asks the page to look again, since a second
 //                                          media stream appeared while the game was sounding
 // 'adStart' ({mute}) runs the consent step and starts the ads SDK (not sent after Skip ads; 'adStop' ends them), 'adReady' is answered
 // with a 'ready' or 'none' for each kind, 'ad' ({kind, mute}) shows one, muted when the game's sound is off, and 'privacy' opens the consent SDK's options form.
-// 'radio' is {url, vol} to play a live stream (vol 0 to 1, replacing any other), {vol} to change the volume, {stop: true}
-// to end it and {check: true} to ask for an 'other' answer.
-// The page tries the next url after an 'error'. The apps stop streams on their own when the game leaves the front.
+// 'music' is {check: true}, to ask for an 'other' answer.
 // Events that come before the saved game is loaded wait in a queue and are replayed by shopStart().
 // Ids are the full store ids. In a plain browser there is no store handler and nothing here shows.
 var PID = 'com.aytutuna.mainstreet.';
@@ -875,7 +870,7 @@ function handle(ev) {
   } else if (ev.t === 'adId') testAdId(ev.id);
   else if (ev.t === 'privacy') $('m-priv').hidden = !ev.required;
   else if (ev.t === 'ad') adEvent(ev);
-  else if (ev.t === 'radio' || ev.t === 'other') radioEvent(ev);
+  else if (ev.t === 'other') musicEvent(ev);
   if (!$('shop').hidden) paintShop();
 }
 
@@ -947,7 +942,7 @@ function adEvent(ev) {
   if (ev.state === 'ready' || ev.state === 'none') adOk[ev.kind] = ev.state === 'ready';
   else if (ev.state === 'open') {
     adOpen = true;
-    radioSync();
+    musicSync();
     if (ac) ac.suspend();
   } else if (ev.state === 'rewarded' && watching) {
     var w = watching;
@@ -957,7 +952,7 @@ function adEvent(ev) {
     save();
   } else if (ev.state === 'closed' || ev.state === 'failed') {
     adOpen = false;
-    radioSync();
+    musicSync();
     if (!watching || ev.kind !== 'reward') return;
     // the reward can arrive a moment after the ad closes
     var w = watching;

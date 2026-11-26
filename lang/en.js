@@ -22,8 +22,6 @@ LANG['en'] = {
   'hud.next_goal.aria': 'Next goal',
   // Screen reader name of the lightning button that calls a rush (a burst of shoppers).
   'hud.call_rush.aria': 'Call a rush',
-  // Screen reader name of the music note button (opens the radio).
-  'hud.radio.aria': 'Radio',
   // Screen reader name of the gift button that opens the one-time starter pack offer.
   'hud.starter.aria': 'Starter pack',
   // Screen reader name of the button for the daily discounted gem pack.
@@ -110,22 +108,20 @@ LANG['en'] = {
   'stats.none': 'Nothing is on sale yet.',
   // Title of the sound mixer box.
   'sound.title': 'Sound',
-  // Slider label: the radio music volume.
+  // Slider label: the music volume.
   'sound.music': 'Music',
   // Slider label: the background sounds of the shopping mall (shoppers, hum).
   'sound.store': 'Store sounds',
   // Slider label: short sound effects (taps, tills, chimes).
   'sound.effects': 'Effects',
   // Small explanation under the three sliders.
-  'sound.note': 'Music is the radio. Store sounds are the shoppers and the hum of the mall. Effects are the taps, tills and chimes.',
+  'sound.note': 'Store sounds are the shoppers and the hum of the mall. Effects are the taps, tills and chimes.',
   // Shown when sound is switched off in the menu.
   'sound.off_note': 'Sound is off. Turn it on in the menu.',
   // Title of the menu box.
   'menu.title': 'Menu',
-  // Menu button that opens the volume sliders. Also used in the radio box.
+  // Menu button that opens the volume sliders. 
   'menu.mixer': 'Sound mixer',
-  // Menu button that opens the radio (internet radio stations and the game's own music).
-  'menu.radio': 'Radio',
   // Menu button that opens the choice of how the store looks.
   'menu.look': 'Store look',
   // Menu button that opens the list of achievements (long-term goals that pay gems).
@@ -141,14 +137,8 @@ LANG['en'] = {
   'menu.version': 'Version {v} ({b})',
   // Credits. Translate only the labels (Models, Sounds, Store models, ...) and the connecting words; keep every name, company, URL and the <br> tags exactly.
   'menu.credits': 'Models: Kenney (www.kenney.nl)<br>Sounds: Kenney; recordings by Membrans, G4F SFX, The Chris Alan, Gamemaster Audio, SoundBits, 3maze, Mechanical Wave, Shapeforms, Airborne Sound, Soundrangers, SmartSoundFX, Kpow Sounds and Creative Audio Pool, from the Sonniss GameAudioGDC bundles<br>Store models: Pipework packs<br>Pizza props: Vira Voloshyn<br>Tools: mekmeesk<br>Nature: Kay Lousberg (KayKit, www.kaylousberg.com), Quaternius, Stylised Nature by Elijah Cobden (elijahcobden.itch.io, CC BY 4.0, https://creativecommons.org/licenses/by/4.0/)<br>App icon: LimeZu (https://limezu.itch.io/)<br>Font: Lilita One by Juan Montoreano (SIL Open Font License)<br>3D: three.js (threejs.org)',
-  // Music and radio credits. Translate only the label words ("Music, from Pixabay:", "by") and the last sentence; keep every title, artist name and the <br> tags exactly.
-  'menu.credits_music': 'Music, from Pixabay: Positive Easy Listening by 331music; Feel Good - Feel Good Music by STAROSTIN; Upbeat - Upbeat Music by ViacheslavStarostin; Happy - Happy Music by kulishov; Pop Light by 331music; Shopping - Shopping Music by iepmusic; Summer Pop by Caldena; Cheerful - Cheerful Music by JonasBlakewood; Indie Pop by AtlasAudio; Country Pop by Music_for_Creators<br>Radio streams are provided by the stations; station names belong to their owners.',
-  // Title of the radio box.
-  'radio.title': 'Radio',
-  // Slider label in the radio box.
-  'radio.volume': 'Music volume',
-  // Small note in the radio box.
-  'radio.note': 'Stations play over the internet and only while the game is open.',
+  // Music credits. Translate only the label words ("Music, from Pixabay:", "by"); keep every title, artist name and the <br> tags exactly.
+  'menu.credits_music': 'Music, from Pixabay: Positive Easy Listening by 331music; Feel Good - Feel Good Music by STAROSTIN; Upbeat - Upbeat Music by ViacheslavStarostin; Happy - Happy Music by kulishov; Pop Light by 331music; Shopping - Shopping Music by iepmusic; Summer Pop by Caldena; Cheerful - Cheerful Music by JonasBlakewood; Indie Pop by AtlasAudio; Country Pop by Music_for_Creators',
   // Title of the achievements box.
   'ach.title': 'Achievements',
   // Title of the box where the player picks how the store looks (colours of floors, walls and signs).
@@ -337,69 +327,9 @@ LANG['en'] = {
   'stats.shelf.ok': 'The stockers keep up',
   'stats.shelf.more': 'They restock {cap} a minute, shoppers need {need}',
 
-  // Radio panel. The radio is the in-game music player.
-  'radio.mix.name': 'Main Street Mix',
-  // {n} is the number of songs.
-  'radio.mix.line': { one: '{n} song, shuffled', other: '{n} songs, shuffled' },
-  'radio.off.name': 'Off',
-  'radio.off.line': 'No music',
-  // Button on the Off row when radio is off (current state).
-  'radio.off.state': 'Off',
-  'radio.turn_off': 'Turn off',
-  // Buttons on station rows: Play starts it, On marks the station that plays now.
-  'radio.play': 'Play',
-  'radio.on': 'On',
-  'radio.loading': 'Loading',
-  'radio.resume': 'Resume',
-  'radio.retry': 'Retry',
-  // Full screen card shown when the game cannot reach the time server (no internet). The Retry button under it is radio.retry.
+  'net.retry': 'Retry',
+  // Full screen card shown when the game cannot reach the time server (no internet). The Retry button under it is net.retry.
   'net.need': 'Main Street needs an internet connection to play. Connect and it carries on where you left off.',
-  // {group} is the name of a country or language group of stations (see radio.group.*).
-  'radio.try': 'Try the {group} stations in the menu, under Radio',
-  // The line that says what is playing.
-  'radio.now.other': 'Your music is playing',
-  'radio.now.off': 'Radio is off',
-  'radio.now.sound_off': 'Sound is off',
-  'radio.now.error': 'Station unavailable',
-  'radio.now.paused': '{name} (paused)',
-  'radio.now.connecting': 'Connecting to {name}',
-  // A radio station and the song it plays.
-  'radio.now.playing': '{name} - {title}',
-  // A song of the game's own mix and its artist.
-  'radio.now.song': '{title} - {artist}',
-  // Names of the groups of radio stations. Countries or a language area.
-  'radio.group.Arabic': 'Arabic',
-  'radio.group.Australia': 'Australia',
-  'radio.group.Brazil': 'Brazil',
-  'radio.group.Canada': 'Canada',
-  'radio.group.Caribbean': 'Caribbean',
-  'radio.group.China': 'China',
-  'radio.group.France': 'France',
-  'radio.group.Germany': 'Germany',
-  'radio.group.Ghana': 'Ghana',
-  'radio.group.Greece': 'Greece',
-  'radio.group.India': 'India',
-  'radio.group.Indonesia': 'Indonesia',
-  'radio.group.Italy': 'Italy',
-  'radio.group.Japan': 'Japan',
-  'radio.group.Kenya': 'Kenya',
-  'radio.group.Korea': 'Korea',
-  // Stations from Latin America in Spanish.
-  'radio.group.Latin': 'Latin',
-  'radio.group.Mexico': 'Mexico',
-  'radio.group.Netherlands': 'Netherlands',
-  'radio.group.Nigeria': 'Nigeria',
-  'radio.group.Philippines': 'Philippines',
-  'radio.group.Poland': 'Poland',
-  'radio.group.Russia': 'Russia',
-  // Sweden, Norway and Denmark together.
-  'radio.group.Scandinavia': 'Scandinavia',
-  'radio.group.South Africa': 'South Africa',
-  'radio.group.Spain': 'Spain',
-  'radio.group.Turkey': 'Turkey',
-  'radio.group.UK': 'UK',
-  'radio.group.USA': 'USA',
-  'radio.group.Vietnam': 'Vietnam',
 
   // Away box: what the store earned while the player was away. Keep the <b> tags; {v} is money.
   'away.waiting': 'Earnings from last time are still waiting: <b>{v}</b>.',
@@ -1168,125 +1098,6 @@ LANG['en'] = {
   'ach.tier.silver': 'Silver',
   'ach.tier.gold': 'Gold',
 
-  // Radio stations: a short description under the station name.
-  // Short description of a real radio station (kind of music and city). Do not translate the station name or city names that have no local form.
-  'radio.line.kiis': 'Pop hits from Los Angeles',
-  'radio.line.lite': 'Adult contemporary from Chicago',
-  'radio.line.hot97': 'Hip-hop and R&B from New York',
-  'radio.line.oldies': 'Pop oldies',
-  'radio.line.poptron': 'Electropop and indie dance',
-  'radio.line.cbcmusic': 'Canadian music from Toronto',
-  'radio.line.cbc1': 'News, talk and music from Toronto',
-  'radio.line.kiss1053': 'Pop hits from Ottawa',
-  'radio.line.capital': 'Pop hits',
-  'radio.line.heart80': 'Pop hits of the 80s',
-  'radio.line.heart90': 'Pop hits of the 90s',
-  'radio.line.heartdance': 'Dance hits',
-  'radio.line.gold': 'Classic pop hits',
-  'radio.line.exa': 'Pop hits from Mexicali',
-  'radio.line.mejorcdmx': 'Regional Mexican from Mexico City',
-  'radio.line.mejormty': 'Regional Mexican from Monterrey',
-  'radio.line.r710': 'Mexican music',
-  'radio.line.los40co': 'Latin pop hits',
-  'radio.line.rockpop': 'Pop and rock from Buenos Aires',
-  'radio.line.reggaeton': 'Reggaeton',
-  'radio.line.lamega': 'Tropical and urban from New York',
-  'radio.line.clube': 'Brazilian pop hits',
-  'radio.line.bons': 'Nostalgic pop and rock',
-  'radio.line.fita': 'Flashback hits',
-  'radio.line.mgt': 'Sertanejo',
-  'radio.line.zipfm': 'Hits and dancehall from Jamaica',
-  'radio.line.radiojam': 'Jamaican and Caribbean music',
-  'radio.line.scorch': 'Soca from Trinidad',
-  'radio.line.unityxm': 'Dancehall and reggae',
-  'radio.line.los40': 'Pop hits from Spain',
-  'radio.line.los40classic': 'Pop and rock classics',
-  'radio.line.kissfm': '80s, 90s and more',
-  'radio.line.flaix': 'Dance and urban from Catalonia',
-  'radio.line.fip': 'Eclectic, from jazz to pop',
-  'radio.line.nrj': 'Pop hits',
-  'radio.line.rtl2': 'Pop and rock',
-  'radio.line.fun': 'Dance and pop',
-  'radio.line.rfm': 'Easy pop',
-  'radio.line.antenne': 'Pop and rock hits',
-  'radio.line.swr3': 'Pop hits',
-  'radio.line.bayern3': 'Pop hits',
-  'radio.line.1live': 'Young pop and charts',
-  'radio.line.ndr2': 'Pop hits from the north',
-  'radio.line.italia80': 'Italian hits of the 80s',
-  'radio.line.rtl1025': 'Pop hits',
-  'radio.line.italia70': 'Italian hits of the 70s',
-  'radio.line.lolli': 'Italian pop',
-  'radio.line.radio2': 'Pop and rock classics',
-  'radio.line.3fm': 'New pop and alternative',
-  'radio.line.qmusic': 'Pop hits',
-  'radio.line.538': 'Pop and dance hits',
-  'radio.line.sky': 'Easy pop',
-  'radio.line.srp3': 'Pop from Sweden',
-  'radio.line.megapol': 'Pop hits from Sweden',
-  'radio.line.p5hits': 'Pop hits from Norway',
-  'radio.line.p12': 'Hits from Norway',
-  'radio.line.rmf': 'Pop hits',
-  'radio.line.zet': 'Pop hits',
-  'radio.line.eska': 'Pop hits from Warsaw',
-  'radio.line.chilli': 'Easy pop',
-  'radio.line.athensdj': 'Pop hits',
-  'radio.line.sfera': 'Greek pop',
-  'radio.line.easy972': 'Pop and soft rock',
-  'radio.line.pepper': 'Easy listening',
-  'radio.line.rusradio': 'Russian pop',
-  'radio.line.dfmdance': 'Russian dance hits',
-  'radio.line.dfm90': 'Eurodance of the 90s',
-  'radio.line.vanya': 'Russian chanson and pop',
-  'radio.line.kral': 'Turkish pop hits',
-  'radio.line.power': 'Turkish pop hits',
-  'radio.line.joy': 'Turkish and world hits',
-  'radio.line.best': 'Turkish pop',
-  'radio.line.trtfm': 'Turkish pop from the state broadcaster',
-  'radio.line.metro': 'Turkish and world pop',
-  'radio.line.mcd': 'Arabic pop and talk',
-  'radio.line.arabmix': 'Arabic hits',
-  'radio.line.nogoum': 'Egyptian pop',
-  'radio.line.gaane': 'Old Bollywood songs',
-  'radio.line.bolly10': 'Bollywood hits of the 2010s',
-  'radio.line.hungama': 'Bollywood hits',
-  'radio.line.hindigold': 'Hindi film classics',
-  'radio.line.qt1': 'Mandarin pop',
-  'radio.line.qt2': 'Mandarin and Cantonese pop',
-  'radio.line.asiafm': 'Asian pop',
-  'radio.line.asiafm2': 'Asian pop classics',
-  'radio.line.jpop': 'Japanese pop',
-  'radio.line.kawaii': 'Kawaii J-pop',
-  'radio.line.sakura': 'Japanese pop classics',
-  'radio.line.bigb': 'K-pop',
-  'radio.line.moekpop': 'K-pop',
-  'radio.line.cbsmusic': 'Korean pop',
-  'radio.line.love983': 'OPM and pop',
-  'radio.line.love1007': 'OPM and pop',
-  'radio.line.winradio': 'Contemporary hits',
-  'radio.line.budots': 'Budots remixes',
-  'radio.line.sbfm': 'Indonesian pop classics',
-  'radio.line.mstream': 'Indonesian pop and indie',
-  'radio.line.rama': 'Indonesian pop',
-  'radio.line.imelda': 'Indonesian classics',
-  'radio.line.mradio': 'Vietnamese pop',
-  'radio.line.cherry': 'Vietnamese pop',
-  'radio.line.hanoi': 'Music from Hanoi',
-  'radio.line.kiis1065': 'Pop hits from Sydney',
-  'radio.line.kiis1011': 'Pop hits from Melbourne',
-  'radio.line.nova919': 'Hits from Adelaide',
-  'radio.line.gold1043': 'Classic hits from Melbourne',
-  'radio.line.coolfm': 'Pop and Afrobeats',
-  'radio.line.wazobia': 'Afrobeats and pidgin pop',
-  'radio.line.softlife': 'Afrobeats and afrofusion',
-  'radio.line.amapiano': 'Amapiano',
-  'radio.line.lekker': 'Top 40',
-  'radio.line.jacaranda': 'Pop hits',
-  'radio.line.ecgold': 'Classic hits',
-  'radio.line.easy1015': 'Soul and pop',
-  'radio.line.capitalke': 'Hits from Nairobi',
-  'radio.line.hitzgh': 'Hits from Accra',
-  'radio.line.ghmusic': 'Ghanaian music',
 
   // Upgrade pieces. Every upgrade the player buys adds one piece to the 3D store, and the card names the next piece ("Cake case", "Hanging sign"). Short noun phrases, max about 26 characters. Words like clerk, showcase and gondola are store fixtures; "Floor lights" are lights set into the floor.
   'piece.apple_table': 'Apple table',

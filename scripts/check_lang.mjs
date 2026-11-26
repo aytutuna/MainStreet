@@ -91,18 +91,16 @@ if (args.includes('--all')) {
 // A key identical to English in a non-English file is flagged unless it is a proper name, a number, a word that is the
 // same in that language (SAME: key -> language codes, * for all) or a known gap (PENDING).
 const SAME = new Set(['OK', 'Wi-Fi', 'RevenueCat', 'Google', 'Pixabay', 'Main Street', 'Main Street Idle']);
-const NAMES = /^(radio\.(?!off\.|group\.|mix\.)\w+\.name$|radio\.group\.|reg\.\w+\.name$)/;
+const NAMES = /^reg\.\w+\.name$/;
 const SAME_WORD = {
-  'sign.main_street': '*', 'common.min': '*', 'common.h_min': '*', 'radio.mix.name': '*', 'board.bus': '*',
-  'radio.line.reggaeton': '*', 'radio.line.mgt': '*', 'radio.line.bigb': '*', 'radio.line.moekpop': '*',
-  'radio.line.amapiano': '*', 'radio.line.lekker': '*', 'radio.line.kawaii': '*',
+  'sign.main_street': '*', 'common.min': '*', 'common.h_min': '*', 'board.bus': '*',
   'place.taxi.it.0': '*', 'ach.tier.bronze': '*', 'ach.tier.gold': '*', 'ach.tier.silver': '*',
   'piece.monitor': '*', 'piece.monster_truck': '*', 'piece.sofa': '*', 'piece.blender': '*', 'piece.sideboard': '*',
   'piece.toaster': '*', 'piece.batteries': '*', 'piece.home_theater': '*', 'piece.recycling': '*',
   'piece.bestsellers': '*', 'piece.canoe': '*',
   'boost.shop': '*', 'shop.title': '*', 'tab.boosts': '*', 'boost.title': '*', 'sell.keep.boosts': '*',
-  'menu.support': '*', 'menu.version': '*', 'menu.title': '*', 'hud.menu.aria': '*', 'menu.radio': '*',
-  'hud.radio.aria': '*', 'radio.title': '*', 'tab.stats': '*', 'stats.title': '*', 'tab.upgrades': '*',
+  'menu.support': '*', 'menu.version': '*', 'menu.title': '*', 'hud.menu.aria': '*',
+  'tab.stats': '*', 'stats.title': '*', 'tab.upgrades': '*',
   'sell.extra': '*', 'shop.badge_bonus': '*', 'perk.line.max': '*',
   'sign.market': 'cs hr pl sk tr', 'sign.sale': 'de', 'sign.open': 'nl', 'sign.half_off': 'pt-BR',
   'dept.auto': 'de fr-CA fr-FR it nl pt-PT ro', 'dept.pets': 'pt-BR', 'look.rustic.name': 'ro',
@@ -129,9 +127,6 @@ const PENDING = {
   'perk.fx.normal': 'ca da de es-ES es-MX fr-FR fr-CA id no pt-BR pt-PT ro tr',
   'piece.microwave': 'id',
   'product.x2.name': 'da sv',
-  'radio.line.cherry': 'nl',
-  'radio.line.mradio': 'nl',
-  'radio.line.qt1': 'hu tr',
   'shop.chip_rep': 'es-MX id it ms nl pt-BR',
   'sign.flash_sale': 'id vi',
   'sign.market': 'fi sl',
