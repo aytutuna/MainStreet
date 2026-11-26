@@ -3,8 +3,8 @@ import UIKit
 import WebKit
 
 // The page sends {cmd: "products", ids}, {cmd: "buy", id}, {cmd: "restore"}, {cmd: "adReady"}, {cmd: "ad", kind} and
-// {cmd: "time", n}, {cmd: "cloudPut" | "cloudGet" | "cloudState"} and {cmd: "radio", ...} to the "store" handler and gets its answers through window.nativeStore(event); shop.js lists the
-// events. Purchases go through RevenueCat, ads through AdsBridge, radio streams through RadioBridge. The web view is held
+// {cmd: "time", n}, {cmd: "cloudPut" | "cloudGet" | "cloudState"} and {cmd: "music", check} to the "store" handler and gets its answers through window.nativeStore(event); shop.js lists the
+// events. Purchases go through RevenueCat, ads through AdsBridge, the check for other music through MusicBridge. The web view is held
 // weakly, since it holds this handler.
 final class StoreBridge: NSObject, WKScriptMessageHandler, PurchasesDelegate {
     weak var web: WKWebView?
@@ -12,7 +12,7 @@ final class StoreBridge: NSObject, WKScriptMessageHandler, PurchasesDelegate {
     // events the page was not there to take (it was reloading); replayed when it asks for the products again
     private var held: [[String: Any]] = []
     private lazy var ads = AdsBridge(presenter: presenter, emit: { [weak self] in self?.emit($0) })
-    private lazy var radio = RadioBridge(emit: { [weak self] in self?.emit($0) })
+    private lazy var music = MusicBridge(emit: { [weak self] in self?.emit($0) })
     private lazy var cloud = CloudBridge(emit: { [weak self] in self?.emit($0) })
     private let presenter: () -> UIViewController?
 
@@ -62,8 +62,8 @@ final class StoreBridge: NSObject, WKScriptMessageHandler, PurchasesDelegate {
             cloud.state(dev: msg["dev"] as? String)
         case "ad":
             ads.show(msg["kind"] as? String ?? "", mute: msg["mute"] as? Bool ?? false)
-        case "radio":
-            radio.command(msg)
+        case "music":
+            music.command(msg)
         default:
             break
         }

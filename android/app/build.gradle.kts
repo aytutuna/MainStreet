@@ -109,8 +109,6 @@ dependencies {
     implementation(libs.play.ads)
     implementation(libs.ump)
     implementation(libs.play.games)
-    implementation(libs.media3.exoplayer)
-    implementation(libs.media3.hls)
 }
 
 // a release or qa bundle without the upload key would be rejected by Play; stop early

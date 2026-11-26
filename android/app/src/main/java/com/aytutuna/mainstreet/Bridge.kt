@@ -49,7 +49,7 @@ class Bridge(private val activity: MainActivity) {
                 "cloudGet" -> activity.cloud.get()
                 "cloudState" -> activity.cloud.state()
                 "cloudSignIn" -> activity.cloud.signIn()
-                "radio" -> activity.radio.command(msg)
+                "music" -> activity.music.command(msg)
             }
         }
     }

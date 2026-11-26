@@ -40,7 +40,7 @@ class MainActivity : ComponentActivity() {
         private set
     lateinit var ads: AdsBridge
         private set
-    lateinit var radio: RadioBridge
+    lateinit var music: MusicBridge
         private set
     lateinit var cloud: CloudBridge
         private set
@@ -95,7 +95,7 @@ class MainActivity : ComponentActivity() {
         setContentView(frame)
         store = StoreBridge(this)
         ads = AdsBridge(this)
-        radio = RadioBridge(this)
+        music = MusicBridge(this)
         cloud = CloudBridge(this)
 
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
@@ -199,7 +199,7 @@ class MainActivity : ComponentActivity() {
 
     override fun onResume() {
         super.onResume()
-        radio.check()
+        music.check()
         startIfCurrent()
         ads.resume()
         webView.onResume()
@@ -211,15 +211,9 @@ class MainActivity : ComponentActivity() {
         super.onPause()
     }
 
-    // streams only play while the game is in front
-    override fun onStop() {
-        radio.stop()
-        super.onStop()
-    }
-
     override fun onDestroy() {
         store.stop()
-        radio.release()
+        music.release()
         ads.stop()
         webView.destroy()
         super.onDestroy()
