@@ -1947,7 +1947,7 @@ function paintBoost() {
   put($('call-txt'), 'textContent', S.call > 0 ? tl('boost.call.ready_in', { t: clock2(S.call) }) : tl('boost.call.brings', { n: CALL.cool / 60 }));
   put($('call-need'), 'textContent', rush ? tl('boost.call.rush_on') : shut() ? tl('boost.call.closed') : S.call > 0 ? gemsLeft(CALL.gems) : '');
   put($('b-call'), 'innerHTML', S.call > 0 ? '<img src="assets/ui_gem.png" alt="">' + CALL.gems : tl('boost.call.btn'));
-  put($('b-call'), 'disabled', !!rush || shut() || (S.call > 0 && S.gems < CALL.gems));
+  put($('b-call'), 'disabled', !!rush || shut() || (S.call > 0 && S.gems < CALL.gems) || !!(watching && watching.k === 'rush'));
   put($('reg-txt'), 'textContent', tl('boost.regs', { a: regOwned(), b: REGS.length, pct: Math.round((regMul() - 1) * 100) }));
   paintAds();
 }

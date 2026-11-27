@@ -242,5 +242,24 @@ pump();
 check('the chain card did not show for a second store', !el('intro').hidden && el('intro-h').textContent === 'intro.chain.title');
 check('the night buttons stayed on another card', el('intro-night').hidden);
 
+// the rush ad is not used up when the rush cannot start
+{
+  const shop = fs.readFileSync(path.join(root, 'shop.js'), 'utf8');
+  const m = shop.match(/function adGive[\s\S]*?\r?\n}\r?\n/);
+  if (!m) throw new Error('adGive not found');
+  const used = {};
+  const c2 = { centerOf: () => ({ x: 0, y: 0 }), $: el, adUsed: () => used, banner() {}, callRush: () => c2.ok, sfx() {}, buzz() {}, nudge() {}, tl: k => k, clock2: () => '', X2_SECS: 1, S: { x2: 0, gems: 0 } };
+  vm.createContext(c2);
+  vm.runInContext(m[0], c2);
+  used.rush = 1;
+  c2.ok = false;
+  vm.runInContext("adGive('rush')", c2);
+  check('the rush ad stayed used up with no rush started', used.rush === 0);
+  used.rush = 1;
+  c2.ok = true;
+  vm.runInContext("adGive('rush')", c2);
+  check('the rush ad was given back for a rush that started', used.rush === 1);
+}
+
 if (failed) process.exit(1);
 console.log('queue ok');

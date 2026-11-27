@@ -977,7 +977,12 @@ function adGive(k, from) {
     S.x2 += X2_SECS;
     banner('<b>' + tl('ads.x2') + '</b><small>' + tl('ads.x2_active', { time: clock2(S.x2) }) + '</small>', 0, false, true);
   } else if (k === 'rush') {
-    if (callRush(true)) $('boost').hidden = true;
+    // a rush that cannot start (one is on, or the store shut while the ad ran) does not use the ad up
+    if (!callRush(true)) {
+      adUsed().rush = Math.max(0, (adUsed().rush || 0) - 1);
+      return;
+    }
+    $('boost').hidden = true;
   } else if (k === 'night') {
     // the night can be over, or paid for with gems, by the time the ad is done: the ad is not used up then
     if (!openTonight(true)) {
