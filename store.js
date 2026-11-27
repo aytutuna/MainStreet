@@ -5885,7 +5885,7 @@ function giftStep(dt, now) {
     }
     if (gv.kind === 'vip' && gv.vip.mixer) gv.vip.mixer.update(dt);
   }
-  if (gv.kind === 'wallet') o.rotation.y += dt * 0.8;
+  if (gv.kind === 'wallet' && !calm()) o.rotation.y += dt * 0.8;
   o.position.y = gv.kind === 'vip' || calm() ? 0 : Math.abs(Math.sin(now / 260)) * 0.07;
   gv.glow.position.x = o.position.x;
   gv.glow.position.z = o.position.z;
