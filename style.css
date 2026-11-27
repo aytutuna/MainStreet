@@ -952,6 +952,26 @@ a.btn {
   padding: 0;
 }
 
+/* controls drawn smaller than 48px keep their look; the touch area reaches past the edge */
+.btn,
+.btns button,
+#stars,
+#gear,
+#gdots {
+  position: relative;
+}
+
+.btn::before,
+.btns button::before,
+#stars::before,
+#warn::before,
+#gear::before,
+#gdots::before {
+  content: "";
+  position: absolute;
+  inset: -5px;
+}
+
 #card-x::after,
 #sheet-x::after {
   content: "";
@@ -1532,6 +1552,13 @@ a.btn {
   display: none;
 }
 
+/* on a long panel the closing button stays in view while the rest scrolls */
+.box > .btn:last-child {
+  position: sticky;
+  bottom: 6px;
+  z-index: 1;
+}
+
 .box.wide {
   max-width: 400px;
 }
@@ -1831,6 +1858,8 @@ a.btn {
 
 .vol input {
   width: 100%;
+  height: 48px;
+  margin: -16px 0;
   accent-color: var(--green2);
 }
 
