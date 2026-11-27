@@ -2870,6 +2870,9 @@ html:is(:lang(ta), :lang(ml)) .box h2 {
 html:is(:lang(ta), :lang(ml)) .btns button,
 html:is(:lang(ta), :lang(ml)) .it .btns button {
   font-size: 11px;
+  letter-spacing: 0;
+  padding-left: 1px;
+  padding-right: 1px;
 }
 
 html:is(:lang(ta), :lang(ml)) .it .fx {
