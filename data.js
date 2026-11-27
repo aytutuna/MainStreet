@@ -121,6 +121,17 @@ var PLACES = [
 var PL = {};
 PLACES.forEach(function (p) { PL[p.id] = p; });
 
+// Store types. A store is built from a type's departments, in the order they open, and its places; mul scales the
+// income of the whole store and cost its prices. The supercenter is the first type and keeps the first ten departments
+// of the old 18, so every place still has the department it comes after. The second entry is a stand-in so two
+// stores can run together until the first real new type (P3.3a) replaces it
+var TYPES = [
+  { id: 'super', depts: BIZ.slice(0, 10).map(function (b) { return b.id; }), places: PLACES.map(function (p) { return p.id; }), mul: 1, cost: 1 },
+  { id: 'test', test: true, depts: BIZ.slice(0, 10).map(function (b) { return b.id; }), places: PLACES.map(function (p) { return p.id; }), mul: 1, cost: 1 }
+];
+var TY = {};
+TYPES.forEach(function (t) { TY[t.id] = t; });
+
 // the tills in the order they open, with the Checkouts level whose piece adds each: staffed lanes and self checkouts
 var TILLS = [{ k: 'lane', lv: 0 }, { k: 'lane', lv: 1 }, { k: 'self', lv: 3 }, { k: 'self', lv: 3 }, { k: 'lane', lv: 5 },
   { k: 'self', lv: 6 }, { k: 'self', lv: 6 }, { k: 'self', lv: 9 }, { k: 'self', lv: 9 }];
