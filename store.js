@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
-import { PLAN, PW, NATURE, HOMES } from './plan.js';
+import { PLAN as SUPER, PW, NATURE, HOMES } from './plan.js';
+import { DINER } from './diner.js';
 import * as LAND from './land.js';
 import { buildWalls } from './walls.js';
 
@@ -26,8 +27,11 @@ var DRIVE = 18;
 var ROAD = 24.8;
 var STREET = 75;
 var WALKS = [-9.5, 9.5];
-var CROSS = PLAN.bank.cross;
-var EXIT = PLAN.bank.exit;
+// the building, its doors and its checkout bank are the same for every store type; what stands inside is a type's own plan
+var PLAN = SUPER;
+var PLANS = { super: SUPER, diner: DINER };
+var CROSS = SUPER.bank.cross;
+var EXIT = SUPER.bank.exit;
 // the kits are drawn at different sizes; these bring them to the shop kit's people
 var SCALE = { car: 0.47, roads: 3, nature: 1.4, furn: 0.9, food: 0.5, sub: 3.2, toy: 1.1, forest: 0.9, golf: 0.45, pets: 0.08, tool: 0.03, pw: PW, pizza: 0.5 };
 
@@ -527,10 +531,14 @@ function modelList() {
     else if (v && typeof v === 'object') Object.keys(v).forEach(function (k) { walk(v[k]); });
   }
   Object.keys(KIND).forEach(function (k) { seen[KIND[k].ref] = 1; });
-  walk(PLAN.areas);
-  walk(PLAN.front);
-  walk(PLAN.decor);
-  walk(PLAN.wing);
+  Object.keys(PLANS).forEach(function (k) {
+    var p = PLANS[k];
+    walk(p.areas);
+    walk(p.front);
+    walk(p.decor);
+    walk(p.wing);
+    walk(p.models);
+  });
   walk(NATURE);
   walk(LAND.REFS);
   walk(SWAP);
@@ -1582,6 +1590,28 @@ function finishMat(f) {
     }
     return VINYL;
   }
+  if (f === 'quarry' || f === 'checker' || f === 'redtile' || f === 'greentile' || f === 'amber' || f === 'cream') {
+    if (!ROOMMAT[f]) {
+      var tc = document.createElement('canvas');
+      tc.width = tc.height = 128;
+      var t = tc.getContext('2d');
+      var pair = { quarry: ['#8e4a32', '#7b3d29'], checker: ['#f6efdf', '#6fbdb3'], redtile: ['#f6efdf', '#d4574d'], greentile: ['#f6efdf', '#7db36b'], amber: ['#f6efdf', '#e6b04a'], cream: ['#efe5cf', '#e9dec6'] }[f];
+      t.fillStyle = pair[0];
+      t.fillRect(0, 0, 128, 128);
+      t.fillStyle = pair[1];
+      t.fillRect(0, 0, 64, 64);
+      t.fillRect(64, 64, 64, 64);
+      if (f === 'quarry') {
+        t.fillStyle = '#c9b8a2';
+        t.fillRect(62, 0, 4, 128);
+        t.fillRect(0, 62, 128, 4);
+        t.fillRect(0, 0, 128, 2);
+        t.fillRect(0, 0, 2, 128);
+      }
+      ROOMMAT[f] = tiled(tc, f === 'quarry' ? 0.8 : f === 'cream' ? 1.6 : 0.9);
+    }
+    return ROOMMAT[f];
+  }
   if (f === 'lino' || f === 'tile' || f === 'boards') {
     if (!ROOMMAT[f]) {
       var rc = document.createElement('canvas');
@@ -1898,7 +1928,8 @@ function board(e) {
 // each department's own colour on its sign
 var DEPT = { produce: '#3f9e47', bakery: '#d98a3d', dairy: '#4a8fd6', meat: '#c8453d', frozen: '#4cb6d8', pantry: '#a87a3d',
   snacks: '#e0592f', toys: '#e04a8e', tech: '#5d6ad6', kitchen: '#d9a21f', clothes: '#a05cc4', home: '#7a9a5a', office: '#3a7a9a',
-  pets: '#e8855a', sports: '#2f9e8a', tools: '#d96a20', auto: '#5c6270', seasonal: '#c43a4a' };
+  pets: '#e8855a', sports: '#2f9e8a', tools: '#d96a20', auto: '#5c6270', seasonal: '#c43a4a', grill: '#c8453d', fry: '#e08a1e', soda: '#3f9ed8',
+  pizza: '#d6402f', coffee: '#8a5a3c', salad: '#4f9a40', takeout: '#d9a21f', dining: '#a8453f' };
 var signIcons = {};
 
 function star(g, x, y, r) {
@@ -2189,9 +2220,9 @@ function lookable(s) {
 // the fence on an edge two sites share is drawn by the one that opens later, which is the one still closed when the
 // other is open
 function sharedWithLater(s, x, z) {
-  return BIZ.some(function (bz, i) {
-    var r = PLAN.areas[bz.id].vacant;
-    if (i <= s.i || x < r[0] - 0.05 || x > r[1] + 0.05 || z < r[2] - 0.05 || z > r[3] + 0.05) return false;
+  return BIZ.some(function (bz) {
+    var r = PLAN.areas[bz.id] && PLAN.areas[bz.id].vacant;
+    if (!r || bz.i <= s.i || x < r[0] - 0.05 || x > r[1] + 0.05 || z < r[2] - 0.05 || z > r[3] + 0.05) return false;
     return Math.min(x - r[0], r[1] - x, z - r[2], r[3] - z) < 0.05;
   });
 }
@@ -2331,7 +2362,8 @@ function square(poly) {
 }
 
 function buildAreas() {
-  BIZ.forEach(function (bz, i) {
+  BIZ.filter(function (bz) { return PLAN.areas[bz.id]; }).forEach(function (bz) {
+    var i = bz.i;
     var a = PLAN.areas[bz.id];
     var r = a.vacant;
     if (ITEMS[bz.id].of.length !== a.ups.length) console.error('ITEMS in data.js does not match the upgrades of', bz.id);
@@ -2349,9 +2381,14 @@ function buildAreas() {
     s.pick = addPick(bz.id, (r[0] + r[1]) / 2, (r[2] + r[3]) / 2, r[1] - r[0], r[3] - r[2]);
   });
   var fl = new Batch();
-  floors(fl, 'shop/floor', -EDGE, EDGE, BACK, FRONT);
-  floors(fl, 'shop/floor%=d5d5d8', -EDGE, EDGE, SB, BACK);
-  floors(fl, 'shop/floor%=d5d5d8', EDGE, WING_X + 0.2, SB, FRONT);
+  if (PLAN.floor) {
+    // a plan with its own finishes lays them as patches, lowest first
+    PLAN.floor.forEach(function (f, j) { fl.geom(patch([[f.r[0], f.r[3]], [f.r[1], f.r[3]], [f.r[1], f.r[2]], [f.r[0], f.r[2]]]), finishMat(f.finish), 0.006 + j * 0.002); });
+  } else {
+    floors(fl, 'shop/floor', -EDGE, EDGE, BACK, FRONT);
+    floors(fl, 'shop/floor%=d5d5d8', -EDGE, EDGE, SB, BACK);
+    floors(fl, 'shop/floor%=d5d5d8', EDGE, WING_X + 0.2, SB, FRONT);
+  }
   var fg = fl.group();
   lookG.floor.push(fg);
   root.add(fg);
@@ -2491,14 +2528,13 @@ function lane(hall, li, lv, x) {
   m.position.set(x, 0, zc);
   m.userData.fp = [[-0.15, -0.35, 1.1, 0, 1, -2, 0]];
   // the belt runs south toward the cashier's end, so the shopper pays at the south end of the lane's west side
-  m.add(mesh('pw/Checkout_Lane_30', -0.15, -0.35, -Math.PI / 2));
+  (PLAN.laneM || [['pw/Checkout_Lane_30', -0.15, -0.35, -Math.PI / 2]]).forEach(function (q) { m.add(mesh(q[0], q[1], q[2], q[3], q[4])); });
   var cashier = crew('shop/character-employee', 'idle');
   cashier.obj.position.set(0.4, 0, -0.1);
   cashier.obj.rotation.y = -Math.PI / 2;
   m.add(cashier.obj);
   var rack = new Batch();
-  rack.add('pw/LaneLight_Pole_01', -0.4, -1.12, 0);
-  rack.add('pw/Basket_Stack_01', -0.15, 0.55, 0);
+  (PLAN.laneRack || [['pw/LaneLight_Pole_01', -0.4, -1.12, 0], ['pw/Basket_Stack_01', -0.15, 0.55, 0]]).forEach(function (q) { rack.add(q[0], q[1], q[2], q[3]); });
   m.add(rack.group());
   var sign = laneSign(li + 1);
   sign.position.set(-0.4, 1.1, -1.12);
@@ -2565,7 +2601,6 @@ function buildShell() {
     hb.add('nature/plant_bush', WING_X + 0.85, z, z * 1.7);
   }
   root.add(hb.group());
-  PLAN.entrances.forEach(function (en) { doorSign(en); });
   buildWallArt();
 }
 
@@ -2708,7 +2743,7 @@ function buildFront() {
   var hall = { items: [], shown: -1, add: true, tills: [], staff: [], solids: [], lv: {} };
   PLAN.entrances.forEach(function (en) {
     [-0.5, 0.5].forEach(function (o) { b.add('furn/rugDoormat', en.x + o, FRONT - 0.45, 0, 0.004); });
-    b.add('pw/Basket_Stack_01', en.basket[0], en.basket[1], 0);
+    b.add(PLAN.stackM || 'pw/Basket_Stack_01', en.basket[0], en.basket[1], 0);
     hall.solids.push({ r: [en.basket[0] - 0.2, en.basket[0] + 0.2, en.basket[1] - 0.2, en.basket[1] + 0.2], lv: 0 });
     // the greeter stands by the baskets from the first day
     var g = crew('shop/character-employee', 'idle');
@@ -2729,7 +2764,7 @@ function buildFront() {
     cx -= tw;
     // the floor of the bank grows with its tills
     hall.lv[t.lv] = hall.lv[t.lv] || new Batch();
-    hall.lv[t.lv].geom(patch(square([[cx, -1.25], [cx + tw, 1.35]])), finishMat(0xc4cad8), 0.045);
+    hall.lv[t.lv].geom(patch(square([[cx, -1.25], [cx + tw, 1.35]])), finishMat(PLAN.bankFloor || 0xc4cad8), 0.045);
     hall.tills.push(t.k === 'lane' ? lane(hall, li++, t.lv, cx + 0.95) : kiosk(hall, ki++, t.lv, cx + 0.35));
   });
   hall.tills.push(gardenTill);
@@ -2744,10 +2779,10 @@ function buildFront() {
   hall.staff.push(att);
   hall.solids.push({ r: [-7.2, -6.6, 0.1, 0.5], lv: 3 });
   hall.lv[3] = hall.lv[3] || new Batch();
-  hall.lv[3].add('pw/SelfCheckout_Attendant_01', -6.72, 0.3, -Math.PI / 2);
+  hall.lv[3].add(PLAN.attM || 'pw/SelfCheckout_Attendant_01', -6.72, 0.3, -Math.PI / 2);
   var desk = new THREE.Group();
   for (var di = 0; di < PLAN.desk.n; di++) {
-    var dm = mesh('pw/ServiceDesk_20', PLAN.desk.x + di * 1.0, PLAN.desk.z, Math.PI);
+    var dm = mesh(PLAN.deskM || 'pw/ServiceDesk_20', PLAN.desk.x + di * 1.0, PLAN.desk.z, Math.PI);
     if (PLAN.desk.n < 3 || di !== 1) {
       var cl = crew('shop/character-employee', 'idle');
       cl.obj.position.set(0, 0, -0.42);
@@ -2756,7 +2791,7 @@ function buildFront() {
     }
     desk.add(dm);
   }
-  desk.add(board({ text: 'board.courtesy', x: PLAN.desk.x + (PLAN.desk.n - 1) / 2, z: 0.1, y: 1.7, w: 1.6, h: 0.45, post: true }));
+  desk.add(board({ text: PLAN.deskBoard || 'board.courtesy', x: PLAN.desk.x + (PLAN.desk.n - 1) / 2, z: 0.1, y: 1.7, w: 1.6, h: 0.45, post: true }));
   desk.visible = false;
   root.add(desk);
   hall.items.push({ g: desk, lv: 7 });
@@ -2780,7 +2815,6 @@ function buildFront() {
   });
   places.hall = hall;
   addPick('hall', 0, 0.5, EDGE * 2, 3.2);
-  buildDoors();
   decor(PLAN.decor.front, true);
 }
 
@@ -2923,9 +2957,64 @@ function buildGarden() {
   pl.pick = addPick('garden', (x0 + x1) / 2, (z0 + z1) / 2, x1 - x0, z1 - z0);
 }
 
+// The diner's patio is the garden center's yard seen as an outdoor dining area: the same fence and gate and the same
+// window where an order is paid, with round tables and their chairs in rows either side of the path
+function buildPatio() {
+  var lv = levels(4);
+  [[-10.2, 1.2], [-11.2, -1.0], [-9.6, -0.2]].forEach(function (p, i) { lv[0].add(i % 2 ? 'nature/flower_yellowA' : 'nature/flower_redA', p[0] + DX, p[1], i); });
+  lv[0].add('furn/bench', -10.4 + DX, 0.4, -Math.PI / 2);
+  lv[0].add('furn/bench', -10.4 + DX, 2.2, -Math.PI / 2);
+  var x0 = GARDEN[0];
+  var x1 = GARDEN[1];
+  var z0 = GARDEN[2];
+  var z1 = GARDEN[3];
+  var step = (x1 - x0) / 5;
+  lv[1].slab(flat(0xd9cdb8), x0, x1, z0, z1, 0.006, 0.02);
+  lv[1].slab(flat(PAVE), x0 + 2 * step, x0 + 3 * step, z1, LOT[0], 0.004, 0.02);
+  for (var i = 0; i < 5; i++) {
+    if (i !== 2) lv[1].add('forest/fence', x0 + (i + 0.5) * step, z1, 0);
+    lv[1].add('forest/fence', x0 + (i + 0.5) * step, z0, 0);
+    lv[1].add('forest/fence', x0, z0 + (i + 0.5) * (z1 - z0) / 5, Math.PI / 2);
+  }
+  [-0.74, 0.74].forEach(function (o) { lv[1].block(flat(0x50566a), GATE_X + o - 0.03, GATE_X + o + 0.03, z1 - 0.03, z1 + 0.03, 0, 1.0); });
+  lv[1].block(flat(0x2f3446), GATE_X - 0.8, GATE_X + 0.8, z1 - 0.04, z1 + 0.02, 0.78, 1.08);
+  boardAtlas(lv[1], { text: 'board.patio', x: GATE_X, y: 0.93, z: z1 + 0.03, w: 1.5, h: 0.28 });
+  // a table and two chairs: the chairs north and south of it, facing it
+  function set(l, x, z) {
+    lv[l].add('pw/Table_Cafe_Round_01', x, z, 0);
+    lv[l].add('pw/Chair_Metal_Cafe_01', x, z - 0.4, 0);
+    lv[l].add('pw/Chair_Metal_Cafe_01', x, z + 0.4, Math.PI);
+  }
+  [[1, 2.0], [2, 0.6], [3, -0.8]].forEach(function (r) {
+    [-11.55 + DX, -9.4 + DX].forEach(function (x) { set(r[0], x, r[1]); });
+  });
+  [[x0 + 0.35, 1.2], [x1 - 0.35, 1.2], [x0 + 0.35, -1.5], [x1 - 0.35, -1.5]].forEach(function (p) { lv[3].add('pw/SM_Patio_Heater_01', p[0], p[1], 0); });
+  [[x0 + 0.3, 2.5], [x1 - 0.3, 2.5]].forEach(function (p) { lv[4].add('pw/Planter_Tall_01', p[0], p[1], 0); });
+  for (var t = 0; t < 4; t++) lv[4].add('furn/pottedPlant', x0 + 0.9 + t * 0.9, -1.85, t);
+  lamp(lv[4], 'roads/light-square', x0 + 0.2, -1.85, Math.PI);
+  lamp(lv[4], 'roads/light-square', x1 - 0.2, -1.85, Math.PI);
+  var pl = finishPlace('garden', lv);
+  pl.add = true;
+  var desk = mesh('arcade/cash-register', TILL_G[0], TILL_G[1], -Math.PI / 2);
+  var cashier = crew('shop/character-employee', 'idle');
+  cashier.obj.position.set(0, 0, -0.5);
+  desk.add(cashier.obj);
+  desk.visible = false;
+  root.add(desk);
+  pl.items.push({ g: desk, lv: 1 });
+  var qx = TILL_G[0] - 0.55;
+  gardenTill = { k: 'garden', till: [TILL_G[0], 0.8, TILL_G[1]], cashier: cashier, head: [TILL_G[0] + 0.5, TILL_G[1]],
+    spot: function (n) { return n ? [qx, TILL_G[1] + 0.5 * n, Math.PI] : [qx, TILL_G[1], Math.PI / 2]; } };
+  pl.pick = addPick('garden', (x0 + x1) / 2, (z0 + z1) / 2, x1 - x0, z1 - z0);
+}
+
 // The east wing: four rooms along the east wall, each a place whose levels add one piece from plan.js. Before a room is
 // bought it holds an opening soon board; its floor and walls are part of the building
 var WING_IDS = ['serv', 'rest', 'lounge', 'head'];
+
+function wingIds() {
+  return WING_IDS.filter(function (id) { return PLAN.wing[id]; });
+}
 
 function buildWing() {
   decor(PLAN.decor.wing, true);
@@ -2933,10 +3022,10 @@ function buildWing() {
   var dw = new THREE.Group();
   var lb = new Batch();
   lb.block(flat(0x7f8597), 14.7, 15.3, 0.5, 1.5, 0.82, 1.0);
-  dw.add(lb.group(), boardFace({ text: 'board.service_restrooms', x: 14.68, z: 1.0, y: 0.9, w: 1.1, h: 0.3, r: -Math.PI / 2 }));
+  dw.add(lb.group(), boardFace({ text: PLAN.wingBoard || 'board.service_restrooms', x: 14.68, z: 1.0, y: 0.9, w: 1.1, h: 0.3, r: -Math.PI / 2 }));
   root.add(dw);
   outer.push({ g: dw, n: [1, 0], both: 1, hide: 1 });
-  WING_IDS.forEach(function (id) {
+  wingIds().forEach(function (id) {
     var r = PLAN.wing[id];
     var cx = (r.rect[0] + r.rect[1]) / 2;
     var cz = (r.rect[2] + r.rect[3]) / 2;
@@ -3027,8 +3116,8 @@ function paintOpen(on) {
 }
 
 function paintPylon() {
-  var big = order.filter(has).length >= 8;
-  var key = (big ? 'b' : 's') + S.cur + S.lk.on;
+  var big = order.filter(has).length >= Math.min(8, Math.ceil(kind().depts.length * 0.75));
+  var key = (big ? 'b' : 's') + S.cur + S.lk.on + kind().id;
   if (pylon.big === key) return;
   pylon.big = key;
   var pl = LK[S.lk.on].pylon;
@@ -3069,9 +3158,9 @@ function paintPylon() {
   fitFont(x, nm, tw, 84);
   nm.forEach(function (l, i) { x.fillText(l, tx, nm.length > 1 ? 66 + i * 74 : 103, tw); });
   x.fillStyle = '#fff';
-  var kind = tl(big ? 'sign.supercenter' : 'sign.market');
-  fitFont(x, [kind], 440, 46);
-  x.fillText(kind, 256, 222, 440);
+  var word = tl((kind().sign || ['sign.market', 'sign.supercenter'])[big ? 1 : 0]);
+  fitFont(x, [word], 440, 46);
+  x.fillText(word, 256, 222, 440);
   if (n) {
     x.beginPath();
     x.arc(434, 100, 54, 0, Math.PI * 2);
@@ -3145,10 +3234,6 @@ function buildOutside() {
   b.slab(flat(ASPHALT), -26.5, -22.5, 9.6, 10.5, 0.016, 0.01);
   var tz = PLAN.tireBay.z;
   b.slab(flat(0xcfc9bd), -22.5, -EDGE - 0.3, tz - 3.2, tz + 3.2, 0.006, 0.02);
-  b.slab(flat(0xf2c230), -21.4, -17.4, tz - 1.55, tz - 1.5, 0.02, 0.008);
-  b.slab(flat(0xf2c230), -21.4, -17.4, tz + 1.5, tz + 1.55, 0.02, 0.008);
-  b.slab(flat(0xf2c230), -21.4, -21.35, tz - 1.55, tz + 1.55, 0.02, 0.008);
-  [[-EDGE - 0.9, tz - 3.0], [-EDGE - 0.9, tz + 3.0], [-22.0, tz - 3.0], [-22.0, tz + 3.0]].forEach(function (q) { b.add('roads/construction-cone', q[0], q[1], 0); });
   // the stream on the west runs under the street on a short bridge
   var bx = LAND.BRIDGE.x;
   b.block(flat(0x9a968c), bx - 8, bx + 8, 9.35, 14.65, -0.75, -0.02);
@@ -3156,9 +3241,6 @@ function buildOutside() {
     b.block(flat(0xb9b4a8), bx - 8, bx + 8, rz, rz + 0.25, -0.02, 0.5);
     [-8, 7.7].forEach(function (rx) { b.block(flat(0xa39e92), bx + rx, bx + rx + 0.3, rz - 0.05, rz + 0.3, -0.02, 0.75); });
   });
-  b.add('furn/cardboardBoxClosed', -EDGE - 1.2, tz + 2.2, 0.2);
-  b.add('car/wheel-dark', -EDGE - 1.5, tz + 2.6, 0, 0);
-  b.add('car/wheel-default', -EDGE - 2.2, tz + 2.6, 0, 0);
   decor(PLAN.decor.out);
   root.add(b.group());
   buildNature();
@@ -3167,7 +3249,6 @@ function buildOutside() {
   buildLot();
   buildTaxi();
   buildDock();
-  buildGarden();
   buildPylon();
 }
 // Trees, bushes, grass and flowers scattered over the zones of NATURE on a jittered grid. Each 12 unit tile of ground is
@@ -4086,7 +4167,7 @@ function navBuild() {
   });
   places.hall.solids.forEach(function (q) { if (placeHas('hall', q.lv - 1)) markRect(q.r[0], q.r[1], q.r[2], q.r[3]); });
   fixed.forEach(markObb);
-  WING_IDS.forEach(function (id) {
+  wingIds().forEach(function (id) {
     places[id].foot.forEach(function (fs, lv) { if (placeHas(id, lv - 1)) fs.forEach(markObb); });
   });
   // the doorway from the sales floor into the wing
@@ -4417,10 +4498,14 @@ function applyLook() {
   if (curLook === S.lk.on) return;
   curLook = S.lk.on;
   var l = LK[curLook];
+  // Classic wears the store type's own walls; any other look tints them
+  var tint = PLAN.tint || {};
+  var wall = l.wall === null && tint.wall !== undefined ? tint.wall : l.wall;
+  var trim = l.trim === null && tint.trim !== undefined ? tint.trim : l.trim;
   order.forEach(function (id) { tintGroup(shops[id].floorG, l.floor); });
   lookG.floor.forEach(function (g) { tintGroup(g, l.floor); });
-  lookG.wall.forEach(function (g) { tintGroup(g, l.wall); });
-  lookG.trim.forEach(function (g) { tintGroup(g, l.trim); });
+  lookG.wall.forEach(function (g) { tintGroup(g, wall); });
+  lookG.trim.forEach(function (g) { tintGroup(g, trim); });
   doorMats.forEach(function (m) {
     paintDoor(m.map.image.getContext('2d'), m.userData.name, false);
     paintDoor(m.emissiveMap.image.getContext('2d'), m.userData.name, true);
@@ -4434,10 +4519,13 @@ function applyLook() {
 }
 
 function sync(animate, now) {
+  useType();
   applyLook();
   order.forEach(function (id) { syncArea(shops[id], animate, now); });
-  PLACES.forEach(function (p) { syncPlace(p.id, animate, now); });
-  ['lot', 'taxi', 'garden'].concat(WING_IDS).forEach(function (id) { places[id].pick.visible = has(PL[id].after); });
+  PLACES.forEach(function (p) { if (places[p.id]) syncPlace(p.id, animate, now); });
+  ['lot', 'taxi', 'garden'].concat(WING_IDS).forEach(function (id) {
+    if (places[id]) places[id].pick.visible = !!kind().pd[id] && has(PL[id].after);
+  });
   paintPylon();
   cutaway();
 }
@@ -5025,16 +5113,35 @@ function carried(f, ref, y) {
   return m;
 }
 
+// what a shopper carries: a bag, a basket and, from the garden, a plant; a store type may carry other things (plan.carry)
+var CARRY = { bag: ['food/bag', 0.03], basket: ['shop/shopping-basket*0.62', 0.07], plant: ['furn/plantSmall2*1.6', 0.12] };
+
+function carry(p, key) {
+  if (!p.sets[key]) {
+    var c = PLANS[key].carry || CARRY;
+    p.sets[key] = { bag: carried(p.f, c.bag[0], c.bag[1]), basket: carried(p.f, c.basket[0], c.basket[1]), plant: carried(p.f, c.plant[0], c.plant[1]) };
+  }
+  var s = p.sets[key];
+  p.bag.visible = false;
+  p.basket.visible = false;
+  p.plant.visible = false;
+  p.bag = s.bag;
+  p.basket = s.basket;
+  p.plant = s.plant;
+}
+
 function person(i, ref) {
   var f = figure(ref || FOLK[i % FOLK.length], 'walk');
-  var bag = carried(f, 'food/bag', 0.03);
-  var basket = carried(f, 'shop/shopping-basket*0.62', 0.07);
-  var plant = carried(f, 'furn/plantSmall2*1.6', 0.12);
+  var bag = carried(f, CARRY.bag[0], CARRY.bag[1]);
+  var basket = carried(f, CARRY.basket[0], CARRY.basket[1]);
+  var plant = carried(f, CARRY.plant[0], CARRY.plant[1]);
   figs.push(f.obj);
   f.obj.traverse(function (o) { if (o.isMesh) o.castShadow = false; });
   f.obj.visible = false;
   root.add(f.obj);
-  return { f: f, bag: bag, basket: basket, plant: plant, path: null, i: 0, wait: 0, speed: 1.05 + (i % 5) * 0.08 };
+  var p = { f: f, bag: bag, basket: basket, plant: plant, sets: { super: { bag: bag, basket: basket, plant: plant } }, path: null, i: 0, wait: 0, speed: 1.05 + (i % 5) * 0.08 };
+  if (ctx && ctx.key !== 'super') carry(p, ctx.key);
+  return p;
 }
 
 function busy(p) {
@@ -5193,7 +5300,7 @@ function roomVisit(pts) {
   if (Math.random() > 0.25) return;
   var spots = [];
   ['serv', 'rest'].forEach(function (id) {
-    PLAN.wing[id].visit.forEach(function (v) { if (placeHas(id, v[3])) spots.push(v); });
+    if (PLAN.wing[id]) PLAN.wing[id].visit.forEach(function (v) { if (placeHas(id, v[3])) spots.push(v); });
   });
   if (!spots.length) return;
   var v = spots[Math.floor(Math.random() * spots.length)];
@@ -6149,7 +6256,7 @@ var STAFF = 'shop/character-employee@5,3>4,2';
 // where the stockers wait: in the lane in front of the racking, the dolly in front
 // stockers walk the lane at LANE; they wait a little further back
 var LANE = -23.1;
-var STAND = PLAN.idle.map(function (q) { return { x: q[0], z: q[1], face: Math.PI }; });
+var STAND = SUPER.idle.map(function (q) { return { x: q[0], z: q[1], face: Math.PI }; });
 // where the dolly stands beside a stocker working a shelf, in his own frame, in the order tried
 var PARK = [[0.5, 0.02], [-0.5, 0.02], [0, -0.45], [0.45, -0.3], [-0.45, -0.3]];
 var LEAF_C = 0xe0823d;
@@ -6404,8 +6511,18 @@ function resetCrowd() {
   truckQ = 0;
 }
 
+// the tags over what the store on screen has: its areas and its places
 function tagIds() {
-  return order.concat(PLACES.map(function (p) { return p.id; }));
+  return order.concat(kind().places.filter(function (id) { return places[id]; }));
+}
+
+function makeTag(id, o) {
+  var el = document.createElement('div');
+  el.className = 'tag';
+  el.innerHTML = '<b></b><i><u></u></i>';
+  el.addEventListener('click', function () { onTap({ kind: 'biz', id: id }); });
+  tagsEl.appendChild(el);
+  o.tag = { el: el, text: '', x: 0, y: 0, line: el.firstChild, bar: el.querySelector('u'), cls: '' };
 }
 
 function makeTags() {
@@ -6415,15 +6532,7 @@ function makeTags() {
   barsX = barsCv.getContext('2d');
   tagsEl.appendChild(barsCv);
   resize();
-  tagIds().forEach(function (id) {
-    var el = document.createElement('div');
-    el.className = 'tag';
-    el.innerHTML = '<b></b><i><u></u></i>';
-    el.addEventListener('click', function () { onTap({ kind: 'biz', id: id }); });
-    tagsEl.appendChild(el);
-    var t = { el: el, text: '', x: 0, y: 0, line: el.firstChild, bar: el.querySelector('u'), cls: '' };
-    (shops[id] || places[id]).tag = t;
-  });
+  ['lot', 'taxi', 'dock'].forEach(function (id) { makeTag(id, shared.places[id]); });
   arrowEl = document.createElement('div');
   arrowEl.id = 'arrow';
   arrowEl.setAttribute('aria-hidden', 'true');
@@ -6616,14 +6725,92 @@ function init(canvas, tap) {
   });
 }
 
+// What stands inside the building depends on the store type: its areas, checkout bank, wing rooms, garden and decor. Each
+// type's is built once, the first time a store of that type is shown, into a group of its own that is shown while that
+// store is on screen. The building, the lot, the stockroom and the street are shared.
+var ctxs = {};
+var ctx = null;
+var shared = { places: {}, picks: [] };
+
+function buildType(key) {
+  typeTexts();
+  var c = { key: key, plan: PLANS[key], group: new THREE.Group(), shops: {}, order: [], places: {}, picks: [], fixed: [],
+    still: { b: new Batch(), x: new THREE.Group(), spots: [], foot: [], still: true } };
+  var keep = [root, PLAN, shops, order, places, picks, still, fixed];
+  root = c.group;
+  PLAN = c.plan;
+  shops = c.shops;
+  order = c.order;
+  places = c.places;
+  picks = c.picks;
+  still = c.still;
+  fixed = [];
+  try {
+    buildAreas();
+    if (PLAN.patio) buildPatio();
+    else buildGarden();
+    buildFront();
+    buildWing();
+    PLAN.entrances.forEach(doorSign);
+    decor(PLAN.decor.side || []);
+    root.add(still.b.group(), still.x);
+    order.forEach(function (id) { makeTag(id, shops[id]); });
+    Object.keys(places).forEach(function (id) { makeTag(id, places[id]); });
+    c.fixed = fixed;
+  } finally {
+    root = keep[0];
+    PLAN = keep[1];
+    shops = keep[2];
+    order = keep[3];
+    places = keep[4];
+    picks = keep[5];
+    still = keep[6];
+    fixed = keep[7];
+  }
+  root.add(c.group);
+  return c;
+}
+
+// puts the content of the store type on screen in place, building it the first time
+function useType() {
+  var key = kind().plan || kind().id;
+  if (ctx && ctx.key === key) return false;
+  if (ctx) {
+    ctx.group.visible = false;
+    ctx.order.concat(Object.keys(ctx.places), Object.keys(shared.places)).forEach(function (id) {
+      var t = (ctx.shops[id] || ctx.places[id] || shared.places[id]).tag;
+      t.el.style.display = 'none';
+      t.shown = false;
+    });
+  }
+  if (!ctxs[key]) ctxs[key] = buildType(key);
+  ctx = ctxs[key];
+  ctx.group.visible = true;
+  PLAN = ctx.plan;
+  shops = ctx.shops;
+  order = ctx.order;
+  still = ctx.still;
+  fixed = ctx.fixed;
+  places = Object.assign({}, shared.places, ctx.places);
+  picks = shared.picks.concat(ctx.picks);
+  curLook = null;
+  nav.dirty = true;
+  shadowDirty = true;
+  people.forEach(function (p) { carry(p, key); });
+  return true;
+}
+
 function build() {
   buildOutside();
-  buildAreas();
+  shared.places = places;
+  shared.picks = picks;
+  places = {};
+  picks = [];
   buildShell();
-  buildFront();
-  buildWing();
+  buildDoors();
   root.add(still.b.group(), still.x);
   makeTags();
+  useType();
   buildConfetti();
   fitShadow();
   sync(false, 0);
@@ -6673,7 +6860,7 @@ function draw(now) {
     });
   });
   places.hall.staff.forEach(function (f) { if (f.mixer && f.obj.parent.visible && f.obj.visible) f.mixer.update(dt); });
-  WING_IDS.forEach(function (id) { places[id].staff.forEach(function (w) { if (w.f.mixer && w.g.visible) w.f.mixer.update(dt); }); });
+  wingIds().forEach(function (id) { places[id].staff.forEach(function (w) { if (w.f.mixer && w.g.visible) w.f.mixer.update(dt); }); });
   crewStep(dt, now);
   janitorStep(dt);
   giftStep(dt, now);
@@ -7171,7 +7358,7 @@ function refresh() {
     s.shown = -1;
     s.key = null;
   });
-  PLACES.forEach(function (p) { places[p.id].shown = -1; });
+  PLACES.forEach(function (p) { if (places[p.id]) places[p.id].shown = -1; });
   sync(false, 0);
   nav.dirty = true;
   openingsClear();
@@ -7383,7 +7570,7 @@ function focusOf(g) {
 
 // what level k of a place adds, or null when it only changes the paint
 function placeIcon(id, k) {
-  var key = id + '#' + k;
+  var key = ctx.key + ':' + id + '#' + k;
   if (icons[key] !== undefined) return icons[key];
   var pl = places[id];
   var g = new THREE.Group();
@@ -7513,7 +7700,7 @@ window.View = {
   rush: rushStart,
   rushEnd: rushEnd,
   tillScreen: tillScreen,
-  upName: function (id, k) { var u = PLAN.areas[id].ups[k]; return u ? u.name : ''; },
+  upName: function (id, k) { var u = PLAN.areas[id] && PLAN.areas[id].ups[k]; return u ? u.name : ''; },
   upIcon: upIcon,
   regIcon: regIcon,
   placeIcon: placeIcon

@@ -576,5 +576,54 @@ run('fillStore()');
 for (let i = 0; i < run('MAX_STORES') + 5; i++) run('openStore(nextType())');
 if (run('nStores()') !== run('MAX_STORES')) fail('the chain grew past ' + run('MAX_STORES'));
 
+// the Diner and Pizzeria is the second store type: it opens as store two, builds its own eight departments in order and
+// the places it has, words them its own way, and earns and saves like the supercenter
+{
+  run('reset()');
+  run('fillStore()');
+  run('S.cash = 1e9');
+  if (run('nextType().id') !== 'diner') fail('the type after the supercenter is not the diner');
+  if (!run('move()') || run('here().t') !== 'diner' || run('S.cur') !== 1 || !aliased()) fail('a full supercenter did not open the diner as store two');
+  const depts = run('kind().depts');
+  if (depts.length !== 8 || depts.some(id => run('ITEMS.' + id + '.of.length') !== 30 || run('BZ.' + id + '.items.reduce(function (n, x) { return n + x.at.length; }, 0)') !== 30)) fail('a diner department does not have 30 upgrades');
+  // it starts with its first department; each next one opens only after the one before
+  if (run('opened()') !== 1 || !run("has('grill')") || run("avail('pizza')") || !run("avail('fry')")) fail('the diner does not start with the grill alone');
+  if (run("avail('produce')") || run("buy('produce', 0)") !== null) fail('a supercenter department could be bought in the diner');
+  for (let i = 1; i < depts.length; i++) {
+    run('S.cash = 1e30');
+    run("S.b['" + depts[i - 1] + "'] = atLevel('" + depts[i - 1] + "', 30)");
+    if (!run("avail('" + depts[i] + "')")) fail(depts[i] + ' did not open after ' + depts[i - 1]);
+    if (!run("buy('" + depts[i] + "', 0)")) fail(depts[i] + ' could not be bought');
+  }
+  // its places: the six it has, in its own words; a taxi it has no use for stays shut
+  const pd = run('Object.keys(kind().pd).sort()');
+  if (pd.join() !== 'dock,garden,hall,lot,lounge,rest') fail('the diner has the places ' + pd.join());
+  if (run('PL.hall.name') !== 'Counter' || run("PL.lot.after") !== 'fry' || run("PL.rest.name") !== 'Walk-in Cooler' || run('PL.hall.items.length') !== 3) fail('a place is not worded as the diner words it');
+  run('S.cash = 1e30');
+  if (run("placeCost('taxi')") !== 0 || run("buyPlace('taxi', 0)") !== null) fail('a taxi stand could be bought in the diner');
+  if (run("placeCost('hall')") <= 0) fail('the counter did not open with the grill');
+  run('view(0)');
+  if (run('PL.hall.name') !== 'Checkouts' || run('PL.lot.after') !== 'bakery') fail('the supercenter lost its wording after the diner was on screen');
+  run('view(1)');
+  // filled, it fills its own places only, earns, and plays on screen as the model says
+  run('S.cs[1].b = {}');
+  run('fillStore()');
+  if (run('S.pl.taxi') !== 0 || run('S.pl.serv') !== 0 || run('S.pl.head') !== 0) fail('a diner that was filled has a place it does not have');
+  if (run('S.pl.hall') !== 10 || run('S.pl.rest') !== 8 || run('S.pl.lounge') !== 10 || run('S.pl.garden') !== 4) fail('a filled diner is missing a place level');
+  if (run('opened()') !== 8 || !(run('rate()') > 0)) fail('a filled diner does not earn');
+  const a1 = run('S.all');
+  const model = run('rate()');
+  play(600);
+  const got = run('S.all') - a1;
+  if (!near(got, model * 600 + run('offRate()') * 600, 0.12)) fail('a filled diner on screen earned ' + got + ' in 600 s, the model says ' + (model + run('offRate()')) * 600);
+  // and it saves and loads as the type it is
+  run('save()');
+  const parsed = JSON.parse(store[key]);
+  if (parsed.cs[1] && parsed.cs[1].t !== 'diner' && parsed.cs[0].t !== 'diner') fail('the diner was saved as another type');
+  run('S = fresh()');
+  run('load()');
+  if (run('here().t') !== 'diner' || run('PL.hall.name') !== 'Counter' || run('opened()') !== 8 || !aliased()) fail('the diner did not come back as saved');
+}
+
 if (failed) process.exit(1);
 console.log('chain ok');

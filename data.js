@@ -19,7 +19,16 @@ var BIZ = [
   { id: 'sports', name: tl('dept.sports'), ic: 'surv/tent-canvas', c0: 9e14, g: 1.165, s: 1.6e12, w: 14.6 },
   { id: 'tools', name: tl('dept.tools'), ic: 'surv/tool-hammer', c0: 9e15, g: 1.165, s: 1.4e13, w: 10.7 },
   { id: 'auto', name: tl('dept.auto'), ic: 'car/wheel-default', c0: 9e16, g: 1.165, s: 1.2e14, w: 11.2 },
-  { id: 'seasonal', name: tl('dept.seasonal'), ic: 'holiday/tree-decorated', c0: 9e17, g: 1.165, s: 1e15, w: 20.3 }
+  { id: 'seasonal', name: tl('dept.seasonal'), ic: 'holiday/tree-decorated', c0: 9e17, g: 1.165, s: 1e15, w: 20.3 },
+  // the Diner and Pizzeria's, on the curve of the supercenter's first eight
+  { id: 'grill', name: tl('dept.grill'), ic: 'food/meat-raw', c0: 4, g: 1.165, s: 6, w: 18.8 },
+  { id: 'fry', name: tl('dept.fry'), ic: 'food/frying-pan', c0: 35, g: 1.202, s: 1.29, w: 14 },
+  { id: 'soda', name: tl('dept.soda'), ic: 'food/ice-cream', c0: 320, g: 1.169, s: 11, w: 8.1 },
+  { id: 'pizza', name: tl('dept.pizza'), ic: 'food/cheese', c0: 3500, g: 1.201, s: 94, w: 10.4 },
+  { id: 'coffee', name: tl('dept.coffee'), ic: 'shop/coffee-maker', c0: 73000, g: 1.135, s: 804, w: 7.6 },
+  { id: 'salad', name: tl('dept.salad'), ic: 'food/apple', c0: 4.5e6, g: 1.1, s: 6860, w: 16.8 },
+  { id: 'takeout', name: tl('dept.takeout'), ic: 'shop/hand-truck', c0: 6.1e6, g: 1.156, s: 58700, w: 13.2 },
+  { id: 'dining', name: tl('dept.dining'), ic: 'furn/loungeSofa', c0: 6e7, g: 1.171, s: 5.01e5, w: 14.4 }
 ];
 
 // a department has UPS upgrades, each one more thing in it, and they come in items of one kind each: sell raises what
@@ -67,7 +76,23 @@ var ITEMS = {
   auto: { it: [[tl('item.auto.0'), 'sell'], [tl('item.auto.1'), 'sell'], [tl('item.auto.2'), 'sell'], [tl('item.auto.3'), 'draw'], [tl('item.auto.4'), 'draw'], [tl('item.auto.5'), 'staff']],
     of: '120230112502442440033444511423' },
   seasonal: { it: [[tl('item.seasonal.0'), 'sell'], [tl('item.seasonal.1'), 'sell'], [tl('item.seasonal.2'), 'sell'], [tl('item.seasonal.3'), 'draw'], [tl('item.seasonal.4'), 'draw'], [tl('item.seasonal.5'), 'staff']],
-    of: '001130202502000244234412542413' }
+    of: '001130202502000244234412542413' },
+  grill: { it: [[tl('item.grill.0'), 'sell'], [tl('item.grill.1'), 'sell'], [tl('item.grill.2'), 'sell'], [tl('item.grill.3'), 'draw'], [tl('item.grill.4'), 'draw'], [tl('item.grill.5'), 'staff']],
+    of: '020030120532110221132023544443' },
+  fry: { it: [[tl('item.fry.0'), 'sell'], [tl('item.fry.1'), 'sell'], [tl('item.fry.2'), 'sell'], [tl('item.fry.3'), 'draw'], [tl('item.fry.4'), 'draw'], [tl('item.fry.5'), 'staff']],
+    of: '020030120532110221132023544443' },
+  soda: { it: [[tl('item.soda.0'), 'sell'], [tl('item.soda.1'), 'sell'], [tl('item.soda.2'), 'sell'], [tl('item.soda.3'), 'draw'], [tl('item.soda.4'), 'draw'], [tl('item.soda.5'), 'staff']],
+    of: '020030120532110221132023544443' },
+  pizza: { it: [[tl('item.pizza.0'), 'sell'], [tl('item.pizza.1'), 'sell'], [tl('item.pizza.2'), 'sell'], [tl('item.pizza.3'), 'draw'], [tl('item.pizza.4'), 'draw'], [tl('item.pizza.5'), 'staff']],
+    of: '020030120532110221132023544443' },
+  coffee: { it: [[tl('item.coffee.0'), 'sell'], [tl('item.coffee.1'), 'sell'], [tl('item.coffee.2'), 'sell'], [tl('item.coffee.3'), 'draw'], [tl('item.coffee.4'), 'draw'], [tl('item.coffee.5'), 'staff']],
+    of: '020030120532110221132023544443' },
+  salad: { it: [[tl('item.salad.0'), 'sell'], [tl('item.salad.1'), 'sell'], [tl('item.salad.2'), 'sell'], [tl('item.salad.3'), 'draw'], [tl('item.salad.4'), 'draw'], [tl('item.salad.5'), 'staff']],
+    of: '020030120532110221132023544443' },
+  takeout: { it: [[tl('item.takeout.0'), 'sell'], [tl('item.takeout.1'), 'sell'], [tl('item.takeout.2'), 'sell'], [tl('item.takeout.3'), 'draw'], [tl('item.takeout.4'), 'draw'], [tl('item.takeout.5'), 'staff']],
+    of: '020030120532110221132023544443' },
+  dining: { it: [[tl('item.dining.0'), 'sell'], [tl('item.dining.1'), 'sell'], [tl('item.dining.2'), 'sell'], [tl('item.dining.3'), 'draw'], [tl('item.dining.4'), 'draw'], [tl('item.dining.5'), 'staff']],
+    of: '020030120532110221132023544443' }
 };
 
 // n prices from c, each g times the one before, to two significant digits
@@ -123,11 +148,25 @@ PLACES.forEach(function (p) { PL[p.id] = p; });
 
 // Store types. A store is built from a type's departments, in the order they open, and its places; mul scales the
 // income of the whole store and cost its prices. The supercenter is the first type and keeps the first ten departments
-// of the old 18, so every place still has the department it comes after. The second entry is a stand-in so two
-// stores can run together until the first real new type (P3.3a) replaces it
+// of the old 18, so every place still has the department it comes after. A type words its places itself (pl, see
+// typeTexts in sim.js): the levels and prices of a place are the same in every type. The last entry is a stand-in that
+// builds like the supercenter, for the checks that need two stores with the same departments
 var TYPES = [
   { id: 'super', depts: BIZ.slice(0, 10).map(function (b) { return b.id; }), places: PLACES.map(function (p) { return p.id; }), mul: 1, cost: 1 },
-  { id: 'test', test: true, depts: BIZ.slice(0, 10).map(function (b) { return b.id; }), places: PLACES.map(function (p) { return p.id; }), mul: 1, cost: 1 }
+  {
+    id: 'diner', mul: 4, cost: 3, sign: ['sign.diner', 'sign.diner_big'],
+    depts: ['grill', 'fry', 'soda', 'pizza', 'coffee', 'salad', 'takeout', 'dining'],
+    places: ['lot', 'hall', 'dock', 'garden', 'rest', 'lounge'],
+    pl: {
+      lot: { name: tl('place.lot'), after: 'fry', next: [tl('dplace.lot.next.0'), tl('place.lot.next.1'), tl('place.lot.next.2'), tl('place.lot.next.3')], it: [tl('place.lot.it.0')] },
+      hall: { name: tl('dplace.hall'), after: 'grill', next: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(function (n) { return tl('dplace.hall.next.' + n); }), it: [0, 1, 2].map(function (n) { return tl('dplace.hall.it.' + n); }) },
+      dock: { name: tl('dplace.dock'), after: 'grill', next: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(function (n) { return tl('dplace.dock.next.' + n); }), it: [0, 1].map(function (n) { return tl('dplace.dock.it.' + n); }) },
+      garden: { name: tl('dplace.garden'), after: 'salad', next: [0, 1, 2, 3].map(function (n) { return tl('dplace.garden.next.' + n); }), it: [tl('dplace.garden.it.0')] },
+      rest: { name: tl('dplace.rest'), after: 'takeout', next: [0, 1, 2, 3, 4, 5, 6, 7].map(function (n) { return tl('dplace.rest.next.' + n); }), it: [0, 1, 2].map(function (n) { return tl('dplace.rest.it.' + n); }) },
+      lounge: { name: tl('dplace.lounge'), after: 'dining', next: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(function (n) { return tl('dplace.lounge.next.' + n); }), it: [0, 1, 2, 3].map(function (n) { return tl('dplace.lounge.it.' + n); }) }
+    }
+  },
+  { id: 'test', test: true, plan: 'super', depts: BIZ.slice(0, 10).map(function (b) { return b.id; }), places: PLACES.map(function (p) { return p.id; }), mul: 1, cost: 1 }
 ];
 var TY = {};
 TYPES.forEach(function (t) { TY[t.id] = t; });
