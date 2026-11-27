@@ -77,8 +77,15 @@ function $(id) {
   return document.getElementById(id);
 }
 
+var CENTS = null;
+
 function money(v) {
-  var m = tl('num.money', { n: short(v) });
+  var n = short(v);
+  if (v > 0.005 && v < 10 && v !== Math.floor(v)) {
+    if (!CENTS) CENTS = new Intl.NumberFormat(I18N.locale + '-u-nu-latn', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    n = CENTS.format(v);
+  }
+  var m = tl('num.money', { n: n });
   // the symbol stays on the side the language put it, whatever the line's direction is
   return I18N.rtl ? '⁦' + m + '⁩' : m;
 }
