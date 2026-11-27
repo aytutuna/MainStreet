@@ -990,7 +990,7 @@ function adGive(k, from) {
 }
 
 function paintAds() {
-  var weak = Math.min(rate() * WARP_SECS, Math.max(S.run, 100)) < rate() * 600;
+  var weak = Math.min(chainRate() * WARP_SECS, Math.max(S.run, 100)) < chainRate() * 600;
   var rows = [['x2', 'ui_bolt', tl('ads.x2'), tl('ads.x2_note')], ['warp', 'ui_warp', tl('ads.warp'), tl('ads.warp_note')],
     ['gems', 'ui_gem', tl('ads.gems'), tl('shop.gems', { n: AD_GEMS })], ['rush', 'ui_bolt', tl('ads.rush'), tl('ads.rush_note')]];
   var html = '<p class="small">' + tl('ads.intro') + '</p>';

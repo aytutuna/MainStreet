@@ -208,7 +208,9 @@ if (run('saved().length') > 300000) fail('thirty full stores make a save of ' + 
   if (got.iap.noads !== 1 || got.iap.noadsTx !== 'T1' || got.iap.noadsUser !== 'U1' || got.iap.noadsAt !== 5) fail('the v11 save lost Skip ads');
   same(got.hold, o.hold, 'the claim');
   same(got.cl.old, ['o1'], 'the cloud stamps');
-  same(got.lk, o.lk, 'the store look');
+  same(got.lk.on, o.lk.on, 'the look in use');
+  same(got.lk.own, o.lk.own, 'the looks owned');
+  if (got.lk.top !== 4) fail('the v11 save lost the store number its looks need');
   same(got.pk, o.pk, 'the perks');
   same(got.goal, o.goal, 'the goals');
   if (got.b.clothes) fail('the v11 save kept a department the supercenter does not have');
@@ -222,6 +224,117 @@ if (run('saved().length') > 300000) fail('thirty full stores make a save of ' + 
   run('S = fresh()');
   run('load()');
   if (run('here().m') !== 1 || run('here().c') !== 1) fail('a first store got a factor');
+}
+
+// a look bought at store 5 stays usable, and so do the free ones of the stores before it
+{
+  const o = JSON.parse(JSON.stringify(fixture));
+  o.store = 5;
+  o.lk = { on: 'rustic', own: { seaside: 1 } };
+  store[key] = JSON.stringify(o);
+  run('S = fresh()');
+  run('load()');
+  const st = ['classic', 'fresh', 'rustic', 'seaside'].map(id => run("lookState('" + id + "')")).join();
+  if (st !== 'use,use,on,use') fail('looks of a v11 save at store 5 read ' + st);
+  if (run("lookState('neon')") !== 'lock') fail('a look that needs an achievement is open');
+  run("S.lk.on = 'classic'");
+  if (run("setLook('seaside')") !== true) fail('a look the player paid for could not be put on');
+}
+
+// a v11 save nobody changed since its last sync keeps the signature, so a copy from another device is still taken
+{
+  const o = JSON.parse(JSON.stringify(fixture));
+  ctx.__raw = o;
+  o.cl = { base: 'b:1', sig: run('cloudSig11(__raw)'), bap: 0, old: [], seen: {}, force: 0, fly: null };
+  store[key] = JSON.stringify(o);
+  run('S = fresh()');
+  run('load()');
+  if (run('S.cl.sig') !== run('cloudSig(S)')) fail('an unchanged v11 save reads as edited');
+  o.gems += 1;
+  store[key] = JSON.stringify(o);
+  run('S = fresh()');
+  run('load()');
+  if (run('S.cl.sig') === run('cloudSig(S)')) fail('a changed v11 save reads as unchanged');
+}
+
+// the goal list never waits on a department no type builds
+{
+  run('reset()');
+  const last = run('GOALS.length - 1');
+  let claimed = 0;
+  let top = -1;
+  for (let n = 0; n < 200 && run('S.goal.length'); n++) {
+    run('finishGoals()');
+    for (const i of run('S.goal.slice()')) {
+      if (run('!reach(GOALS[' + i + '])')) fail('goal ' + i + ' is about a department nothing builds');
+      run('claimGoal(' + i + ')');
+      claimed++;
+      top = Math.max(top, i);
+    }
+  }
+  if (run('S.goal.length') || top !== last) fail('the goal list stopped at ' + top + ' of ' + last);
+  if (claimed >= run('GOALS.length')) fail('no goal was passed over');
+  // a v11 save that holds one of those goals moves on
+  const o = JSON.parse(JSON.stringify(fixture));
+  const dead = run("GOALS.findIndex(function (g) { return g.to === 'clothes'; })");
+  o.goal = [dead, dead + 1, dead + 2];
+  o.gn = dead + 3;
+  store[key] = JSON.stringify(o);
+  run('S = fresh()');
+  run('load()');
+  if (run('S.goal.some(function (i) { return !reach(GOALS[i]); })') || run('S.goal.length') !== 3) fail('a saved goal nothing can finish stayed');
+}
+
+// the department and star achievements count every store
+{
+  run('reset()');
+  run('fillStore()');
+  run('S.cash = 1e12');
+  run('move()');
+  run('fillStore()');
+  const got = run('achieve().map(function (a) { return a.id; })');
+  for (const id of ['dep2', 'dep3', 'rate1', 'rate2']) if (!got.includes(id)) fail(id + ' was not earned with two full stores');
+  if (run("lookState('neon')") === 'lock') fail('the look that needs 12 departments stayed locked');
+}
+
+// what the chain earns, not the store on screen, sizes the warp, the gifts and the HUD
+{
+  twoStores();
+  const one = run('rate()');
+  const all = run('chainRate()');
+  if (!(all > one * 1000)) fail('the chain rate ' + all + ' is not the filled store plus the new one ' + one);
+  if (!near(all, run('rate() + storeRate(0)'), 1e-9)) fail('the chain rate is not the sum of both stores');
+  run('S.run = 1e30');
+  const w = run('warp(true)');
+  if (!near(w, all * run('WARP_SECS'), 1e-9)) fail('the warp paid ' + w + ', not an hour of the chain');
+  run('S.x2 = 100');
+  if (!near(run('chainRate()'), run('rate() + storeRate(0) * 2'), 1e-9)) fail('the x2 boost is not on the stores off screen');
+  run('S.x2 = 0');
+}
+
+// the shoppers of a store off screen count while playing, and the away cap follows the best Head Office
+{
+  twoStores();
+  const before = run('S.st.srv');
+  play(30);
+  if (!(run('S.st.srv') - before > 10)) fail('the store off screen served nobody in 30 s');
+  run("S.cs[0].pl.head = 3");
+  run("S.cs[1].pl.head = 0");
+  if (run('maxAway()') !== run('MAX_AWAY') + 3 * 3600 + 3600 * run("pv('away')")) fail('the away cap depends on the store on screen');
+}
+
+// a full chain gives no reputation for a move that opens nothing; the seed money perk pays for a new store
+{
+  twoStores();
+  run('S.pk.cash = 2');
+  run('fillStore()');
+  const c = run('S.cash');
+  run('move()');
+  if (run('S.cash') - c < run("PK.cash.val[2]")) fail('the seed money perk paid nothing');
+  for (let i = 0; i < run('MAX_STORES'); i++) run('openStore(nextType())');
+  run('fillStore()');
+  const rep = run('S.rep');
+  if (run('canMove()') || run('move()') || run('S.rep') !== rep) fail('a move in a full chain paid reputation');
 }
 
 // opening stores stops at the cap

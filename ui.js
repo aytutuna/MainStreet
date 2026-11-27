@@ -1207,7 +1207,7 @@ function updateHud() {
   // dev only: unlimited money is a test option
   var cash = free ? 'Unlimited' : money(S.cash);
   set(shown, 'cash', $('cash-n'), 'textContent', cash);
-  set(shown, 'rate', $('rate'), 'textContent', shut() ? tl('hud.closed') : tl('hud.rate', { v: money(rate()) }));
+  set(shown, 'rate', $('rate'), 'textContent', shut() ? tl('hud.closed') : tl('hud.rate', { v: money(chainRate()) }));
   set(shown, 'clk', $('clk'), 'textContent', shut() ? tl('hud.closed_at', { t: stamp() }) : stamp());
   flag(shown, 'clc', $('clk'), 'shut', shut());
   set(shown, 'gems', $('gem-n'), 'textContent', short(S.gems));
@@ -1325,8 +1325,8 @@ function updateMeters() {
 
 // the figures of the Stats sheet, in the order they show
 var STATS = [
-  ['stats.income_s', function () { return tl('stats.per_sec', { v: money(rate()) }); }],
-  ['stats.income_m', function () { return tl('stats.per_min', { v: money(rate() * 60) }); }],
+  ['stats.income_s', function () { return tl('stats.per_sec', { v: money(chainRate()) }); }],
+  ['stats.income_m', function () { return tl('stats.per_min', { v: money(chainRate() * 60) }); }],
   ['stats.served_store', function () { return short(S.st.sr); }],
   ['stats.served_all', function () { return short(S.st.srv); }],
   ['stats.lost', function () { return short(S.st.lost); }],
@@ -1760,9 +1760,9 @@ function paintBoost() {
   put($('x2-need'), 'textContent', gemsLeft(X2_COST));
   put($('b-x2'), 'innerHTML', '<img src="assets/ui_gem.png" alt="">' + X2_COST);
   put($('b-x2'), 'disabled', S.gems < X2_COST);
-  var full = rate() * WARP_SECS;
+  var full = chainRate() * WARP_SECS;
   var v = Math.min(full, Math.max(S.run, 100));
-  var weak = v < rate() * 600 || v <= 0;
+  var weak = v < chainRate() * 600 || v <= 0;
   put($('warp-txt'), 'textContent', tl(v < full ? 'boost.warp.so_far' : 'boost.warp.hour', { v: money(v) }));
   put($('warp-need'), 'textContent', gemsLeft(WARP_COST) || (weak ? tl('boost.warp.weak') : ''));
   put($('b-warp'), 'innerHTML', '<img src="assets/ui_gem.png" alt="">' + WARP_COST);
@@ -1789,7 +1789,7 @@ function perkFx(id, l) {
   var v = PK[id].val[l];
   switch (id) {
     case 'open': return v[1] ? tl('perk.fx.open2', { a: BZ.produce.name, x: v[0], b: BZ.bakery.name, y: v[1] }) : tl('perk.fx.open1', { dept: BZ.produce.name, n: v[0] });
-    case 'cash': return money(START_CASH + v);
+    case 'cash': return v ? money(v) : tl('perk.fx.base');
     case 'cheap': return v ? tl('perk.fx.off', { n: Math.round(v * 100) }) : tl('perk.fx.full');
     case 'pace': return v < 1 ? tl('perk.fx.quicker', { n: Math.round((1 - v) * 100) }) : tl('perk.fx.normal');
     case 'away': return tl('common.h', { n: MAX_AWAY / 3600 + S.pl.head + v });
@@ -1858,8 +1858,8 @@ function openSell() {
   var ok = canMove();
   paintSell();
   paintPerks();
-  var keep = [['ui_gem', tl('common.gems', { n: short(S.gems) })], ['ui_star', tl('sell.keep.rep')], ['ui_goal', tl('sell.keep.goals')], ['ui_bolt', tl('sell.keep.boosts')]];
-  var lose = [['coin', tl('sell.lose.cash')], ['@open', tl('sell.lose.depts')], ['@cheap', tl('sell.lose.places')], ['ui_star', tl('sell.lose.stars')]];
+  var keep = [['coin', tl('sell.lose.cash')], ['ui_gem', tl('common.gems', { n: short(S.gems) })], ['ui_star', tl('sell.keep.rep')], ['ui_goal', tl('sell.keep.goals')], ['ui_bolt', tl('sell.keep.boosts')]];
+  var lose = [['@open', tl('sell.lose.depts')], ['@cheap', tl('sell.lose.places')], ['ui_star', tl('sell.lose.stars')]];
   var list = function (a) {
     return a.map(function (x) {
       return '<li>' + (x[0][0] === '@' ? icon(x[0].slice(1), 'mini') : '<img src="assets/' + x[0] + '.png" alt="">') + x[1] + '</li>';

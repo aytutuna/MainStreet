@@ -104,7 +104,7 @@ var S = fresh();
 
 function fresh() {
   var s = { v: SAVE_V, cash: START_CASH, gems: 0, rep: 0, pk: {}, run: 0, all: 0, pend: 0, ps: 0, x2: 0, call: 0, vt: rnd(VIP.first), b: {}, ms: {},
-    st: { srv: 0, lost: 0, sr: 0, t: 0 }, goal: [0, 1, 2], gn: 3, gd: {}, day: { n: 0, d: -1, t: 0 }, tz: { o: zone(), at: clock() }, mi: { d: -1, m: [], b: 0 }, rg: { o: {}, days: 0, gifts: 0, combo: 0 }, lk: { on: 'classic', own: {} }, ac: { o: {}, m: {} },
+    st: { srv: 0, lost: 0, sr: 0, t: 0 }, goal: [0, 1, 2], gn: 3, gd: {}, day: { n: 0, d: -1, t: 0 }, tz: { o: zone(), at: clock() }, mi: { d: -1, m: [], b: 0 }, rg: { o: {}, days: 0, gifts: 0, combo: 0 }, lk: { on: 'classic', own: {}, top: 0 }, ac: { o: {}, m: {} },
     ask: 0, clk: START_H * CLOCK / 24, iap: { noads: 0, x2: 0, starter: 0, noadsTx: '', x2Tx: '', noadsUser: '', x2User: '', noadsAt: 0, x2At: 0, wait: {}, tx: [], rf: [], paid: [] }, cl: { base: '', sig: '', bap: 0, old: [], seen: {}, force: 0, fly: null }, er: 0, ads: { d: -1, n: {}, pt: 0, ap: 0, li: 0, sd: 0 }, hold: { dev: '', at: 0 }, ts: clock() };
   noPlaces(s);
   s.b.produce = atLevel('produce', 1);
@@ -258,7 +258,9 @@ function bmul() {
 }
 
 function maxAway() {
-  return MAX_AWAY + 3600 * (S.pl.head + pv('away'));
+  var h = 0;
+  S.cs.forEach(function (r) { h = Math.max(h, r.pl.head); });
+  return MAX_AWAY + 3600 * (h + pv('away'));
 }
 
 // what the break room does to the time a till or a stocker takes
@@ -423,6 +425,11 @@ function rate() {
   return baseRate() * bmul();
 }
 
+// what the whole chain earns a second: the store on screen and the others by the model
+function chainRate() {
+  return rate() + (S.cs.length > 1 ? offBase * (S.x2 > 0 ? 2 : 1) : 0);
+}
+
 function storeCost() {
   return here().c;
 }
@@ -576,6 +583,8 @@ var outT = 0;
 var OFF_EVERY = 1;
 var offAt = 0;
 var offBase = 0;
+var offSrv = 0;
+var offFrac = 0;
 
 function clearShoppers() {
   offAt = 0;
@@ -790,6 +799,19 @@ function offRate() {
   return v;
 }
 
+// the shoppers the other stores serve a second
+function offServed() {
+  var v = 0;
+  for (var i = 0; i < S.cs.length; i++) if (i !== S.cur) v += atStore(i, function () { return served() + gardenServed(); });
+  return v;
+}
+
+function offRefresh() {
+  offAt = OFF_EVERY;
+  offBase = offRate();
+  offSrv = offServed();
+}
+
 function tick(dt) {
   dt *= speed;
   // the clock waits for the first purchase, so the opening never meets a closing
@@ -799,10 +821,15 @@ function tick(dt) {
   if (S.x2 > 0 && !off) S.x2 = Math.max(0, S.x2 - dt);
   if (S.cs.length > 1 && !off) {
     if ((offAt -= dt) <= 0) {
-      offAt = OFF_EVERY;
-      offBase = offRate();
+      offRefresh();
     }
     earn(offBase * dt * (boosted ? 2 : 1));
+    // the shoppers they serve count as they do while away
+    offFrac += offSrv * dt;
+    var whole = Math.floor(offFrac);
+    offFrac -= whole;
+    S.st.srv += whole;
+    S.st.sr += whole;
   }
   if (S.call > 0) S.call = Math.max(0, S.call - dt);
   lostT -= dt;
@@ -939,7 +966,7 @@ function takeGift() {
       r.x2 = GIFT.jx2;
       S.x2 += r.x2;
     } else {
-      r.cash = Math.max(1, rate() * rnd(GIFT.jcash));
+      r.cash = Math.max(1, chainRate() * rnd(GIFT.jcash));
       earn(r.cash);
     }
   } else if (p < GIFT.x2) {
@@ -949,7 +976,7 @@ function takeGift() {
     r.gems = Math.round(rnd(GIFT.gemN));
     S.gems += r.gems;
   } else {
-    r.cash = Math.max(1, rate() * rnd(GIFT.cash));
+    r.cash = Math.max(1, chainRate() * rnd(GIFT.cash));
     earn(r.cash);
   }
   gift = null;
@@ -1005,14 +1032,21 @@ function feats() {
   return got;
 }
 
-// what each achievement counts. A store's departments and stars start again with a move, so the best so far is kept
+// what f counts over every store of the chain
+function chainSum(f) {
+  var v = 0;
+  for (var i = 0; i < S.cs.length; i++) v += atStore(i, f);
+  return v;
+}
+
+// what each achievement counts; the best so far is kept
 var ACHM = { dep: 18, rate: 54, star: 3 };
 var ACHV = {
   srv: function () { return S.st.srv; },
   all: function () { return S.all; },
   store: function () { return nStores(); },
-  dep: function () { return opened(); },
-  rate: function () { return rating(); },
+  dep: function () { return chainSum(opened); },
+  rate: function () { return chainSum(rating); },
   star: function () { return REGV.bruno(); },
   reg: regOwned,
   rush: function () { return S.rg.combo; },
@@ -1051,8 +1085,9 @@ function achieve() {
 function lookState(id) {
   var l = LK[id];
   if (S.lk.on === id) return 'on';
-  if (l.store ? nStores() < l.store : l.ach && !S.ac.o[l.ach]) return 'lock';
-  return !l.gems || S.lk.own[id] ? 'use' : 'buy';
+  if (S.lk.own[id]) return 'use';
+  if (l.store ? Math.max(nStores(), S.lk.top) < l.store : l.ach && !S.ac.o[l.ach]) return 'lock';
+  return l.gems ? 'buy' : 'use';
 }
 
 function setLook(id) {
@@ -1083,7 +1118,7 @@ function tipReg(c) {
   if (!c.reg || c.tipped) return 0;
   c.tipped = true;
   var vip = c.reg === 'vip';
-  var v = Math.max(1, rate() * rnd(vip ? VIP.tip : REGC.tip));
+  var v = Math.max(1, chainRate() * rnd(vip ? VIP.tip : REGC.tip));
   earn(v);
   c.gems = 0;
   if (vip && Math.random() < VIP.gems) {
@@ -1299,6 +1334,17 @@ function goals() {
   });
 }
 
+// whether some store type builds the department a goal is about; the others wait until a type that has it exists
+function reach(g) {
+  return !g.to || !BZ[g.to] || TYPES.some(function (t) { return t.di[g.to] !== undefined; });
+}
+
+// the next goal to show in o, passing over the ones nothing can finish, or -1
+function nextGoal(o) {
+  while (o.gn < GOALS.length && !reach(GOALS[o.gn])) o.gn++;
+  return o.gn < GOALS.length ? o.gn++ : -1;
+}
+
 function claimGoal(i) {
   var at = S.goal.indexOf(i);
   if (at < 0) return null;
@@ -1307,7 +1353,8 @@ function claimGoal(i) {
   S.gems += g.gems;
   S.x2 += g.x2 * 60;
   delete S.gd[i];
-  if (S.gn < GOALS.length) S.goal[at] = S.gn++;
+  var n = nextGoal(S);
+  if (n >= 0) S.goal[at] = n;
   else S.goal.splice(at, 1);
   return g;
 }
@@ -1328,7 +1375,7 @@ function gate() {
 }
 
 function canMove() {
-  return rating() >= gate();
+  return nStores() < MAX_STORES && rating() >= gate();
 }
 
 // reputation a move pays: a point for each star and each open department, and one for each digit earned in the store
@@ -1377,6 +1424,7 @@ function view(i) {
   S.pi = r.pi;
   S.ms = r.ms;
   clearShoppers();
+  offRefresh();
   repick();
 }
 
@@ -1404,6 +1452,7 @@ function move() {
   if (!canMove()) return false;
   claimAway();
   S.rep += repGain();
+  S.cash += pv('cash');
   return openStore(nextType());
 }
 
@@ -1600,7 +1649,7 @@ function buyX2() {
 function warp(free) {
   if (!free && S.gems < WARP_COST) return 0;
   if (!free) S.gems -= WARP_COST;
-  var v = Math.min(rate() * WARP_SECS, Math.max(S.run, 100));
+  var v = Math.min(chainRate() * WARP_SECS, Math.max(S.run, 100));
   earn(v);
   return v;
 }
@@ -1770,12 +1819,16 @@ function validate(o) {
   }
   var seen = {};
   s.goal = (Array.isArray(o.goal) ? o.goal : []).filter(function (i) {
-    var ok = i >= 0 && i < gn && !seen[i];
+    var ok = i >= 0 && i < gn && !seen[i] && reach(GOALS[i]);
     seen[i] = 1;
     return ok;
   }).slice(0, 3);
   s.gn = gn;
-  while (s.goal.length < 3 && s.gn < GOALS.length) s.goal.push(s.gn++);
+  while (s.goal.length < 3) {
+    var gi = nextGoal(s);
+    if (gi < 0) break;
+    s.goal.push(gi);
+  }
   if (o.gd) for (var k in o.gd) if (s.goal.indexOf(+k) >= 0) s.gd[k] = 1;
   if (o.day && isFinite(o.day.n) && isFinite(o.day.d)) s.day = { n: Math.floor(o.day.n), d: Math.floor(o.day.d), t: num(o.day.t, 0) };
   if (o.tz && isFinite(o.tz.o) && isFinite(o.tz.at)) s.tz = { o: Math.floor(o.tz.o), at: o.tz.at };
@@ -1790,7 +1843,10 @@ function validate(o) {
   if (o.lk && typeof o.lk === 'object') {
     LOOKS.forEach(function (l) { if (o.lk.own && o.lk.own[l.id]) s.lk.own[l.id] = 1; });
     if (typeof o.lk.on === 'string' && LK.hasOwnProperty(o.lk.on)) s.lk.on = o.lk.on;
+    s.lk.top = Math.min(MAX_STORES, Math.max(0, Math.floor(num(o.lk.top, 0))));
   }
+  // the store number a save from before the chain had reached still unlocks the looks that asked for it
+  if (!list) s.lk.top = Math.max(s.lk.top, Math.min(MAX_STORES, n));
   if (o.ac && typeof o.ac === 'object') {
     ACHS.forEach(function (a) { if (o.ac.o && o.ac.o[a.id]) s.ac.o[a.id] = 1; });
     for (var m in ACHM) s.ac.m[m] = Math.min(ACHM[m], Math.floor(num(o.ac.m && o.ac.m[m], 0)));
@@ -1808,6 +1864,12 @@ function validate(o) {
       return r;
     });
     if (ms.indexOf(null) < 0) s.mi = { d: Math.floor(mi.d), m: ms, b: mi.b ? 1 : 0 };
+  }
+  // a v11 game nobody has changed since its last sync keeps counting as unchanged under the new signature
+  if (o.v < 12 && s.cl.sig) {
+    try {
+      if (cloudSig11(o) === s.cl.sig) s.cl.sig = cloudSig(s);
+    } catch (e) {}
   }
   return s;
 }
@@ -1844,6 +1906,7 @@ function load() {
     if (!o && !mall) S = fresh();
     if (o) {
       S = o;
+      offRefresh();
       var edited = cloudSig(o) !== o.cl.sig;
       var sec = (clock() - o.ts) / 1000;
       if (sec > 60) back = away(sec);
@@ -1908,6 +1971,13 @@ function cloudSig(o) {
   var rg = o.rg && [o.rg.o, o.rg.days, o.rg.gifts, o.rg.combo];
   var mi = o.mi && [o.mi.b, o.mi.m.map(function (m) { return m.c; })];
   return JSON.stringify([o.gems, o.rep, o.cur, o.cs && o.cs.map(function (r) { return [r.t, r.m, r.c, r.b, r.pl, r.pi, r.ms]; }), o.goal, o.gn, o.gd, o.lk, o.ac, o.pk, o.iap, o.ads && o.ads.n, rg, mi, o.day && o.day.n]);
+}
+
+// what build 33 hashed for a save from before the chain, so an unchanged one is not taken for an edited one
+function cloudSig11(o) {
+  var rg = o.rg && [o.rg.o, o.rg.days, o.rg.gifts, o.rg.combo];
+  var mi = o.mi && [o.mi.b, o.mi.m.map(function (m) { return m.c; })];
+  return JSON.stringify([o.gems, o.rep, o.store, o.b, o.pl, o.pi, o.ms, o.goal, o.gn, o.gd, o.lk, o.ac, o.pk, o.iap, o.ads && o.ads.n, rg, mi, o.day && o.day.n]);
 }
 
 // a deal that is still open and that the other side's ledger does not show as used up (by that very tap, not by another
@@ -2130,7 +2200,7 @@ function reset() {
 }
 
 function testIncome(hours) {
-  earn(rate() * 3600 * hours);
+  earn(chainRate() * 3600 * hours);
 }
 
 // every department and place of the store on screen at its last level
