@@ -36,6 +36,7 @@ LANG['pl'] = {
   'shop.restore': 'Przywróć zakupy',
   'pack.title': 'Pakiet startowy',
   'common.not_now': 'Nie teraz',
+  'buy.broke': 'Za mało gotówki',
   'pack.limit': 'Dostępne tylko przez pierwsze {n} godz.',
   'sell.look': 'Wygląd sklepu',
   'sell.perks': 'Atuty',

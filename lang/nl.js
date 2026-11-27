@@ -36,6 +36,7 @@ LANG['nl'] = {
   'shop.restore': 'Aankopen herstellen',
   'pack.title': 'Startpakket',
   'common.not_now': 'Nu niet',
+  'buy.broke': 'Niet genoeg geld',
   'pack.limit': 'Alleen beschikbaar in de eerste {n} uur.',
   'sell.look': 'Winkelstijl',
   'sell.perks': 'Voordelen',

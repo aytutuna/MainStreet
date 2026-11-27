@@ -36,6 +36,7 @@ LANG['zh-Hans'] = {
   'shop.restore': '恢复购买',
   'pack.title': '新手礼包',
   'common.not_now': '以后再说',
+  'buy.broke': '现金不足',
   'pack.limit': '仅在前 {n} 小时内提供。',
   'sell.look': '店面风格',
   'sell.perks': '特权',

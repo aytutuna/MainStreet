@@ -36,6 +36,7 @@ LANG['ur'] = {
   'shop.restore': 'خریداریاں بحال کریں',
   'pack.title': 'اسٹارٹر پیک',
   'common.not_now': 'ابھی نہیں',
+  'buy.broke': 'کافی نقدی نہیں ہے',
   'pack.limit': 'صرف پہلے {n} گھنٹوں کے لیے دستیاب۔',
   'sell.look': 'اسٹور کا انداز',
   'sell.perks': 'فائدے',

@@ -36,6 +36,7 @@ LANG['cs'] = {
   'shop.restore': 'Obnovit nákupy',
   'pack.title': 'Startovní balíček',
   'common.not_now': 'Teď ne',
+  'buy.broke': 'Nedostatek hotovosti',
   'pack.limit': 'Nabízeno jen prvních {n} hodin.',
   'sell.look': 'Vzhled obchodu',
   'sell.perks': 'Výhody',

@@ -36,6 +36,7 @@ LANG['sv'] = {
   'shop.restore': 'Återställ köp',
   'pack.title': 'Startpaket',
   'common.not_now': 'Inte nu',
+  'buy.broke': 'Inte tillräckligt med pengar',
   'pack.limit': 'Bara tillgängligt de första {n} timmarna.',
   'sell.look': 'Butiksstil',
   'sell.perks': 'Förmåner',

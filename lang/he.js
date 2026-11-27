@@ -36,6 +36,7 @@ LANG['he'] = {
   'shop.restore': 'שחזור רכישות',
   'pack.title': 'חבילת פתיחה',
   'common.not_now': 'לא עכשיו',
+  'buy.broke': 'אין מספיק מזומן',
   'pack.limit': 'זמין רק ב-{n} השעות הראשונות.',
   'sell.look': 'עיצוב החנות',
   'sell.perks': 'יתרונות',

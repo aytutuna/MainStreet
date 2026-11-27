@@ -36,6 +36,7 @@ LANG['pa'] = {
   'shop.restore': 'ਖਰੀਦਾਂ ਬਹਾਲ ਕਰੋ',
   'pack.title': 'ਸ਼ੁਰੂਆਤੀ ਪੈਕ',
   'common.not_now': 'ਹੁਣੇ ਨਹੀਂ',
+  'buy.broke': 'ਲੋੜੀਂਦੀ ਨਕਦੀ ਨਹੀਂ ਹੈ',
   'pack.limit': 'ਸਿਰਫ਼ ਪਹਿਲੇ {n} ਘੰਟਿਆਂ ਲਈ ਉਪਲਬਧ।',
   'sell.look': 'ਸਟੋਰ ਦਾ ਰੂਪ',
   'sell.perks': 'ਲਾਭ',

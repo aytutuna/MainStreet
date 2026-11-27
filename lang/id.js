@@ -36,6 +36,7 @@ LANG['id'] = {
   'shop.restore': 'Pulihkan pembelian',
   'pack.title': 'Paket pemula',
   'common.not_now': 'Nanti saja',
+  'buy.broke': 'Uang tunai tidak cukup',
   'pack.limit': 'Hanya tersedia selama {n} jam pertama.',
   'sell.look': 'Tampilan toko',
   'sell.perks': 'Bonus',

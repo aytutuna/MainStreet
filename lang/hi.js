@@ -36,6 +36,7 @@ LANG['hi'] = {
   'shop.restore': 'खरीदारी वापस पाएँ',
   'pack.title': 'स्टार्टर पैक',
   'common.not_now': 'अभी नहीं',
+  'buy.broke': 'पर्याप्त नकदी नहीं है',
   'pack.limit': 'केवल पहले {n} घंटे के लिए उपलब्ध।',
   'sell.look': 'स्टोर लुक',
   'sell.perks': 'पर्क',

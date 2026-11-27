@@ -36,6 +36,7 @@ LANG['or'] = {
   'shop.restore': 'କିଣା ଫେରାଅ',
   'pack.title': 'ଆରମ୍ଭ ପ୍ୟାକ୍',
   'common.not_now': 'ଏବେ ନୁହେଁ',
+  'buy.broke': 'ଯଥେଷ୍ଟ ନଗଦ ନାହିଁ',
   'pack.limit': 'କେବଳ ପ୍ରଥମ {n} ଘଣ୍ଟା ପାଇଁ ଉପଲବ୍ଧ।',
   'sell.look': 'ଦୋକାନ ରୂପ',
   'sell.perks': 'ସୁବିଧା',

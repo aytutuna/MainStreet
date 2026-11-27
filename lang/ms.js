@@ -36,6 +36,7 @@ LANG['ms'] = {
   'shop.restore': 'Pulihkan pembelian',
   'pack.title': 'Pek permulaan',
   'common.not_now': 'Bukan sekarang',
+  'buy.broke': 'Wang tunai tidak mencukupi',
   'pack.limit': 'Hanya ditawarkan untuk {n} jam pertama.',
   'sell.look': 'Rupa kedai',
   'sell.perks': 'Faedah',

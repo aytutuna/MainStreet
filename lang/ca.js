@@ -36,6 +36,7 @@ LANG['ca'] = {
   'shop.restore': 'Restaura les compres',
   'pack.title': 'Paquet d’inici',
   'common.not_now': 'Ara no',
+  'buy.broke': 'No hi ha prou diners',
   'pack.limit': 'Només disponible durant les primeres {n} hores.',
   'sell.look': 'Aspecte',
   'sell.perks': 'Avantatges',

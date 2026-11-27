@@ -36,6 +36,7 @@ LANG['zh-Hant'] = {
   'shop.restore': '恢復購買',
   'pack.title': '新手禮包',
   'common.not_now': '先不要',
+  'buy.broke': '現金不足',
   'pack.limit': '僅在前 {n} 小時內提供。',
   'sell.look': '店面風格',
   'sell.perks': '特權',

@@ -82,6 +82,7 @@ LANG['en'] = {
   'pack.title': 'Starter pack',
   // Button that dismisses an offer without buying.
   'common.not_now': 'Not now',
+  'buy.broke': 'Not enough cash',
   // Small note under the starter offer. {n} is the number of hours it lasts.
   'pack.limit': 'Only offered for the first {n} hours.',
   // Button that opens the choice of how the store looks (colours, signs). Max about 14 characters.

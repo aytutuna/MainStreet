@@ -36,6 +36,7 @@ LANG['ar'] = {
   "shop.restore": "استعادة المشتريات",
   "pack.title": "حزمة البداية",
   "common.not_now": "ليس الآن",
+  "buy.broke": "لا يوجد نقد كافٍ",
   "pack.limit": "متاح فقط خلال أول {n} ساعات.",
   "sell.look": "شكل الفرع",
   "sell.perks": "الميزات",

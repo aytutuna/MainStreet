@@ -36,6 +36,7 @@ LANG['vi'] = {
   'shop.restore': 'Khôi phục giao dịch mua',
   'pack.title': 'Gói khởi đầu',
   'common.not_now': 'Chưa cần',
+  'buy.broke': 'Không đủ tiền mặt',
   'pack.limit': 'Chỉ có trong {n} giờ đầu tiên.',
   'sell.look': 'Diện mạo',
   'sell.perks': 'Đặc quyền',

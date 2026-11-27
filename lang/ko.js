@@ -36,6 +36,7 @@ LANG['ko'] = {
   'shop.restore': '구매 복원',
   'pack.title': '스타터 팩',
   'common.not_now': '나중에',
+  'buy.broke': '현금이 부족합니다',
   'pack.limit': '처음 {n}시간 동안만 제공됩니다.',
   'sell.look': '매장 스타일',
   'sell.perks': '특전',

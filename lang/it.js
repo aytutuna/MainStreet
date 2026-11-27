@@ -36,6 +36,7 @@ LANG['it'] = {
   'shop.restore': 'Ripristina acquisti',
   'pack.title': 'Pacchetto iniziale',
   'common.not_now': 'Non ora',
+  'buy.broke': 'Contanti insufficienti',
   'pack.limit': 'Disponibile solo per le prime {n} ore.',
   'sell.look': 'Aspetto',
   'sell.perks': 'Vantaggi',

@@ -36,6 +36,7 @@ LANG['ru'] = {
   'shop.restore': 'Восстановить покупки',
   'pack.title': 'Стартовый набор',
   'common.not_now': 'Не сейчас',
+  'buy.broke': 'Не хватает денег',
   'pack.limit': 'Доступно только первые {n} ч.',
   'sell.look': 'Вид магазина',
   'sell.perks': 'Бонусы',

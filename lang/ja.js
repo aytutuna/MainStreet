@@ -36,6 +36,7 @@ LANG['ja'] = {
   'shop.restore': '購入を復元',
   'pack.title': 'スターターパック',
   'common.not_now': '今はいい',
+  'buy.broke': '現金が足りません',
   'pack.limit': '最初の{n}時間だけご利用いただけます。',
   'sell.look': '店のデザイン',
   'sell.perks': '特典',

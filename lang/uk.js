@@ -36,6 +36,7 @@ LANG['uk'] = {
   'shop.restore': 'Відновити покупки',
   'pack.title': 'Стартовий набір',
   'common.not_now': 'Не зараз',
+  'buy.broke': 'Не вистачає грошей',
   'pack.limit': 'Доступно лише перші {n} год.',
   'sell.look': 'Стиль магазину',
   'sell.perks': 'Перки',

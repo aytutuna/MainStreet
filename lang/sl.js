@@ -36,6 +36,7 @@ LANG['sl'] = {
   'shop.restore': 'Obnovi nakupe',
   'pack.title': 'Začetni paket',
   'common.not_now': 'Ne zdaj',
+  'buy.broke': 'Premalo denarja',
   'pack.limit': 'Na voljo samo prvih {n} ur.',
   'sell.look': 'Videz trgovine',
   'sell.perks': 'Ugodnosti',

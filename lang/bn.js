@@ -36,6 +36,7 @@ LANG['bn'] = {
   'shop.restore': 'কেনা ফিরিয়ে আনুন',
   'pack.title': 'স্টার্টার প্যাক',
   'common.not_now': 'এখন না',
+  'buy.broke': 'যথেষ্ট নগদ টাকা নেই',
   'pack.limit': 'শুধু প্রথম {n} ঘণ্টার জন্য পাওয়া যাবে।',
   'sell.look': 'স্টোরের সাজ',
   'sell.perks': 'সুবিধা',
