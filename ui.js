@@ -526,7 +526,7 @@ function fitWire() {
   window.addEventListener('resize', all);
   if (document.fonts) {
     document.fonts.ready.then(all);
-    // a face that arrives late (the extended Latin Lilita, a system fallback) changes every width again
+    // a face that arrives late (a system fallback) changes every width again
     document.fonts.addEventListener('loadingdone', all);
   }
   ask(document);
