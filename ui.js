@@ -1034,6 +1034,7 @@ function showCard(id) {
   cardRow = room(id) ? makeRoom(id) : makeRow(id);
   $('card-row').appendChild(cardRow.el);
   upRow(cardRow);
+  $('card').setAttribute('aria-label', (cardRow.el.querySelector('b') || {}).textContent || '');
   $('card').hidden = false;
   $('app').classList.add('card-open');
   fitInsets();
@@ -1106,6 +1107,7 @@ function upgrade(id, j) {
   // only a button that is short of cash can be tapped and still not buy
   if (!res) {
     sfx('broke');
+    say(tl('buy.broke'));
     bumpEl('cash-n');
     buzz('light');
     return;
@@ -1898,6 +1900,7 @@ function paintSell() {
 
 function openSell() {
   var ok = canMove();
+  $('sell').querySelector('.box').setAttribute('aria-label', tl('tab.new_store'));
   paintSell();
   paintPerks();
   var keep = [['ui_gem', tl('common.gems', { n: short(S.gems) })], ['ui_star', tl('sell.keep.rep')], ['ui_goal', tl('sell.keep.goals')], ['ui_bolt', tl('sell.keep.boosts')]];
@@ -2637,7 +2640,6 @@ function wireDialogs() {
       behind.forEach(function (e) { e.inert = veilUp(); });
       if (open) {
         from = document.activeElement;
-        if (box.id === 'card') box.setAttribute('aria-label', (box.querySelector('b') || {}).textContent || '');
         box.tabIndex = -1;
         box.focus({ preventScroll: true });
       } else if (from && from !== document.body && document.contains(from) && !from.closest('[hidden]')) {
@@ -2648,7 +2650,7 @@ function wireDialogs() {
   [].forEach.call(document.querySelectorAll('.veil'), function (v) {
     var box = v.querySelector('.box');
     box.setAttribute('aria-modal', 'true');
-    dialog(v, box, box.querySelector('h2, p'));
+    dialog(v, box, v.id === 'sell' ? null : box.querySelector('h2, p'));
     nameBtns(v);
   });
   dialog($('sheet'), $('sheet'), $('sheet-head').querySelector('b'));

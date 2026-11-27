@@ -956,6 +956,7 @@ a.btn {
 .btn,
 .btns button,
 #stars,
+#gems,
 #gear,
 #gdots {
   position: relative;
@@ -964,6 +965,7 @@ a.btn {
 .btn::before,
 .btns button::before,
 #stars::before,
+#gems::before,
 #warn::before,
 #gear::before,
 #gdots::before {
@@ -1555,8 +1557,11 @@ a.btn {
 /* on a long panel the closing button stays in view while the rest scrolls */
 .box > .btn:last-child {
   position: sticky;
-  bottom: 6px;
+  bottom: -14px;
   z-index: 1;
+  /* paper around it, so rows scrolling past do not show beside it */
+  outline: 12px solid var(--paper);
+  outline-offset: 4px;
 }
 
 .box.wide {
@@ -1922,6 +1927,16 @@ a.btn {
   inset: 0;
   pointer-events: none;
   overflow: hidden;
+}
+
+.tag::before {
+  content: "";
+  position: absolute;
+  inset: -12px -4px;
+}
+
+.tag.dot::before {
+  inset: -17px;
 }
 
 .tag {
