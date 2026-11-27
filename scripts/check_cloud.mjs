@@ -1210,6 +1210,7 @@ for (const flag of [false, true]) {
   a.lag = true;
   now = T12;
   b.change(40, 80000);
+  b.run('openStore(nextType())');
   if (flag) b.run('S.iap.noads = 1; S.iap.noadsTx = "TN"; S.iap.noadsUser = "u"; S.iap.noadsAt = ' + T12);
   else b.run('grant("gems2", "TB")');
   b.put();
@@ -1217,7 +1218,7 @@ for (const flag of [false, true]) {
   a.run('reset()');
   a.run('cloudPut(true)');
   const erased = a.gems();
-  const game = 'JSON.stringify([S.b, S.pl, S.store, S.gn, S.ms])';
+  const game = 'JSON.stringify([S.cur, S.cs.map(function (r) { return [r.t, r.m, r.c, r.b, r.pl, r.pi, r.ms]; }), S.gn])';
   const before = a.run(game);
   a.catchUp();
   elapse(CLOUD_EVERY * 2, a);
@@ -1519,7 +1520,7 @@ function installVis(d) {
 {
   const { cloud, a, b } = claimPair(true);
   a.launch();
-  a.run('S.store = 3; S.rep = 77; S.ads.ap += 50000; save()');
+  a.run('openStore(nextType()); S.rep = 77; S.ads.ap += 50000; save()');
   a.run('grant("gems2", "TA")');
   elapse(CLOUD_EVERY + 1000, a, b);
   a.put();
@@ -1531,14 +1532,14 @@ function installVis(d) {
   elapse(11000, a, b);
   a.pump();
   expect(a.run('cloudOff'), 'iPhone: the first device did not stop under the fresh game');
-  expect(a.run('S.store') === 3 && a.run('S.rep') === 77 && a.run('S.ads.ap') > 50000, 'iPhone: the fresh copy replaced the game of the device that was taken over');
+  expect(a.run('S.cs.length') === 2 && a.run('S.rep') === 77 && a.run('S.ads.ap') > 50000, 'iPhone: the fresh copy replaced the game of the device that was taken over');
   b.lagged = Object.keys(cloud.keys).filter(k => k !== b.id()).map(k => cloud.keys[k]);
   b.catchUp();
   elapse(5000, a, b);
   now += 60000;
   a.run('cloudHere()');
   elapse(10000, a, b);
-  expect(a.run('S.store') === 3 && a.run('S.rep') === 77 && a.gems() >= 600, 'iPhone: Play here did not bring the first device\'s own game back (store ' + a.run('S.store') + ', rep ' + a.run('S.rep') + ')');
+  expect(a.run('S.cs.length') === 2 && a.run('S.rep') === 77 && a.gems() >= 600, 'iPhone: Play here did not bring the first device\'s own game back (stores ' + a.run('S.cs.length') + ', rep ' + a.run('S.rep') + ')');
 }
 
 // the bonus of a deal is paid inside the credit, so every copy of the purchase carries it
