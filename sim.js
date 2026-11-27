@@ -107,7 +107,7 @@ PLACES.forEach(function (p) {
 var S = fresh();
 
 function fresh() {
-  var s = { v: SAVE_V, cash: START_CASH, gems: 0, rep: 0, pk: {}, run: 0, all: 0, pend: 0, ps: 0, x2: 0, call: 0, vt: rnd(VIP.first), b: {}, ms: {},
+  var s = { v: SAVE_V, cash: START_CASH, gems: 0, rep: 0, pk: {}, run: 0, all: 0, pend: 0, pr: 0, ps: 0, x2: 0, call: 0, vt: rnd(VIP.first), b: {}, ms: {},
     st: { srv: 0, lost: 0, sr: 0, t: 0 }, goal: [0, 1, 2], gn: 3, gd: {}, day: { n: 0, d: -1, t: 0 }, tz: { o: zone(), at: clock() }, mi: { d: -1, m: [], b: 0 }, rg: { o: {}, days: 0, gifts: 0, combo: 0 }, lk: { on: 'classic', own: {}, top: 0 }, ac: { o: {}, m: {} },
     ask: 0, clk: START_H * CLOCK / 24, iap: { noads: 0, x2: 0, starter: 0, noadsTx: '', x2Tx: '', noadsUser: '', x2User: '', noadsAt: 0, x2At: 0, wait: {}, tx: [], rf: [], paid: [] }, cl: { base: '', sig: '', bap: 0, old: [], seen: {}, force: 0, fly: null }, er: 0, ads: { d: -1, n: {}, pt: 0, ap: 0, li: 0, sd: 0 }, hold: { dev: '', at: 0 }, ts: clock() };
   noPlaces(s);
@@ -489,6 +489,13 @@ function topUp() {
   if (FREE === null) return;
   if (S.cash < TOP / 10) FREE = S.cash;
   S.cash = TOP;
+}
+
+// money from the whole chain: the run counts only the share of the store on screen
+function earnChain(v) {
+  var c = chainRate();
+  earn(v, true);
+  S.run += c > 0 ? v * rate() / c : v;
 }
 
 // off: what a store off screen earned, which is not this store's run
@@ -990,7 +997,7 @@ function takeGift() {
       S.x2 += r.x2;
     } else {
       r.cash = Math.max(1, chainRate() * rnd(GIFT.jcash));
-      earn(r.cash);
+      earnChain(r.cash);
     }
   } else if (p < GIFT.x2) {
     r.x2 = GIFT.x2Secs;
@@ -1000,7 +1007,7 @@ function takeGift() {
     S.gems += r.gems;
   } else {
     r.cash = Math.max(1, chainRate() * rnd(GIFT.cash));
-    earn(r.cash);
+    earnChain(r.cash);
   }
   gift = null;
   giftT = rnd(GIFT.gap);
@@ -1142,7 +1149,7 @@ function tipReg(c) {
   c.tipped = true;
   var vip = c.reg === 'vip';
   var v = Math.max(1, chainRate() * rnd(vip ? VIP.tip : REGC.tip));
-  earn(v);
+  earnChain(v);
   c.gems = 0;
   if (vip && Math.random() < VIP.gems) {
     c.gems = Math.round(rnd(VIP.gemN));
@@ -1161,12 +1168,18 @@ function away(sec) {
   var gain = 0;
   var n = 0;
   var here = 0;
+  var gainHere = 0;
+  var cur = S.cur;
   S.cs.forEach(function (r, i) {
     atStore(i, function () {
-      gain += baseRate() * (s * up + xs) * (S.iap.x2 ? 2 : 1) * (1 + HEAD * S.pl.head);
+      var g = baseRate() * (s * up + xs) * (S.iap.x2 ? 2 : 1) * (1 + HEAD * S.pl.head);
       var k = Math.floor((served() + gardenServed()) * s * up);
+      gain += g;
       n += k;
-      if (i === S.cur) here = k;
+      if (i === cur) {
+        here = k;
+        gainHere = g;
+      }
     });
   });
   if (started()) S.clk = (S.clk + sec) % CLOCK;
@@ -1175,6 +1188,7 @@ function away(sec) {
   S.call = Math.max(0, S.call - s);
   perkOff();
   S.pend += gain;
+  S.pr += gainHere;
   S.ps += s;
   S.st.srv += n;
   S.st.sr += here;
@@ -1215,9 +1229,12 @@ function claimAway(dbl, free) {
     if (!free) S.gems -= c;
     v *= 2;
   }
+  var share = S.pend > 0 ? Math.min(1, S.pr / S.pend) : 1;
   S.pend = 0;
+  S.pr = 0;
   S.ps = 0;
-  earn(v);
+  earn(v, true);
+  S.run += v * share;
   return v;
 }
 
@@ -1519,7 +1536,7 @@ function claimDaily() {
   var r = dailyReward(info.idx);
   S.gems += r.gems;
   S.x2 += r.x2 * 60;
-  if (r.cash) earn(r.cash);
+  if (r.cash) earnChain(r.cash);
   S.day = { n: info.idx + 1, d: dayNum(clock()), t: clock() };
   S.rg.days++;
   r.idx = info.idx;
@@ -1676,8 +1693,8 @@ function buyX2() {
 function warp(free) {
   if (!free && S.gems < WARP_COST) return 0;
   if (!free) S.gems -= WARP_COST;
-  var v = Math.min(chainRate() * WARP_SECS, Math.max(S.run, 100));
-  earn(v);
+  var v = chainRate() * WARP_SECS;
+  earnChain(v);
   return v;
 }
 
@@ -1780,6 +1797,8 @@ function validate(o) {
   s.run = num(o.run, 0);
   s.all = Math.max(s.run, num(o.all, 0));
   s.pend = num(o.pend, 0);
+  // the share of it the store on screen made; a save from before the chain had one store
+  s.pr = o.v >= 12 ? Math.min(s.pend, num(o.pr, 0)) : s.pend;
   s.ps = num(o.ps, 0);
   s.x2 = num(o.x2, 0);
   s.call = Math.min(CALL.cool, num(o.call, 0));
@@ -2250,7 +2269,7 @@ function reset() {
 }
 
 function testIncome(hours) {
-  earn(chainRate() * 3600 * hours);
+  earnChain(chainRate() * 3600 * hours);
 }
 
 // every department and place of the store on screen at its last level

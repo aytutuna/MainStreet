@@ -992,13 +992,12 @@ function adGive(k, from) {
 }
 
 function paintAds() {
-  var weak = Math.min(chainRate() * WARP_SECS, Math.max(S.run, 100)) < chainRate() * 600;
   var rows = [['x2', 'ui_bolt', tl('ads.x2'), tl('ads.x2_note')], ['warp', 'ui_warp', tl('ads.warp'), tl('ads.warp_note')],
     ['gems', 'ui_gem', tl('ads.gems'), tl('shop.gems', { n: AD_GEMS })], ['rush', 'ui_bolt', tl('ads.rush'), tl('ads.rush_note')]];
   var html = '<p class="small">' + tl('ads.intro') + '</p>';
   rows.forEach(function (r) {
     var left = adLeft(r[0]);
-    var off = !canWatch(r[0]) || (r[0] === 'warp' && weak) || (r[0] === 'rush' && (rush || shut() || S.call <= 0));
+    var off = !canWatch(r[0]) || (r[0] === 'rush' && (rush || shut() || S.call <= 0));
     html += '<div class="offer"><img src="assets/' + r[1] + '.png" alt=""><div><b>' + r[2] + '</b><span>' + r[3] + ' · ' +
       (left > 0 ? tl('ads.left', { n: left }) : tl('ads.tomorrow')) + '</span></div><button type="button" class="btn" data-a="' + r[0] + '"' +
       (off ? ' disabled' : '') + '>' + adLabel() + '</button></div>';

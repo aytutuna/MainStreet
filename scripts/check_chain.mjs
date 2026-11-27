@@ -415,6 +415,37 @@ if (run('saved().length') > 300000) fail('thirty full stores make a save of ' + 
   if (run('S.cl.fly.sig') !== run('cloudSig(S)')) fail('the in-flight put kept the old signature');
 }
 
+// the warp is there right after a store opens and pays an hour of the chain, counting only this store's share in its run
+{
+  twoStores();
+  run('S.gems = 100');
+  run('S.run = 0');
+  const hour = run('chainRate() * WARP_SECS');
+  const got = run('warp()');
+  if (!near(got, hour, 1e-9) || run('S.gems') !== 50) fail('the warp paid ' + got + ' for ' + hour + ' right after a store opened');
+  if (!(run('S.run') < got / 100)) fail('the warp put the whole chain into the run of one store');
+}
+
+// time away: the run and "served this store" take the share of the store on screen, whichever one it is
+{
+  twoStores();
+  run('S.run = 0');
+  run('S.st.sr = 0');
+  run('S.pend = 0; S.pr = 0');
+  const a = run('away(7200)');
+  const c = run('claimAway()');
+  if (!(c > 0) || !(run('S.run') < c / 100)) fail('an away claim put the chain into the run of one store (' + run('S.run') + ' of ' + c + ')');
+  run('view(0)');
+  run('S.run = 0');
+  run('S.st.sr = 0');
+  run('S.pend = 0; S.pr = 0');
+  const b = run('away(7200)');
+  const here = run('atStore(0, function () { return Math.floor((served() + gardenServed()) * 7200 * openShare()); })');
+  if (run('S.st.sr') !== here || !(here > b.n * 0.5)) fail('served this store after away on store 1 is ' + run('S.st.sr') + ', not ' + here);
+  const c2 = run('claimAway()');
+  if (!near(run('S.run'), c2, 0.01)) fail('the away pay of the store on screen did not reach its run');
+}
+
 // opening stores stops at the cap
 run('reset()');
 run('fillStore()');

@@ -369,9 +369,7 @@ LANG['en'] = {
   'boost.x2.active': 'Active: {t} left. Buying adds 30 min.',
   'boost.x2.idle': 'All income x2 for 30 minutes.',
   // {v} is money.
-  'boost.warp.so_far': 'Get {v} now, as much as this store has earned so far.',
   'boost.warp.hour': 'Get {v} now, an hour of income.',
-  'boost.warp.weak': 'Worth less than 10 minutes of income. Better later.',
   'boost.call.ready_in': 'Ready in {t}, or call one now.',
   // A rush is a burst of shoppers. {n} is minutes to wait before the next free one.
   'boost.call.brings': 'Brings a rush now. Then {n} min to wait.',

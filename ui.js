@@ -1760,13 +1760,10 @@ function paintBoost() {
   put($('x2-need'), 'textContent', gemsLeft(X2_COST));
   put($('b-x2'), 'innerHTML', '<img src="assets/ui_gem.png" alt="">' + X2_COST);
   put($('b-x2'), 'disabled', S.gems < X2_COST);
-  var full = chainRate() * WARP_SECS;
-  var v = Math.min(full, Math.max(S.run, 100));
-  var weak = v < chainRate() * 600 || v <= 0;
-  put($('warp-txt'), 'textContent', tl(v < full ? 'boost.warp.so_far' : 'boost.warp.hour', { v: money(v) }));
-  put($('warp-need'), 'textContent', gemsLeft(WARP_COST) || (weak ? tl('boost.warp.weak') : ''));
+  put($('warp-txt'), 'textContent', tl('boost.warp.hour', { v: money(chainRate() * WARP_SECS) }));
+  put($('warp-need'), 'textContent', gemsLeft(WARP_COST));
   put($('b-warp'), 'innerHTML', '<img src="assets/ui_gem.png" alt="">' + WARP_COST);
-  put($('b-warp'), 'disabled', S.gems < WARP_COST || weak);
+  put($('b-warp'), 'disabled', S.gems < WARP_COST);
   put($('call-txt'), 'textContent', S.call > 0 ? tl('boost.call.ready_in', { t: clock2(S.call) }) : tl('boost.call.brings', { n: CALL.cool / 60 }));
   put($('call-need'), 'textContent', rush ? tl('boost.call.rush_on') : shut() ? tl('boost.call.closed') : S.call > 0 ? gemsLeft(CALL.gems) : '');
   put($('b-call'), 'innerHTML', S.call > 0 ? '<img src="assets/ui_gem.png" alt="">' + CALL.gems : tl('boost.call.btn'));
