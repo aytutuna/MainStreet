@@ -276,11 +276,13 @@ var GROUND = /^flora\/(flower|fern|sn-stone)/;
 // pw/Gondola_Island_10.goods is the goods of Gondola_Island_10_Stocked; pw/ProduceTable_15.goods-Apples those of ProduceTable_15_Apples
 var GOODS = /^goods(-(\w+))?$/;
 
-function loadModels(list, progress, done) {
+// prev is an earlier load whose models and materials this one adds to
+function loadModels(list, progress, done, prev) {
   var loader = new GLTFLoader();
   loader.register(textureFix);
-  var mats = {};
-  var models = {};
+  var mats = prev ? prev.mats : {};
+  var models = prev ? prev.models : {};
+  progress = progress || function () {};
   var files = {};
   list.forEach(function (ref) {
     var f = parseRef(ref).file;
@@ -518,11 +520,13 @@ function loadModels(list, progress, done) {
       one();
     });
   });
-  return { model: function (ref) { return models[SWAP[ref] || ref] || missing; } };
+  if (!names.length) setTimeout(done, 0);
+  return { mats: mats, models: models, model: function (ref) { return models[SWAP[ref] || ref] || missing; } };
 }
 
 // every model the store can show, gathered from the tables
-function modelList() {
+// every model the store can show: the shared tables and the plan of one store type
+function modelList(key) {
   var seen = {};
   function walk(v) {
     if (typeof v === 'string') {
@@ -531,14 +535,15 @@ function modelList() {
     else if (v && typeof v === 'object') Object.keys(v).forEach(function (k) { walk(v[k]); });
   }
   Object.keys(KIND).forEach(function (k) { seen[KIND[k].ref] = 1; });
-  Object.keys(PLANS).forEach(function (k) {
-    var p = PLANS[k];
-    walk(p.areas);
-    walk(p.front);
-    walk(p.decor);
-    walk(p.wing);
-    walk(p.models);
-  });
+  // the outside and the stockroom are the supercenter's tables whatever the type
+  walk(SUPER.decor.out);
+  walk(SUPER.decor.stock);
+  var p = PLANS[key];
+  walk(p.areas);
+  walk(p.front);
+  walk(p.decor);
+  walk(p.wing);
+  walk(p.models);
   walk(NATURE);
   walk(LAND.REFS);
   walk(SWAP);
@@ -1590,18 +1595,18 @@ function finishMat(f) {
     }
     return VINYL;
   }
-  if (f === 'quarry' || f === 'checker' || f === 'redtile' || f === 'greentile' || f === 'amber' || f === 'cream') {
+  if (f === 'quarry' || f === 'checker' || f === 'redtile' || f === 'greentile' || f === 'amber' || f === 'cream' || f === 'quarrybw' || f === 'quarryslate') {
     if (!ROOMMAT[f]) {
       var tc = document.createElement('canvas');
       tc.width = tc.height = 128;
       var t = tc.getContext('2d');
-      var pair = { quarry: ['#8e4a32', '#7b3d29'], checker: ['#f6efdf', '#6fbdb3'], redtile: ['#f6efdf', '#d4574d'], greentile: ['#f6efdf', '#7db36b'], amber: ['#f6efdf', '#e6b04a'], cream: ['#efe5cf', '#e9dec6'] }[f];
+      var pair = { quarry: ['#8e4a32', '#7b3d29'], checker: ['#f6efdf', '#6fbdb3'], redtile: ['#f6efdf', '#d4574d'], greentile: ['#f6efdf', '#7db36b'], amber: ['#f6efdf', '#e6b04a'], cream: ['#efe5cf', '#e9dec6'], quarrybw: ['#f1eee6', '#33353b'], quarryslate: ['#8a909c', '#767c88'] }[f];
       t.fillStyle = pair[0];
       t.fillRect(0, 0, 128, 128);
       t.fillStyle = pair[1];
       t.fillRect(0, 0, 64, 64);
       t.fillRect(64, 64, 64, 64);
-      if (f === 'quarry') {
+      if (f === 'quarry' || f === 'quarrybw' || f === 'quarryslate') {
         t.fillStyle = '#c9b8a2';
         t.fillRect(62, 0, 4, 128);
         t.fillRect(0, 62, 128, 4);
@@ -4519,7 +4524,7 @@ function applyLook() {
 }
 
 function sync(animate, now) {
-  useType();
+  if (!useType()) return;
   applyLook();
   order.forEach(function (id) { syncArea(shops[id], animate, now); });
   PLACES.forEach(function (p) { if (places[p.id]) syncPlace(p.id, animate, now); });
@@ -6713,16 +6718,44 @@ function init(canvas, tap) {
   window.addEventListener('resize', resize);
   bind();
   var bar = document.getElementById('load-bar');
-  lib = loadModels(modelList(), function (p) { if (bar) bar.style.width = Math.round(p * 100) + '%'; }, function () {
+  var first = typeKey();
+  var list = modelList(first);
+  list.forEach(function (r) { asked[r] = 1; });
+  lib = loadModels(list, function (p) { if (bar) bar.style.width = Math.round(p * 100) + '%'; }, function () {
     setTimeout(function () {
       try {
+        typeReady[first] = true;
         build();
+        loadOthers();
       } catch (e) {
         console.error(e);
         loadFail(tl('scene.build_failed'));
       }
     }, 30);
   });
+}
+
+// The models of the other store types come once the first screen is up, one type after another. A store of a type whose
+// models are not in yet waits on the loading screen for them.
+var asked = {};
+var typeReady = {};
+var waiting = null;
+
+function loadOthers() {
+  var todo = Object.keys(PLANS).filter(function (k) { return !typeReady[k]; });
+  if (!todo.length) return;
+  var k = todo[0];
+  var extra = modelList(k).filter(function (r) { return !asked[r]; });
+  extra.forEach(function (r) { asked[r] = 1; });
+  loadModels(extra, null, function () {
+    typeReady[k] = true;
+    loadOthers();
+  }, lib);
+}
+
+function typeKey() {
+  var t = kind();
+  return t.plan || t.id;
 }
 
 // What stands inside the building depends on the store type: its areas, checkout bank, wing rooms, garden and decor. Each
@@ -6773,8 +6806,13 @@ function buildType(key) {
 
 // puts the content of the store type on screen in place, building it the first time
 function useType() {
-  var key = kind().plan || kind().id;
-  if (ctx && ctx.key === key) return false;
+  var key = typeKey();
+  if (ctx && ctx.key === key) return true;
+  if (!typeReady[key]) {
+    waiting = key;
+    loadingEl.classList.remove('done');
+    return false;
+  }
   if (ctx) {
     ctx.group.visible = false;
     ctx.order.concat(Object.keys(ctx.places), Object.keys(shared.places)).forEach(function (id) {
@@ -6824,6 +6862,12 @@ var lastT = 0;
 
 function draw(now) {
   if (!ready) return;
+  if (waiting && typeReady[waiting]) {
+    waiting = null;
+    loadingEl.classList.add('done');
+    refresh();
+    focusNow();
+  }
   var dt = Math.min(0.1, (now - lastT) / 1000);
   lastT = now;
   var flying = !!goal;
@@ -6983,11 +7027,11 @@ function spot(id) {
   return { x: 0, y: 0.5 };
 }
 
-// the start view: the grocery entrance, the produce market and the east wing at the phone's portrait width
+// the start view, at the phone's portrait width: each store type's plan says where it looks
 function focusNow() {
   goal = null;
-  focus.x = 10.5;
-  focus.z = -4.5;
+  focus.x = PLAN.home.x;
+  focus.z = PLAN.home.z;
   focus.dist = homeDist = fit(19);
   focus.az = VIEW_AZ;
   clamp();

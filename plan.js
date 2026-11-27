@@ -1234,6 +1234,8 @@ DECOR.wing = cat(
 );
 
 export var PLAN = {
+  // where the start view looks: the grocery entrance, the produce market and the east wing
+  home: { x: 10.5, z: -4.5 },
   // the sales floor, the stockroom behind it, stock doors in the wall between and dock doors in the north wall
   hall: [-15, 15, -22.5, 2.5], stock: [-15, 15, -28.5, -22.5],
   doors: [-8.5, -0.5, 8.5], docks: [-10.5, -4.5, 4.5, 10.5],
