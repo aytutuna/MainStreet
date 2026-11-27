@@ -503,9 +503,37 @@ if (run('saved().length') > 300000) fail('thirty full stores make a save of ' + 
   if (run('S.cash') !== cash) fail('the store sold while it was shut ' + (run('S.cash') - cash) + ' ' + run('shut()') + ' ' + run('dayHour()'));
 }
 
+// time away pays the seconds the store is open in the span, from where the clock stands
+{
+  run('reset()');
+  run('fillStore()');
+  run('S.day.n = 1');
+  const base = run('baseRate() * (S.iap.x2 ? 2 : 1) * (1 + HEAD * S.pl.head)');
+  const paid = (h, secs) => {
+    run('S.clk = ' + h + ' * CLOCK / 24; S.pend = 0; S.pr = 0; S.x2 = 0');
+    return run('away(' + secs + ').gain') / base;
+  };
+  if (paid(0, 300) !== 0) fail('away from 00:00 paid ' + paid(0, 300) + ' s');
+  if (!near(paid(12, 300), 300, 1e-9)) fail('away from noon did not pay the full span');
+  // a game hour is 60 s: from 23:55 there are 5 s before midnight, then the 360 s night, then open again
+  if (!near(paid(23 + 55 / 60, 900), 5 + 900 - 5 - 360, 1e-9)) fail('a span over midnight paid ' + paid(23 + 55 / 60, 900) + ' s, not 540');
+  // from 05:55 the night ends after 5 s
+  if (!near(paid(5 + 55 / 60, 900), 895, 1e-9)) fail('a span out of the night paid ' + paid(5 + 55 / 60, 900) + ' s, not 895');
+  const day = run('CLOCK');
+  run('S.pk.night = 0');
+  if (!near(paid(7, 5 * day), 5 * day * 0.75, 1e-9)) fail('five days paid ' + paid(7, 5 * day) / (5 * day) + ' of the time, not 0.75');
+  // the x2 boost drains only while open
+  run('S.clk = 0; S.x2 = 100; S.pend = 0');
+  run('away(300)');
+  if (run('S.x2') !== 100) fail('the x2 boost ran down during the night');
+}
+
 // star gems are paid the first time a star is earned in a store type and department, not again in another store
 {
-  const toStar = n => run('(function () { var j = 0; for (var guard = 0; lv("produce") < STAR_AT[' + n + '] && guard < 500; guard++) { if (buy("produce", j) === null) j = (j + 1) % BZ.produce.items.length; } })()');
+  const atLvl = (v, id, l) => JSON.parse(run('JSON.stringify(atLevel("' + id + '", ' + l + '))'));
+  const toStar = n => {
+    if (!run('(function () { var j = 0; var fails = 0; while (lv("produce") < STAR_AT[' + n + ']) { if (buy("produce", j) === null) { j = (j + 1) % BZ.produce.items.length; if (++fails > 50) return false; } else fails = 0; } return true; })()')) fail('nothing could be bought toward star ' + (n + 1));
+  };
   run('reset()');
   run('S.cash = 1e30');
   run('S.gems = 0');
@@ -528,17 +556,17 @@ if (run('saved().length') > 300000) fail('thirty full stores make a save of ' + 
   if (JSON.stringify(run('S.sg')) !== JSON.stringify(o.sg)) fail('the star record was not kept');
   const v = JSON.parse(JSON.stringify(fixture));
   v.gems = 40;
-  v.b.produce = { l: 30, it: v.b.produce.it };
+  v.b.produce = atLvl(v, 'produce', 12);
   delete v.ms;
   store[key] = JSON.stringify(v);
   run('S = fresh()');
   run('load()');
-  const stars = run('starsAt(S.b.produce.l)');
-  if (run('S.gems') !== 40 || run("S.sg['super.produce']") < stars) fail('a migrated save lost gems or did not count its stars as paid');
+  if (run('S.gems') !== 40 || run("S.sg['super.produce']") !== 1) fail('a migrated save lost gems or did not count its star as paid');
   run('S.cash = 1e30');
-  const before = run('S.gems');
-  run('(function () { var j = 0; for (var guard = 0; lv("produce") < STAR_AT[' + (stars - 1) + '] + 1 && guard < 500; guard++) { if (buy("produce", j) === null) j = (j + 1) % BZ.produce.items.length; } })()');
-  if (run('S.gems') !== before) fail('a star the migrated save already had paid again');
+  toStar(0);
+  if (run('S.gems') !== 40) fail('a star the migrated save already had paid again');
+  toStar(1);
+  if (run('S.gems') !== 40 + run('STAR_GEMS[1]')) fail('the next star of a migrated save paid ' + (run('S.gems') - 40));
 }
 
 // opening stores stops at the cap

@@ -326,6 +326,24 @@ function openShare() {
   return pv('night') ? 1 : 1 - ((SHUT[1] - SHUT[0] + 24) % 24) / 24;
 }
 
+// the seconds of the s from the clock reading at that the store is open: the closed hours inside the span are taken out,
+// whole days by their share and the rest by where the span starts and ends in the day
+function openSecs(at, s) {
+  if (pv('night') || s <= 0) return s;
+  var a = SHUT[0] * CLOCK / 24;
+  var b = SHUT[1] * CLOCK / 24;
+  var spans = a > b ? [[0, b], [a, CLOCK]] : [[a, b]];
+  // closed seconds from the start of the day to x
+  function shutTo(x) {
+    var d = Math.floor(x / CLOCK);
+    var y = x - d * CLOCK;
+    var n = d * (CLOCK * (1 - openShare()));
+    spans.forEach(function (p) { n += Math.max(0, Math.min(y, p[1]) - p[0]); });
+    return n;
+  }
+  return s - (shutTo(at + s) - shutTo(at));
+}
+
 function stamp() {
   return fmtClock(Math.floor(S.clk * 1440 / CLOCK));
 }
@@ -1176,10 +1194,10 @@ function tipReg(c) {
 // time away: the store runs at its steady rate; the pay is held until claimAway
 function away(sec) {
   var s = Math.max(0, Math.min(sec, maxAway()));
-  // the night closing is not played out: the away rate just takes the open share of the day, and the x2 boost only
-  // runs down while the store is open, as it does when played
-  var up = openShare();
-  var xs = Math.min(s * up, S.x2);
+  // the night closing is not played out: the away rate takes the seconds the store is open, and the x2 boost only runs
+  // down while the store is open, as it does when played. The clock holds before the first purchase
+  var open = started() ? openSecs(S.clk, s) : shut() ? 0 : s;
+  var xs = Math.min(open, S.x2);
   var gain = 0;
   var n = 0;
   var here = 0;
@@ -1187,8 +1205,8 @@ function away(sec) {
   var cur = S.cur;
   S.cs.forEach(function (r, i) {
     atStore(i, function () {
-      var g = baseRate() * (s * up + xs) * (S.iap.x2 ? 2 : 1) * (1 + HEAD * S.pl.head);
-      var k = Math.floor((served() + gardenServed()) * s * up);
+      var g = baseRate() * (open + xs) * (S.iap.x2 ? 2 : 1) * (1 + HEAD * S.pl.head);
+      var k = Math.floor((served() + gardenServed()) * open);
       gain += g;
       n += k;
       if (i === cur) {
