@@ -1884,7 +1884,6 @@ function paintPerks() {
   }).join('');
 }
 
-// the sign, the star ring and what the move pays; painted again when a perk takes reputation
 // the stores of the chain, each a button that shows it: its income, how much is open and whether it is closed
 function paintChain() {
   var html = '';
@@ -1907,8 +1906,13 @@ function showStore(i) {
   save();
 }
 
+// the sign, the star ring and what the move pays, from the newest store; painted again when a perk takes reputation. They
+// show only while the newest store is the one on screen, since that is the store the next one comes from
 function paintSell() {
   paintChain();
+  var last = S.cur === nStores() - 1;
+  ['sell-art', 'sell-txt', 'sell-rep', 'sell-keep', 'sell-ok'].forEach(function (id) { $(id).hidden = !last; });
+  if (!last) return;
   var r = rating();
   var g = gate();
   var ok = canMove();
@@ -1934,6 +1938,7 @@ function paintSell() {
 }
 
 function openSell() {
+  $('sell-ok').dataset.armed = '';
   var ok = canMove();
   $('sell').querySelector('.box').setAttribute('aria-label', tl('tab.new_store'));
   paintSell();
@@ -2156,6 +2161,7 @@ function wire() {
     var b = e.target.closest('.crow');
     if (!b) return;
     sfx('tap');
+    $('sell-ok').dataset.armed = '';
     showStore(+b.dataset.i);
     $('sell').hidden = true;
   });
