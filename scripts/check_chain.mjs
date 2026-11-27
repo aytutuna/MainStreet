@@ -446,6 +446,35 @@ if (run('saved().length') > 300000) fail('thirty full stores make a save of ' + 
   if (!near(run('S.run'), c2, 0.01)) fail('the away pay of the store on screen did not reach its run');
 }
 
+// the share of the pending pay the store on screen made is saved, kept for a v11 save, and spent by a claim
+{
+  twoStores();
+  run('S.pend = 1000; S.pr = 250');
+  const o = JSON.parse(run('saved()'));
+  if (o.pr !== 250) fail('the share of the away pay is not saved');
+  store[key] = JSON.stringify(o);
+  run('S = fresh()');
+  run('load()');
+  if (run('S.pr') !== 250) fail('the share of the away pay did not load');
+  delete o.pr;
+  store[key] = JSON.stringify(o);
+  run('S = fresh()');
+  run('load()');
+  if (run('S.pr') !== run('S.pend')) fail('a save with no share did not count all of its pay as the one store');
+  const v = JSON.parse(JSON.stringify(fixture));
+  v.pend = 500;
+  store[key] = JSON.stringify(v);
+  run('S = fresh()');
+  run('load()');
+  if (run('S.pr') !== run('S.pend')) fail('a v11 save did not keep its whole pending pay as the one store');
+  run('S.pend = 1000; S.pr = 250; S.run = 0');
+  run('claimAway()');
+  if (run('S.pr') !== 0 || run('S.pend') !== 0 || !near(run('S.run'), 250, 1e-9)) fail('a claim did not spend the share (run ' + run('S.run') + ')');
+  run('S.pend = 1000; S.pr = 250; S.run = 0; S.ps = 3600');
+  run('claimAway(true, true)');
+  if (run('S.pr') !== 0 || !near(run('S.run'), 500, 1e-9)) fail('a doubled claim did not double the share (run ' + run('S.run') + ')');
+}
+
 // opening stores stops at the cap
 run('reset()');
 run('fillStore()');

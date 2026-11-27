@@ -1798,7 +1798,7 @@ function validate(o) {
   s.all = Math.max(s.run, num(o.all, 0));
   s.pend = num(o.pend, 0);
   // the share of it the store on screen made; a save from before the chain had one store
-  s.pr = o.v >= 12 ? Math.min(s.pend, num(o.pr, 0)) : s.pend;
+  s.pr = o.pr === undefined ? s.pend : Math.min(s.pend, num(o.pr, 0));
   s.ps = num(o.ps, 0);
   s.x2 = num(o.x2, 0);
   s.call = Math.min(CALL.cool, num(o.call, 0));
