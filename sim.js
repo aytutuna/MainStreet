@@ -53,10 +53,10 @@ var BOX = 8;
 // each Staff level cuts the stockers' work in its department to this share
 var STAFF = 0.7;
 
-// a game day lasts CLOCK real seconds. The store shuts from SHUT[0] to SHUT[1] o'clock, two game hours that are two minutes
-// of play, and the clock starts at START_H
+// a game day lasts CLOCK real seconds. The store shuts from SHUT[0] to SHUT[1] o'clock, six game hours that are six minutes
+// of play, and the clock starts at START_H, so a new game meets its first night after 18 minutes
 var CLOCK = 1440;
-var SHUT = [23, 1];
+var SHUT = [0, 6];
 var START_H = 6;
 var speed = 1;
 var shutNow = null;
@@ -317,7 +317,8 @@ function dayHour() {
 // closed for the night unless the store stays open all night
 function shut() {
   var h = dayHour();
-  return !pv('night') && (h >= SHUT[0] || h < SHUT[1]);
+  var wraps = SHUT[0] > SHUT[1];
+  return !pv('night') && (wraps ? h >= SHUT[0] || h < SHUT[1] : h >= SHUT[0] && h < SHUT[1]);
 }
 
 // the share of a day the store is open

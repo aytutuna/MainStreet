@@ -357,7 +357,7 @@ if (run('saved().length') > 300000) fail('thirty full stores make a save of ' + 
 {
   twoStores();
   const full = run('chainRate()');
-  run('S.clk = 23.5 * CLOCK / 24');
+  run('S.clk = 3 * CLOCK / 24');
   run("S.cs[0].b = { produce: atLevel('produce', 1) }");
   play(2);
   if (!run('shut()') || !(run('chainRate()') < full / 10)) fail('the chain rate stayed at what the replaced store earned');
@@ -473,6 +473,34 @@ if (run('saved().length') > 300000) fail('thirty full stores make a save of ' + 
   run('S.pend = 1000; S.pr = 250; S.run = 0; S.ps = 3600');
   run('claimAway(true, true)');
   if (run('S.pr') !== 0 || !near(run('S.run'), 500, 1e-9)) fail('a doubled claim did not double the share (run ' + run('S.run') + ')');
+}
+
+// the store shuts from 00:00 to 06:00
+{
+  run('reset()');
+  const at = h => { run('S.clk = ' + h + ' * CLOCK / 24'); return run('shut()'); };
+  const got = [at(5.98), at(6), at(12), at(23.98), at(0)].join();
+  if (got !== 'true,false,false,false,true') fail('the store is shut at 05:59, 06:00, 12:00, 23:59 and 00:00 as ' + got);
+  if (run('openShare()') !== 0.75) fail('the store is open ' + run('openShare()') + ' of the day');
+  run("S.pk.night = 1");
+  if (run('openShare()') !== 1 || at(3)) fail('the night perk does not keep the store open');
+  run('reset()');
+  const held = run('S.clk');
+  play(10);
+  if (run('S.clk') !== held) fail('the clock ran before the first purchase');
+  run('S.cash = 1e6; buyBest(); buyBest()');
+  const t0 = run('S.clk');
+  let secs = 0;
+  while (!run('shut()') && secs < 2000) {
+    play(1);
+    secs++;
+  }
+  if (Math.abs(secs - 18 * 60) > 2) fail('a new game met its first night after ' + secs + ' s, not 18 minutes');
+  // the shoppers already inside pay on their way out
+  play(120);
+  const cash = run('S.cash');
+  play(20);
+  if (run('S.cash') !== cash) fail('the store sold while it was shut ' + (run('S.cash') - cash) + ' ' + run('shut()') + ' ' + run('dayHour()'));
 }
 
 // opening stores stops at the cap
