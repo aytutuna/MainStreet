@@ -52,7 +52,7 @@ LANG['tr'] = {
   'sound.music': 'Müzik',
   'sound.store': 'Mağaza sesleri',
   'sound.effects': 'Efektler',
-  'sound.note': 'Mağaza sesleri müşteriler ve alışveriş merkezinin uğultusudur. Efektler dokunuşlar, kasalar ve zil sesleridir.',
+  'sound.note': 'Mağaza sesleri müşteriler ve mağazanın uğultusudur. Efektler dokunuşlar, kasalar ve zil sesleridir.',
   'sound.off_note': 'Ses kapalı. Menüden aç.',
   'menu.title': 'Menü',
   'menu.mixer': 'Ses ayarları',

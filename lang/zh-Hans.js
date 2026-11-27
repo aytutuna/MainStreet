@@ -52,7 +52,7 @@ LANG['zh-Hans'] = {
   'sound.music': '音乐',
   'sound.store': '店内声音',
   'sound.effects': '音效',
-  'sound.note': '店内声音是顾客和商场的嗡嗡声。音效是点击声、收银声和提示音。',
+  'sound.note': '店内声音是顾客和商店的嗡嗡声。音效是点击声、收银声和提示音。',
   'sound.off_note': '声音已关闭。请在菜单中打开。',
   'menu.title': '菜单',
   'menu.mixer': '调音台',

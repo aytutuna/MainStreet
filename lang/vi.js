@@ -52,7 +52,7 @@ LANG['vi'] = {
   'sound.music': 'Nhạc',
   'sound.store': 'Tiếng siêu thị',
   'sound.effects': 'Hiệu ứng',
-  'sound.note': 'Tiếng siêu thị là tiếng khách và tiếng ồn nhẹ của trung tâm. Hiệu ứng là tiếng chạm, quầy thanh toán và chuông.',
+  'sound.note': 'Tiếng siêu thị là tiếng khách và tiếng ồn nhẹ của cửa hàng. Hiệu ứng là tiếng chạm, quầy thanh toán và chuông.',
   'sound.off_note': 'Âm thanh đang tắt. Bật lại trong menu.',
   'menu.title': 'Menu',
   'menu.mixer': 'Chỉnh âm thanh',
