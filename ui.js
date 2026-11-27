@@ -536,6 +536,11 @@ function popAt(text, x, y, cls) {
   var half = d.offsetWidth * 0.58 + 4;
   d.style.left = Math.max(half, Math.min($('fly').clientWidth - half, x)) + 'px';
   d.style.top = Math.max(70, y) + 'px';
+  if (still()) {
+    d.style.transform = 'translate(-50%, -20px)';
+    setTimeout(function () { d.remove(); }, cls === 'item' ? 1800 : 1100);
+    return;
+  }
   var keys = [{ transform: 'translate(-50%, 0) scale(0.6)', opacity: 0 }, { transform: 'translate(-50%, -14px) scale(1.15)', opacity: 1, offset: 0.2 },
     { transform: 'translate(-50%, -52px) scale(1)', opacity: 0 }];
   // a buy's pill stays readable longer and rises less
@@ -546,6 +551,11 @@ function popAt(text, x, y, cls) {
 }
 
 function flyIcons(src, x, y, n, targetId) {
+  if (still()) {
+    land(targetId === 'gems' ? 'gems' : 'coins', 0);
+    bumpEl(targetId === 'gems' ? 'gem-n' : 'cash-n');
+    return;
+  }
   var ar = $('app').getBoundingClientRect();
   var to = $(targetId).getBoundingClientRect();
   var tx = to.left - ar.left + 26;
@@ -569,6 +579,7 @@ function flyIcons(src, x, y, n, targetId) {
 
 // a ring that swells and fades where something was tapped
 function ring(x, y) {
+  if (still()) return;
   var d = document.createElement('i');
   d.className = 'ring';
   d.style.left = x + 'px';
@@ -1091,6 +1102,11 @@ function upgrade(id, j) {
 
 // coins falling from the top of the screen, one tick of the coin sound as each wave lands
 function rain(n) {
+  if (!still()) rainFall(n);
+  for (var k = 0; k < 5; k++) setTimeout(function (r) { sfx('coins', r); }, 350 + k * 330, 1 + k * 0.05);
+}
+
+function rainFall(n) {
   var w = $('fly').clientWidth;
   var h = $('fly').clientHeight;
   for (var i = 0; i < n; i++) {
@@ -1104,7 +1120,6 @@ function rain(n) {
       { duration: 1300 + Math.random() * 900, delay: i * 50, easing: 'cubic-bezier(.4,0,.8,.6)', fill: 'backwards' });
     a.onfinish = function (e) { e.target.effect.target.remove(); };
   }
-  for (var k = 0; k < 5; k++) setTimeout(function (r) { sfx('coins', r); }, 350 + k * 330, 1 + k * 0.05);
 }
 
 // the new store opens: coins and confetti over the screen, and two banners one after the other
@@ -1198,6 +1213,7 @@ function bumpCombo() {
 
 // a quick glow round the screen's edge
 function pulse(k) {
+  if (still()) return;
   var d = $('flash');
   d.animate([{ opacity: 0 }, { opacity: k, offset: 0.25 }, { opacity: 0 }], { duration: 320, easing: 'ease-out' });
 }

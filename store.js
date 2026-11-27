@@ -731,7 +731,7 @@ function fit(w) {
 
 function flyTo(x, z, dist, secs) {
   var d = Math.hypot(x - focus.x, z - focus.z);
-  goal = { x0: focus.x, z0: focus.z, k0: focus.dist, x: x, z: z, k: dist === undefined ? focus.dist : dist, t: 0, d: secs || Math.min(1.2, 0.4 + d / 30) };
+  goal = { x0: focus.x, z0: focus.z, k0: focus.dist, x: x, z: z, k: dist === undefined ? focus.dist : dist, t: 0, d: still() ? 0.01 : secs || Math.min(1.2, 0.4 + d / 30) };
   return goal.d;
 }
 
@@ -6033,9 +6033,9 @@ function frenzyStep(dt, now) {
     // slow on purpose: about 1 Hz brightness, and the colour eases between red and yellow
     var w = 0.5 + 0.5 * Math.sin(now * 0.0063);
     saleFlash.material.color.setHex(0xff2a1a).lerp(fxC.setHex(0xffc01a), 0.5 + 0.5 * Math.sin(now * 0.0031));
-    saleFlash.material.opacity = 0.2 * saleK * (0.4 + 0.6 * w) * (0.35 + 0.65 * daylight());
+    saleFlash.material.opacity = still() ? 0 : 0.2 * saleK * (0.4 + 0.6 * w) * (0.35 + 0.65 * daylight());
   }
-  saleBan.forEach(function (m) { m.scale.setScalar(1.06 + Math.sin(now * 0.0063) * 0.07); });
+  saleBan.forEach(function (m) { m.scale.setScalar(still() ? 1.06 : 1.06 + Math.sin(now * 0.0063) * 0.07); });
   saleT -= dt;
   var ids = null;
   for (var i = 0; i < saleS.length; i++) {
@@ -6045,8 +6045,9 @@ function frenzyStep(dt, now) {
     if (e.s.visible) {
       var pop = u < 0.15 ? u / 0.15 * 1.25 : 1.25 - Math.min(0.25, (u - 0.15) * 1.5);
       var out = u > 0.85 ? (1 - u) / 0.15 : 1;
+      if (still()) pop = 1;
       e.s.scale.set(2.2 * pop * out, 1.1 * pop * out, 1);
-      e.s.position.set(e.x, 2.6 + Math.sin(now * 0.006 + i) * 0.08 + u * 0.4, e.z);
+      e.s.position.set(e.x, 2.6 + (still() ? 0 : Math.sin(now * 0.006 + i) * 0.08 + u * 0.4), e.z);
     } else if (mad && saleT <= 0) {
       // the ones near what the player is looking at, so the signs are seen
       ids = ids || order.filter(function (id) { return has(id) && Math.hypot(shops[id].cx - focus.x, shops[id].cz - focus.z) < focus.dist * 0.7; });
@@ -6698,6 +6699,7 @@ function draw(now) {
 var punchAt = -1e9;
 
 function confetti() {
+  if (still()) return;
   var cols = ['#f0c040', '#e8553a', '#4f9a40', '#3f78b8', '#e85d9a'];
   for (var i = 0; i < 30; i++) {
     var d = document.createElement('i');
@@ -6733,6 +6735,7 @@ function buildConfetti() {
 
 // n pieces from a department or place, or from the middle of the view when id is empty, starting delay seconds from now
 function burst(id, delay, n) {
+  if (still()) return;
   var p = id ? spot(id) : { x: focus.x, y: focus.z };
   var now = performance.now() + delay * 1000;
   var tint = DEPT[id] ? fxC.set(DEPT[id]).getHex() : 0xf2c230;
@@ -7503,7 +7506,7 @@ window.View = {
   giftTaken: giftTaken,
   giftLeaves: giftLeaves,
   giftOff: giftHide,
-  punch: function () { punchAt = performance.now(); },
+  punch: function () { if (!still()) punchAt = performance.now(); },
   rush: rushStart,
   rushEnd: rushEnd,
   tillScreen: tillScreen,

@@ -1055,3 +1055,6 @@ function wireAds() {
   });
   $('pack-x').addEventListener('click', function () { $('pack').hidden = true; });
 }
+
+// the system's Reduce Motion setting, asked each time so a change in Settings counts at once
+function still() { return !!(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches); }

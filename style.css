@@ -2779,10 +2779,11 @@ svg.pk {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  #deals button,
-  .hero::after,
-  #sell-ok.ready {
-    animation: none;
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
   }
 }
 
