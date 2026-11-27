@@ -18,18 +18,18 @@
   --paper: #f6ecd2;
   --paper2: #ead9ae;
   --green: #4f9a40;
-  --green2: #2f6e28;
+  --green2: #2a6424;
   --green3: #1b4a17;
   --edge: #24170e;
-  --red: #c4432f;
-  --muted: #6a5640;
+  --red: #a8321f;
+  --muted: #5c4a36;
   --gold: #f0c040;
   --blue: #3f78b8;
-  --blue2: #2a5588;
+  --blue2: #1f4670;
   --gloss: linear-gradient(#fffcee, var(--paper) 48%, #e8d6a4 52%, #f0e1b6);
   --gloss-gold: linear-gradient(#fff4b0, #ffd85a 48%, #f0b92e 52%, #f5c845);
-  --gloss-green: linear-gradient(#86d474, #5db04b 48%, #3d8a31 52%, #4a9a3c);
-  --gloss-red: linear-gradient(#ee826b, #d4523a 48%, #b23722 52%, #c4432f);
+  --gloss-green: linear-gradient(#7acb67, #33802b 48%, #2a7024 52%, #38862e);
+  --gloss-red: linear-gradient(#e0705a, #c4432f 48%, #a8321f 52%, #b83a27);
   --sys: ui-rounded, "SF Pro Rounded", system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif;
   --head: "Lilita One", var(--sys);
   --st: env(safe-area-inset-top);
@@ -522,12 +522,24 @@ button.pill:active,
   color: var(--green2);
 }
 
+.why:not(:empty)::before {
+  content: "\2713  ";
+}
+
+.srow.amber .why:not(:empty)::before {
+  content: "\25C6  ";
+}
+
+.srow.red .why:not(:empty)::before {
+  content: "\25B2  ";
+}
+
 .srow.amber .why {
-  color: #b86e00;
+  color: #7f4c00;
 }
 
 .srow.red .why {
-  color: #c4281c;
+  color: #a82418;
 }
 
 .more {
@@ -910,6 +922,14 @@ a.btn {
   box-shadow: 0 1px 0 #6e1d10;
 }
 
+#tabs u::after {
+  content: "!";
+  display: block;
+  color: #fff;
+  font: 700 11px/12px var(--sys);
+  text-align: center;
+}
+
 #card {
   position: relative;
   background: var(--paper);
@@ -1074,7 +1094,7 @@ a.btn {
 
 .l1 i {
   font-style: normal;
-  color: #a8997c;
+  color: #7d6e50;
 }
 
 .l1 i.on {
@@ -1126,7 +1146,7 @@ a.btn {
 }
 
 .biz.lim .pr em {
-  color: #c4281c;
+  color: #a82418;
 }
 
 .biz.rd .pr {
@@ -1196,8 +1216,8 @@ a.btn {
 
 .btns button.poor {
   opacity: 1;
-  background: linear-gradient(#d8ccb0, #b3a280 52%, #a89878);
-  border-color: #6e5e42;
+  background: linear-gradient(#a39373, #7d6e50 52%, #716347);
+  border-color: #4f4330;
   box-shadow: 0 3px 0 #4a3e2a, inset 0 2px 0 rgba(255, 255, 255, 0.5);
   text-shadow: 0 1px 0 rgba(60, 40, 10, 0.6);
 }
@@ -1220,6 +1240,23 @@ a.btn {
   to {
     outline: 3px solid rgba(255, 216, 74, 1);
   }
+}
+
+.biz.best,
+.it.best {
+  position: relative;
+}
+
+.biz.best::after,
+.it.best::after {
+  content: "\2605";
+  position: absolute;
+  top: 0;
+  inset-inline-end: 4px;
+  font-size: 13px;
+  line-height: 1;
+  color: var(--ink);
+  pointer-events: none;
 }
 
 .biz.best {
@@ -1916,7 +1953,7 @@ a.btn {
 }
 
 .tag.alert {
-  background: #d8452f;
+  background: #c43a26;
   color: #fff;
   box-shadow: 0 0 0 1.5px #fff;
 }
@@ -1958,7 +1995,29 @@ a.btn {
 }
 
 .tag.dot.alert {
-  background: #d8452f;
+  background: #c43a26;
+}
+
+/* a shape or mark for each state, so the dots do not rely on colour */
+.tag.dot.buy {
+  border-radius: 3px;
+}
+
+.tag.dot.ready::after,
+.tag.dot.alert::after {
+  display: block;
+  font: 700 11px/14px var(--sys);
+  text-align: center;
+}
+
+.tag.dot.ready::after {
+  content: "\2605";
+  color: var(--ink);
+}
+
+.tag.dot.alert::after {
+  content: "!";
+  color: #fff;
 }
 
 .say.reg {
