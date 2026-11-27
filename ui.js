@@ -1912,9 +1912,9 @@ function paintBoost() {
   put($('warp-need'), 'textContent', gemsLeft(WARP_COST));
   put($('b-warp'), 'innerHTML', '<img src="assets/ui_gem.png" alt="">' + WARP_COST);
   put($('b-warp'), 'disabled', S.gems < WARP_COST);
-  var tomorrow = fmtClock(SHUT[1] * 60);
-  put($('night-txt'), 'textContent', pv('night') ? tl('boost.night.perk') : S.ot ? tl('boost.night.on', { t: tomorrow }) : shut() ? tl('boost.night.shut', { t: tomorrow }) :
-    tl('boost.night.day', { a: fmtClock(SHUT[0] * 60), b: tomorrow }));
+  var morning = fmtClock(SHUT[1] * 60);
+  put($('night-txt'), 'textContent', pv('night') ? tl('boost.night.perk') : S.ot ? tl('boost.night.on', { t: morning }) : shut() ? tl('boost.night.shut', { t: morning }) :
+    tl('boost.night.day', { a: fmtClock(SHUT[0] * 60), b: morning }));
   put($('night-need'), 'textContent', shut() ? gemsLeft(NIGHT.gems) : '');
   put($('b-night'), 'innerHTML', '<img src="assets/ui_gem.png" alt="">' + NIGHT.gems);
   put($('b-night'), 'disabled', !shut() || S.gems < NIGHT.gems);
