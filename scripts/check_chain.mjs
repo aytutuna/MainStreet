@@ -503,6 +503,44 @@ if (run('saved().length') > 300000) fail('thirty full stores make a save of ' + 
   if (run('S.cash') !== cash) fail('the store sold while it was shut ' + (run('S.cash') - cash) + ' ' + run('shut()') + ' ' + run('dayHour()'));
 }
 
+// star gems are paid the first time a star is earned in a store type and department, not again in another store
+{
+  const toStar = n => run('(function () { var j = 0; for (var guard = 0; lv("produce") < STAR_AT[' + n + '] && guard < 500; guard++) { if (buy("produce", j) === null) j = (j + 1) % BZ.produce.items.length; } })()');
+  run('reset()');
+  run('S.cash = 1e30');
+  run('S.gems = 0');
+  toStar(0);
+  if (run('S.gems') !== run('STAR_GEMS[0]')) fail('the first star paid ' + run('S.gems') + ' gems');
+  run("openStore(TY.super)");
+  run('S.cash = 1e30');
+  const g = run('S.gems');
+  toStar(0);
+  if (run('S.gems') !== g) fail('the same star paid again in a second store of the type');
+  run('openStore(TY.test)');
+  run('S.cash = 1e30');
+  toStar(0);
+  if (run('S.gems') !== g + run('STAR_GEMS[0]')) fail('a star in another store type did not pay');
+  // a save keeps the record, and a save from before it counts the stars it has as paid
+  const o = JSON.parse(run('saved()'));
+  store[key] = JSON.stringify(o);
+  run('S = fresh()');
+  run('load()');
+  if (JSON.stringify(run('S.sg')) !== JSON.stringify(o.sg)) fail('the star record was not kept');
+  const v = JSON.parse(JSON.stringify(fixture));
+  v.gems = 40;
+  v.b.produce = { l: 30, it: v.b.produce.it };
+  delete v.ms;
+  store[key] = JSON.stringify(v);
+  run('S = fresh()');
+  run('load()');
+  const stars = run('starsAt(S.b.produce.l)');
+  if (run('S.gems') !== 40 || run("S.sg['super.produce']") < stars) fail('a migrated save lost gems or did not count its stars as paid');
+  run('S.cash = 1e30');
+  const before = run('S.gems');
+  run('(function () { var j = 0; for (var guard = 0; lv("produce") < STAR_AT[' + (stars - 1) + '] + 1 && guard < 500; guard++) { if (buy("produce", j) === null) j = (j + 1) % BZ.produce.items.length; } })()');
+  if (run('S.gems') !== before) fail('a star the migrated save already had paid again');
+}
+
 // opening stores stops at the cap
 run('reset()');
 run('fillStore()');

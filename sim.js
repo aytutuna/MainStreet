@@ -107,7 +107,7 @@ PLACES.forEach(function (p) {
 var S = fresh();
 
 function fresh() {
-  var s = { v: SAVE_V, cash: START_CASH, gems: 0, rep: 0, pk: {}, run: 0, all: 0, pend: 0, pr: 0, ps: 0, x2: 0, call: 0, vt: rnd(VIP.first), b: {}, ms: {},
+  var s = { v: SAVE_V, cash: START_CASH, gems: 0, rep: 0, pk: {}, run: 0, all: 0, sg: {}, pend: 0, pr: 0, ps: 0, x2: 0, call: 0, vt: rnd(VIP.first), b: {}, ms: {},
     st: { srv: 0, lost: 0, sr: 0, t: 0 }, goal: [0, 1, 2], gn: 3, gd: {}, day: { n: 0, d: -1, t: 0 }, tz: { o: zone(), at: clock() }, mi: { d: -1, m: [], b: 0 }, rg: { o: {}, days: 0, gifts: 0, combo: 0 }, lk: { on: 'classic', own: {}, top: 0 }, ac: { o: {}, m: {} },
     ask: 0, clk: START_H * CLOCK / 24, iap: { noads: 0, x2: 0, starter: 0, noadsTx: '', x2Tx: '', noadsUser: '', x2User: '', noadsAt: 0, x2At: 0, wait: {}, tx: [], rf: [], paid: [] }, cl: { base: '', sig: '', bap: 0, old: [], seen: {}, force: 0, fly: null }, er: 0, ads: { d: -1, n: {}, pt: 0, ap: 0, li: 0, sd: 0 }, hold: { dev: '', at: 0 }, ts: clock() };
   noPlaces(s);
@@ -547,8 +547,9 @@ function buy(id, j) {
     res.star = i + 1;
     if ((S.ms[id] || 0) > i) return;
     S.ms[id] = i + 1;
-    S.gems += STAR_GEMS[i];
-    res.gems += STAR_GEMS[i];
+    var g = starGems(here().t, id, i);
+    S.gems += g;
+    res.gems += g;
   });
   if (res.unlock) mis('open', 1, id);
   if (res.star) mis('star', 1, id);
@@ -1486,6 +1487,15 @@ function view(i) {
   repick();
 }
 
+// the gems for star i (0 is the first) of a department in a store type: paid the first time that star is ever earned in
+// that type and department, whatever store of the chain earns it
+function starGems(type, id, i) {
+  var k = type + '.' + id;
+  if ((S.sg[k] || 0) > i) return 0;
+  S.sg[k] = i + 1;
+  return STAR_GEMS[i];
+}
+
 // a new store of the chain, shown at once. It shares the wallet; the old store keeps what it has built
 function openStore(t) {
   if (nStores() >= MAX_STORES) return false;
@@ -1495,7 +1505,7 @@ function openStore(t) {
   for (var id in r.b) {
     for (var i = 0; i < starsAt(r.b[id].l); i++) {
       r.ms[id] = i + 1;
-      S.gems += STAR_GEMS[i];
+      S.gems += starGems(t.id, id, i);
     }
   }
   S.cs.push(r);
@@ -1857,6 +1867,19 @@ function validate(o) {
       r.c = Math.pow(1.35, Math.max(0, n - 2));
     }
     return r;
+  });
+  // the stars earned for good: what a save holds, and the stars every store has now, which were paid when they were earned
+  if (o.sg && typeof o.sg === 'object') {
+    for (var sk in o.sg) {
+      var sn = Math.min(STAR_AT.length, Math.floor(num(o.sg[sk], 0)));
+      if (/^\w+\.\w+$/.test(sk) && sn > 0) s.sg[sk] = sn;
+    }
+  }
+  s.cs.forEach(function (r) {
+    for (var id in r.b) {
+      var sk = r.t + '.' + id;
+      s.sg[sk] = Math.max(s.sg[sk] || 0, r.ms[id] || 0, starsAt(r.b[id].l));
+    }
   });
   s.cur = cur;
   s.b = s.cs[cur].b;
