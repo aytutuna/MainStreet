@@ -28,6 +28,8 @@ jobs:
         run: node scripts/check_lang.mjs --all
       - name: Simulation and saves
         run: node scripts/check_sim.mjs
+      - name: Chain of stores
+        run: node scripts/check_chain.mjs
       - name: Cloud save rules
         run: node scripts/check_cloud.mjs
       - name: Back under the net and find cards
