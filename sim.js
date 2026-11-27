@@ -2,13 +2,9 @@ var KEY = 'mainstreet.v11';
 var OLD_KEYS = ['mainstreet.v10', 'mainstreet.v9', 'mainstreet.v8', 'mainstreet.v7', 'mainstreet.v6', 'mainstreet.v5', 'mainstreet.v4', 'mainstreet.v3', 'mainstreet.v2', 'mainstreet.v1', 'mainstreet.won'];
 var MAX_AWAY = 8 * 3600;
 var START_CASH = 5;
-// each store is worth this much more income than the one before; the move needs GATE0 department stars in store 1
-// and GATE_STEP more in each one after, up to every star in the store
-var STORE_MUL = 1.45;
-// and from store 3 on everything costs this much more than in the one before, so income does not outrun the prices
-var STORE_COST = 1.35;
-var GATE0 = 16;
-var GATE_STEP = 2;
+// stars in the store on screen that open the next store of the chain; a stand-in until the pacing work (P3.5) sets the gate
+var OPEN_AT = 16;
+var MAX_STORES = 30;
 var HALL_BOOST = 0.1;
 var X2_COST = 20;
 var AWAY_X2 = 5;
@@ -69,13 +65,20 @@ var clock = function () { return synced ? synced.ms + performance.now() - synced
 var onShopper = null;
 var onMission = null;
 var onYesterday = null;
-var SAVE_V = 11;
+var SAVE_V = 12;
 var onSaveFail = null;
 var onSaved = null;
 var saveFailed = false;
 // a save from a newer build is left alone
 var blocked = false;
 var BZ = {};
+// where each department and place stands in its type's lists
+TYPES.forEach(function (t) {
+  t.di = {};
+  t.depts.forEach(function (id, i) { t.di[id] = i; });
+  t.pd = {};
+  t.places.forEach(function (id) { t.pd[id] = 1; });
+});
 BIZ.forEach(function (b, i) {
   var it = ITEMS[b.id];
   b.i = i;
@@ -100,12 +103,33 @@ PLACES.forEach(function (p) {
 var S = fresh();
 
 function fresh() {
-  var s = { v: 11, cash: START_CASH, gems: 0, rep: 0, pk: {}, store: 1, run: 0, all: 0, pend: 0, ps: 0, x2: 0, call: 0, vt: rnd(VIP.first), b: {}, ms: {},
+  var s = { v: SAVE_V, cash: START_CASH, gems: 0, rep: 0, pk: {}, run: 0, all: 0, pend: 0, ps: 0, x2: 0, call: 0, vt: rnd(VIP.first), b: {}, ms: {},
     st: { srv: 0, lost: 0, sr: 0, t: 0 }, goal: [0, 1, 2], gn: 3, gd: {}, day: { n: 0, d: -1, t: 0 }, tz: { o: zone(), at: clock() }, mi: { d: -1, m: [], b: 0 }, rg: { o: {}, days: 0, gifts: 0, combo: 0 }, lk: { on: 'classic', own: {} }, ac: { o: {}, m: {} },
     ask: 0, clk: START_H * CLOCK / 24, iap: { noads: 0, x2: 0, starter: 0, noadsTx: '', x2Tx: '', noadsUser: '', x2User: '', noadsAt: 0, x2At: 0, wait: {}, tx: [], rf: [], paid: [] }, cl: { base: '', sig: '', bap: 0, old: [], seen: {}, force: 0, fly: null }, er: 0, ads: { d: -1, n: {}, pt: 0, ap: 0, li: 0, sd: 0 }, hold: { dev: '', at: 0 }, ts: clock() };
   noPlaces(s);
   s.b.produce = atLevel('produce', 1);
+  // the stores of the chain. The one on screen is cs[cur] and S.b, S.pl, S.pi and S.ms are its own objects
+  s.cs = [{ t: TYPES[0].id, m: TYPES[0].mul, c: TYPES[0].cost, b: s.b, pl: s.pl, pi: s.pi, ms: s.ms }];
+  s.cur = 0;
   return s;
+}
+
+function here() {
+  return S.cs[S.cur];
+}
+
+function nStores() {
+  return S.cs.length;
+}
+
+// the type of the store on screen
+function kind() {
+  return TY[here().t];
+}
+
+// whether the store on screen is built with this department
+function built(id) {
+  return kind().di[id] !== undefined;
 }
 
 // a store with no places: S.pl is each place's total level, S.pi the level of each of its items
@@ -149,10 +173,11 @@ function has(id) {
   return lv(id) > 0;
 }
 
-// a department can be opened once the one before it in the list is open
+// a department can be opened once the one before it in its store's list is open
 function avail(id) {
-  var i = BZ[id].i;
-  return has(id) || i === 0 || has(BIZ[i - 1].id);
+  var t = kind();
+  var i = t.di[id];
+  return has(id) || i === 0 || (i > 0 && has(t.depts[i - 1]));
 }
 
 // a department at level l has the first l upgrades of plan.js in; an item's level is how many of its own are among them
@@ -213,7 +238,7 @@ function drawLv() {
 }
 
 function gmul() {
-  return Math.pow(STORE_MUL, S.store - 1) * (1 + HALL_BOOST * S.pl.hall) * (1 + REST * S.pl.rest) * pv('sales') * regMul() * achMul();
+  return here().m * (1 + HALL_BOOST * S.pl.hall) * (1 + REST * S.pl.rest) * pv('sales') * regMul() * achMul();
 }
 
 // the regulars owned, each adding a little to sales and the whole set a little more
@@ -292,7 +317,7 @@ function started() {
   var n = 0;
   BIZ.forEach(function (b) { n += lv(b.id); });
   PLACES.forEach(function (p) { n += S.pl[p.id]; });
-  return n > 1 || S.store > 1 || S.day.n > 0;
+  return n > 1 || nStores() > 1 || S.day.n > 0;
 }
 
 function flow() {
@@ -399,7 +424,7 @@ function rate() {
 }
 
 function storeCost() {
-  return Math.pow(STORE_COST, Math.max(0, S.store - 2));
+  return here().c;
 }
 
 // a piece's price is set by its place in plan.js, so buying one item never moves the price of another
@@ -488,7 +513,7 @@ function buy(id, j) {
 // the price of item j's next piece, or without j of the cheapest piece left; 0 when there is none to buy
 function placeCost(id, j) {
   var p = PL[id];
-  if (!has(p.after)) return 0;
+  if (!has(p.after) || !kind().pd[id]) return 0;
   var k = -1;
   if (j !== undefined) k = placePiece(id, j);
   else p.items.forEach(function (x, i) {
@@ -547,8 +572,13 @@ var onPerk = null;
 var fill = {};
 var crew = [];
 var outT = 0;
+// what the stores that are not on screen earn a second together, worked out again every OFF_EVERY seconds of play
+var OFF_EVERY = 1;
+var offAt = 0;
+var offBase = 0;
 
 function clearShoppers() {
+  offAt = 0;
   shoppers = [];
   tills = TILLS.map(function (t, i) { return { i: i, k: t.k, lv: t.lv, q: [], t: 0 }; });
   tills.push({ i: TILLS.length, k: 'garden', lv: 0, q: [], t: 0 });
@@ -724,12 +754,56 @@ function stockStep(dt) {
   });
 }
 
+// runs f with store i of the chain as the one on screen, then puts the real one back
+function atStore(i, f) {
+  var cur = S.cur;
+  var b = S.b;
+  var pl = S.pl;
+  var pi = S.pi;
+  var ms = S.ms;
+  var r = S.cs[i];
+  S.cur = i;
+  S.b = r.b;
+  S.pl = r.pl;
+  S.pi = r.pi;
+  S.ms = r.ms;
+  try {
+    return f();
+  } finally {
+    S.cur = cur;
+    S.b = b;
+    S.pl = pl;
+    S.pi = pi;
+    S.ms = ms;
+  }
+}
+
+// what store i earns a second at its steady rate, before the x2 boost
+function storeRate(i) {
+  return atStore(i, function () { return baseRate() * (S.iap.x2 ? 2 : 1) * (1 + HEAD * S.pl.head); });
+}
+
+// the same for every store but the one on screen
+function offRate() {
+  var v = 0;
+  for (var i = 0; i < S.cs.length; i++) if (i !== S.cur) v += storeRate(i);
+  return v;
+}
+
 function tick(dt) {
   dt *= speed;
   // the clock waits for the first purchase, so the opening never meets a closing
   if (started()) S.clk = (S.clk + dt) % CLOCK;
   var off = shut();
+  var boosted = S.x2 > 0;
   if (S.x2 > 0 && !off) S.x2 = Math.max(0, S.x2 - dt);
+  if (S.cs.length > 1 && !off) {
+    if ((offAt -= dt) <= 0) {
+      offAt = OFF_EVERY;
+      offBase = offRate();
+    }
+    earn(offBase * dt * (boosted ? 2 : 1));
+  }
   if (S.call > 0) S.call = Math.max(0, S.call - dt);
   lostT -= dt;
   calmT -= dt;
@@ -905,7 +979,7 @@ var REGV = {
   hana: function () { return S.all; },
   theo: function () { return has('tech') ? 1 : 0; },
   walt: function () { return S.rg.days; },
-  rosa: function () { return S.store; },
+  rosa: function () { return nStores(); },
   nina: function () {
     var n = 0;
     for (var k in S.pk) n += S.pk[k];
@@ -936,7 +1010,7 @@ var ACHM = { dep: 18, rate: 54, star: 3 };
 var ACHV = {
   srv: function () { return S.st.srv; },
   all: function () { return S.all; },
-  store: function () { return S.store; },
+  store: function () { return nStores(); },
   dep: function () { return opened(); },
   rate: function () { return rating(); },
   star: function () { return REGV.bruno(); },
@@ -977,7 +1051,7 @@ function achieve() {
 function lookState(id) {
   var l = LK[id];
   if (S.lk.on === id) return 'on';
-  if (l.store ? S.store < l.store : l.ach && !S.ac.o[l.ach]) return 'lock';
+  if (l.store ? nStores() < l.store : l.ach && !S.ac.o[l.ach]) return 'lock';
   return !l.gems || S.lk.own[id] ? 'use' : 'buy';
 }
 
@@ -1026,8 +1100,14 @@ function away(sec) {
   // runs down while the store is open, as it does when played
   var up = openShare();
   var xs = Math.min(s * up, S.x2);
-  var gain = baseRate() * (s * up + xs) * (S.iap.x2 ? 2 : 1) * (1 + HEAD * S.pl.head);
-  var n = Math.floor((served() + gardenServed()) * s * up);
+  var gain = 0;
+  var n = 0;
+  S.cs.forEach(function (r, i) {
+    atStore(i, function () {
+      gain += baseRate() * (s * up + xs) * (S.iap.x2 ? 2 : 1) * (1 + HEAD * S.pl.head);
+      n += Math.floor((served() + gardenServed()) * s * up);
+    });
+  });
   if (started()) S.clk = (S.clk + sec) % CLOCK;
   shutNow = shut();
   S.x2 -= xs;
@@ -1189,11 +1269,11 @@ var GOALS = [
   gIt('hall', 1, 1, tl('goal.self'), 10), nw(gPl('dock', 3, tl('goal.stockroom_level', { n: 3 }), 10)), gEarn(1e7, 8), gLv('pantry', 1, 10), gLv('produce', 30, 12), gLv('snacks', 1, 10),
   gPl('lot', 3, tl('goal.parking_level', { n: 3 }), 10), gLv('toys', 1, 12), gServe(2000, 10), gEarn(1e9, 10, 30), gLv('tech', 1, 15),
   gIt('hall', 0, 2, tl('goal.lane', { n: 3 }), 15), gLv('kitchen', 1, 20), gEarn(1e11, 15), gLv('kitchen', 20, 15, 30), gLv('toys', 25, 15),
-  goTo(gl(tl('goal.move'), 30, 1, function () { return S.store - 1; }), 'sell'), gServe(10000, 20), gEarn(1e13, 20, 60), gLv('clothes', 1, 25),
+  goTo(gl(tl('goal.move'), 30, 1, function () { return nStores() - 1; }), 'sell'), gServe(10000, 20), gEarn(1e13, 20, 60), gLv('clothes', 1, 25),
   gPl('garden', 1, tl('goal.garden'), 25), gLv('home', 1, 30), gLv('office', 1, 30), gPl('hall', 10, tl('goal.checkouts_level', { n: 10 }), 30),
   nw(gPl('dock', 10, tl('goal.stockroom_level', { n: 10 }), 30)),
   gLv('pets', 1, 35), gEarn(1e15, 25), gLv('sports', 1, 35), gServe(50000, 30), gLv('tools', 1, 40), gLv('auto', 1, 40),
-  goTo(gl(tl('goal.store', { n: 3 }), 40, 2, function () { return S.store - 1; }), 'sell'), gLv('seasonal', 1, 50), gEarn(1e21, 30)
+  goTo(gl(tl('goal.store', { n: 3 }), 40, 2, function () { return nStores() - 1; }), 'sell'), gLv('seasonal', 1, 50), gEarn(1e21, 30)
 ];
 
 // a v8 save's goal numbers, moved to where those goals are now; the new ones before them are passed over
@@ -1236,7 +1316,7 @@ function finishGoals() {
   S.goal.forEach(function (i) { S.gd[i] = 1; });
 }
 
-// the department stars in the store, which is what the move is gated on
+// the department stars in the store on screen, which is what opening the next store is gated on
 function rating() {
   var n = 0;
   BIZ.forEach(function (b) { n += deptStars(b.id); });
@@ -1244,7 +1324,7 @@ function rating() {
 }
 
 function gate() {
-  return Math.min(STAR_AT.length * BIZ.length, GATE0 + GATE_STEP * (S.store - 1));
+  return Math.min(STAR_AT.length * kind().depts.length, OPEN_AT);
 }
 
 function canMove() {
@@ -1274,35 +1354,57 @@ function buyPerk(id) {
   return true;
 }
 
-// the departments a store starts with
-function startBiz() {
+// the departments a store of type t starts with
+function startBiz(t) {
   var v = pv('open');
-  var b = { produce: atLevel('produce', v[0]) };
-  if (v[1]) b.bakery = atLevel('bakery', v[1]);
+  var b = {};
+  b[t.depts[0]] = atLevel(t.depts[0], v[0]);
+  if (v[1]) b[t.depts[1]] = atLevel(t.depts[1], v[1]);
   return b;
 }
 
+// the type the next store of the chain is
+function nextType() {
+  return TYPES[Math.min(nStores(), TYPES.length - 1)];
+}
+
+// the store on screen becomes store i of the chain; the others go on earning by the model
+function view(i) {
+  var r = S.cs[i];
+  S.cur = i;
+  S.b = r.b;
+  S.pl = r.pl;
+  S.pi = r.pi;
+  S.ms = r.ms;
+  clearShoppers();
+  repick();
+}
+
+// a new store of the chain, shown at once. It shares the wallet; the old store keeps what it has built
+function openStore(t) {
+  if (nStores() >= MAX_STORES) return false;
+  var r = { t: t.id, m: t.mul, c: t.cost, b: startBiz(t), ms: {}, pl: {}, pi: {} };
+  noPlaces(r);
+  // stars the start already has pay their gems, as if earned
+  for (var id in r.b) {
+    for (var i = 0; i < starsAt(r.b[id].l); i++) {
+      r.ms[id] = i + 1;
+      S.gems += STAR_GEMS[i];
+    }
+  }
+  S.cs.push(r);
+  S.run = 0;
+  S.st.sr = 0;
+  view(nStores() - 1);
+  return true;
+}
+
+// what the New store sheet calls until the chain screen replaces it
 function move() {
   if (!canMove()) return false;
   claimAway();
   S.rep += repGain();
-  S.store++;
-  S.cash = START_CASH + pv('cash');
-  S.run = 0;
-  S.st.sr = 0;
-  S.ms = {};
-  noPlaces(S);
-  S.b = startBiz();
-  // stars the start already has pay their gems, as if earned
-  for (var id in S.b) {
-    for (var i = 0; i < starsAt(S.b[id].l); i++) {
-      S.ms[id] = i + 1;
-      S.gems += STAR_GEMS[i];
-    }
-  }
-  clearShoppers();
-  repick();
-  return true;
+  return openStore(nextType());
 }
 
 function zone() {
@@ -1542,12 +1644,57 @@ function oldPieces(l) {
   return n;
 }
 
+// one store's places, departments and stars as a save of version v holds them, in src; t is its type
+function readStore(src, v, t) {
+  var r = { t: t.id, m: t.mul, c: t.cost, b: {}, ms: {}, pl: {}, pi: {} };
+  noPlaces(r);
+  var pl = src.pl && typeof src.pl === 'object' ? src.pl : {};
+  PLACES.forEach(function (p) {
+    var l = Math.min(p.cost.length, Math.floor(num(pl[p.id], 0)));
+    var it = atPlace(p.id, l);
+    // v11 keeps the level of each item; the first l pieces are what the older saves had
+    var at = v >= 11 && src.pi && src.pi[p.id];
+    if (Array.isArray(at) && at.length === p.items.length) {
+      var had = at.reduce(function (a, c) { return a + Math.floor(num(c, 0)); }, 0);
+      it = p.items.map(function (x, j) { return Math.min(x.at.length, Math.floor(num(at[j], 0))); });
+      l = it.reduce(function (a, c) { return a + c; }, 0);
+      // an item with fewer pieces than it had keeps the pieces in total, spread as a new level would
+      if (had > l) {
+        l = Math.min(p.cost.length, had);
+        it = atPlace(p.id, l);
+      }
+    }
+    r.pl[p.id] = l;
+    r.pi[p.id] = it;
+  });
+  BIZ.forEach(function (z) {
+    var e = src.b && src.b[z.id];
+    if (!e || !(e.l >= 1) || t.di[z.id] === undefined) return;
+    var l = Math.floor(e.l);
+    // before v10 a department went to level 400 and showed 21 pieces on the way; it keeps its share of them
+    if (v < 10) l = Math.max(1, Math.round(oldPieces(l) * UPS / 21));
+    l = Math.min(UPS, l);
+    var b = atLevel(z.id, l);
+    // v11 keeps the level of each item; the first l pieces are what the older saves had
+    if (v >= 11 && Array.isArray(e.it) && e.it.length === z.items.length) {
+      var it = z.items.map(function (x, j) { return Math.min(x.at.length, Math.floor(num(e.it[j], 0))); });
+      var sum = it.reduce(function (a, c) { return a + c; }, 0);
+      var all = e.it.reduce(function (a, c) { return a + Math.floor(num(c, 0)); }, 0);
+      // an item with fewer pieces than it had keeps the pieces in total, spread as a new level would
+      if (all > sum) b = atLevel(z.id, Math.min(UPS, all));
+      else if (sum >= 1) b = { l: sum, it: it };
+    }
+    r.b[z.id] = b;
+    r.ms[z.id] = v >= 11 && src.ms && z.id in src.ms ? Math.min(STAR_AT.length, Math.floor(num(src.ms[z.id], 0))) : starsAt(b.l);
+  });
+  return r;
+}
+
 // copies what it knows by id; anything unknown is dropped and anything missing starts over
 function validate(o) {
   if (!o || typeof o !== 'object' || typeof o.v !== 'number' || o.v < 7 || o.v > SAVE_V || !o.b || typeof o.b !== 'object') return null;
   if (!isFinite(o.cash) || !isFinite(o.ts)) return null;
   var s = fresh();
-  s.b = {};
   s.cash = num(o.cash, 0);
   s.gems = Math.floor(num(o.gems, 0));
   s.rep = Math.floor(num(o.rep, 0));
@@ -1586,54 +1733,34 @@ function validate(o) {
   var ad = o.ads || {};
   s.ads = { d: Math.floor(num(ad.d, -1)), n: {}, pt: num(ad.pt, 0), ap: num(ad.ap, 0), li: num(ad.li, 0), sd: num(ad.sd, 0) };
   for (var k in AD_CAP) s.ads.n[k] = Math.min(AD_CAP[k], Math.floor(num(ad.n && ad.n[k], 0)));
-  var pl = o.pl && typeof o.pl === 'object' ? o.pl : {};
-  PLACES.forEach(function (p) {
-    var l = Math.min(p.cost.length, Math.floor(num(pl[p.id], 0)));
-    var it = atPlace(p.id, l);
-    // v11 keeps the level of each item; the first l pieces are what the older saves had
-    var at = o.v >= 11 && o.pi && o.pi[p.id];
-    if (Array.isArray(at) && at.length === p.items.length) {
-      var had = at.reduce(function (a, c) { return a + Math.floor(num(c, 0)); }, 0);
-      it = p.items.map(function (x, j) { return Math.min(x.at.length, Math.floor(num(at[j], 0))); });
-      l = it.reduce(function (a, c) { return a + c; }, 0);
-      // an item with fewer pieces than it had keeps the pieces in total, spread as a new level would
-      if (had > l) {
-        l = Math.min(p.cost.length, had);
-        it = atPlace(p.id, l);
-      }
+  var list = o.v >= 12 && Array.isArray(o.cs) && o.cs.length ? o.cs.slice(0, MAX_STORES) : null;
+  var cur = list ? Math.min(list.length - 1, Math.floor(num(o.cur, 0))) : 0;
+  // a store from before the chain was the one with the store number's income and prices
+  var n = Math.min(1000, Math.max(1, Math.floor(num(o.store, 0)) || 1 + Math.floor(num(o.st && o.st.sales, 0))));
+  s.cs = (list || [null]).map(function (e, i) {
+    var t = TY[e && e.t] || TYPES[0];
+    var r = readStore(i === cur ? o : e || {}, o.v, t);
+    if (e) {
+      r.m = num(e.m, t.mul);
+      r.c = num(e.c, t.cost);
+    } else {
+      r.m = Math.pow(1.45, n - 1);
+      r.c = Math.pow(1.35, Math.max(0, n - 2));
     }
-    s.pl[p.id] = l;
-    s.pi[p.id] = it;
+    return r;
   });
+  s.cur = cur;
+  s.b = s.cs[cur].b;
+  s.pl = s.cs[cur].pl;
+  s.pi = s.cs[cur].pi;
+  s.ms = s.cs[cur].ms;
   s.ts = o.ts;
-  BIZ.forEach(function (z) {
-    var e = o.b[z.id];
-    if (!e || !(e.l >= 1)) return;
-    var l = Math.floor(e.l);
-    // before v10 a department went to level 400 and showed 21 pieces on the way; it keeps its share of them
-    if (o.v < 10) l = Math.max(1, Math.round(oldPieces(l) * UPS / 21));
-    l = Math.min(UPS, l);
-    var b = atLevel(z.id, l);
-    // v11 keeps the level of each item; the first l pieces are what the older saves had
-    if (o.v >= 11 && Array.isArray(e.it) && e.it.length === z.items.length) {
-      var it = z.items.map(function (x, j) { return Math.min(x.at.length, Math.floor(num(e.it[j], 0))); });
-      var sum = it.reduce(function (a, c) { return a + c; }, 0);
-      var all = e.it.reduce(function (a, c) { return a + Math.floor(num(c, 0)); }, 0);
-      // an item with fewer pieces than it had keeps the pieces in total, spread as a new level would
-      if (all > sum) b = atLevel(z.id, Math.min(UPS, all));
-      else if (sum >= 1) b = { l: sum, it: it };
-    }
-    s.b[z.id] = b;
-    s.ms[z.id] = o.v >= 11 && o.ms && z.id in o.ms ? Math.min(STAR_AT.length, Math.floor(num(o.ms[z.id], 0))) : starsAt(b.l);
-  });
   if (o.st) {
     s.st.srv = Math.floor(num(o.st.srv, 0));
     s.st.lost = Math.floor(num(o.st.lost, 0));
     s.st.sr = Math.min(s.st.srv, Math.floor(num(o.st.sr, 0)));
     s.st.t = num(o.st.t, 0);
   }
-  // before the move a store sale was counted in st.sales
-  s.store = Math.min(1000, Math.max(1, Math.floor(num(o.store, 0)) || 1 + Math.floor(num(o.st && o.st.sales, 0))));
   // the goal list was rewritten with the tills, so a v7 save starts it again; a v8 one had no stockroom goals
   if (o.v === 8) v8Goals(o);
   var gn = o.v === 7 ? 3 : Math.min(GOALS.length, Math.floor(num(o.gn, 3)));
@@ -1691,7 +1818,6 @@ function carry(o) {
   S = fresh();
   S.gems = Math.floor(num(o.gems, 0));
   S.x2 = num(o.x2, 0);
-  S.store = 1 + Math.floor(num(o.st && o.st.sales, 0));
   if (o.day && isFinite(o.day.n) && isFinite(o.day.d)) S.day = { n: Math.floor(o.day.n), d: Math.floor(o.day.d), t: 0 };
   save();
 }
@@ -1781,7 +1907,7 @@ var cloudTook = false;
 function cloudSig(o) {
   var rg = o.rg && [o.rg.o, o.rg.days, o.rg.gifts, o.rg.combo];
   var mi = o.mi && [o.mi.b, o.mi.m.map(function (m) { return m.c; })];
-  return JSON.stringify([o.gems, o.rep, o.store, o.b, o.pl, o.pi, o.ms, o.goal, o.gn, o.gd, o.lk, o.ac, o.pk, o.iap, o.ads && o.ads.n, rg, mi, o.day && o.day.n]);
+  return JSON.stringify([o.gems, o.rep, o.cur, o.cs && o.cs.map(function (r) { return [r.t, r.m, r.c, r.b, r.pl, r.pi, r.ms]; }), o.goal, o.gn, o.gd, o.lk, o.ac, o.pk, o.iap, o.ads && o.ads.n, rg, mi, o.day && o.day.n]);
 }
 
 // a deal that is still open and that the other side's ledger does not show as used up (by that very tap, not by another
@@ -1978,7 +2104,9 @@ function takeCloud(raw, stamp, current) {
 function saved() {
   var c = S.cash;
   if (FREE !== null) S.cash = FREE;
-  var out = JSON.stringify(S);
+  // the store on screen is saved at the top, like the single store of the saves before the chain
+  var cs = S.cs.map(function (r, i) { return i === S.cur ? { t: r.t, m: r.m, c: r.c } : r; });
+  var out = JSON.stringify(Object.assign({}, S, { cs: cs }));
   S.cash = c;
   return out;
 }
@@ -2005,9 +2133,9 @@ function testIncome(hours) {
   earn(rate() * 3600 * hours);
 }
 
-// every department and place at its last level
+// every department and place of the store on screen at its last level
 function fillStore() {
-  BIZ.forEach(function (z) { S.b[z.id] = atLevel(z.id, ITEMS[z.id].of.length); });
+  BIZ.forEach(function (z) { if (built(z.id)) S.b[z.id] = atLevel(z.id, ITEMS[z.id].of.length); });
   PLACES.forEach(function (p) {
     S.pi[p.id] = atPlace(p.id, p.of.length);
     S.pl[p.id] = p.of.length;

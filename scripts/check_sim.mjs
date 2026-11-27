@@ -101,7 +101,7 @@ const sampleSave = JSON.parse(store[key]);
 run('S = fresh()');
 run('load()');
 const got = JSON.parse(run('saved()'));
-if (got.v !== sampleSave.v || got.cash !== sampleSave.cash || got.gems !== sampleSave.gems) fail('the v11 sample save did not load as written');
+if (got.v !== run('SAVE_V') || got.cash !== sampleSave.cash || got.gems !== sampleSave.gems) fail('the v11 sample save did not load as written');
 if (Object.keys(got.b).join() !== Object.keys(sampleSave.b).join()) fail('the v11 sample save lost departments');
 
 // a save that cannot be read is kept as a backup before the new game replaces it; a newer one is left alone
@@ -120,12 +120,12 @@ delete store[key];
 run('S = fresh()');
 run('load()');
 if (key + '.bak' in store) fail('an empty store made a backup');
-const newer = JSON.stringify({ ...JSON.parse(good), v: 12 });
+const newer = JSON.stringify({ ...JSON.parse(good), v: 13 });
 store[key] = newer;
 run('S = fresh()');
 run('load()');
 run('save()');
-if (store[key] !== newer || run('blocked') !== true) fail('a v12 save was not left alone');
+if (store[key] !== newer || run('blocked') !== true) fail('a v13 save was not left alone');
 run('blocked = false');
 
 // an item that lost pieces keeps the pieces in total
@@ -213,7 +213,7 @@ if (run('S.vt') !== 0) fail('a due VIP timer came back as ' + run('S.vt'));
   run('S = fresh()');
   run('load()');
   if (run('S.cl.base') !== 's1' || run('cloudSig(S)') !== run('S.cl.sig')) fail('the first save does not agree with the copy it came from');
-  if (run('takeCloud(' + JSON.stringify(JSON.stringify({ ...other, v: 12 })) + ', "s2")')) fail('a cloud save from a newer build was read');
+  if (run('takeCloud(' + JSON.stringify(JSON.stringify({ ...other, v: 13 })) + ', "s2")')) fail('a cloud save from a newer build was read');
   if (run('blocked') !== true) fail('a cloud save from a newer build did not stop this build from saving');
   run('blocked = false');
   run('S.ads.pt = 700');

@@ -831,7 +831,7 @@ for (const aMore of [false, true]) {
 // a copy from a newer build blocks writing, in a running game
 {
   const [a, , c] = pair();
-  a.push({ t: 'cloud', json: JSON.stringify({ ...good, v: good.v + 1 }), at: T17, dev: 'x', stamp: 'x:1', refused: false });
+  a.push({ t: 'cloud', json: JSON.stringify({ ...good, v: 13 }), at: T17, dev: 'x', stamp: 'x:1', refused: false });
   expect(a.run('blocked') === true && a.fails.some(f => f[1] === true), 'a copy from a newer build did not stop saving');
   const n = a.puts().length;
   a.change(1, 1);
