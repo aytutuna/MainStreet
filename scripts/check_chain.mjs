@@ -569,6 +569,63 @@ if (run('saved().length') > 300000) fail('thirty full stores make a save of ' + 
   if (run('S.gems') !== 40 + run('STAR_GEMS[1]')) fail('the next star of a migrated save paid ' + (run('S.gems') - 40));
 }
 
+// the next store is paid for by the newest one, whichever store is on screen
+{
+  twoStores();
+  run('fillStore()');
+  run('view(0)');
+  const viewed = run('repGain()');
+  if (!run('canMove()')) fail('the move was not offered with the newest store at its gate, viewed from the first store');
+  run('view(1)');
+  if (run('repGain()') !== viewed) fail('the reputation depends on the store on screen');
+  const rep = run('S.rep');
+  run('S.cash = 1e12');
+  run('view(0)');
+  if (!run('move()')) fail('the newest store could not open the next one from another view');
+  const gained = run('S.rep') - rep;
+  if (gained !== viewed) fail('the move paid ' + gained + ', not ' + viewed);
+  run('view(0)');
+  if (run('canMove()') || run('move()') || run('S.rep') !== rep + gained) fail('the move was offered again for a store that has not reached its gate');
+}
+
+// a rush, a gift and the VIP timer go on when the view changes stores
+{
+  twoStores();
+  run("rush = { kind: 'bus', left: 60, got: 0 }");
+  run("gift = { kind: 'cart', left: 20, jack: false }");
+  run('S.vt = 77');
+  run('view(0)');
+  if (!run('rush && rush.left === 60') || !run('gift && gift.left === 20') || run('S.vt') !== 77) fail('a rush, a gift or the VIP timer was dropped by switching stores');
+  run('rush = null; gift = null');
+}
+
+// what a store earned and served is its own
+{
+  twoStores();
+  run('S.run = 5; S.st.sr = 3');
+  const first = run('S.cs[0].run');
+  run('view(0)');
+  if (run('S.run') !== first || run('S.cs[1].run') !== 5 || run('S.cs[1].sr') !== 3) fail('the run was not swapped with the store');
+  run('view(1)');
+  if (run('S.run') !== 5 || run('S.st.sr') !== 3) fail('the run did not come back with its store');
+  const before = run('S.cs[0].run');
+  play(5);
+  if (!(run('S.cs[0].run') > before)) fail('a store off screen did not earn for its own run');
+  if (run('atStore(0, function () { return S.run; })') !== run('S.cs[0].run')) fail('atStore does not see the run of the store');
+  run('S.cs[0].sr = 9');
+  store[key] = run('saved()');
+  run('S = fresh()');
+  run('load()');
+  if (run('S.cs[0].sr') !== 9) fail('the run of a store was not saved');
+  // a save from before it gives its run to the store on screen
+  const v = JSON.parse(JSON.stringify(fixture));
+  v.run = 1234;
+  store[key] = JSON.stringify(v);
+  run('S = fresh()');
+  run('load()');
+  if (run('S.run') !== 1234) fail('a migrated save lost its run');
+}
+
 // opening stores stops at the cap
 run('reset()');
 run('fillStore()');

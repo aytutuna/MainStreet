@@ -113,7 +113,7 @@ function fresh() {
   noPlaces(s);
   s.b.produce = atLevel('produce', 1);
   // the stores of the chain. The one on screen is cs[cur] and S.b, S.pl, S.pi and S.ms are its own objects
-  s.cs = [{ t: TYPES[0].id, m: TYPES[0].mul, c: TYPES[0].cost, b: s.b, pl: s.pl, pi: s.pi, ms: s.ms }];
+  s.cs = [{ t: TYPES[0].id, m: TYPES[0].mul, c: TYPES[0].cost, run: 0, sr: 0, b: s.b, pl: s.pl, pi: s.pi, ms: s.ms }];
   s.cur = 0;
   return s;
 }
@@ -641,19 +641,25 @@ var OFF_EVERY = 1;
 var offAt = 0;
 var offBase = 0;
 var offSrv = 0;
+var offEach = [];
 var offFrac = 0;
 // what the stores off screen have added to S.all and S.st.srv, for the sweep that measures the one on screen
 var offEarned = 0;
 var offServedN = 0;
 
 function clearShoppers() {
+  clearFloor();
+  perkOff();
+}
+
+// the shoppers, tills, crew and shelves of the store on screen
+function clearFloor() {
   offAt = 0;
   shoppers = [];
   tills = TILLS.map(function (t, i) { return { i: i, k: t.k, lv: t.lv, q: [], t: 0 }; });
   tills.push({ i: TILLS.length, k: 'garden', lv: 0, q: [], t: 0 });
   due = { walk: 0.8, car: 0.4, taxi: 0, garden: 0.5 };
   lostT = 0;
-  perkOff();
   BIZ.forEach(function (b) { fill[b.id] = 1; });
   crew = [];
   outT = 0;
@@ -830,12 +836,19 @@ function atStore(i, f) {
   var pl = S.pl;
   var pi = S.pi;
   var ms = S.ms;
+  var run = S.run;
+  var sr = S.st.sr;
   var r = S.cs[i];
   S.cur = i;
   S.b = r.b;
   S.pl = r.pl;
   S.pi = r.pi;
   S.ms = r.ms;
+  // what a store earned and served is its own; the one on screen keeps its numbers in S
+  if (i !== cur) {
+    S.run = r.run;
+    S.st.sr = r.sr;
+  }
   try {
     return f();
   } finally {
@@ -844,6 +857,8 @@ function atStore(i, f) {
     S.pl = pl;
     S.pi = pi;
     S.ms = ms;
+    S.run = run;
+    S.st.sr = sr;
   }
 }
 
@@ -870,6 +885,7 @@ function offRefresh() {
   offAt = OFF_EVERY;
   offBase = offRate();
   offSrv = offServed();
+  offEach = S.cs.map(function (r, i) { return i === S.cur ? 0 : storeRate(i); });
 }
 
 function tick(dt) {
@@ -887,6 +903,7 @@ function tick(dt) {
     var gain = offBase * dt * (boosted ? 2 : 1);
     earn(gain, true);
     offEarned += gain;
+    S.cs.forEach(function (r, i) { if (i !== S.cur) r.run += (offEach[i] || 0) * dt * (boosted ? 2 : 1); });
     // the shoppers they serve count in the total, not in this store's
     offFrac += offSrv * dt;
     var whole = Math.floor(offFrac);
@@ -1451,13 +1468,18 @@ function gate() {
   return Math.min(STAR_AT.length * kind().depts.length, OPEN_AT);
 }
 
+// the next store opens on the progress of the newest one, whichever store is on screen
+function newest(f) {
+  return atStore(nStores() - 1, f);
+}
+
 function canMove() {
-  return nStores() < MAX_STORES && rating() >= gate();
+  return nStores() < MAX_STORES && newest(function () { return rating() >= gate(); });
 }
 
 // reputation a move pays: a point for each star and each open department, and one for each digit earned in the store
 function repGain() {
-  return rating() + opened() + Math.floor(Math.log10(S.run + 1));
+  return newest(function () { return rating() + opened() + Math.floor(Math.log10(S.run + 1)); });
 }
 
 // what a perk is worth at the level bought
@@ -1495,12 +1517,17 @@ function nextType() {
 // the store on screen becomes store i of the chain; the others go on earning by the model
 function view(i) {
   var r = S.cs[i];
+  here().run = S.run;
+  here().sr = S.st.sr;
+  S.run = r.run;
+  S.st.sr = r.sr;
   S.cur = i;
   S.b = r.b;
   S.pl = r.pl;
   S.pi = r.pi;
   S.ms = r.ms;
-  clearShoppers();
+  // the floor starts over for the new store; a rush, a gift and the VIP timer go on
+  clearFloor();
   offRefresh();
   repick();
 }
@@ -1517,7 +1544,7 @@ function starGems(type, id, i) {
 // a new store of the chain, shown at once. It shares the wallet; the old store keeps what it has built
 function openStore(t) {
   if (nStores() >= MAX_STORES) return false;
-  var r = { t: t.id, m: t.mul, c: t.cost, b: startBiz(t), ms: {}, pl: {}, pi: {} };
+  var r = { t: t.id, m: t.mul, c: t.cost, run: 0, sr: 0, b: startBiz(t), ms: {}, pl: {}, pi: {} };
   noPlaces(r);
   // stars the start already has pay their gems, as if earned
   for (var id in r.b) {
@@ -1527,8 +1554,6 @@ function openStore(t) {
     }
   }
   S.cs.push(r);
-  S.run = 0;
-  S.st.sr = 0;
   view(nStores() - 1);
   return true;
 }
@@ -1781,7 +1806,7 @@ function oldPieces(l) {
 
 // one store's places, departments and stars as a save of version v holds them, in src; t is its type
 function readStore(src, v, t) {
-  var r = { t: t.id, m: t.mul, c: t.cost, b: {}, ms: {}, pl: {}, pi: {} };
+  var r = { t: t.id, m: t.mul, c: t.cost, run: Math.max(0, num(src.run, 0)), sr: Math.max(0, num(src.sr, 0)), b: {}, ms: {}, pl: {}, pi: {} };
   noPlaces(r);
   var pl = src.pl && typeof src.pl === 'object' ? src.pl : {};
   PLACES.forEach(function (p) {
