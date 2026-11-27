@@ -20,6 +20,8 @@ const code = [
   /function covered[\s\S]*?\r?\n\}\r?\n/,
   /var INTRO = \{[\s\S]*?\r?\n\};/,
   /var introQ = \[\];/,
+  /function introLive[\s\S]*?\r?\n\}\r?\n/,
+  /function nightAd[\s\S]*?\r?\n\}\r?\n/,
   /var INTRO_WHEN = \{[\s\S]*?\r?\n\};/,
   /function want[\s\S]*?\r?\n\}\r?\n/,
   /function pumpIntro[\s\S]*?\r?\n\}\r?\n/,
@@ -65,12 +67,18 @@ const ctx = {
   STAR_MUL: 4,
   STAR_AT: [10, 20, 30],
   X2_COST: 20,
+  I18N: { locale: 'en' },
+  fmtn: n => String(n),
+  rush: null,
+  gift: null,
+  vipIn: () => false,
+  watching: null,
   S: { intro: {}, gems: 0 },
   cardId: null,
   sheetOpen: false,
   bq: [],
   bqBusy: false,
-  closed: true,
+  closed: false,
   started: () => true,
   shut: () => ctx.closed,
   nStores: () => 1,
@@ -126,6 +134,28 @@ advance(400);
 check('the banner that waited showed after the box closed', !banner().hidden && banner().innerHTML.includes('four'));
 idle();
 
+// banners held behind a card are all kept, in order
+ctx.cardId = 'hall';
+for (let i = 1; i <= 5; i++) run("banner('<b>B" + i + "</b>', 0)");
+check('held banners were dropped: ' + run('bq.length') + ' kept', run('bq.length') === 5);
+ctx.cardId = null;
+const order = [];
+for (let i = 0; i < 5; i++) {
+  advance(400);
+  order.push(banner().innerHTML);
+  advance(2000);
+}
+check('the held banners did not all show in order: ' + order.join(), order.every((h, i) => h.includes('B' + (i + 1))));
+// a banner that says it is no longer live is dropped
+ctx.rush = {};
+ctx.cardId = 'hall';
+run("banner('<b>flash</b>', 0, false, false, { live: function () { return !!rush; } })");
+ctx.rush = null;
+ctx.cardId = null;
+advance(1000);
+check('a banner for a rush that was over showed', banner().hidden || !banner().innerHTML.includes('flash'));
+idle();
+
 // a first-time card waits for an open card and shows once
 ctx.cardId = 'hall';
 run("want('stars')");
@@ -136,6 +166,7 @@ pump();
 check('the star card did not open when the card closed', !el('intro').hidden && el('intro-h').textContent === 'intro.stars.title');
 check('the star card was not marked as shown', ctx.S.intro.stars === 1);
 // the next one waits for this one to be closed
+ctx.gift = {};
 run("want('gifts')");
 pump();
 check('two first-time cards at once', el('intro-h').textContent === 'intro.stars.title');
@@ -151,6 +182,7 @@ check('a card shown before came again', el('intro').hidden);
 // a card waits for a banner on screen
 run("banner('<b>six</b>', 0)");
 advance(300);
+ctx.rush = {};
 run("want('rush')");
 pump();
 check('a card opened over a banner', el('intro').hidden);
@@ -160,6 +192,7 @@ check('the card did not follow the banner', !el('intro').hidden && el('intro-h')
 el('intro').hidden = true;
 
 // a banner waits for a first-time card
+ctx.vipIn = () => true;
 run("want('vip')");
 pump();
 run("banner('<b>seven</b>', 0)");
@@ -189,6 +222,19 @@ el('intro').hidden = true;
 run("want('night')");
 pump();
 check('the closing card came twice', el('intro').hidden);
+
+// a card for an event that is gone is dropped and not used up
+ctx.rush = null;
+ctx.S.intro.rush = 0;
+run("want('rush')");
+pump();
+check('a rush card showed for no rush', el('intro').hidden);
+check('a rush card was used up for no rush', !ctx.S.intro.rush);
+ctx.gift = null;
+run("want('gifts')");
+ctx.S.intro.gifts = 0;
+pump();
+check('a gift card showed for no gift', el('intro').hidden && !ctx.S.intro.gifts);
 
 // a state that turns true gets its card
 ctx.nStores = () => 2;

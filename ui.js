@@ -660,9 +660,16 @@ function words(el) {
 }
 
 // now is for the answer to a tap inside an open box, which shows at once; every other banner waits until nothing is open
-function banner(html, delay, big, now) {
-  if (bq.length > 2) bq.shift();
-  bq.push({ h: html, d: delay || 0, big: big, now: now });
+// extra may hold fx, run when the banner shows (the flight that belongs to it), and live, which says whether it is still
+// worth showing by then
+function banner(html, delay, big, now, extra) {
+  // what waits behind an open card is kept, up to a point; the cap is for a stream that can show at once
+  if (bq.length > (covered() ? 8 : 2)) {
+    var j = 0;
+    while (j < bq.length && bq[j].now) j++;
+    bq.splice(j < bq.length ? j : 0, 1);
+  }
+  bq.push({ h: html, d: delay || 0, big: big, now: now, fx: extra && extra.fx, live: extra && extra.live });
   if (!bqBusy) nextBanner();
 }
 
@@ -679,10 +686,15 @@ function nextBanner() {
     return;
   }
   var q = bq.splice(i, 1)[0];
+  if (q.live && !q.live()) {
+    nextBanner();
+    return;
+  }
   setTimeout(function () {
     var b = $('banner');
     hideToast();
     b.innerHTML = q.h;
+    if (q.fx) q.fx();
     b.hidden = false;
     say(words(b));
     b.style.animation = 'none';
@@ -1103,8 +1115,7 @@ function afterBuy(res) {
     pulse(0.9);
     want('stars');
     banner('<b>' + tl('banner.star', { name: name, n: res.star, mul: Math.pow(STAR_MUL, res.star) }) + '</b>' + (res.gems ? '<small>' + tl('common.gems_plus', { n: res.gems }) + '</small>' : ''),
-      t + 0.3, res.star === STAR_AT.length);
-    if (res.gems) flyGems(innerWidth / 2, innerHeight * 0.3, Math.min(6, res.gems));
+      t + 0.3, res.star === STAR_AT.length, false, { fx: function () { if (res.gems) flyGems(innerWidth / 2, innerHeight * 0.3, Math.min(6, res.gems)); } });
     View.burst(res.id, t, [30, 44, 50][res.star - 1]);
     if (res.star === STAR_AT.length) View.burst(res.id, t + 0.4, 30);
     setTimeout(askNotify, 2500);
@@ -1390,7 +1401,7 @@ function covered() {
 // First-time cards. Each system tells itself once, the first time it matters. They wait for each other, for the banners
 // and for any open card, sheet or box, and the ones shown are kept in the save. The title and text are lang keys
 var INTRO = {
-  stars: ['intro.stars.title', 'intro.stars', function () { return { n: STAR_MUL, a: STAR_AT.slice(1).join(', ') }; }],
+  stars: ['intro.stars.title', 'intro.stars', function () { return { n: STAR_MUL, a: new Intl.ListFormat(I18N.locale, { type: 'conjunction' }).format(STAR_AT.slice(1).map(function (n) { return fmtn(n); })) }; }],
   gifts: ['intro.gifts.title', 'intro.gifts'],
   rush: ['intro.rush.title', 'intro.rush'],
   vip: ['intro.vip.title', 'intro.vip'],
@@ -1405,9 +1416,20 @@ var INTRO = {
 var INTRO_WHEN = {
   chain: function () { return nStores() > 1; },
   perks: function () { return perkDue(); },
-  shop: function () { return S.gems >= X2_COST; }
+  shop: function () { return S.gems >= X2_COST; },
+  night: function () { return shut(); }
 };
 var introQ = [];
+
+// a card for an event is for as long as the event is there: a rush that ended or a gift that left under an open card is
+// not explained afterwards, and not used up, so the next one gets it
+function introLive(id) {
+  if (id === 'night') return shut();
+  if (id === 'rush') return !!rush;
+  if (id === 'gifts') return !!gift;
+  if (id === 'vip') return vipIn();
+  return true;
+}
 
 function want(id) {
   if (!S.intro[id] && introQ.indexOf(id) < 0) introQ.push(id);
@@ -1416,8 +1438,7 @@ function want(id) {
 function pumpIntro() {
   if (!started()) return;
   for (var k in INTRO_WHEN) if (INTRO_WHEN[k]()) want(k);
-  // the closing card offers a way to stay open, so it is not for a store that is open again
-  while (introQ.length && (S.intro[introQ[0]] || (introQ[0] === 'night' && !shut()))) introQ.shift();
+  while (introQ.length && (S.intro[introQ[0]] || !introLive(introQ[0]))) introQ.shift();
   if (!introQ.length || covered() || bqBusy || document.hidden) return;
   var id = introQ.shift();
   var d = INTRO[id];
@@ -1434,10 +1455,15 @@ function pumpIntro() {
 function paintNight() {
   if ($('intro-night').hidden) return;
   put($('intro-gems'), 'innerHTML', '<img src="assets/ui_gem.png" alt="">' + NIGHT.gems);
-  put($('intro-gems'), 'disabled', S.gems < NIGHT.gems || !shut());
+  put($('intro-gems'), 'disabled', S.gems < NIGHT.gems || !shut() || nightAd());
   put($('intro-ad'), 'hidden', !canWatch('night'));
   put($('intro-ad'), 'textContent', adLabel());
   put($('intro-ad'), 'disabled', !shut());
+}
+
+// the night ad is on its way, so gems cannot pay the same night twice
+function nightAd() {
+  return !!(watching && watching.k === 'night');
 }
 
 // tonight is open: the store's own Open banner follows
@@ -1917,7 +1943,7 @@ function paintBoost() {
     tl('boost.night.day', { a: fmtClock(SHUT[0] * 60), b: morning }));
   put($('night-need'), 'textContent', shut() ? gemsLeft(NIGHT.gems) : '');
   put($('b-night'), 'innerHTML', '<img src="assets/ui_gem.png" alt="">' + NIGHT.gems);
-  put($('b-night'), 'disabled', !shut() || S.gems < NIGHT.gems);
+  put($('b-night'), 'disabled', !shut() || S.gems < NIGHT.gems || nightAd());
   put($('call-txt'), 'textContent', S.call > 0 ? tl('boost.call.ready_in', { t: clock2(S.call) }) : tl('boost.call.brings', { n: CALL.cool / 60 }));
   put($('call-need'), 'textContent', rush ? tl('boost.call.rush_on') : shut() ? tl('boost.call.closed') : S.call > 0 ? gemsLeft(CALL.gems) : '');
   put($('b-call'), 'innerHTML', S.call > 0 ? '<img src="assets/ui_gem.png" alt="">' + CALL.gems : tl('boost.call.btn'));
@@ -2629,7 +2655,7 @@ function onPerkEvent(ev, o) {
   else if (ev === 'rush') {
     View.rush(o.kind);
     want('rush');
-    banner('<b>' + tl(o.kind === 'bus' ? 'banner.bus' : 'banner.flash') + '</b><small>' + tl(o.kind === 'bus' ? 'banner.bus.line' : 'banner.flash.line') + '</small>', 0);
+    banner('<b>' + tl(o.kind === 'bus' ? 'banner.bus' : 'banner.flash') + '</b><small>' + tl(o.kind === 'bus' ? 'banner.bus.line' : 'banner.flash.line') + '</small>', 0, false, false, { live: function () { return !!rush; } });
     sfx(buf.rush ? 'rush' : 'done');
     buzz('medium');
   } else if (ev === 'rushend') {
@@ -2990,6 +3016,7 @@ function begin(fromCloud) {
     if (!View.ready()) return;
     clearInterval(wait);
     View.refresh();
+    if (rush) View.rush(rush.kind);
     updateBest();
     View.focusNow();
     updateGoals();

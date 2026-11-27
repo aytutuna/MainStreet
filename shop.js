@@ -979,7 +979,12 @@ function adGive(k, from) {
   } else if (k === 'rush') {
     if (callRush(true)) $('boost').hidden = true;
   } else if (k === 'night') {
-    if (openTonight(true)) tonightOpen();
+    // the night can be over, or paid for with gems, by the time the ad is done: the ad is not used up then
+    if (!openTonight(true)) {
+      adUsed().night = Math.max(0, (adUsed().night || 0) - 1);
+      return;
+    }
+    tonightOpen();
   } else if (k === 'warp') {
     var v = warp(true);
     popAt(plus(money(v)), c.x, c.y, 'big');
