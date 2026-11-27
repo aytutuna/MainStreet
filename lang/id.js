@@ -247,7 +247,7 @@ LANG['id'] = {
 
   'sell.sign': 'TOKO',
   'sell.stars': 'bintang',
-  'sell.open_depts': 'Buka <b>{a} dari {b}</b> departemen',
+  'sell.open_depts': '<b>{a} dari {b}</b> departemen dibuka',
   'sell.income': 'Pendapatan <b>x{a} → x{b}</b>',
   'sell.ready': 'Siap pindah.',
   'sell.reach': { other: 'Capai {n} bintang untuk pindah.' },

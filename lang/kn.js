@@ -233,7 +233,7 @@ LANG['kn'] = {
   'perk.maxed': 'ಗರಿಷ್ಠ',
   'sell.sign': 'ಅಂಗಡಿ',
   'sell.stars': 'ನಕ್ಷತ್ರ',
-  'sell.open_depts': '{b} ವಿಭಾಗಗಳಲ್ಲಿ <b>{a}</b> ತೆರೆಯಿರಿ',
+  'sell.open_depts': 'ತೆರೆದ ವಿಭಾಗಗಳು: <b>{a}/{b}</b>',
   'sell.income': 'ಆದಾಯ <b>x{a} → x{b}</b>',
   'sell.ready': 'ಹೋಗಲು ಸಿದ್ಧ.',
   'sell.reach': { one: 'ಹೋಗಲು {n} ನಕ್ಷತ್ರ ತಲುಪಿ.', other: 'ಹೋಗಲು {n} ನಕ್ಷತ್ರಗಳನ್ನು ತಲುಪಿ.' },

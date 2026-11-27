@@ -248,7 +248,7 @@ LANG['da'] = {
 
   'sell.sign': 'BUTIK',
   'sell.stars': 'stjerner',
-  'sell.open_depts': 'Åbn <b>{a} af {b}</b> afdelinger',
+  'sell.open_depts': 'Åbne afdelinger: <b>{a} af {b}</b>',
   'sell.income': 'Indtjening <b>x{a} → x{b}</b>',
   'sell.ready': 'Klar til at flytte.',
   'sell.reach': { one: 'Nå {n} stjerne for at flytte.', other: 'Nå {n} stjerner for at flytte.' },

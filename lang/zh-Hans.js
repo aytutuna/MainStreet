@@ -247,7 +247,7 @@ LANG['zh-Hans'] = {
 
   'sell.sign': '超市',
   'sell.stars': '星',
-  'sell.open_depts': '开设<b>{a}/{b}</b>个部门',
+  'sell.open_depts': '已开设<b>{a}/{b}</b>个部门',
   'sell.income': '收入 <b>x{a} → x{b}</b>',
   'sell.ready': '可以搬了。',
   'sell.reach': { other: '集齐{n}颗星才能搬。' },

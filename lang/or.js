@@ -248,7 +248,7 @@ LANG['or'] = {
 
   'sell.sign': 'ଦୋକାନ',
   'sell.stars': 'ତାରା',
-  'sell.open_depts': '{b} ରୁ <b>{a}</b> ବିଭାଗ ଖୋଲ',
+  'sell.open_depts': 'ଖୋଲା ବିଭାଗ: <b>{a}/{b}</b>',
   'sell.income': 'ଆୟ <b>x{a} → x{b}</b>',
   'sell.ready': 'ଯିବାକୁ ପ୍ରସ୍ତୁତ।',
   'sell.reach': { one: 'ଯିବାକୁ {n} ତାରା ପାଅ।', other: 'ଯିବାକୁ {n} ତାରା ପାଅ।' },

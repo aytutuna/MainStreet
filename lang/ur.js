@@ -248,7 +248,7 @@ LANG['ur'] = {
 
   'sell.sign': 'اسٹور',
   'sell.stars': 'ستارے',
-  'sell.open_depts': '<b>{b} میں سے {a}</b> شعبے کھلے ہوں',
+  'sell.open_depts': 'کھلے شعبے: <b>{a}/{b}</b>',
   'sell.income': 'آمدنی <b>x{a} ← x{b}</b>',
   'sell.ready': 'منتقل ہونے کے لیے تیار۔',
   'sell.reach': { one: 'منتقل ہونے کے لیے {n} ستارہ حاصل کریں۔', other: 'منتقل ہونے کے لیے {n} ستارے حاصل کریں۔' },

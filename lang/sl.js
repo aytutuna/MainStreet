@@ -265,7 +265,7 @@ LANG['sl'] = {
 
   'sell.sign': 'TRGOVINA',
   'sell.stars': 'zvezdic',
-  'sell.open_depts': 'Odpri <b>{a} od {b}</b> oddelkov',
+  'sell.open_depts': 'Odprti oddelki: <b>{a} od {b}</b>',
   'sell.income': 'Dohodek <b>x{a} → x{b}</b>',
   'sell.ready': 'Pripravljeno na selitev.',
   'sell.reach': {

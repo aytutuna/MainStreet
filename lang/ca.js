@@ -249,7 +249,7 @@ LANG['ca'] = {
 
   'sell.sign': 'BOTIGA',
   'sell.stars': 'estrelles',
-  'sell.open_depts': 'Obre <b>{a} de {b}</b> seccions',
+  'sell.open_depts': 'Seccions obertes: <b>{a} de {b}</b>',
   'sell.income': 'Ingressos <b>x{a} → x{b}</b>',
   'sell.ready': 'Llest per canviar.',
   'sell.reach': { one: 'Arriba a {n} estrella per canviar.', many: 'Arriba a {n} d’estrelles per canviar.', other: 'Arriba a {n} estrelles per canviar.' },

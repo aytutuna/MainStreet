@@ -231,7 +231,7 @@ LANG['no'] = {
   'perk.maxed': 'Maks',
   'sell.sign': 'BUTIKK',
   'sell.stars': 'stjerner',
-  'sell.open_depts': 'Åpne <b>{a} av {b}</b> avdelinger',
+  'sell.open_depts': 'Åpne avdelinger: <b>{a} av {b}</b>',
   'sell.income': 'Inntekt <b>x{a} → x{b}</b>',
   'sell.ready': 'Klar til å flytte.',
   'sell.reach': { one: 'Nå {n} stjerne for å flytte.', other: 'Nå {n} stjerner for å flytte.' },

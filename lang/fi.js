@@ -248,7 +248,7 @@ LANG['fi'] = {
 
   'sell.sign': 'KAUPPA',
   'sell.stars': 'tähteä',
-  'sell.open_depts': 'Avaa <b>{a}/{b}</b> osastoa',
+  'sell.open_depts': 'Osastoja auki: <b>{a}/{b}</b>',
   'sell.income': 'Tulot <b>x{a} → x{b}</b>',
   'sell.ready': 'Valmis muuttoon.',
   'sell.reach': { one: 'Hanki {n} tähti, niin voit muuttaa.', other: 'Hanki {n} tähteä, niin voit muuttaa.' },

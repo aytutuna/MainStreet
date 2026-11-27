@@ -406,8 +406,8 @@ LANG['en'] = {
   'sell.sign': 'STORE',
   // Label under a fraction such as 3/5.
   'sell.stars': 'stars',
-  // Keep the <b> tags. {a} departments open out of {b}.
-  'sell.open_depts': 'Open <b>{a} of {b}</b> departments',
+  // Keep the <b> tags. A count, not an order: {a} departments are open out of {b}.
+  'sell.open_depts': 'Departments open: <b>{a} of {b}</b>',
   // Keep the <b> tags. {a} and {b} are the income multipliers of this store and the next.
   'sell.income': 'Income <b>x{a} → x{b}</b>',
   'sell.ready': 'Ready to move.',

@@ -247,7 +247,7 @@ LANG['ms'] = {
 
   'sell.sign': 'KEDAI',
   'sell.stars': 'bintang',
-  'sell.open_depts': 'Buka <b>{a} daripada {b}</b> jabatan',
+  'sell.open_depts': '<b>{a} daripada {b}</b> jabatan dibuka',
   'sell.income': 'Pendapatan <b>x{a} → x{b}</b>',
   'sell.ready': 'Sedia untuk berpindah.',
   'sell.reach': { other: 'Capai {n} bintang untuk berpindah.' },

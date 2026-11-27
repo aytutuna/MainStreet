@@ -247,7 +247,7 @@ LANG['vi'] = {
 
   'sell.sign': 'SIÊU THỊ',
   'sell.stars': 'sao',
-  'sell.open_depts': 'Mở <b>{a}/{b}</b> khu hàng',
+  'sell.open_depts': 'Đã mở <b>{a}/{b}</b> khu hàng',
   'sell.income': 'Thu nhập <b>x{a} → x{b}</b>',
   'sell.ready': 'Sẵn sàng chuyển.',
   'sell.reach': { other: 'Đạt {n} sao để chuyển.' },

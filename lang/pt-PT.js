@@ -234,7 +234,7 @@ LANG['pt-PT'] = {
   'perk.maxed': 'No máximo',
   'sell.sign': 'LOJA',
   'sell.stars': 'estrelas',
-  'sell.open_depts': 'Abre <b>{a} de {b}</b> secções',
+  'sell.open_depts': 'Secções abertas: <b>{a} de {b}</b>',
   'sell.income': 'Rendimento <b>x{a} → x{b}</b>',
   'sell.ready': 'Pronto para mudar.',
   'sell.reach': { one: 'Chega a {n} estrela para mudar.', many: 'Chega a {n} de estrelas para mudar.', other: 'Chega a {n} estrelas para mudar.' },

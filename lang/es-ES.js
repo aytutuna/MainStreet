@@ -249,7 +249,7 @@ LANG['es-ES'] = {
 
   'sell.sign': 'TIENDA',
   'sell.stars': 'estrellas',
-  'sell.open_depts': 'Abre <b>{a} de {b}</b> secciones',
+  'sell.open_depts': 'Secciones abiertas: <b>{a} de {b}</b>',
   'sell.income': 'Ingresos <b>x{a} → x{b}</b>',
   'sell.ready': 'Listo para mudarte.',
   'sell.reach': { one: 'Consigue {n} estrella para mudarte.', many: 'Consigue {n} de estrellas para mudarte.', other: 'Consigue {n} estrellas para mudarte.' },

@@ -250,7 +250,7 @@ LANG['cs'] = {
 
   'sell.sign': 'OBCHOD',
   'sell.stars': 'hvězd',
-  'sell.open_depts': 'Otevři <b>{a} z {b}</b> oddělení',
+  'sell.open_depts': 'Otevřená oddělení: <b>{a} z {b}</b>',
   'sell.income': 'Příjem <b>x{a} → x{b}</b>',
   'sell.ready': 'Můžeš se přesunout.',
   'sell.reach': { one: 'Získej {n} hvězdu, ať se můžeš přesunout.', few: 'Získej {n} hvězdy, ať se můžeš přesunout.', many: 'Získej {n} hvězdy, ať se můžeš přesunout.', other: 'Získej {n} hvězd, ať se můžeš přesunout.' },
