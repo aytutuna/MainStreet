@@ -457,7 +457,10 @@ var fitQueue = [];
 // changing in a pill do not make it jitter. Once shrunk a label only shrinks more until its box or the language changes.
 function fitOne(el) {
   if (!el.offsetParent) return;
-  var cw = el.clientWidth;
+  var cs = getComputedStyle(el);
+  // layout widths are fractional; clientWidth and scrollWidth round, which left a label up to half a pixel too wide
+  var cw = parseFloat(cs.width) - parseFloat(cs.borderLeftWidth) - parseFloat(cs.borderRightWidth);
+  if (isNaN(cw)) cw = el.clientWidth;
   var key = fitEpoch + '|' + cw + '|' + el.textContent;
   if (el.fit === key) return;
   var layout = fitEpoch + '|' + cw;
@@ -467,17 +470,30 @@ function fitOne(el) {
     el.style.fontSize = '';
   }
   el.fit = key;
-  var sw = el.scrollWidth;
-  if (sw <= cw) return;
-  var cur = parseFloat(getComputedStyle(el).fontSize);
+  var sw = fitNeed(el, cs);
+  if (sw <= cw + 0.01) return;
+  var cur = parseFloat(cs.fontSize);
   if (!el.fitBase) el.fitBase = cur;
   var base = el.fitBase;
-  var want = cur * cw / sw;
+  // a pixel short of the box, since letter spacing does not shrink with the font
+  var want = cur * (cw - 1) / sw;
   // the largest step that still fits, the smallest when none does
   var i = 0;
   while (i < fitSteps.length - 1 && base * fitSteps[i] > want) i++;
   var px = base * fitSteps[i];
   if (px < cur - 0.01) el.style.fontSize = px + 'px';
+}
+
+// the width the content wants, padding included, undone for a bump animation's scale
+function fitNeed(el, cs) {
+  var r = document.createRange();
+  r.selectNodeContents(el);
+  var w = r.getBoundingClientRect().width;
+  var outer = el.getBoundingClientRect().width;
+  var own = parseFloat(cs.width);
+  if (outer && own) w *= own / outer;
+  var pad = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+  return Math.max(w + pad, el.scrollWidth - 0.5);
 }
 
 function fitAll(root) {
@@ -526,7 +542,7 @@ function fitWire() {
   window.addEventListener('resize', all);
   if (document.fonts) {
     document.fonts.ready.then(all);
-    // a face that arrives late (the extended Latin Lilita, a system fallback) changes every width again
+    // a face that arrives late (a system fallback) changes every width again
     document.fonts.addEventListener('loadingdone', all);
   }
   ask(document);

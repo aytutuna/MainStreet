@@ -68,7 +68,7 @@ function sysLang() {
   return String((navigator.languages && navigator.languages[0]) || navigator.language || 'en');
 }
 
-// Lilita One only has Latin letters. Everything else falls to the phone's own fonts, listed per script because the
+// Fira Sans covers Latin, Cyrillic and Greek. Everything else falls to the phone's own fonts, listed per script because the
 // system fallback is not always the nicest one (Urdu wants Nastaliq, Japanese and Chinese need their own forms).
 // They come before the generic families, which would otherwise answer first.
 var FONT_BASE = 'ui-rounded, "SF Pro Rounded"';
@@ -166,12 +166,12 @@ function setupLang(code) {
   h.lang = e[2];
   h.dir = I18N.rtl ? 'rtl' : 'ltr';
   if (I18N.script && !/^(ja|ko|zh)/.test(code)) h.classList.add('cx');
-  // Lilita One only draws Latin, so these languages fall to a system font, which needs its own bold
-  if (I18N.script || /^(ru|uk|el|vi)$/.test(code)) h.classList.add('fb');
+  // these languages fall to a system font, which needs its own bold
+  if (I18N.script) h.classList.add('fb');
   // the stack for the page (CSS var --sys) and for text drawn on canvases
   I18N.font = [FONT_BASE, I18N.script, FONT_TAIL].filter(Boolean).join(', ');
   h.style.setProperty('--sys', I18N.font);
-  h.style.setProperty('--head', '"Lilita One", ' + I18N.font);
+  h.style.setProperty('--head', '"Fira Sans", ' + I18N.font);
 }
 
 (function () {
