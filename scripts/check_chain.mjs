@@ -626,6 +626,37 @@ if (run('saved().length') > 300000) fail('thirty full stores make a save of ' + 
   if (run('S.run') !== 1234) fail('a migrated save lost its run');
 }
 
+// a rush that follows the view is measured against the store it ends in
+{
+  twoStores();
+  run('S.cash = 1e12');
+  run('view(0)');
+  ctx.__ev = [];
+  run("onPerk = function (ev, o) { if (ev === 'rushend') __ev.push(o.extra); }");
+  run('callRush(true)');
+  const steady = run('rate()');
+  const len = run('rush.len');
+  run('rush.got = 2 * rate() * rush.len');
+  play(len + 2);
+  run('onPerk = null');
+  if (ctx.__ev.length !== 1 || !near(ctx.__ev[0], steady * len, 0.1)) fail('the rush after a switch added ' + ctx.__ev.join() + ', not about ' + steady * len);
+}
+
+// a v12 save from before each store kept its run has one run, which is the newest store's
+{
+  twoStores();
+  run('view(0)');
+  const o = JSON.parse(run('saved()'));
+  for (const e of o.cs) { delete e.run; delete e.sr; }
+  o.run = 99;
+  o.st.srv = 100;
+  o.st.sr = 7;
+  store[key] = JSON.stringify(o);
+  run('S = fresh()');
+  run('load()');
+  if (run('S.cs[1].run') !== 99 || run('S.cs[1].sr') !== 7 || run('S.run') !== 0 || run('S.st.sr') !== 0) fail('the one run of an older save stayed with the store on screen');
+}
+
 // opening stores stops at the cap
 run('reset()');
 run('fillStore()');

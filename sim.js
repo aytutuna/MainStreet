@@ -829,7 +829,8 @@ function stockStep(dt) {
   });
 }
 
-// runs f with store i of the chain as the one on screen, then puts the real one back
+// runs f with store i of the chain as the one on screen, then puts the real one back. S.run and S.st.sr are put back too,
+// so f must not add to them
 function atStore(i, f) {
   var cur = S.cur;
   var b = S.b;
@@ -1004,13 +1005,14 @@ function perkStep(dt) {
   }
   if (rush) {
     rush.left -= dt;
+    rush.base = (rush.base || 0) + incRate * dt;
     if (rush.left <= 0) {
       var r = rush;
       rush = null;
       rushT = rnd(RUSH.gap);
       calmT = 8;
       // what the rush added to the steady income
-      r.extra = Math.max(0, r.got - incRate * r.len);
+      r.extra = Math.max(0, r.got - (r.base || 0));
       if (onPerk) onPerk('rushend', r);
     }
   } else if (!hold && !shut() && (rushT -= dt) <= 0) startRush();
@@ -1528,6 +1530,9 @@ function view(i) {
   S.ms = r.ms;
   // the floor starts over for the new store; a rush, a gift and the VIP timer go on
   clearFloor();
+  // the new store's steady income is what a rush that goes on is measured against
+  inc = 0;
+  incRate = rate();
   offRefresh();
   repick();
 }
@@ -1935,6 +1940,14 @@ function validate(o) {
     s.st.lost = Math.floor(num(o.st.lost, 0));
     s.st.sr = Math.min(s.st.srv, Math.floor(num(o.st.sr, 0)));
     s.st.t = num(o.st.t, 0);
+  }
+  // a save from before each store kept its own run had one run, the newest store's
+  if (list && !list.some(function (e) { return e && ('run' in e || 'sr' in e); }) && cur !== s.cs.length - 1) {
+    var lastR = s.cs[s.cs.length - 1];
+    lastR.run = s.run;
+    lastR.sr = s.st.sr;
+    s.run = 0;
+    s.st.sr = 0;
   }
   // the goal list was rewritten with the tills, so a v7 save starts it again; a v8 one had no stockroom goals
   if (o.v === 8) v8Goals(o);
