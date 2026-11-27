@@ -195,6 +195,7 @@ for (const [x2, boost] of [[0, 0], [1, 0], [0, 7200], [1, 7200]]) {
 
 // a VIP that is due but held back keeps its zero through a save and load
 run('reset()');
+run('fillStore()');
 run('S.vt = 0.4; perkStep(1, true)');
 run('save()');
 run('S = fresh()');
@@ -219,8 +220,10 @@ if (run('S.vt') !== 0) fail('a due VIP timer came back as ' + run('S.vt'));
   run('S.ads.pt = 700');
   run('save()');
   if (store[key].length > 1000000) fail('the save is ' + store[key].length + ' bytes, over the 1 MB the cloud allows');
-}
-
+}
+
+
+
 // shortened figures keep their direction: progress goes down, targets and prices go up
 for (const [v, dir, want] of [[11.65, 1, '12'], [11.4, -1, '11'], [1236, -1, '1.23K'], [1240, 1, '1.24K'], [1236, 1, '1.24K'], [999.2, 1, '1K'], [999999.5, 1, '1M'], [999999.5, -1, '999K'], [0, 1, '0'], [0, -1, '0'], [1e6, 1, '1M'], [1e6, -1, '1M']]) {
   const got3 = run('short(' + v + ', ' + dir + ')');

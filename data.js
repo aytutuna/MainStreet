@@ -150,6 +150,8 @@ GIFT.jmix = 0.25;
 var RUSH = { gap: [240, 360], secs: 30, mul: 2, sale: 3, tap: 0.9, combo: 0.05, top: 10 };
 // the manager's call for a rush: cool seconds between calls, or gems to call one now
 var CALL = { cool: 1200, gems: 5 };
+// opening tonight, when the store is shut for the night: what it costs in gems, or one ad a day
+var NIGHT = { gems: 25 };
 
 // Perks bought with reputation, which each store move pays and which a move keeps. cost is what each level takes in
 // reputation and val what the perk is worth at level 0 and then at each level bought: cash, away hours and rush seconds
@@ -227,7 +229,7 @@ var DEAL = { bonus: 0.2, packs: ['gems2', 'gems3', 'gems1', 'gems4'] };
 
 // Ads the player chooses to watch: what each one gives and how many a day. With Skip ads (noads) the same rewards come
 // for free, up to the same number
-var AD_CAP = { x2: 4, away: 3, warp: 2, gems: 3, rush: 2 };
+var AD_CAP = { x2: 4, away: 3, warp: 2, gems: 3, rush: 2, night: 1 };
 var AD_GEMS = 3;
 // a gem pack the store lists is credited if it is no older than this many seconds and not credited before
 var RECOVER = 3 * 86400;

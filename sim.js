@@ -109,7 +109,7 @@ var S = fresh();
 function fresh() {
   var s = { v: SAVE_V, cash: START_CASH, gems: 0, rep: 0, pk: {}, run: 0, all: 0, sg: {}, pend: 0, pr: 0, ps: 0, x2: 0, call: 0, vt: rnd(VIP.first), b: {}, ms: {},
     st: { srv: 0, lost: 0, sr: 0, t: 0 }, goal: [0, 1, 2], gn: 3, gd: {}, day: { n: 0, d: -1, t: 0 }, tz: { o: zone(), at: clock() }, mi: { d: -1, m: [], b: 0 }, rg: { o: {}, days: 0, gifts: 0, combo: 0 }, lk: { on: 'classic', own: {}, top: 0 }, ac: { o: {}, m: {} },
-    ask: 0, clk: START_H * CLOCK / 24, iap: { noads: 0, x2: 0, starter: 0, noadsTx: '', x2Tx: '', noadsUser: '', x2User: '', noadsAt: 0, x2At: 0, wait: {}, tx: [], rf: [], paid: [] }, cl: { base: '', sig: '', bap: 0, old: [], seen: {}, force: 0, fly: null }, er: 0, ads: { d: -1, n: {}, pt: 0, ap: 0, li: 0, sd: 0 }, hold: { dev: '', at: 0 }, ts: clock() };
+    ask: 0, clk: START_H * CLOCK / 24, iap: { noads: 0, x2: 0, starter: 0, noadsTx: '', x2Tx: '', noadsUser: '', x2User: '', noadsAt: 0, x2At: 0, wait: {}, tx: [], rf: [], paid: [] }, cl: { base: '', sig: '', bap: 0, old: [], seen: {}, force: 0, fly: null }, er: 0, ads: { d: -1, n: {}, pt: 0, ap: 0, li: 0, sd: 0 }, hold: { dev: '', at: 0 }, ot: 0, ru: null, intro: {}, ts: clock() };
   noPlaces(s);
   s.b.produce = atLevel('produce', 1);
   // the stores of the chain. The one on screen is cs[cur] and S.b, S.pl, S.pi and S.ms are its own objects
@@ -314,11 +314,24 @@ function dayHour() {
   return S.clk * 24 / CLOCK;
 }
 
-// closed for the night unless the store stays open all night
-function shut() {
+// the clock is in the hours the store shuts
+function nightHours() {
   var h = dayHour();
   var wraps = SHUT[0] > SHUT[1];
-  return !pv('night') && (wraps ? h >= SHUT[0] || h < SHUT[1] : h >= SHUT[0] && h < SHUT[1]);
+  return wraps ? h >= SHUT[0] || h < SHUT[1] : h >= SHUT[0] && h < SHUT[1];
+}
+
+// closed for the night unless the store stays open all night or tonight was opened (S.ot, cleared when the hours end)
+function shut() {
+  return !pv('night') && !S.ot && nightHours();
+}
+
+// keeps tonight's closing off until the morning, for the gems or the ad that paid for it
+function openTonight(paid) {
+  if (!shut() || (!paid && S.gems < NIGHT.gems)) return false;
+  if (!paid) S.gems -= NIGHT.gems;
+  S.ot = 1;
+  return true;
 }
 
 // the share of a day the store is open
@@ -616,7 +629,8 @@ var due = {};
 var sid = 0;
 var lostT = 0;
 // what the player can tap: a gift that shows up for a few seconds now and then, and a rush that doubles the arrivals for
-// a while. The ui sets hold while the player is busy elsewhere, so nothing new starts then
+// a while. The ui sets hold while a card, sheet or box is open: they still turn up then, but what is on screen
+// does not run down until it closes
 var hold = false;
 var gift = null;
 var giftT = 0;
@@ -675,7 +689,7 @@ function come(by) {
     at: null, done: false, reg: null, tipped: false };
   // now and then the shopper is one of the regulars
   if (by !== 'garden' && speed === 1) {
-    if (S.vt <= 0 && !hold && !vipIn()) {
+    if (S.vt <= 0 && !vipIn()) {
       c.reg = 'vip';
       S.vt = rnd(VIP.gap);
     } else if (Math.random() < REGC.odds) c.reg = pickReg();
@@ -893,6 +907,7 @@ function tick(dt) {
   dt *= speed;
   // the clock waits for the first purchase, so the opening never meets a closing
   if (started()) S.clk = (S.clk + dt) % CLOCK;
+  if (S.ot && !nightHours()) S.ot = 0;
   var off = shut();
   var boosted = S.x2 > 0;
   if (S.x2 > 0 && !off) S.x2 = Math.max(0, S.x2 - dt);
@@ -936,7 +951,7 @@ function tick(dt) {
       come(k);
     }
     // a rush's extra shoppers only come in while the view has figures to spare; the rest never arrive, so none is lost
-    if (rush && k !== 'garden') {
+    if (rush && !hold && k !== 'garden') {
       xdue[k] += f[k] * dt * ((rush.kind === 'sale' ? RUSH.sale : RUSH.mul) - 1);
       while (xdue[k] >= 1) {
         xdue[k]--;
@@ -949,6 +964,8 @@ function tick(dt) {
   }
   for (var i = shoppers.length - 1; i >= 0; i--) {
     var c = shoppers[i];
+    // a VIP's visit does not run down behind an open card
+    if (hold && c.reg === 'vip') continue;
     c.age += dt;
     // a figure stuck somewhere lets go, and its shopper carries on unseen
     if (c.v && c.age > 240) {
@@ -991,20 +1008,20 @@ function perkOff() {
 }
 
 function perkStep(dt) {
-  if (!hold && S.vt > 0) S.vt = Math.max(0, S.vt - dt);
+  if (started() && S.vt > 0) S.vt = Math.max(0, S.vt - dt);
   if (gift) {
-    gift.left -= dt;
+    if (!hold) gift.left -= dt;
     if (gift.left <= 0) {
       gift = null;
       giftT = rnd(GIFT.gap);
       if (onPerk) onPerk('giftgone');
     }
-  } else if (!hold && (giftT -= dt) <= 0) {
+  } else if (started() && (giftT -= dt) <= 0) {
     gift = { kind: ['cart', 'wallet', 'vip'][Math.floor(Math.random() * 3)], left: rnd(GIFT.life), jack: Math.random() < GIFT.jack };
     if (onPerk) onPerk('gift', gift);
   }
   if (rush) {
-    rush.left -= dt;
+    if (!hold) rush.left -= dt;
     rush.base = (rush.base || 0) + incRate * dt;
     if (rush.left <= 0) {
       var r = rush;
@@ -1015,7 +1032,7 @@ function perkStep(dt) {
       r.extra = Math.max(0, r.got - (r.base || 0));
       if (onPerk) onPerk('rushend', r);
     }
-  } else if (!hold && !shut() && (rushT -= dt) <= 0) startRush();
+  } else if (started() && !shut() && (rushT -= dt) <= 0) startRush();
 }
 
 function startRush() {
@@ -1235,6 +1252,7 @@ function away(sec) {
     });
   });
   if (started()) S.clk = (S.clk + sec) % CLOCK;
+  S.ot = 0;
   shutNow = shut();
   S.x2 -= xs;
   S.call = Math.max(0, S.call - s);
@@ -1876,6 +1894,11 @@ function validate(o) {
   s.call = Math.min(CALL.cool, num(o.call, 0));
   s.vt = Math.min(VIP.gap[1], num(o.vt, s.vt));
   s.ask = o.ask ? 1 : 0;
+  s.ot = o.ot ? 1 : 0;
+  s.intro = {};
+  if (o.intro && typeof o.intro === 'object') for (var ik in o.intro) if (/^\w+$/.test(ik) && o.intro[ik]) s.intro[ik] = 1;
+  var ru = o.ru;
+  s.ru = ru && typeof ru === 'object' && ru.left > 0 && ru.len > 0 ? { kind: ru.kind === 'bus' ? 'bus' : 'sale', left: num(ru.left, 0), len: num(ru.len, 0), got: num(ru.got, 0), base: num(ru.base, 0) } : null;
   s.clk = num(o.clk, s.clk) % CLOCK;
   var ip = o.iap || {};
   s.iap = { noads: ip.noads ? 1 : 0, x2: ip.x2 ? 1 : 0, starter: ip.starter === 2 ? 2 : ip.starter ? 1 : 0, offered: ip.offered ? 1 : 0,
@@ -2036,6 +2059,15 @@ function carry(o) {
   save();
 }
 
+// a rush that was running when the game was saved goes on from what it had left, measured against the steady rate
+function resumeRush(sec) {
+  var r = S.ru;
+  S.ru = null;
+  if (!r || r.left - sec <= 0 || shut()) return;
+  rush = { kind: r.kind, left: r.left - sec, len: r.len, got: r.got, base: r.base };
+  incRate = rate();
+}
+
 // returns the away summary when the save is old enough, else null
 // the store from before shoppers paid at the tills keeps its departments and places
 function load() {
@@ -2067,6 +2099,7 @@ function load() {
       var edited = cloudSig(o) !== o.cl.sig;
       var sec = (clock() - o.ts) / 1000;
       if (sec > 60) back = away(sec);
+      else resumeRush(sec);
       // what the away pay unlocks is not a change of the player's
       if (!edited) S.cl.sig = cloudSig(S);
       if (old) save();
@@ -2336,7 +2369,8 @@ function saved() {
   if (FREE !== null) S.cash = FREE;
   // the store on screen is saved at the top, like the single store of the saves before the chain
   var cs = S.cs.map(function (r, i) { return i === S.cur ? { t: r.t, m: r.m, c: r.c } : r; });
-  var out = JSON.stringify(Object.assign({}, S, { cs: cs }));
+  var ru = rush ? { kind: rush.kind, left: rush.left, len: rush.len, got: rush.got, base: rush.base || 0 } : null;
+  var out = JSON.stringify(Object.assign({}, S, { cs: cs, ru: ru }));
   S.cash = c;
   return out;
 }
