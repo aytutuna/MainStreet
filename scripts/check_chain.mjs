@@ -49,12 +49,13 @@ function play(secs) {
 const aliased = () => run('S.cs[S.cur].b === S.b && S.cs[S.cur].pl === S.pl && S.cs[S.cur].pi === S.pi && S.cs[S.cur].ms === S.ms');
 const near = (a, b, tol) => Math.abs(a - b) <= tol * Math.abs(b);
 
-// a game with the first store filled to its last level, and the second opened
+// a game with the first store filled to its last level, and the second opened: the stand-in type, which has the same
+// departments as the supercenter, so the checks below can buy the same things in both
 function twoStores() {
   run('reset()');
   run('fillStore()');
   run('S.cash = 1e9');
-  if (!run('move()')) fail('the second store did not open after a full first one');
+  if (!run('openStore(TY.test)')) fail('the second store did not open after a full first one');
 }
 
 // a fresh game is one supercenter whose objects are the ones on screen

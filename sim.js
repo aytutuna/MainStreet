@@ -104,6 +104,23 @@ PLACES.forEach(function (p) {
   }
 });
 
+// A place keeps its levels and prices in every store type but is worded by the type: pl on a type gives a place's name, the
+// department it comes after, and its pieces and items in the type's words. The supercenter's wording is the default, and
+// the words of the store on screen are the ones a place holds
+var PL0 = {};
+PLACES.forEach(function (p) { PL0[p.id] = { name: p.name, after: p.after, next: p.next, it: p.items.map(function (x) { return x.name; }) }; });
+
+function typeTexts() {
+  var t = kind();
+  PLACES.forEach(function (p) {
+    var o = t.pl && t.pl[p.id] || PL0[p.id];
+    p.name = o.name;
+    p.after = o.after;
+    p.next = o.next;
+    p.items.forEach(function (x, j) { x.name = o.it[j]; });
+  });
+}
+
 var S = fresh();
 
 function fresh() {
@@ -1489,7 +1506,8 @@ function startBiz(t) {
 
 // the type the next store of the chain is
 function nextType() {
-  return TYPES[Math.min(nStores(), TYPES.length - 1)];
+  var real = TYPES.filter(function (t) { return !t.test; });
+  return real[Math.min(nStores(), real.length - 1)];
 }
 
 // the store on screen becomes store i of the chain; the others go on earning by the model
@@ -1500,6 +1518,7 @@ function view(i) {
   S.pl = r.pl;
   S.pi = r.pi;
   S.ms = r.ms;
+  typeTexts();
   clearShoppers();
   offRefresh();
   repick();
@@ -2331,6 +2350,7 @@ function testIncome(hours) {
 function fillStore() {
   BIZ.forEach(function (z) { if (built(z.id)) S.b[z.id] = atLevel(z.id, ITEMS[z.id].of.length); });
   PLACES.forEach(function (p) {
+    if (!kind().pd[p.id]) return;
     S.pi[p.id] = atPlace(p.id, p.of.length);
     S.pl[p.id] = p.of.length;
   });
