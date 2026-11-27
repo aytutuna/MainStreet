@@ -15,6 +15,7 @@ var AWAY_X2 = 5;
 var X2_SECS = 1800;
 var WARP_COST = 50;
 var WARP_SECS = 3600;
+var WARP_WEAK = 600;
 var DAILY = [
   { cash: 2 }, { gems: 5 }, { x2: 30 }, { cash: 30 }, { gems: 10 }, { cash: 60 }, { gems: 25, x2: 60, cash: 120 }
 ];
@@ -121,17 +122,30 @@ function noPlaces(s) {
 // numbers: 1.2K, 3.4M, 5.6B, 7.8T and so on up to Dc, then 1.5e42
 var SUFFIX = null;
 
-function short(v) {
+// dir 1 rounds up and -1 down (progress against a target, money against a price); without it the nearest figure is shown
+function short(v, dir) {
   if (!isFinite(v)) return '∞';
   if (!SUFFIX) SUFFIX = tl('num.suffixes').split(',');
-  if (v < 1000) return fmtn(v < 10 && v !== Math.floor(v) ? Math.round(v * 10) / 10 : Math.floor(v));
+  if (dir && v < 1000) {
+    v = dir > 0 ? Math.ceil(v - 1e-9) : Math.floor(v + 1e-9);
+    if (v < 1000) return fmtn(v + 0);
+  } else if (v < 1000) {
+    return fmtn(v < 10 && v !== Math.floor(v) ? Math.round(v * 10) / 10 : Math.floor(v));
+  }
   var i = Math.floor(Math.log10(v) / 3);
   var x = v / Math.pow(1000, i);
-  if (x >= 999.5) {
+  if (dir) {
+    var f = Math.pow(10, 2 - Math.floor(Math.log10(x)));
+    x = (dir > 0 ? Math.ceil(x * f - 1e-9) : Math.floor(x * f + 1e-9)) / f;
+    if (x >= 1000) {
+      x /= 1000;
+      i++;
+    }
+  } else if (x >= 999.5) {
     x /= 1000;
     i++;
   }
-  if (i < SUFFIX.length) return fmtn(Number(x.toPrecision(3))) + SUFFIX[i];
+  if (i < SUFFIX.length) return fmtn(dir ? x : Number(x.toPrecision(3))) + SUFFIX[i];
   var e = Math.floor(Math.log10(v));
   var m = Number((v / Math.pow(10, e)).toPrecision(2));
   if (m >= 10) {
@@ -1164,7 +1178,7 @@ function gLv(id, n, gems, x2) {
   return goTo(gl(n === 1 ? tl('goal.open', { dept: BZ[id].name }) : tl('goal.dept_level', { dept: BZ[id].name, n: n }), gems, n, function () { return lv(id); }, x2), id);
 }
 function gEarn(n, gems, x2) {
-  return gl(tl('goal.earn', { amount: short(n) }), gems, n, function () { return S.all; }, x2);
+  return gl(tl('goal.earn', { amount: short(n, 1) }), gems, n, function () { return S.all; }, x2);
 }
 function gServe(n, gems, x2) {
   return gl(tl('goal.serve', { n: n }), gems, n, function () { return S.st.srv; }, x2);
@@ -1446,7 +1460,7 @@ function missions() {
 function missionText(m) {
   switch (m.k) {
     case 'serve': return tl('goal.serve', { n: m.n });
-    case 'earn': return tl('mission.earn', { amount: short(m.n) });
+    case 'earn': return tl('mission.earn', { amount: short(m.n, 1) });
     case 'gift': return tl('mission.gift', { n: m.n });
     case 'rush': return tl('mission.rush', { n: m.n });
     case 'buy': return tl('mission.buy', { n: m.n });

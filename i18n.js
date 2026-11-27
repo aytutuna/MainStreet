@@ -61,6 +61,12 @@ var LANGS = [
 // rest of LANGS are empty files waiting for translators. scripts/gen_native.mjs rewrites this line.
 var LANG_READY = ['en', 'ar', 'bn', 'ca', 'cs', 'da', 'de', 'el', 'es-ES', 'es-MX', 'fi', 'fr-FR', 'fr-CA', 'gu', 'he', 'hi', 'hr', 'hu', 'id', 'it', 'ja', 'kn', 'ko', 'ml', 'mr', 'ms', 'nl', 'no', 'or', 'pa', 'pl', 'pt-BR', 'pt-PT', 'ro', 'ru', 'sk', 'sl', 'sv', 'ta', 'te', 'th', 'tr', 'uk', 'ur', 'vi', 'zh-Hans', 'zh-Hant'];
 var LANG_KEY = 'mainstreet.lang';
+var LANG_SYS_KEY = 'mainstreet.lang.sys';
+
+// the phone's first language, as the page sees it
+function sysLang() {
+  return String((navigator.languages && navigator.languages[0]) || navigator.language || 'en');
+}
 
 // Lilita One only has Latin letters. Everything else falls to the phone's own fonts, listed per script because the
 // system fallback is not always the nicest one (Urdu wants Nastaliq, Japanese and Chinese need their own forms).
@@ -125,6 +131,15 @@ function pickLang() {
   var saved = '';
   try {
     saved = localStorage.getItem(LANG_KEY) || '';
+    // a choice holds until the phone or app language changes, then the phone wins again
+    var sys = localStorage.getItem(LANG_SYS_KEY);
+    // a choice made before the phone language was kept is taken as made under today's
+    if (saved && sys === null) localStorage.setItem(LANG_SYS_KEY, sysLang());
+    else if (saved && sys !== sysLang()) {
+      localStorage.removeItem(LANG_KEY);
+      localStorage.removeItem(LANG_SYS_KEY);
+      saved = '';
+    }
   } catch (e) {}
   // ?lang= takes any language, so a translator can look at a file that is not released yet
   if (q && langEntry(q[1])) return q[1];
@@ -286,6 +301,7 @@ function setLang(code) {
   langWait = '';
   try {
     localStorage.setItem(LANG_KEY, code);
+    localStorage.setItem(LANG_SYS_KEY, sysLang());
   } catch (e) {}
   if (typeof save === 'function') save();
   if (typeof cloudPut === 'function') cloudPut();
