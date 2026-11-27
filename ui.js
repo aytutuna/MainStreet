@@ -536,7 +536,7 @@ function popAt(text, x, y, cls) {
   var half = d.offsetWidth * 0.58 + 4;
   d.style.left = Math.max(half, Math.min($('fly').clientWidth - half, x)) + 'px';
   d.style.top = Math.max(70, y) + 'px';
-  if (still()) {
+  if (calm()) {
     d.style.transform = 'translate(-50%, -20px)';
     setTimeout(function () { d.remove(); }, cls === 'item' ? 1800 : 1100);
     return;
@@ -551,7 +551,7 @@ function popAt(text, x, y, cls) {
 }
 
 function flyIcons(src, x, y, n, targetId) {
-  if (still()) {
+  if (calm()) {
     land(targetId === 'gems' ? 'gems' : 'coins', 0);
     bumpEl(targetId === 'gems' ? 'gem-n' : 'cash-n');
     return;
@@ -580,7 +580,7 @@ function flyIcons(src, x, y, n, targetId) {
 
 // a ring that swells and fades where something was tapped
 function ring(x, y) {
-  if (still()) return;
+  if (calm()) return;
   var d = document.createElement('i');
   d.className = 'ring';
   d.style.left = x + 'px';
@@ -1128,7 +1128,7 @@ function upgrade(id, j) {
 
 // coins falling from the top of the screen, one tick of the coin sound as each wave lands
 function rain(n) {
-  if (!still()) rainFall(n);
+  if (!calm()) rainFall(n);
   for (var k = 0; k < 5; k++) setTimeout(function (r) { sfx('coins', r); }, 350 + k * 330, 1 + k * 0.05);
 }
 
@@ -1240,7 +1240,7 @@ function bumpCombo() {
 
 // a quick glow round the screen's edge
 function pulse(k) {
-  if (still()) return;
+  if (calm()) return;
   var d = $('flash');
   d.animate([{ opacity: 0 }, { opacity: k, offset: 0.25 }, { opacity: 0 }], { duration: 320, easing: 'ease-out' });
 }
