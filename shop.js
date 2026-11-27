@@ -980,6 +980,7 @@ function adGive(k, from) {
     // a rush that cannot start (one is on, or the store shut while the ad ran) does not use the ad up
     if (!callRush(true)) {
       adUsed().rush = Math.max(0, (adUsed().rush || 0) - 1);
+      banner('<b>' + tl('ads.no_reward') + '</b>', 0, false, true);
       return;
     }
     $('boost').hidden = true;
@@ -987,6 +988,7 @@ function adGive(k, from) {
     // the night can be over, or paid for with gems, by the time the ad is done: the ad is not used up then
     if (!openTonight(true)) {
       adUsed().night = Math.max(0, (adUsed().night || 0) - 1);
+      banner('<b>' + tl('ads.no_reward') + '</b>', 0, false, true);
       return;
     }
     tonightOpen();
