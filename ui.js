@@ -2613,6 +2613,7 @@ function dragEnd(d, dy, ms) {
 function wireDialogs() {
   var behind = ['top', 'bottom', 'sheet', 'tags'].map($);
   var ids = 0;
+  var opener = {};
   // buttons that show only a price or a count are read with the heading of the tile they sit in
   function nameBtns(p) {
     [].forEach.call(p.querySelectorAll('.offer .btn, .feat .btn, .hero .btn, .tile .btn, .perk .btn, .mrow .btn'), function (b) {
@@ -2635,15 +2636,26 @@ function wireDialogs() {
     var from = null;
     new MutationObserver(function () {
       nameBtns(p);
+      if (p.classList.contains('veil')) box.classList.toggle('over', box.scrollHeight > box.clientHeight + 1);
       if (p.hidden === !open) return;
       open = !p.hidden;
       behind.forEach(function (e) { e.inert = veilUp(); });
       if (open) {
         from = document.activeElement;
+        opener[p.id] = from;
         box.tabIndex = -1;
         box.focus({ preventScroll: true });
-      } else if (from && from !== document.body && document.contains(from) && !from.closest('[hidden]')) {
-        from.focus({ preventScroll: true });
+      } else {
+        // a panel opened from another one that has since closed hands focus back to that one's opener
+        var to = from;
+        for (var n = 0; to && to.closest('[hidden]') && n < 4; n++) {
+          var up = to.closest('.veil, #sheet');
+          to = up && up !== p ? opener[up.id] : null;
+        }
+        // inert and the hidden tab bar clear after this task
+        setTimeout(function () {
+          if (to && to !== document.body && !veilUp() && $('sheet').hidden && $('card').hidden && document.contains(to) && !to.closest('[hidden]')) to.focus({ preventScroll: true });
+        }, 0);
       }
     }).observe(p, { attributes: true, attributeFilter: ['hidden'], childList: p.classList.contains('veil'), subtree: p.classList.contains('veil') });
   }
