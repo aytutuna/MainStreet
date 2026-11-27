@@ -1568,6 +1568,10 @@ a.btn {
   clip-path: inset(0 -12px -12px -12px);
 }
 
+.box.over > .btn:last-child:focus-visible {
+  outline-color: #ffd34a;
+}
+
 .box.wide {
   max-width: 400px;
 }
