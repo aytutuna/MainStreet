@@ -1115,7 +1115,7 @@ function moveParty(rep) {
   View.burst(null, 0.2, 50);
   View.burst(null, 0.7, 40);
   rain(28);
-  banner('<b>' + tl('banner.store_open', { n: nStores() }) + '</b><small>' + tl('banner.income_x', { n: storeMul(nStores()) }) + '</small>', 0.2, true);
+  banner('<b>' + tl('banner.store_open', { n: nStores() }) + '</b><small>' + (here().t === 'test' ? '' : tl('banner.income_x', { n: storeMul(nStores()) })) + '</small>', 0.2, true);
   banner('<b>' + tl('banner.rep', { n: rep }) + '</b><small>' + tl('banner.rep.line') + '</small>', 0.1);
   var ask = nStores() === 2;
   if (ask) try { if (!localStorage.getItem(RATED_KEY)) localStorage.setItem(RATED_KEY, 'want'); } catch (e) {}
@@ -1792,7 +1792,7 @@ function perkFx(id, l) {
     case 'cash': return v ? money(v) : tl('perk.fx.base');
     case 'cheap': return v ? tl('perk.fx.off', { n: Math.round(v * 100) }) : tl('perk.fx.full');
     case 'pace': return v < 1 ? tl('perk.fx.quicker', { n: Math.round((1 - v) * 100) }) : tl('perk.fx.normal');
-    case 'away': return tl('common.h', { n: MAX_AWAY / 3600 + S.pl.head + v });
+    case 'away': return tl('common.h', { n: MAX_AWAY / 3600 + headTop() + v });
     case 'rush': return tl('common.sec', { n: RUSH.secs + v });
     case 'night': return tl(v ? 'perk.fx.night_open' : 'perk.fx.night_closed');
     case 'sales': return 'x' + v;
@@ -1848,7 +1848,7 @@ function paintSell() {
   $('sell-txt').innerHTML = '<div class="sring"><svg viewBox="0 0 88 88" aria-hidden="true"><circle cx="44" cy="44" r="36" fill="none" stroke="#ead9ae" stroke-width="9"/>' +
     '<circle cx="44" cy="44" r="36" fill="none" stroke="' + (ok ? '#4f9a40' : '#f0c040') + '" stroke-width="9" stroke-linecap="round" stroke-dasharray="' + (circ * got / g).toFixed(1) + ' ' + circ.toFixed(1) +
     '" transform="rotate(-90 44 44)"/></svg><div><b>' + got + '/' + g + '</b><span>' + tl('sell.stars') + '</span></div></div><div class="srows">' +
-    '<span>' + tl('sell.open_depts', { a: opened(), b: kind().depts.length }) + '</span><span>' + tl('sell.income', { a: storeMul(S.cur + 1), b: storeMul(nStores() + 1) }) + '</span>' +
+    '<span>' + tl('sell.open_depts', { a: opened(), b: kind().depts.length }) + '</span>' + (nextType().test ? '' : '<span>' + tl('sell.income', { a: storeMul(S.cur + 1), b: storeMul(nStores() + 1) }) + '</span>') +
     '<span class="' + (ok ? 'go' : '') + '">' + (ok ? tl('sell.ready') : tl('sell.reach', { n: g })) + (r > g ? ' ' + tl('sell.extra', { n: r - g }) : '') + '</span></div>';
   $('sell-rep').innerHTML = icon('medal', 'big') + '<div><b>+' + repGain() + '</b><span>' + tl('sell.rep_for_move') + '</span></div><small>' + tl('sell.rep_have', { n: S.rep }) + '</small>';
   $('sell-ok').classList.toggle('ready', ok);
@@ -2303,8 +2303,8 @@ function sweepStart(t) {
   sweep.t = t;
   sweep.frames = 0;
   sweep.open = 0;
-  sweep.srv = S.st.srv;
-  sweep.all = S.all;
+  sweep.srv = S.st.srv - offServedN;
+  sweep.all = S.all - offEarned;
   sweep.earned = 0;
   sweep.served = 0;
   sweep.shown = 0;
@@ -2320,11 +2320,11 @@ function sweepFrame(t) {
     sweep.frames++;
     sweep.open += (t - sweep.last) / 1000;
     sweep.shown += rate() * (t - sweep.last) / 1000;
-    sweep.earned += S.all - sweep.all;
-    sweep.served += S.st.srv - sweep.srv;
+    sweep.earned += S.all - offEarned - sweep.all;
+    sweep.served += S.st.srv - offServedN - sweep.srv;
   }
-  sweep.all = S.all;
-  sweep.srv = S.st.srv;
+  sweep.all = S.all - offEarned;
+  sweep.srv = S.st.srv - offServedN;
   sweep.last = t;
   var secs = sweep.open;
   if (secs < SWEEP_SECS) {

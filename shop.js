@@ -23,7 +23,9 @@
 //                                          keeps a key per device and sends every other device's copy, more being true on all but the
 //                                          last; Android has one saved game and sends it alone. refused is true when it answers a
 //                                          {cmd: 'cloudPut'} that was not written because the cloud holds another stamp than the put's
-//                                          base (Android only); put is then the stamp of that put. Like 'time' it skips the queue; the
+//                                          base (Android only); put is then the stamp of that put. Every cloud command carries slot, the
+//                                          name this build's copies are kept under ('chain' for chain builds, absent or '' for main).
+//                                          iPhone: keys "<slot>.<dev>" in place of "save.<dev>"; Android: the saved game named slot in place of "save". The legacy iPhone key is read for the empty slot only. Like 'time' it skips the queue; the
 //                                          page judges every copy whenever it comes, so nothing about its age is promised
 //   {t: 'cloudState', state}               'available', 'signedOut', 'pending' (iPhone: iCloud has not delivered anything yet) or
 //                                          'unavailable' (Play Games cannot be reached: no copy comes with it); answers
@@ -215,7 +217,7 @@ function cloudPut(erase) {
     $('taken').hidden = true;
     S.hold = { dev: claim.dev, at: claim.at };
   }
-  post({ cmd: 'cloudPut', json: saved(), at: Math.round(clock()), dev: devId(), stamp: stamp, base: cl.base, force: force });
+  post({ cmd: 'cloudPut', slot: SLOT, json: saved(), at: Math.round(clock()), dev: devId(), stamp: stamp, base: cl.base, force: force });
   save();
 }
 
@@ -298,7 +300,7 @@ function cloudHere() {
 
 // the device id goes with every read: the iPhone keeps one key per device and leaves out this device's own
 function cloudAsk() {
-  post({ cmd: 'cloudGet', dev: devId() });
+  post({ cmd: 'cloudGet', slot: SLOT, dev: devId() });
 }
 
 function cloudSoon() {
@@ -316,7 +318,7 @@ function cloudLook(done) {
   // Play Games has no change push; iCloud's push is the iPhone's way to learn of another device
   if (/Android/i.test(navigator.userAgent)) setInterval(cloudPoll, CLOUD_POLL);
   claimNeeded = true;
-  post({ cmd: 'cloudState', dev: devId() });
+  post({ cmd: 'cloudState', slot: SLOT, dev: devId() });
   cloudAsk();
   if (hasSave()) {
     cloudAt = performance.now();

@@ -1,4 +1,8 @@
-var KEY = 'mainstreet.v11';
+// the chain builds keep their own save and cloud slot, so a build from main never meets a v12 save; the first run takes
+// the game of mainstreet.v11 and leaves it as it is. P4.9 goes back to the plain names
+var SLOT = 'chain';
+var KEY = 'mainstreet.chain';
+var FROM_KEY = 'mainstreet.chain.from';
 var OLD_KEYS = ['mainstreet.v10', 'mainstreet.v9', 'mainstreet.v8', 'mainstreet.v7', 'mainstreet.v6', 'mainstreet.v5', 'mainstreet.v4', 'mainstreet.v3', 'mainstreet.v2', 'mainstreet.v1', 'mainstreet.won'];
 var MAX_AWAY = 8 * 3600;
 var START_CASH = 5;
@@ -258,9 +262,7 @@ function bmul() {
 }
 
 function maxAway() {
-  var h = 0;
-  S.cs.forEach(function (r) { h = Math.max(h, r.pl.head); });
-  return MAX_AWAY + 3600 * (h + pv('away'));
+  return MAX_AWAY + 3600 * (headTop() + pv('away'));
 }
 
 // what the break room does to the time a till or a stocker takes
@@ -425,6 +427,20 @@ function rate() {
   return baseRate() * bmul();
 }
 
+// what every store of the chain earns a second at its steady rate, before the boosts
+function chainBase() {
+  var v = 0;
+  for (var i = 0; i < S.cs.length; i++) v += atStore(i, baseRate);
+  return v;
+}
+
+// the best Head Office of the chain, which sets how long the stores keep earning while away
+function headTop() {
+  var h = 0;
+  S.cs.forEach(function (r) { h = Math.max(h, r.pl.head); });
+  return h;
+}
+
 // what the whole chain earns a second: the store on screen and the others by the model
 function chainRate() {
   return rate() + (S.cs.length > 1 ? offBase * (S.x2 > 0 ? 2 : 1) : 0);
@@ -475,10 +491,11 @@ function topUp() {
   S.cash = TOP;
 }
 
-function earn(v) {
+// off: what a store off screen earned, which is not this store's run
+function earn(v, off) {
   if (FREE !== null) FREE += v;
   S.cash += v;
-  S.run += v;
+  if (!off) S.run += v;
   S.all += v;
 }
 
@@ -585,6 +602,9 @@ var offAt = 0;
 var offBase = 0;
 var offSrv = 0;
 var offFrac = 0;
+// what the stores off screen have added to S.all and S.st.srv, for the sweep that measures the one on screen
+var offEarned = 0;
+var offServedN = 0;
 
 function clearShoppers() {
   offAt = 0;
@@ -819,17 +839,20 @@ function tick(dt) {
   var off = shut();
   var boosted = S.x2 > 0;
   if (S.x2 > 0 && !off) S.x2 = Math.max(0, S.x2 - dt);
+  if (S.cs.length > 1) {
+    // kept up while shut too, so what is sized from the chain's rate is never from before a purchase or a copy
+    if ((offAt -= dt) <= 0) offRefresh();
+  }
   if (S.cs.length > 1 && !off) {
-    if ((offAt -= dt) <= 0) {
-      offRefresh();
-    }
-    earn(offBase * dt * (boosted ? 2 : 1));
-    // the shoppers they serve count as they do while away
+    var gain = offBase * dt * (boosted ? 2 : 1);
+    earn(gain, true);
+    offEarned += gain;
+    // the shoppers they serve count in the total, not in this store's
     offFrac += offSrv * dt;
     var whole = Math.floor(offFrac);
     offFrac -= whole;
     S.st.srv += whole;
-    S.st.sr += whole;
+    offServedN += whole;
   }
   if (S.call > 0) S.call = Math.max(0, S.call - dt);
   lostT -= dt;
@@ -1137,10 +1160,13 @@ function away(sec) {
   var xs = Math.min(s * up, S.x2);
   var gain = 0;
   var n = 0;
+  var here = 0;
   S.cs.forEach(function (r, i) {
     atStore(i, function () {
       gain += baseRate() * (s * up + xs) * (S.iap.x2 ? 2 : 1) * (1 + HEAD * S.pl.head);
-      n += Math.floor((served() + gardenServed()) * s * up);
+      var k = Math.floor((served() + gardenServed()) * s * up);
+      n += k;
+      if (i === S.cur) here = k;
     });
   });
   if (started()) S.clk = (S.clk + sec) % CLOCK;
@@ -1151,7 +1177,7 @@ function away(sec) {
   S.pend += gain;
   S.ps += s;
   S.st.srv += n;
-  S.st.sr += n;
+  S.st.sr += here;
   return { secs: s, real: sec, gain: gain, n: n };
 }
 
@@ -1334,7 +1360,8 @@ function goals() {
   });
 }
 
-// whether some store type builds the department a goal is about; the others wait until a type that has it exists
+// whether some store type builds the department a goal is about. The goals nothing can finish are passed over for good: a
+// later build with more types has to give them back when it migrates the list (P4.2)
 function reach(g) {
   return !g.to || !BZ[g.to] || TYPES.some(function (t) { return t.di[g.to] !== undefined; });
 }
@@ -1483,7 +1510,7 @@ function daily() {
 
 function dailyReward(i) {
   var d = DAILY[i];
-  return { gems: d.gems || 0, x2: d.x2 || 0, cash: d.cash ? Math.max(25, baseRate() * d.cash * 60) : 0 };
+  return { gems: d.gems || 0, x2: d.x2 || 0, cash: d.cash ? Math.max(25, chainBase() * d.cash * 60) : 0 };
 }
 
 function claimDaily() {
@@ -1734,7 +1761,7 @@ function readStore(src, v, t) {
       else if (sum >= 1) b = { l: sum, it: it };
     }
     r.b[z.id] = b;
-    r.ms[z.id] = v >= 11 && src.ms && z.id in src.ms ? Math.min(STAR_AT.length, Math.floor(num(src.ms[z.id], 0))) : starsAt(b.l);
+    r.ms[z.id] = v >= 11 && src.ms && typeof src.ms === 'object' && z.id in src.ms ? Math.min(STAR_AT.length, Math.floor(num(src.ms[z.id], 0))) : starsAt(b.l);
   });
   return r;
 }
@@ -1787,7 +1814,7 @@ function validate(o) {
   // a store from before the chain was the one with the store number's income and prices
   var n = Math.min(1000, Math.max(1, Math.floor(num(o.store, 0)) || 1 + Math.floor(num(o.st && o.st.sales, 0))));
   s.cs = (list || [null]).map(function (e, i) {
-    var t = TY[e && e.t] || TYPES[0];
+    var t = e && typeof e.t === 'string' && TY.hasOwnProperty(e.t) ? TY[e.t] : TYPES[0];
     var r = readStore(i === cur ? o : e || {}, o.v, t);
     if (e) {
       r.m = num(e.m, t.mul);
@@ -1816,6 +1843,18 @@ function validate(o) {
   if (o.v === 7) {
     o.goal = [0, 1, 2];
     o.gd = null;
+  }
+  // a goal for a department no store builds that was done but not claimed is paid now, since it can not be claimed later
+  if (Array.isArray(o.goal)) {
+    o.goal.forEach(function (i) {
+      var g = GOALS[i];
+      if (!g || reach(g)) return;
+      var e = o.b[g.to];
+      if ((o.gd && o.gd[i]) || (e && e.l >= g.n)) {
+        s.gems += g.g;
+        s.x2 += g.x2 * 60;
+      }
+    });
   }
   var seen = {};
   s.goal = (Array.isArray(o.goal) ? o.goal : []).filter(function (i) {
@@ -1869,6 +1908,7 @@ function validate(o) {
   if (o.v < 12 && s.cl.sig) {
     try {
       if (cloudSig11(o) === s.cl.sig) s.cl.sig = cloudSig(s);
+      if (s.cl.fly && cloudSig11(o) === s.cl.fly.sig) s.cl.fly.sig = cloudSig(s);
     } catch (e) {}
   }
   return s;
@@ -1890,9 +1930,11 @@ function load() {
   var back = null;
   try {
     var raw = localStorage.getItem(KEY);
-    var old = raw ? null : localStorage.getItem('mainstreet.v10') || localStorage.getItem('mainstreet.v9') || localStorage.getItem('mainstreet.v8') || localStorage.getItem('mainstreet.v7');
+    var v11 = raw || localStorage.getItem(FROM_KEY) ? null : localStorage.getItem('mainstreet.v11');
+    var old = raw ? null : v11 || localStorage.getItem('mainstreet.v10') || localStorage.getItem('mainstreet.v9') || localStorage.getItem('mainstreet.v8') || localStorage.getItem('mainstreet.v7');
     var mall = raw || old ? null : localStorage.getItem('mainstreet.v6');
     OLD_KEYS.forEach(function (k) { localStorage.removeItem(k); });
+    if (v11) localStorage.setItem(FROM_KEY, '1');
     if (mall) carry(JSON.parse(mall));
     raw = raw || old || localStorage.getItem(KEY);
     var j = null;
@@ -1900,7 +1942,10 @@ function load() {
       j = raw ? JSON.parse(raw) : null;
     } catch (e) {}
     if (j && j.v > SAVE_V) blocked = true;
-    var o = j ? validate(j) : null;
+    var o = null;
+    try {
+      o = j ? validate(j) : null;
+    } catch (e) {}
     if (raw && !o && !blocked) keep(raw);
     // a new game is made now, so its start comes from the server time
     if (!o && !mall) S = fresh();
@@ -1920,7 +1965,9 @@ function load() {
 
 function hasSave() {
   try {
-    return [KEY].concat(OLD_KEYS.slice(0, 5)).some(function (k) { return localStorage.getItem(k) !== null; });
+    var keys = [KEY].concat(OLD_KEYS.slice(0, 5));
+    if (!localStorage.getItem(FROM_KEY)) keys.push('mainstreet.v11');
+    return keys.some(function (k) { return localStorage.getItem(k) !== null; });
   } catch (e) {
     return false;
   }
@@ -2160,6 +2207,7 @@ function takeCloud(raw, stamp, current) {
   o.cl = { base: stamp, sig: theirs, bap: their, force: 0, old: c.base && c.base !== stamp ? c.old.concat([c.base]).slice(-8) : c.old, seen: c.seen, fly: null };
   S = o;
   clearShoppers();
+  offRefresh();
   // the copy was saved when the other device last ran: the time since is time away
   var sec = (clock() - o.ts) / 1000;
   cloudAway = sec > 60 ? away(sec) : null;
@@ -2194,8 +2242,10 @@ function reset() {
   S.er = S.ts = Math.round(clock());
   S.cl.force = 1;
   clearShoppers();
+  offRefresh();
   try {
     localStorage.removeItem(KEY);
+    localStorage.setItem(FROM_KEY, '1');
   } catch (e) {}
 }
 

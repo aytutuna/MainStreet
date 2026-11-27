@@ -337,6 +337,84 @@ if (run('saved().length') > 300000) fail('thirty full stores make a save of ' + 
   if (run('canMove()') || run('move()') || run('S.rep') !== rep) fail('a move in a full chain paid reputation');
 }
 
+// a chain build keeps its own save and takes the game of mainstreet.v11 once, leaving that one as it is
+{
+  for (const k of Object.keys(store)) delete store[k];
+  const raw = JSON.stringify(fixture);
+  store['mainstreet.v11'] = raw;
+  run('S = fresh()');
+  if (!run('hasSave()')) fail('a v11 save is not found by a chain build');
+  run('load()');
+  if (run('S.gems') !== fixture.gems || store['mainstreet.v11'] !== raw || !store[key]) fail('the first run did not take mainstreet.v11 into its own slot and leave it');
+  if (run('SLOT') !== 'chain' || key === 'mainstreet.v11') fail('the chain build shares the main save slot');
+  run('reset()');
+  run('S = fresh()');
+  run('load()');
+  if (run('S.gems') !== 0 || run('hasSave()')) fail('an erased chain game came back from mainstreet.v11');
+}
+
+// the chain rate follows the stores while the doors are shut and after a copy is taken
+{
+  twoStores();
+  const full = run('chainRate()');
+  run('S.clk = 23.5 * CLOCK / 24');
+  run("S.cs[0].b = { produce: atLevel('produce', 1) }");
+  play(2);
+  if (!run('shut()') || !(run('chainRate()') < full / 10)) fail('the chain rate stayed at what the replaced store earned');
+  if (run('takeCloud.toString().indexOf("offRefresh()")') < 0) fail('taking a cloud copy does not refresh the rate of the other stores');
+}
+
+// the daily cash is the same whichever store is on screen
+{
+  twoStores();
+  const i = run('DAILY.findIndex(function (d) { return d.cash; })');
+  const there = run('dailyReward(' + i + ').cash');
+  run('view(0)');
+  const away = run('dailyReward(' + i + ').cash');
+  if (there !== away) fail('the daily cash is ' + there + ' on one store and ' + away + ' on the other');
+  if (!near(there, run('chainBase() * DAILY[' + i + '].cash * 60'), 1e-9)) fail('the daily cash is not minutes of the whole chain');
+}
+
+// a store off screen does not count in this store's earned and served
+{
+  twoStores();
+  run('S.st.sr = 0');
+  const all = run('S.all');
+  play(5);
+  if (run('S.st.sr') > 5 || !(run('S.run') < (run('S.all') - all) / 100)) fail('the store off screen counted as this store (served ' + run('S.st.sr') + ')');
+  if (!(run('offEarned') > 0 && run('offServedN') > 0)) fail('the sweep cannot tell the store off screen apart');
+}
+
+// damaged values in one store do not drop the game
+{
+  twoStores();
+  const o = JSON.parse(run('saved()'));
+  o.cs[0].t = 'constructor';
+  o.cs[0].ms = 'x';
+  o.gems = 321;
+  store[key] = JSON.stringify(o);
+  run('S = fresh()');
+  run('load()');
+  if (run('S.gems') !== 321 || run('nStores()') !== 2 || run('S.cs[0].t') !== 'super') fail('a store with a bad type or stars dropped the game');
+}
+
+// a done goal for a department nothing builds is paid at migration, and an in-flight put keeps the signature
+{
+  const o = JSON.parse(JSON.stringify(fixture));
+  ctx.__raw = o;
+  const dead = run("GOALS.findIndex(function (g) { return g.to === 'clothes'; })");
+  o.goal = [dead, dead + 1, dead + 2];
+  o.gn = dead + 3;
+  o.gd = { [dead]: 1 };
+  o.cl = { base: 'b:1', sig: run('cloudSig11(__raw)'), bap: 0, old: [], seen: {}, force: 0, fly: null };
+  o.cl.fly = { stamp: 's:1', sig: o.cl.sig, ap: 0, force: 0 };
+  store[key] = JSON.stringify(o);
+  run('S = fresh()');
+  run('load()');
+  if (run('S.gems') !== o.gems + run('GOALS[' + dead + '].g')) fail('the done goal for a removed department was not paid');
+  if (run('S.cl.fly.sig') !== run('cloudSig(S)')) fail('the in-flight put kept the old signature');
+}
+
 // opening stores stops at the cap
 run('reset()');
 run('fillStore()');

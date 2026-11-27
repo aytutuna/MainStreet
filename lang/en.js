@@ -423,7 +423,7 @@ LANG['en'] = {
   'sell.keep.goals': 'Goals and regulars',
   'sell.keep.boosts': 'Boosts',
   'sell.lose.cash': 'Cash, shared by every store',
-  'sell.lose.depts': 'Its own departments, one open',
+  'sell.lose.depts': 'Its own departments',
   // The places run from Checkouts (first) to Head Office (last).
   'sell.lose.places': 'Its own places, none built',
   'sell.lose.stars': 'Its own stars (they pay gems again)',
