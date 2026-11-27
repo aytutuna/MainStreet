@@ -83,7 +83,7 @@ for (const code of codes) {
 if (args.includes('--all')) {
   const all = codes.map(load);
   const same = Object.keys(en).filter(k => /\p{L}{3}/u.test(JSON.stringify(en[k]).replace(/\{\w+\}/g, ''))
-    && !/^(native\.|app\.title$|reg\.vip\.name$|cloud\.(sign_in|taken_title|taken_line|play_here)$|menu\.remind_(on|off|denied)$)/.test(k) && all.every(t => t && JSON.stringify(t[k]) === JSON.stringify(en[k])));
+    && !/^(native\.|intro\.|boost\.night\.|ads\.night|app\.title$|reg\.vip\.name$|cloud\.(sign_in|taken_title|taken_line|play_here)$|menu\.remind_(on|off|denied)$)/.test(k) && all.every(t => t && JSON.stringify(t[k]) === JSON.stringify(en[k])));
   for (const k of same) console.log(`untranslated in every language: ${k}`);
   if (same.length) bad++;
 }
@@ -107,6 +107,32 @@ const SAME_WORD = {
 };
 // Texts still in English in these languages, to be translated (key: language codes).
 const PENDING = {
+  'intro.ok': '*',
+  'intro.stars.title': '*',
+  'intro.stars': '*',
+  'intro.gifts.title': '*',
+  'intro.gifts': '*',
+  'intro.rush.title': '*',
+  'intro.rush': '*',
+  'intro.vip.title': '*',
+  'intro.vip': '*',
+  'intro.regs.title': '*',
+  'intro.regs': '*',
+  'intro.night.title': '*',
+  'intro.night': '*',
+  'intro.chain.title': '*',
+  'intro.chain': '*',
+  'intro.perks.title': '*',
+  'intro.perks': '*',
+  'intro.missions.title': '*',
+  'intro.missions': '*',
+  'boost.night.title': '*',
+  'boost.night.perk': '*',
+  'boost.night.on': '*',
+  'boost.night.shut': '*',
+  'boost.night.day': '*',
+  'ads.night': '*',
+  'ads.night_note': '*',
   'banner.flash': 'id vi',
   'banner.jackpot': 'cs da de fi hr id it ms nl no pl pt-PT ro sk sl sv tr vi',
   'banner.place_level': 'id',

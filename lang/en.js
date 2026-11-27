@@ -203,6 +203,52 @@ LANG['en'] = {
   'hud.warn': '! {t}',
   // Shown once, under the warning, the first time a meter runs red. Stats is the name of a panel.
   'hud.warn_tip': 'Tap the warning to see Stats and fix it',
+  // Button that closes a first-time tip card.
+  'intro.ok': 'Got it',
+  // First-time card, shown when a department earns its first star.
+  'intro.stars.title': 'Your first star',
+  // {n} is the sales multiplier of a star, {a} the levels of the next stars (20, 30).
+  'intro.stars': 'Each star multiplies a department\'s sales by {n}. More stars come at levels {a}.',
+  // First-time card, shown the first time a gift floats over the store.
+  'intro.gifts.title': 'A gift!',
+  'intro.gifts': 'Tap the gift before it floats away. It can hold cash, gems or double income.',
+  // First-time card, shown at the first rush: a short burst of extra shoppers.
+  'intro.rush.title': 'A rush!',
+  'intro.rush': 'Extra shoppers are coming for a short while. Tap a checkout to serve its shopper sooner.',
+  // First-time card, shown when the gold shopper first comes in.
+  'intro.vip.title': 'A VIP shopper',
+  'intro.vip': 'The gold shopper leaves a bigger tip. Tap them while they are in the store.',
+  // First-time card, shown when the first regular is met.
+  'intro.regs.title': 'Regulars',
+  'intro.regs': 'Regulars come back now and then. Tap one for a tip. Each one you meet adds to your sales.',
+  // First-time card, shown the first time the store shuts for the night.
+  'intro.night.title': 'Closing time',
+  // {a} and {b} are the closing and opening times, {n} a number of gems.
+  'intro.night': 'The store shuts from {a} to {b}, and nothing sells. Keep it open tonight for {n} gems or a short ad. A perk can keep it open for good.',
+  // First-time card, shown when the second store opens.
+  'intro.chain.title': 'Your chain',
+  // Your stores is the name of the tab, tab.new_store.
+  'intro.chain': 'Every store keeps earning while you are in another one. Open Your stores to switch.',
+  // First-time card, shown when the first perk can be bought.
+  'intro.perks.title': 'Perks',
+  // Your stores is the name of the tab, tab.new_store.
+  'intro.perks': 'Reputation buys perks that help every store. Find them in Your stores.',
+  // First-time card, shown when the first daily mission is finished.
+  'intro.missions.title': 'Mission done',
+  // Daily is the name of the tab, tab.daily.
+  'intro.missions': 'Claim it in Daily. Finish all three missions of the day for a bonus.',
+  // Boost name: keeps the store open through the night it is shut.
+  'boost.night.title': 'Open tonight',
+  'boost.night.perk': 'Your store is open all night.',
+  // {t} is the time the store opens again.
+  'boost.night.on': 'Open until {t}.',
+  // {t} is the time the store opens again.
+  'boost.night.shut': 'The store is shut. Keep it open until {t}.',
+  // {a} and {b} are the closing and opening times.
+  'boost.night.day': 'Shuts from {a} to {b}. Only for a store that is shut.',
+  // Name of the ad reward that keeps the store open for the night.
+  'ads.night': 'Open tonight',
+  'ads.night_note': 'Until the morning',
   // Shown when several upgrades are bought quickly. {n} is the count.
   'hud.combo': 'x{n} combo!',
   // Pop-up over a till when the player taps it during a rush: the shopper is served faster.
