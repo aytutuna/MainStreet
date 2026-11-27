@@ -14,7 +14,7 @@
 LANG['en'] = {
   // The name of the game, shown on the loading screen and as the page title. A brand: keep "Main Street" unless the language has an established local brand name.
   'app.title': 'Main Street',
-  // Screen reader name of the star pill at the top. Opens the screen where the player moves to a new store (building) for reputation.
+  // Screen reader name of the star pill at the top. Opens the screen that lists the player's stores and opens the next one.
   'hud.new_store.aria': 'Your stores',
   // Screen reader name of the three-line menu button.
   'hud.menu.aria': 'Menu',
@@ -42,7 +42,7 @@ LANG['en'] = {
   'tab.boosts': 'Boosts',
   // Bottom tab: daily missions and the daily reward. Max about 11 characters.
   'tab.daily': 'Daily',
-  // Bottom tab: move to a new, bigger store (a prestige reset; the player keeps reputation and perks). "Store" is the whole building, not a shop item. Max about 11 characters.
+  // Bottom tab: the screen that lists the player's stores, switches between them and opens the next one for reputation. "Store" is the whole building, not a shop item. Max about 11 characters.
   'tab.new_store': 'Your stores',
   // Bottom tab: statistics. Max about 11 characters.
   'tab.stats': 'Stats',
