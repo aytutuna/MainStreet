@@ -1557,10 +1557,13 @@ a.btn {
 /* on a long panel the closing button stays in view while the rest scrolls */
 .box > .btn:last-child {
   position: sticky;
-  bottom: -14px;
+  bottom: -11px;
   z-index: 1;
-  /* paper around it, so rows scrolling past do not show beside it */
-  outline: 12px solid var(--paper);
+}
+
+/* paper around it, so rows scrolling past do not show beside it; only a box that scrolls needs it */
+.box.over > .btn:last-child {
+  outline: 5px solid var(--paper);
   outline-offset: 4px;
 }
 
