@@ -71,7 +71,7 @@ LANG['en'] = {
   // Button that opens the shop. Max about 10 characters.
   'boost.shop': 'Shop',
   // Small note under the boosts. Gems are the premium currency.
-  'boost.gems_note': 'Gems come from goals, stars, gifts and the daily reward.',
+  'boost.gems_note': 'Earn gems from goals, stars, missions, gifts, achievements and the daily reward, or buy them in the shop.',
   // Title of the box listing regulars (named shoppers who come back to the store).
   'regs.title': 'Regulars',
   // Title of the shop box (gems and offers bought with real money).
@@ -82,6 +82,7 @@ LANG['en'] = {
   'pack.title': 'Starter pack',
   // Button that dismisses an offer without buying.
   'common.not_now': 'Not now',
+  'buy.broke': 'Not enough cash',
   // Small note under the starter offer. {n} is the number of hours it lasts.
   'pack.limit': 'Only offered for the first {n} hours.',
   // Button that opens the choice of how the store looks (colours, signs). Max about 14 characters.
@@ -99,23 +100,23 @@ LANG['en'] = {
   // Button next to the Shoppers meter: opens the place to get more shoppers. Max about 14 characters.
   'stats.fix.in': 'Bring more',
   // Button next to the Checkouts meter: opens the checkout upgrades. Max about 14 characters.
-  'stats.fix.tills': 'Add lanes',
+  'stats.fix.tills': 'Add checkouts',
   // Button next to the Shelves meter: opens the stockroom upgrades (stockers carry boxes to the shelves). Max about 14 characters.
   'stats.fix.shelf': 'Hire stockers',
   // Heading: how much one shopper spends in each department. Read as "Spent per shopper".
-  'stats.spent': 'Spent a shopper',
+  'stats.spent': 'Spent per shopper',
   // Shown when no department is open yet.
   'stats.none': 'Nothing is on sale yet.',
   // Title of the sound mixer box.
   'sound.title': 'Sound',
   // Slider label: the music volume.
   'sound.music': 'Music',
-  // Slider label: the background sounds of the shopping mall (shoppers, hum).
+  // Slider label: the background sounds of the store (shoppers, hum).
   'sound.store': 'Store sounds',
-  // Slider label: short sound effects (taps, tills, chimes).
+  // Slider label: short sound effects (taps, checkouts, chimes).
   'sound.effects': 'Effects',
   // Small explanation under the three sliders.
-  'sound.note': 'Store sounds are the shoppers and the hum of the mall. Effects are the taps, tills and chimes.',
+  'sound.note': 'Store sounds are the shoppers and the hum of the store. Effects are the taps, checkouts and chimes.',
   // Shown when sound is switched off in the menu.
   'sound.off_note': 'Sound is off. Turn it on in the menu.',
   // Title of the menu box.
@@ -173,10 +174,10 @@ LANG['en'] = {
   'common.h': '{n} h',
   // Hours and minutes together, such as 2 h 5 min.
   'common.h_min': '{h} h {m} min',
-  // {n} is a number of minutes. A boost that doubles income.
-  'common.x2_min': 'x2 for {n} min',
+  // {t} is a duration such as 30 min or 2 h. A boost that doubles income.
+  'common.x2_min': 'x2 for {t}',
   'common.x2_s': 'x2 for {n} s',
-  'common.income_x2_min': 'Income x2 for {n} min',
+  'common.income_x2_min': 'Income x2 for {t}',
   // {a} of {b}, for example 3 of 12.
   'common.x_of_y': '{a} of {b}',
   'common.pct': '{n}%',
@@ -209,15 +210,15 @@ LANG['en'] = {
   // Pop-up over a regular customer called a VIP who leaves a tip.
   'hud.vip_tip': 'VIP tip!',
   // Hint before the first purchase.
-  'hud.hint.buy': 'Tap the glowing Buy button',
+  'hud.hint.buy': 'Tap the glowing price to buy',
   // {dept} is the name of the first department (Produce).
-  'hud.hint.produce': 'Tap {dept} to buy your first stand',
+  'hud.hint.produce': 'Tap {dept} to buy your first piece',
 
   // What one more level of an item does. {v} is a number per minute.
   'fx.shoppers_min': '+{v} shoppers/min',
   'fx.restocked_min': '+{v} restocked/min',
-  'fx.rest': '+{n}% spent a shopper',
-  'fx.lounge': '-{n}% till and stock time',
+  'fx.rest': '+{n}% spent per shopper',
+  'fx.lounge': '-{n}% checkout and stock time',
   // {n} is a percent, {h} a number of hours the store keeps earning while the player is away.
   'fx.head': '+{n}% income, {h} h more away',
   // {v} is money earned per second.
@@ -246,13 +247,13 @@ LANG['en'] = {
   'card.build': 'Build',
   'card.open': 'Open',
   // {v} is money.
-  'card.per_shopper': '{v} a shopper',
+  'card.per_shopper': '{v} per shopper',
   // {fx} is what a place does at its current level.
   'card.now': 'Now: {fx}',
   // Checkouts: shoppers coming against what the tills can take. Both numbers are per minute.
-  'card.load.tills': 'Shoppers {n}/min · tills {cap}/min',
+  'card.load.tills': 'Shoppers {n}/min · checkouts {cap}/min',
   'card.load.restock': 'Shoppers {n}/min · restock {cap}/min',
-  'card.fix.lanes': 'Add lanes or self checkouts',
+  'card.fix.lanes': 'Add cashiers or self checkouts',
   'card.fix.stockers': 'Hire stockers',
 
   // Banners after a purchase. Each banner has a bold title and a small line under it.
@@ -293,8 +294,8 @@ LANG['en'] = {
   'goal.claim': 'Claim +{n}',
 
   // Stats panel. Labels of the figures.
-  'stats.income_s': 'Income a second',
-  'stats.income_m': 'Income a minute',
+  'stats.income_s': 'Income per second',
+  'stats.income_m': 'Income per minute',
   'stats.served_store': 'Served this store',
   'stats.served_all': 'Served in all',
   'stats.lost': 'Lost shoppers',
@@ -309,7 +310,7 @@ LANG['en'] = {
   // {v} is money.
   'stats.per_sec': '{v}/s',
   // {v} is a number or money per minute.
-  'stats.per_min': '{v}/m',
+  'stats.per_min': '{v}/min',
   // {n} is the store number, {mul} the sales multiplier.
   'stats.store_val': '{n}, sales x{mul}',
   // A department's share of the basket. {v} is money, {pct} a percent.
@@ -346,8 +347,8 @@ LANG['en'] = {
   'away.double': 'Double it',
 
   // Daily reward and missions
-  // {n} is a number of minutes of income given as a reward.
-  'daily.cash_min': '{n} min of income',
+  // {t} is a duration such as 20 min or 2 h of income given as a reward.
+  'daily.cash_min': '{t} of income',
   // A mission and its progress. {text} is the mission, {v} such as 3/10.
   'daily.progress': '{text} ({v})',
   'daily.all_done': 'All three done',
@@ -366,8 +367,8 @@ LANG['en'] = {
   // {n} is the player's gems.
   'boost.have': { one: 'You have {n} gem.', other: 'You have {n} gems.' },
   // {t} is the time left, minutes:seconds.
-  'boost.x2.active': 'Active: {t} left. Buying adds 30 min.',
-  'boost.x2.idle': 'All income x2 for 30 minutes.',
+  'boost.x2.active': 'Active: {t} left. Buying adds {m} min.',
+  'boost.x2.idle': 'All income x2 for {t}.',
   // {v} is money.
   'boost.warp.hour': 'Get {v} now, an hour of income.',
   'boost.call.ready_in': 'Ready in {t}, or call one now.',
@@ -390,7 +391,7 @@ LANG['en'] = {
   'perk.fx.normal': 'normal',
   // The store is shut at night. These two describe the perk that keeps it open. Update the hours if your language writes them differently.
   'perk.fx.night_open': 'open 24 hours',
-  'perk.fx.night_closed': 'closed 11 PM – 1 AM',
+  'perk.fx.night_closed': 'closed {a} – {b}',
   'perk.fx.base': 'base',
   // {what} is the perk's effect name, {now} the current value, {next} the value after buying.
   'perk.line.next': '{what}: {now} → {next}',
@@ -404,8 +405,8 @@ LANG['en'] = {
   'sell.sign': 'STORE',
   // Label under a fraction such as 3/5.
   'sell.stars': 'stars',
-  // Keep the <b> tags. {a} departments open out of {b}.
-  'sell.open_depts': 'Open <b>{a} of {b}</b> departments',
+  // Keep the <b> tags. A count, not an order: {a} departments are open out of {b}.
+  'sell.open_depts': 'Departments open: <b>{a} of {b}</b>',
   // Keep the <b> tags. {a} and {b} are the income multipliers of this store and the next.
   'sell.income': 'Income <b>x{a} → x{b}</b>',
   'sell.ready': 'Ready to move.',
@@ -469,7 +470,7 @@ LANG['en'] = {
   },
   'look.need_store': 'Reach store {n}',
   // {name} is the name of an achievement.
-  'look.need_ach': 'Earn {name}',
+  'look.need_ach': 'Earn the {name} achievement',
   // Buttons: the look is in use now, or can be picked.
   'look.in_use': 'In use',
   'look.use': 'Use',
@@ -516,10 +517,10 @@ LANG['en'] = {
   // {n} is a count of shoppers.
   'goal.serve': { one: 'Serve {n} shopper', other: 'Serve {n} shoppers' },
   // A lane is one checkout lane (cash register) of the store.
-  'goal.lane': 'Open lane {n}',
+  'goal.lane': 'Open checkout {n}',
   // The stocker is the worker who restocks shelves from the stockroom.
   'goal.stocker': 'Hire a second stocker',
-  'goal.parking': 'Build the Parking',
+  'goal.parking': 'Build the parking lot',
   'goal.taxi': 'Open the Taxi Stand',
   // Self checkouts are the machines where shoppers scan and pay themselves.
   'goal.self': 'Put in self checkouts',
@@ -530,7 +531,7 @@ LANG['en'] = {
   // Moving to a new store is the game's prestige reset.
   'goal.move': 'Move to a new store',
   // {n} is the number of the store.
-  'goal.store': 'Reach store #{n}',
+  'goal.store': 'Reach store {n}',
   // {amount} is a compact money amount such as 1M. The $ is the game's currency mark.
   'mission.earn': 'Earn ${amount}',
   // Gifts are the floating presents the player taps.
@@ -541,10 +542,10 @@ LANG['en'] = {
   // {dept} is a department name. A star is a department's rating star.
   'mission.star': 'Earn a star in {dept}',
   // Phone notification text shown while the app is closed.
-  'notify.full': 'Your store is full. Come and collect what it earned.',
+  'notify.full': 'Your store has earned all it can while you are away. Come and collect.',
   'notify.daily': 'Your daily reward is ready.',
   // Card shown before the phone asks for permission to send notifications, and its yes button.
-  'notify.ask': 'Get a reminder when your store is full or your daily reward is ready?',
+  'notify.ask': 'Get a reminder when your store has earned all it can, or your daily reward is ready?',
   'notify.ask.yes': 'Remind me',
 
   // Label on a shop button for a one-time product the player already bought.
@@ -569,7 +570,7 @@ LANG['en'] = {
   'shop.deal_day': { one: 'Deal of the day: +{n} gem', other: 'Deal of the day: +{n} gems' },
   // Section heading above the gem packs.
   'shop.gems_heading': 'Gems',
-  'shop.intro': 'Gems are for boosts and time warps.',
+  'shop.intro': 'Gems pay for boosts, time warps, store looks and double pay for time away.',
   'shop.unavailable': 'The store is not available right now. Try again later.',
   // Banner title. {count} is the compact amount of gems (such as 1.2K), {n} the same amount as a plain number.
   'shop.recovered': { one: '{count} gem added', other: '{count} gems added' },
@@ -597,10 +598,10 @@ LANG['en'] = {
   'ads.x2': 'Double income',
   // {time} is minutes:seconds left.
   'ads.x2_active': 'Active for {time}',
-  'ads.x2_note': '30 min of x2',
+  'ads.x2_note': '{m} min of x2',
   // Time warp: instantly collects income as if time passed.
   'ads.warp': 'Time warp',
-  'ads.warp_note': 'An hour of income',
+  'ads.warp_note': 'Up to an hour of income',
   'ads.gems': 'Free gems',
   // A rush is a burst of shoppers.
   'ads.rush': 'Call a rush',
@@ -671,7 +672,7 @@ LANG['en'] = {
   'board.ice_cream': 'ICE CREAM\n2 FOR 6',
   'board.fresh_deli': 'FRESH DELI',
   'board.balls': 'BALLS\n3 FOR 10',
-  'board.tires': 'TIRES\n4 FOR 3',
+  'board.tires': 'TIRES\nBUY 3, GET 1',
   'board.toy_sale': 'TOY\nSALE',
   // Small header over a paper shelf, one line.
   'board.paper': 'PAPER 2 FOR 5',
@@ -695,7 +696,7 @@ LANG['en'] = {
 
   // Small labels on the map above departments and over shoppers.
   // A shopper gave up because the checkout lines are full.
-  'tag.lines_too_long': 'Lines too long!',
+  'tag.lines_too_long': 'Checkout lines too long!',
   // Appended to a place's name when its shelves are empty (the stockroom).
   'tag.shelves_empty': 'Shelves empty!',
   // Appended to the name of the main hall when the checkout lines are full.
@@ -738,7 +739,7 @@ LANG['en'] = {
 
   // Items inside a department: each department has several kinds of things the player buys upgrades for. Plain plural noun phrases, max about 26 characters (they appear on cards).
   'item.produce.0': 'Fruit & tomato tables',
-  'item.produce.1': 'Veg & flower stands',
+  'item.produce.1': 'Veggie & flower stands',
   'item.produce.2': 'Fruit & melon bins',
   'item.produce.3': 'Farm signs & lights',
   'item.produce.4': 'Baskets, bench & mat',
@@ -854,14 +855,14 @@ LANG['en'] = {
 
   // What each level of a place adds. Shown on the card and in a banner after buying: "A second stocker", "More parking bays". Short noun phrases, max about 40 characters.
   'place.lot.next.0': 'A parking lot for shoppers who drive',
-  'place.lot.next.1': 'More parking bays',
-  'place.lot.next.2': 'More parking bays',
+  'place.lot.next.1': 'More parking spaces',
+  'place.lot.next.2': 'More parking spaces',
   'place.lot.next.3': 'The whole lot, with planters',
-  'place.hall.next.0': 'Lane 2, with a cashier',
+  'place.hall.next.0': 'Checkout 2, with a cashier',
   'place.hall.next.1': 'Cart corrals with carts',
   'place.hall.next.2': 'Two self checkouts and an attendant',
   'place.hall.next.3': 'Recycling stations',
-  'place.hall.next.4': 'Lane 3, with a cashier',
+  'place.hall.next.4': 'Checkout 3, with a cashier',
   'place.hall.next.5': 'Two more self checkouts',
   'place.hall.next.6': 'A courtesy desk',
   'place.hall.next.7': 'Vending machines and a news rack',
@@ -881,13 +882,13 @@ LANG['en'] = {
   'place.taxi.next.1': 'More taxis',
   'place.taxi.next.2': 'More taxis',
   'place.taxi.next.3': 'A taxi every few seconds',
-  'place.garden.next.0': 'A fenced garden with a till',
+  'place.garden.next.0': 'A fenced garden with a checkout',
   'place.garden.next.1': 'More flower displays',
   'place.garden.next.2': 'Potted plants and more displays',
   'place.garden.next.3': 'Trees and lamps',
   'place.serv.next.0': 'A service desk',
   'place.serv.next.1': 'A clerk behind it',
-  'place.serv.next.2': 'Queue posts',
+  'place.serv.next.2': 'Rope and posts',
   'place.serv.next.3': 'Waiting benches',
   'place.serv.next.4': 'A second service desk',
   'place.serv.next.5': 'A second clerk',
@@ -903,7 +904,7 @@ LANG['en'] = {
   'place.rest.next.6': 'Supply shelves, a bench, bins and plants',
   'place.rest.next.7': 'A cleaning cart, mop bucket and a wet floor sign',
   'place.lounge.next.0': 'A fridge, pantry and counters',
-  'place.lounge.next.1': 'Worktops, a kettle and wall cupboards',
+  'place.lounge.next.1': 'Counters, a kettle and wall cabinets',
   'place.lounge.next.2': 'Coffee, microwave and toaster',
   'place.lounge.next.3': 'A table with four chairs',
   'place.lounge.next.4': 'Pizza boxes on the table',
@@ -925,11 +926,11 @@ LANG['en'] = {
 
   // Kinds of things inside a place (like items of a department). Max about 26 characters.
   'place.lot.it.0': 'Parking lot',
-  'place.hall.it.0': 'Lanes',
+  'place.hall.it.0': 'Checkouts',
   'place.hall.it.1': 'Self checkout pairs',
   'place.hall.it.2': 'Carts & vending',
   'place.dock.it.0': 'Stockers',
-  'place.dock.it.1': 'Boxes a dolly',
+  'place.dock.it.1': 'Boxes per dolly',
   'place.taxi.it.0': 'Taxis',
   'place.garden.it.0': 'Garden',
   'place.serv.it.0': 'Desks',
@@ -982,7 +983,7 @@ LANG['en'] = {
   'reg.ollie.line': 'Never pays without a coupon.',
   'reg.ollie.feat': 'Tap 10 gifts',
   'reg.priya.name': 'Priya',
-  'reg.priya.line': 'Knows which till is the fastest.',
+  'reg.priya.line': 'Knows which checkout is the fastest.',
   'reg.priya.feat': 'Finish a rush combo of 10',
   'reg.hana.name': 'Hana',
   'reg.hana.line': 'Shops for the whole block.',
@@ -1014,7 +1015,7 @@ LANG['en'] = {
   // Shop products bought with real money (gem packs are named by the shop.gems key).
   'product.starter.name': 'Starter pack',
   // What the product gives, shown in the shop.
-  'product.starter.text': '150 gems, 2 hours of double income and 10 rep.',
+  'product.starter.text': '{g}, {t} of double income and {rep} rep.',
   'product.noads.name': 'Skip ads',
   // One short line on the product button.
   'product.noads.line': 'Every ad reward comes at once, no ad to watch.',
@@ -1163,7 +1164,7 @@ LANG['en'] = {
   'piece.pasta_gondola': 'Pasta gondola',
   'piece.rice_rack': 'Rice rack',
   'piece.soup_gondola': 'Soup gondola',
-  'piece.canned_veg_gondola': 'Canned veg gondola',
+  'piece.canned_veg_gondola': 'Canned veggie gondola',
   'piece.flour_rack': 'Flour rack',
   'piece.jar_end_cap': 'Jar end cap',
   'piece.pantry_desk': 'Pantry desk',
@@ -1265,7 +1266,7 @@ LANG['en'] = {
   'piece.cheese_and_yogurt_chest': 'Cheese and yogurt chest',
   'piece.ice_cream_cooler': 'Ice cream cooler',
   'piece.pizza_cooler': 'Pizza cooler',
-  'piece.veg_cooler': 'Veg cooler',
+  'piece.veg_cooler': 'Veggie cooler',
   'piece.popsicle_cooler': 'Popsicle cooler',
   'piece.dinner_cooler': 'Dinner cooler',
   'piece.fries_cooler': 'Fries cooler',
@@ -1273,7 +1274,7 @@ LANG['en'] = {
   'piece.pizza_chest': 'Pizza chest',
   'piece.frozen_desk': 'Frozen desk',
   'piece.pops_chest': 'Pops chest',
-  'piece.bagged_veg_chest': 'Bagged veg chest',
+  'piece.bagged_veg_chest': 'Bagged veggie chest',
   'piece.waffle_chest': 'Waffle chest',
   'piece.ice_cream_deal': 'Ice cream deal',
   'piece.ice_cream_island': 'Ice cream island',
@@ -1537,12 +1538,12 @@ LANG['en'] = {
   'piece.tape_and_glue_shelf': 'Tape and glue shelf',
   'piece.axe_and_pick_end': 'Axe and pick end',
   'piece.bolt_bin': 'Bolt bin',
-  'piece.paint_tin': 'Paint tin',
+  'piece.paint_tin': 'Paint can',
   'piece.tool_wall': 'Tool wall',
   'piece.mallet_rack': 'Mallet rack',
   'piece.plier_rack': 'Plier rack',
   'piece.tool_deal': 'Tool deal',
-  'piece.primer_tin': 'Primer tin',
+  'piece.primer_tin': 'Primer can',
   'piece.nail_bin': 'Nail bin',
   'piece.paint_pile': 'Paint pile',
   'piece.brush_pot': 'Brush pot',

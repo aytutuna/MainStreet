@@ -77,8 +77,19 @@ function $(id) {
   return document.getElementById(id);
 }
 
-function money(v) {
-  var m = tl('num.money', { n: short(v) });
+var CENTS = null;
+
+// cents show only under 10, cut down for what the player has and up for what a thing costs, so a balance never reads as a price it can't pay
+function money(v, up) {
+  var c = (up ? Math.ceil(v * 100 - 1e-6) / 100 : Math.floor(v * 100 + 1e-6) / 100) + 0;
+  var n;
+  if (c > 0 && c < 10 && c !== Math.floor(c)) {
+    if (!CENTS) CENTS = new Intl.NumberFormat(I18N.locale + '-u-nu-latn', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    n = CENTS.format(c);
+  } else {
+    n = short(c < 1000 ? c : v, up ? 1 : -1);
+  }
+  var m = tl('num.money', { n: n });
   // the symbol stays on the side the language put it, whatever the line's direction is
   return I18N.rtl ? '⁦' + m + '⁩' : m;
 }
@@ -404,6 +415,7 @@ function buzz(kind) {
 }
 
 function clock2(v) {
+  if (v >= 3600) return hms(v);
   var m = Math.floor(v / 60);
   var s = Math.floor(v % 60);
   return m + ':' + (s < 10 ? '0' : '') + s;
@@ -486,6 +498,7 @@ function fitFlush() {
       fitAll(t);
     }
   }
+  overAll();
 }
 
 function fitWire() {
@@ -536,6 +549,11 @@ function popAt(text, x, y, cls) {
   var half = d.offsetWidth * 0.58 + 4;
   d.style.left = Math.max(half, Math.min($('fly').clientWidth - half, x)) + 'px';
   d.style.top = Math.max(70, y) + 'px';
+  if (calm()) {
+    d.style.transform = 'translate(-50%, -20px)';
+    setTimeout(function () { d.remove(); }, cls === 'item' ? 1800 : 1100);
+    return;
+  }
   var keys = [{ transform: 'translate(-50%, 0) scale(0.6)', opacity: 0 }, { transform: 'translate(-50%, -14px) scale(1.15)', opacity: 1, offset: 0.2 },
     { transform: 'translate(-50%, -52px) scale(1)', opacity: 0 }];
   // a buy's pill stays readable longer and rises less
@@ -546,6 +564,11 @@ function popAt(text, x, y, cls) {
 }
 
 function flyIcons(src, x, y, n, targetId) {
+  if (calm()) {
+    land(targetId === 'gems' ? 'gems' : 'coins', 0);
+    bumpEl(targetId === 'gems' ? 'gem-n' : 'cash-n');
+    return;
+  }
   var ar = $('app').getBoundingClientRect();
   var to = $(targetId).getBoundingClientRect();
   var tx = to.left - ar.left + 26;
@@ -553,6 +576,7 @@ function flyIcons(src, x, y, n, targetId) {
   for (var i = 0; i < n; i++) {
     var d = document.createElement('img');
     d.src = src;
+    d.alt = '';
     d.className = 'fc';
     d.style.left = x - 10 + 'px';
     d.style.top = y - 10 + 'px';
@@ -569,6 +593,7 @@ function flyIcons(src, x, y, n, targetId) {
 
 // a ring that swells and fades where something was tapped
 function ring(x, y) {
+  if (calm()) return;
   var d = document.createElement('i');
   d.className = 'ring';
   d.style.left = x + 'px';
@@ -606,6 +631,18 @@ function centerOf(el) {
 }
 
 // milestone and unlock banners wait for each other and for the camera
+// the polite live region: cleared first so the same words twice are still read
+var sayTimer = 0;
+function say(text) {
+  clearTimeout(sayTimer);
+  $('live').textContent = '';
+  sayTimer = setTimeout(function () { $('live').textContent = text; }, 80);
+}
+
+function words(el) {
+  return [].map.call(el.children, function (c) { return c.textContent; }).join('. ') || el.textContent;
+}
+
 function banner(html, delay, big) {
   if (bq.length > 2) bq.shift();
   bq.push({ h: html, d: delay || 0, big: big });
@@ -624,6 +661,7 @@ function nextBanner() {
     hideToast();
     b.innerHTML = q.h;
     b.hidden = false;
+    say(words(b));
     b.style.animation = 'none';
     void b.offsetWidth;
     b.style.animation = '';
@@ -654,7 +692,7 @@ function perMin(v) {
   if (v >= 1000) return short(v);
   if (v >= 10) return fmtn(Math.round(v));
   var r = Math.round(v * 10) / 10;
-  return r ? fmtn(r) : v > 0 ? '<0.1' : '0';
+  return r ? fmtn(r) : v > 0 ? '<' + fmtn(0.1) : '0';
 }
 
 // how many of the departments are open, which is also the one that opens next
@@ -671,11 +709,20 @@ function far(id) {
 // a button's price, or why it cannot be bought: locked, or too dear for now
 function buyBtn(k, b, label, c, locked) {
   var poor = !locked && S.cash < c;
-  set(k, 'up', b, 'innerHTML', locked ? tl('common.locked') : label + '<small>' + money(c) + '</small>');
+  set(k, 'up', b, 'innerHTML', locked ? tl('common.locked') : label + '<small>' + money(c, true) + '</small>');
   // too dear stays tappable, so the tap can say there is not enough cash yet
   set(k, 'upd', b, 'disabled', locked);
   flag(k, 'lk', b, 'lk', locked);
   flag(k, 'poor', b, 'poor', poor);
+}
+
+// a button that shows only a price is read with the name of what it buys
+var nameN = 0;
+function named(nm, btn) {
+  nameN++;
+  nm.id = 'nm' + nameN;
+  btn.id = 'bt' + nameN;
+  btn.setAttribute('aria-labelledby', nm.id + ' ' + btn.id);
 }
 
 function makeRow(id) {
@@ -689,6 +736,7 @@ function makeRow(id) {
     fill: el.querySelector('.pr i'), bt: el.querySelector('.pr em'), ms: el.querySelector('.l3 span'), nx: el.querySelector('.l3 img'),
     up: el.querySelector('.up') };
   r.nm.textContent = b.name;
+  named(r.nm, r.up);
   el.querySelector('.ic').addEventListener('click', function () { focusBiz(id); });
   r.up.addEventListener('click', function () {
     if (room(id)) openPlace(id);
@@ -743,7 +791,7 @@ function stat(id, x) {
   if (x.stat === 'sell') return tl('fx.per_shopper', { v: money(perSell(id) * bmul()) });
   if (x.stat === 'draw') {
     var n = DRAW * 60 * (1 + SERV * S.pl.serv);
-    return tl('fx.shoppers_min', { v: n.toFixed(n < 1 ? 2 : 1) });
+    return tl('fx.shoppers_min', { v: numFmt(n < 1 ? 2 : 1).format(n) });
   }
   return tl('fx.stocking', { n: Math.round((1 - STAFF) * 100) });
 }
@@ -766,6 +814,7 @@ function makeRoom(id) {
       '<div class="l3 fx"><span></span></div><div class="btns"><button type="button" class="up"></button></div>';
     var q = { el: row, k: {}, pic: row.querySelector('.ic'), nm: row.querySelector('b'), n: row.querySelector('.segs'), fx: row.querySelector('.fx span'),
       up: row.querySelector('.up') };
+    named(q.nm, q.up);
     for (var s = 0; s < (x.got || 0) + x.at.length; s++) q.n.appendChild(document.createElement('i'));
     q.up.addEventListener('click', function () {
       cardSel = j;
@@ -999,6 +1048,7 @@ function showCard(id) {
   cardRow = room(id) ? makeRoom(id) : makeRow(id);
   $('card-row').appendChild(cardRow.el);
   upRow(cardRow);
+  $('card').setAttribute('aria-label', (cardRow.el.querySelector('b') || {}).textContent || '');
   $('card').hidden = false;
   $('app').classList.add('card-open');
   fitInsets();
@@ -1071,11 +1121,13 @@ function upgrade(id, j) {
   // only a button that is short of cash can be tapped and still not buy
   if (!res) {
     sfx('broke');
+    say(tl('buy.broke'));
     bumpEl('cash-n');
     buzz('light');
     return;
   }
   afterBuy(res);
+  say('+ ' + (PL[id] ? PL[id].next[res.piece] : upName(id, res.piece)));
   var at = View.pieceScreen(res.id, res.piece);
   if (!at) return;
   // above whatever panel is open, so the text is never under it
@@ -1092,11 +1144,17 @@ function upgrade(id, j) {
 
 // coins falling from the top of the screen, one tick of the coin sound as each wave lands
 function rain(n) {
+  if (!calm()) rainFall(n);
+  for (var k = 0; k < 5; k++) setTimeout(function (r) { sfx('coins', r); }, 350 + k * 330, 1 + k * 0.05);
+}
+
+function rainFall(n) {
   var w = $('fly').clientWidth;
   var h = $('fly').clientHeight;
   for (var i = 0; i < n; i++) {
     var d = document.createElement('img');
     d.src = 'assets/coin.png';
+    d.alt = '';
     d.className = 'fc';
     d.style.left = Math.random() * (w - 20) + 'px';
     d.style.top = '-24px';
@@ -1105,7 +1163,6 @@ function rain(n) {
       { duration: 1300 + Math.random() * 900, delay: i * 50, easing: 'cubic-bezier(.4,0,.8,.6)', fill: 'backwards' });
     a.onfinish = function (e) { e.target.effect.target.remove(); };
   }
-  for (var k = 0; k < 5; k++) setTimeout(function (r) { sfx('coins', r); }, 350 + k * 330, 1 + k * 0.05);
 }
 
 // the new store opens: coins and confetti over the screen, and two banners one after the other
@@ -1150,7 +1207,7 @@ function claimGoalAt(i, el) {
   var c = centerOf(el);
   popAt(tl('common.gems_plus', { n: g.gems }), c.x, c.y + 20, 'gem');
   flyGems(c.x, c.y + 10, Math.min(8, g.gems));
-  if (g.x2) banner('<b>' + tl('banner.goal_done') + '</b><small>' + tl('common.income_x2_min', { n: g.x2 }) + '</small>', 0);
+  if (g.x2) banner('<b>' + tl('banner.goal_done') + '</b><small>' + tl('common.income_x2_min', { t: hours(g.x2 * 60) }) + '</small>', 0);
   sfx('done');
   buzz('success');
   nudge();
@@ -1199,6 +1256,7 @@ function bumpCombo() {
 
 // a quick glow round the screen's edge
 function pulse(k) {
+  if (calm()) return;
   var d = $('flash');
   d.animate([{ opacity: 0 }, { opacity: k, offset: 0.25 }, { opacity: 0 }], { duration: 320, easing: 'ease-out' });
 }
@@ -1279,6 +1337,7 @@ function meterHint(i) {
   var m = $('warn').getBoundingClientRect();
   t.innerHTML = '<b>' + tl(METERS[i].warn) + '</b><small>' + tl('hud.warn_tip') + '</small>';
   t.hidden = false;
+  say(words(t));
   t.style.left = '0px';
   var w = t.offsetWidth;
   var left = Math.max(8, Math.min(a.width - w - 8, m.left - a.left + m.width / 2 - w / 2));
@@ -1647,9 +1706,9 @@ function takeAway(dbl, from, free) {
 
 function dayText(d) {
   var p = [];
-  if (d.cash) p.push(tl('daily.cash_min', { n: d.cash }));
+  if (d.cash) p.push(tl('daily.cash_min', { t: hours(d.cash * 60) }));
   if (d.gems) p.push(tl('common.gems', { n: d.gems }));
-  if (d.x2) p.push(tl('common.x2_min', { n: d.x2 }));
+  if (d.x2) p.push(tl('common.x2_min', { t: hours(d.x2 * 60) }));
   return p.join(tl('common.list_sep'));
 }
 
@@ -1661,7 +1720,7 @@ function missionSig() {
 }
 
 function missLine(m) {
-  var v = m.k === 'earn' ? short(Math.floor(m.p)) + '/' + short(m.n) : Math.floor(m.p) + '/' + m.n;
+  var v = m.k === 'earn' ? short(m.p, -1) + '/' + short(m.n, 1) : Math.floor(m.p) + '/' + m.n;
   return m.k === 'open' || m.k === 'star' ? missionText(m) : tl('daily.progress', { text: missionText(m), v: v });
 }
 
@@ -1756,7 +1815,7 @@ function gemsLeft(cost) {
 
 function paintBoost() {
   put($('boost-gems'), 'textContent', tl('boost.have', { n: short(S.gems) }));
-  put($('x2-txt'), 'textContent', S.x2 > 0 ? tl('boost.x2.active', { t: clock2(S.x2) }) : tl('boost.x2.idle'));
+  put($('x2-txt'), 'textContent', S.x2 > 0 ? tl('boost.x2.active', { t: clock2(S.x2), m: X2_SECS / 60 }) : tl('boost.x2.idle', { t: hours(X2_SECS) }));
   put($('x2-need'), 'textContent', gemsLeft(X2_COST));
   put($('b-x2'), 'innerHTML', '<img src="assets/ui_gem.png" alt="">' + X2_COST);
   put($('b-x2'), 'disabled', S.gems < X2_COST);
@@ -1791,7 +1850,7 @@ function perkFx(id, l) {
     case 'pace': return v < 1 ? tl('perk.fx.quicker', { n: Math.round((1 - v) * 100) }) : tl('perk.fx.normal');
     case 'away': return tl('common.h', { n: MAX_AWAY / 3600 + headTop() + v });
     case 'rush': return tl('common.sec', { n: RUSH.secs + v });
-    case 'night': return tl(v ? 'perk.fx.night_open' : 'perk.fx.night_closed');
+    case 'night': return v ? tl('perk.fx.night_open') : tl('perk.fx.night_closed', { a: fmtClock(SHUT[0] * 60), b: fmtClock(SHUT[1] * 60) });
     case 'sales': return 'x' + v;
   }
   return v ? tl('common.gems_plus', { n: v }) : tl('perk.fx.base');
@@ -1853,6 +1912,7 @@ function paintSell() {
 
 function openSell() {
   var ok = canMove();
+  $('sell').querySelector('.box').setAttribute('aria-label', tl('tab.new_store'));
   paintSell();
   paintPerks();
   var keep = [['coin', tl('sell.lose.cash')], ['ui_gem', tl('common.gems', { n: short(S.gems) })], ['ui_star', tl('sell.keep.rep')], ['ui_goal', tl('sell.keep.goals')], ['ui_bolt', tl('sell.keep.boosts')]];
@@ -2358,7 +2418,7 @@ function collectGift() {
   var at = View.giftTaken() || { x: innerWidth / 2, y: innerHeight / 2 };
   ring(at.x, at.y);
   if (r.x2) {
-    popAt(r.x2 < 60 ? tl('common.x2_s', { n: r.x2 }) : tl('common.x2_min', { n: r.x2 / 60 }), at.x, at.y - 20, 'big');
+    popAt(r.x2 < 60 ? tl('common.x2_s', { n: r.x2 }) : tl('common.x2_min', { t: hours(r.x2) }), at.x, at.y - 20, 'big');
     bumpEl('x2');
   } else if (r.gems) {
     popAt(tl('common.gems_plus', { n: r.gems }), at.x, at.y - 20, 'big gem');
@@ -2370,7 +2430,7 @@ function collectGift() {
   sfx('gift');
   if (r.jack) {
     sfx('gems');
-    banner('<b>' + tl('banner.jackpot') + '</b><small>' + (r.x2 ? tl('common.income_x2_min', { n: r.x2 / 60 }) : plus(money(r.cash))) + '</small>', 0, true);
+    banner('<b>' + tl('banner.jackpot') + '</b><small>' + (r.x2 ? tl('common.income_x2_min', { t: hours(r.x2) }) : plus(money(r.cash))) + '</small>', 0, true);
   }
   buzz('success');
   nudge();
@@ -2561,6 +2621,87 @@ function dragEnd(d, dy, ms) {
   }, 190);
 }
 
+// panels are dialogs named by their heading: focus moves in when one opens and back to what opened it when it closes,
+// and while a veil is up the screen behind it is out of reach
+function overFlow(box) {
+  box.classList.toggle('over', box.scrollHeight > box.clientHeight + 1);
+}
+
+function overAll() {
+  [].forEach.call(document.querySelectorAll('.veil:not([hidden]) > .box'), overFlow);
+}
+
+function wireDialogs() {
+  var behind = ['top', 'bottom', 'sheet', 'tags'].map($);
+  var ids = 0;
+  var opener = {};
+  // buttons that show only a price or a count are read with the heading of the tile they sit in
+  function nameBtns(p) {
+    [].forEach.call(p.querySelectorAll('.offer .btn, .feat .btn, .hero .btn, .tile .btn, .perk .btn, .mrow .btn'), function (b) {
+      if (b.hasAttribute('aria-labelledby') || b.hasAttribute('aria-label')) return;
+      var c = b.closest('.offer, .feat, .hero, .tile, .perk, .mrow');
+      var h = c.querySelector(c.classList.contains('mrow') ? 'span' : 'h3, b');
+      if (!h) return;
+      h.id = h.id || 'hd' + ++ids;
+      b.id = b.id || 'hb' + ++ids;
+      b.setAttribute('aria-labelledby', h.id + ' ' + b.id);
+    });
+  }
+  function dialog(p, box, label) {
+    box.setAttribute('role', 'dialog');
+    if (label) {
+      label.id = label.id || p.id + '-t';
+      box.setAttribute('aria-labelledby', label.id);
+    }
+    var open = !p.hidden;
+    var from = null;
+    new MutationObserver(function () {
+      nameBtns(p);
+      if (p.classList.contains('veil')) overFlow(box);
+      if (p.hidden === !open) return;
+      open = !p.hidden;
+      behind.forEach(function (e) { e.inert = veilUp(); });
+      if (open) {
+        var at = document.activeElement;
+        var hp = at.closest('.veil, #sheet');
+        // coming back from a panel that was opened from this one keeps this one's own opener
+        if (hp && hp.hidden && opener[hp.id] && p.contains(opener[hp.id]) && opener[p.id]) at = opener[p.id];
+        from = at;
+        opener[p.id] = from;
+        box.tabIndex = -1;
+        box.focus({ preventScroll: true });
+      } else {
+        // a panel opened from another one that has since closed hands focus back to that one's opener
+        var to = from;
+        for (var n = 0; to && to.closest('[hidden]') && n < 4; n++) {
+          var up = to.closest('.veil, #sheet');
+          to = up && up !== p ? opener[up.id] : null;
+        }
+        // inert and the hidden tab bar clear after this task
+        setTimeout(function () {
+          var now = document.activeElement;
+          if (now !== document.body && !now.closest('[hidden]')) return;
+          if (to && to !== document.body && to.isConnected && !to.closest('[hidden], [inert]')) to.focus({ preventScroll: true });
+        }, 0);
+      }
+    }).observe(p, { attributes: true, attributeFilter: ['hidden'], childList: p.classList.contains('veil'), subtree: p.classList.contains('veil') });
+  }
+  [].forEach.call(document.querySelectorAll('.veil'), function (v) {
+    var box = v.querySelector('.box');
+    box.setAttribute('aria-modal', 'true');
+    dialog(v, box, v.id === 'sell' ? null : box.querySelector('h2, p'));
+    nameBtns(v);
+  });
+  dialog($('sheet'), $('sheet'), $('sheet-head').querySelector('b'));
+  dialog($('card'), $('card'), null);
+  behind.forEach(function (e) { e.inert = veilUp(); });
+  window.addEventListener('resize', overAll);
+  window.addEventListener('orientationchange', overAll);
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && closeTop()) e.preventDefault();
+  });
+}
+
 function wireClose() {
   // a tap on the dark backdrop, outside the box; a box that just opened ignores the tap that may be meant for the game
   var shownAt = {};
@@ -2581,14 +2722,15 @@ function wireClose() {
     edge = null;
     if (e.touches.length !== 1) return;
     // a swipe that starts on the 3D view pans the camera
-    if (IOS && t.clientX <= 24 && !e.target.closest('#view, #tags')) edge = { x: t.clientX, y: t.clientY };
+    var rtl = I18N.rtl;
+    if (IOS && (rtl ? t.clientX >= innerWidth - 24 : t.clientX <= 24) && !e.target.closest('#view, #tags')) edge = { x: t.clientX, y: t.clientY };
     var p = panelOf(e.target);
     if (p && !scrolled(e.target, p.el)) d = { el: p.el, done: p.done, x: t.clientX, y: t.clientY, at: Date.now(), on: false, dy: 0 };
   }, { passive: true });
   document.addEventListener('touchmove', function (e) {
     if (!edge) return;
     var t = e.touches[0];
-    var ex = t.clientX - edge.x;
+    var ex = I18N.rtl ? edge.x - t.clientX : t.clientX - edge.x;
     if (Math.abs(t.clientY - edge.y) > ex) edge = null;
     else if (ex > 70) {
       edge = null;
@@ -2669,6 +2811,7 @@ function begin(fromCloud) {
   fitWire();
   wireSound();
   wireClose();
+  wireDialogs();
   buildStats();
   shopStart();
   setFree(free);
@@ -2680,7 +2823,7 @@ function begin(fromCloud) {
   onShopper = onSale;
   onPerk = onPerkEvent;
   onYesterday = function (g, x) {
-    banner('<b>' + tl('banner.yesterday', { n: g }) + '</b>' + (x ? '<small>' + tl('common.income_x2_min', { n: x / 60 }) + '</small>' : ''), 0);
+    banner('<b>' + tl('banner.yesterday', { n: g }) + '</b>' + (x ? '<small>' + tl('common.income_x2_min', { t: hours(x) }) + '</small>' : ''), 0);
   };
   onMission = function (m) {
     banner('<b>' + tl('banner.mission_done') + '</b><small>' + missionText(m) + '</small>', 0);

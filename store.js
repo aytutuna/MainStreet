@@ -731,7 +731,7 @@ function fit(w) {
 
 function flyTo(x, z, dist, secs) {
   var d = Math.hypot(x - focus.x, z - focus.z);
-  goal = { x0: focus.x, z0: focus.z, k0: focus.dist, x: x, z: z, k: dist === undefined ? focus.dist : dist, t: 0, d: secs || Math.min(1.2, 0.4 + d / 30) };
+  goal = { x0: focus.x, z0: focus.z, k0: focus.dist, x: x, z: z, k: dist === undefined ? focus.dist : dist, t: 0, d: calm() ? 0.01 : secs || Math.min(1.2, 0.4 + d / 30) };
   return goal.d;
 }
 
@@ -5887,19 +5887,19 @@ function giftStep(dt, now) {
     }
     if (gv.kind === 'vip' && gv.vip.mixer) gv.vip.mixer.update(dt);
   }
-  if (gv.kind === 'wallet') o.rotation.y += dt * 0.8;
-  o.position.y = gv.kind === 'vip' ? 0 : Math.abs(Math.sin(now / 260)) * 0.07;
+  if (gv.kind === 'wallet' && !calm()) o.rotation.y += dt * 0.8;
+  o.position.y = gv.kind === 'vip' || calm() ? 0 : Math.abs(Math.sin(now / 260)) * 0.07;
   gv.glow.position.x = o.position.x;
   gv.glow.position.z = o.position.z;
-  sparkMat.opacity = 0.55 + 0.3 * Math.sin(now / 170);
-  gv.glow.scale.setScalar((gv.kind === 'vip' ? 1.5 : 1.1) * (gv.jack ? 1.7 : 1) * (1 + 0.12 * Math.sin(now / 230)));
+  sparkMat.opacity = calm() ? 0.7 : 0.55 + 0.3 * Math.sin(now / 170);
+  gv.glow.scale.setScalar((gv.kind === 'vip' ? 1.5 : 1.1) * (gv.jack ? 1.7 : 1) * (calm() ? 1 : 1 + 0.12 * Math.sin(now / 230)));
   gv.x = o.position.x;
   gv.z = o.position.z;
   toScreen(o.position.x, 1.5, o.position.z, sp);
   // the marker only shows while the gift is on screen
   var seen = !gv.out && sp.z < 1 && sp.x > 16 && sp.x < cw - 16 && sp.y - 30 > IT + 16 && sp.y < ch - IB;
   if (markEl.hidden === seen) markEl.hidden = !seen;
-  if (seen) markEl.style.transform = 'translate(' + Math.round(sp.x) + 'px,' + Math.round(sp.y - 30 - Math.abs(Math.sin(now / 240)) * 10) + 'px) translate(-50%,-50%)';
+  if (seen) markEl.style.transform = 'translate(' + Math.round(sp.x) + 'px,' + Math.round(sp.y - 30 - (calm() ? 0 : Math.abs(Math.sin(now / 240)) * 10)) + 'px) translate(-50%,-50%)';
 }
 
 // where the gift is on screen, or null when it is not there to be tapped
@@ -6035,9 +6035,9 @@ function frenzyStep(dt, now) {
     // slow on purpose: about 1 Hz brightness, and the colour eases between red and yellow
     var w = 0.5 + 0.5 * Math.sin(now * 0.0063);
     saleFlash.material.color.setHex(0xff2a1a).lerp(fxC.setHex(0xffc01a), 0.5 + 0.5 * Math.sin(now * 0.0031));
-    saleFlash.material.opacity = 0.2 * saleK * (0.4 + 0.6 * w) * (0.35 + 0.65 * daylight());
+    saleFlash.material.opacity = calm() ? 0 : 0.2 * saleK * (0.4 + 0.6 * w) * (0.35 + 0.65 * daylight());
   }
-  saleBan.forEach(function (m) { m.scale.setScalar(1.06 + Math.sin(now * 0.0063) * 0.07); });
+  saleBan.forEach(function (m) { m.scale.setScalar(calm() ? 1.06 : 1.06 + Math.sin(now * 0.0063) * 0.07); });
   saleT -= dt;
   var ids = null;
   for (var i = 0; i < saleS.length; i++) {
@@ -6047,8 +6047,9 @@ function frenzyStep(dt, now) {
     if (e.s.visible) {
       var pop = u < 0.15 ? u / 0.15 * 1.25 : 1.25 - Math.min(0.25, (u - 0.15) * 1.5);
       var out = u > 0.85 ? (1 - u) / 0.15 : 1;
+      if (calm()) pop = 1;
       e.s.scale.set(2.2 * pop * out, 1.1 * pop * out, 1);
-      e.s.position.set(e.x, 2.6 + Math.sin(now * 0.006 + i) * 0.08 + u * 0.4, e.z);
+      e.s.position.set(e.x, 2.6 + (calm() ? 0 : Math.sin(now * 0.006 + i) * 0.08 + u * 0.4), e.z);
     } else if (mad && saleT <= 0) {
       // the ones near what the player is looking at, so the signs are seen
       ids = ids || order.filter(function (id) { return has(id) && Math.hypot(shops[id].cx - focus.x, shops[id].cz - focus.z) < focus.dist * 0.7; });
@@ -6425,6 +6426,7 @@ function makeTags() {
   });
   arrowEl = document.createElement('div');
   arrowEl.id = 'arrow';
+  arrowEl.setAttribute('aria-hidden', 'true');
   arrowEl.innerHTML = '<svg viewBox="0 0 24 30"><path d="M12 29 L2 14 H8 V2 H16 V14 H22 Z"/></svg>';
   arrowEl.hidden = true;
   tagsEl.appendChild(arrowEl);
@@ -6485,7 +6487,7 @@ function tagText(id, st, mode) {
     if (mode) return st.name + ' ' + st.lv;
     return st.name + '  ' + (PL[id] ? tl('tag.lv', { n: st.lv }) : tl('tag.lv_max', { n: st.lv, max: UPS }) + '  ' + '★'.repeat(st.stars));
   }
-  return st.name + '  ' + money(st.price);
+  return st.name + '  ' + money(st.price, true);
 }
 
 function clash(a, b) {
@@ -6577,7 +6579,7 @@ function overlay(now) {
     return;
   }
   // the arrow points down at the place's tag
-  var bob2 = Math.abs(Math.sin(now / 260)) * 9;
+  var bob2 = calm() ? 0 : Math.abs(Math.sin(now / 260)) * 9;
   var x = a2.x;
   var y = a2.top - 22 - bob2;
   var cx = Math.max(24, Math.min(cw - 24, x));
@@ -6700,6 +6702,7 @@ function draw(now) {
 var punchAt = -1e9;
 
 function confetti() {
+  if (calm()) return;
   var cols = ['#f0c040', '#e8553a', '#4f9a40', '#3f78b8', '#e85d9a'];
   for (var i = 0; i < 30; i++) {
     var d = document.createElement('i');
@@ -6735,6 +6738,7 @@ function buildConfetti() {
 
 // n pieces from a department or place, or from the middle of the view when id is empty, starting delay seconds from now
 function burst(id, delay, n) {
+  if (calm()) return;
   var p = id ? spot(id) : { x: focus.x, y: focus.z };
   var now = performance.now() + delay * 1000;
   var tint = DEPT[id] ? fxC.set(DEPT[id]).getHex() : 0xf2c230;
@@ -7039,7 +7043,7 @@ function setMark(id, k) {
 }
 
 function selStep(now) {
-  var u = 0.5 + 0.5 * Math.sin(now / 320);
+  var u = calm() ? 1 : 0.5 + 0.5 * Math.sin(now / 320);
   if (sel) {
     areaEdge.opacity = 0.6 + 0.4 * u;
     areaFill.opacity = 0.05 + 0.09 * u;
@@ -7050,7 +7054,7 @@ function selStep(now) {
     mark.ar.rotation.set(-TILT, focus.az, 0);
     markEdge.opacity = 0.7 + 0.3 * u;
     markPad.opacity = 0.2 + 0.25 * u;
-    mark.ar.position.y = mark.y + Math.abs(Math.sin(now / 260)) * 0.3;
+    mark.ar.position.y = mark.y + (calm() ? 0 : Math.abs(Math.sin(now / 260)) * 0.3);
   }
 }
 
@@ -7505,7 +7509,7 @@ window.View = {
   giftTaken: giftTaken,
   giftLeaves: giftLeaves,
   giftOff: giftHide,
-  punch: function () { punchAt = performance.now(); },
+  punch: function () { if (!calm()) punchAt = performance.now(); },
   rush: rushStart,
   rushEnd: rushEnd,
   tillScreen: tillScreen,

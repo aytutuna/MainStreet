@@ -79,7 +79,6 @@ for (const code of codes) {
   if (r.errors.length > 40) console.log(`  ... ${r.errors.length - 40} more`);
   if (r.errors.length) bad++;
 }
-// TODO cloud.sign_in, the taken-over card and the reminders texts stay English in every file until P2.2 translates them.
 // A text that is still English in every language was added without being translated; the per-language check only sees missing keys.
 if (args.includes('--all')) {
   const all = codes.map(load);
@@ -93,7 +92,7 @@ if (args.includes('--all')) {
 const SAME = new Set(['OK', 'Wi-Fi', 'RevenueCat', 'Google', 'Pixabay', 'Main Street', 'Main Street Idle']);
 const NAMES = /^reg\.\w+\.name$/;
 const SAME_WORD = {
-  'sign.main_street': '*', 'common.min': '*', 'common.h_min': '*', 'board.bus': '*',
+  'sign.main_street': '*', 'common.min': '*', 'stats.per_min': '*', 'common.h_min': '*', 'board.bus': '*',
   'place.taxi.it.0': '*', 'ach.tier.bronze': '*', 'ach.tier.gold': '*', 'ach.tier.silver': '*',
   'piece.monitor': '*', 'piece.monster_truck': '*', 'piece.sofa': '*', 'piece.blender': '*', 'piece.sideboard': '*',
   'piece.toaster': '*', 'piece.batteries': '*', 'piece.home_theater': '*', 'piece.recycling': '*',
@@ -112,17 +111,11 @@ const PENDING = {
   'banner.jackpot': 'cs da de fi hr id it ms nl no pl pt-PT ro sk sl sv tr vi',
   'banner.place_level': 'id',
   'card.items': 'nl',
-  'cloud.play_here': '*',
-  'cloud.taken_line': '*',
-  'cloud.taken_title': '*',
   'common.claim': 'nl',
   'common.later': 'nl',
   'daily.bonus': 'ca cs da de fi fr-FR fr-CA hr id it ms nl no pl ro sk sl sv tr',
   'dept.auto': 'ms',
   'goal.claim': 'nl',
-  'menu.remind_denied': '*',
-  'menu.remind_off': '*',
-  'menu.remind_on': '*',
   'hud.combo': 'nl',
   'hud.rush.flash': 'id vi',
   'perk.cost': 'es-MX id it ms nl pt-BR',
