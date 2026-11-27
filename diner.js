@@ -23,7 +23,6 @@ var SZ = {
   SM_BagInBox_Rack_01: [0.902, 0.48, 1.5],
   SM_BarStool_Diner_01: [0.372, 0.372, 0.75],
   SM_Bar_Corner_01: [0.7, 0.7, 1.1],
-  SM_Bar_End_01: [0.7, 0.08, 1.1],
   SM_Bar_Section_10: [1, 0.7, 1.1],
   SM_Bar_Section_20: [2, 0.7, 1.1],
   SM_Booth_Single_12: [1.2, 0.603, 1.129],
@@ -164,7 +163,7 @@ var AREAS = {};
 
 // Grill: a line of ranges along the back wall under its hood, a pass table in front of it, steam and prep beside it
 var gl0 = strip('s', -22.15, -7.5, [
-  ['Charbroiler', 'SM_Charbroiler_075', { s: 1 }],
+  ['Charbroiler', 'SM_Charbroiler_075', { s: 0 }],
   ['Flat top griddle', 'SM_Griddle_FlatTop_10', { s: 0 }],
   ['Six burner range', 'SM_Range_Com_6Burner_10', { s: 0 }],
   ['Four burner range', 'SM_Range_Com_4Burner_Griddle_10', { s: 0 }],
@@ -185,7 +184,11 @@ var gl2 = strip('s', -22.15, -4.7, [
   ['Drawer table', 'SM_WorkTable_Drawers_15', { s: 0 }],
   ['Under counter fridge', 'SM_Undercounter_Fridge_10', { s: 0 }]
 ]);
-gl2.push(topOf(gl2[2], 'Burger patties', 'food/meat-patty', -0.2, 0, 1.4), topOf(gl2[2], 'Sausages', 'food/meat-sausage', 0.2, 0, 1.4), topOf(gl2[0], 'Steaks', 'food/meat-raw', 0, 0, 1.4));
+gl2.push(topOf(gl2[2], 'Burger buns', 'food/bread', -0.2, 0, 1.4), topOf(gl2[2], 'Baguettes', 'food/loaf-baguette', 0.2, 0, 1.4), topOf(gl2[0], 'Plated steak', 'pw/SM_Plate_Steak_01', 0, 0));
+// the first piece bought is the pass table, which has a front a shopper can stand at
+var t0 = gl0[0];
+gl0[0] = gl1[0];
+gl1[0] = t0;
 AREAS.grill = {
   cx: -4.5, cz: -19.7, vacant: [-8.0, -1.0, -22.2, -17.2], sign: [-4.5, -17.9, 1.9],
   floor: [floor(-8.0, -1.0, -22.2, -17.2, 'quarry')],
@@ -194,8 +197,9 @@ AREAS.grill = {
     gl1,
     gl2,
     [SIGN, board('Grill menu', 'board.d_grill', -2.3, -17.6, 1.1, 0.95), lights([[-5.5, -20.6], [-3.0, -20.6]]),
-      put('Kitchen mats', 'SM_Mat_AntiFatigue_01', -3.9, -21.3, 's', { spots: 0 }), up(nm('Golden grill'), { sign: 'gold' }, hang('SM_Plate_Burger_01', -4.0, -20.2, 0, 0.46, 3))],
-    [put('Extinguisher', 'SM_Extinguisher_ClassK_01', -1.9, -22.1, 's', { spots: 0, y: 0.35 }), put('Hand sink', 'SM_HandSink_Wall_01', -1.5, -22.08, 's', { spots: 0, y: 0.25 }),
+      put('Kitchen mats', 'SM_Mat_AntiFatigue_01', -3.9, -21.3, 's', { spots: 0 }),
+      up(nm('Golden grill'), { sign: 'gold' }, pw('SM_WorkTable_10', -3.5, -20.2, 's', { spots: 0 }), hang('SM_Plate_Burger_01', -3.5, -20.2, 0, 0.46, 2))],
+    [put('Mop sink', 'SM_ServiceSink_Floor_01', -1.6, -21.8, 's', { spots: 0 }), put('Sanitizer bucket', 'SM_SanitizerBucket_01', -2.4, -21.6, 's', { spots: 0 }),
       put('Waste bin', 'SM_TrashCan_Round_Dolly_01', -1.5, -18.2, 's', { spots: 0 }), put('Wet floor sign', 'WetFloorSign_01', -6.2, -18.2, 's', { spots: 0 })],
     [staff('Grill cook', -6.0, -21.35, 'n'), HELP]
   ])
@@ -203,7 +207,7 @@ AREAS.grill = {
 
 // Pizza ovens: deck ovens under a hood along the back wall, a prep island in front, dough stores on the east side
 var pz0 = strip('s', -22.15, 0.5, [
-  ['Pizza deck oven', 'SM_Oven_PizzaDeck_15', { s: 1 }],
+  ['Pizza deck oven', 'SM_Oven_PizzaDeck_15', { s: 0 }],
   ['Second deck oven', 'SM_Oven_PizzaDeck_15', { s: 0 }],
   ['Dough mixer', 'SM_Mixer_Floor_01', { s: 0 }],
   ['Sheet pan rack', 'SM_SheetPanRack_01', { s: 0 }],
@@ -224,18 +228,21 @@ var pz2 = strip('k', 7.95, -21.9, [
   ['Sauce bin', 'SM_IngredientBin_01', { s: 0 }],
   ['Can shelving', 'SM_Shelving_Wire_Loaded_12', { s: 0 }]
 ]);
-pz2.push(topOf(pz2[1], 'Cheese wheels', 'food/cheese', 0, 0, 0.6, 0.36), topOf(pz2[2], 'Mushrooms', 'food/mushroom', 0, 0, 1.2, 0.36), topOf(pz2[2], 'Peppers', 'food/paprika', 0.1, 0, 1.2, 0.36));
+pz2.push(topOf(pz2[1], 'Tomato cans', 'pw/SM_Can_No10_01', 0, 0, 1, 0.36), topOf(pz2[2], 'Flour bags', 'pw/Bag_Flour_01', 0, 0, 1, 0.36), topOf(pz2[2], 'Olive oil', 'pw/OilBottle_01', 0.1, 0, 1, 0.36));
+var t1 = pz0[0];
+pz0[0] = pz1[0];
+pz1[0] = t1;
 AREAS.pizza = {
   cx: 4.05, cz: -19.7, vacant: [0.1, 8.0, -22.2, -17.2], sign: [4.05, -17.9, 1.9],
-  floor: [floor(0.1, 8.0, -22.2, -17.2, 'quarry')],
+  floor: [floor(0.1, 8.0, -22.2, -17.2, 'quarrybw')],
   ups: compose([
     pz0,
     pz1,
     pz2,
     [SIGN, board('Pizza menu', 'board.d_pizza', 6.2, -17.6, 1.1, 0.95), lights([[2.0, -20.6], [5.0, -20.6]]),
       up(nm('Oven lights'), hang('SM_Light_Heat_Bulb_Cord_01', 1.3, -21.2, 0, 1.2), hang('SM_Light_Heat_Bulb_Cord_01', 2.3, -21.2, 0, 1.2)),
-      up(nm('Golden pizza'), { sign: 'gold' }, hang('SM_Pizza_Whole_01', 4.5, -20.2, 0, 0.46, 2))],
-    [put('Sheet pan stack', 'SM_SheetPan_Stack_01', 4.6, -21.95, 's', { spots: 0 }), put('Hand sink', 'SM_HandSink_Wall_01', 5.6, -22.08, 's', { spots: 0, y: 0.25 }),
+      up(nm('Golden pizza'), { sign: 'gold' }, pw('SM_WorkTable_10', 5.0, -20.2, 's', { spots: 0 }), hang('SM_Pizza_Whole_01', 5.0, -20.2, 0, 0.46, 2))],
+    [put('Sheet pan stack', 'SM_SheetPan_Stack_01', 4.6, -21.95, 's', { spots: 0 }), put('Mop sink', 'SM_ServiceSink_Floor_01', 5.6, -21.8, 's', { spots: 0 }),
       put('Waste bin', 'SM_TrashCan_Round_Dolly_01', 7.4, -18.0, 's', { spots: 0 }), put('Kitchen mats', 'SM_Mat_AntiFatigue_01', 4.4, -21.2, 's', { spots: 0 })],
     [staff('Pizza maker', 2.8, -21.2, 'n'), HELP]
   ])
@@ -243,7 +250,7 @@ AREAS.pizza = {
 
 // Fry station: fryers and ovens under a hood along the east wall, a pan island beside it, a hot line
 var fr0 = strip('k', 14.7, -21.9, [
-  ['Single fryer', 'SM_Fryer_Single_05', { s: 1 }],
+  ['Single fryer', 'SM_Fryer_Single_05', { s: 0 }],
   ['Double fryer', 'SM_Fryer_Double_10', { s: 0 }],
   ['Fry dump station', 'SM_FryDump_Station_05', { s: 0 }],
   ['Convection oven', 'Oven_Convection_10', { s: 0 }],
@@ -262,20 +269,23 @@ var fr2 = strip('k', 14.7, -19.3, [
   ['Chef base', 'SM_ChefBase_Drawers_15', { s: 0 }],
   ['Back table', 'SM_WorkTable_Backsplash_15', { s: 0 }]
 ]);
-fr2.push(topOf(fr2[0], 'Panini press', 'pw/SM_PaniniPress_01', -0.2, 0), topOf(fr2[1], 'Microwave', 'pw/SM_Microwave_Com_01', -0.2, 0, 1, 0.46), topOf(fr2[0], 'Toaster', 'pw/SM_Toaster_Conveyor_01', 0.2, 0),
-  topOf(fr2[1], 'Rice cooker', 'pw/SM_RiceCooker_Com_01', 0.2, 0, 1, 0.46), topOf(fr2[0], 'Hot plate', 'pw/SM_HotPlate_Double_01', 0, 0));
+fr2.push(topOf(fr2[0], 'Panini press', 'pw/SM_PaniniPress_01', -0.26, 0), topOf(fr2[1], 'Microwave', 'pw/SM_Microwave_Com_01', -0.2, 0, 1, 0.46), topOf(fr2[0], 'Toaster', 'pw/SM_Toaster_Conveyor_01', 0.26, 0),
+  topOf(fr2[1], 'Rice cooker', 'pw/SM_RiceCooker_Com_01', 0.2, 0, 1, 0.46), topOf(fr2[0], 'Soup kettle', 'pw/SM_SoupKettle_01', 0, 0));
+var t2 = fr0[0];
+fr0[0] = fr1[0];
+fr1[0] = t2;
 AREAS.fry = {
   cx: 12.2, cz: -17.8, vacant: [9.7, 14.7, -22.2, -13.4], sign: [12.2, -14.4, 1.9],
-  floor: [floor(9.7, 14.7, -22.2, -13.4, 'quarry')],
+  floor: [floor(9.7, 14.7, -22.2, -13.4, 'quarryslate')],
   ups: compose([
     fr0,
     fr1,
     fr2,
     [SIGN, board('Fry menu', 'board.d_fry', 10.7, -14.0, 1.1, 0.95), lights([[12.0, -20.4], [12.0, -16.2]]),
       up(nm('Heat lamps'), hang('SM_Light_Heat_Bulb_Cord_01', 13.4, -18.6, 0, 1.2), hang('SM_Light_Heat_Bulb_Cord_01', 13.4, -17.8, 0, 1.2)),
-      up(nm('Golden fryer'), { sign: 'gold' }, pw('SM_Fryer_Double_10', 12.5, -15.0, 'k'))],
-    [put('Oil jugs', 'SM_OilJug_Fryer_01', 14.45, -17.4, 'k', { s: 0, n: 3 }), put('Used oil caddy', 'SM_UsedOil_Caddy_01', 14.4, -16.4, 'k', { s: 0 }),
-      put('Fry mat', 'SM_Mat_AntiFatigue_01', 13.6, -19.0, 'k', { s: 0 }), put('Extinguisher', 'SM_Extinguisher_ClassK_01', 14.62, -15.4, 'k', { s: 0, y: 0.35 })],
+      up(nm('Golden fryer'), { sign: 'gold' }, pw('SM_Fryer_Double_10', 14.325, -16.7, 'k', { spots: 0 }), hang('SM_Hood_Canopy_10', 14.7, -16.7, -Math.PI / 2, 1.0))],
+    [put('Oil jugs', 'SM_OilJug_Fryer_01', 14.45, -17.4, 'k', { s: 0, n: 3 }), put('Used oil caddy', 'SM_UsedOil_Caddy_01', 14.4, -15.2, 'k', { s: 0 }),
+      put('Fry mat', 'SM_Mat_AntiFatigue_01', 13.6, -19.0, 'k', { s: 0 }), put('Sanitizer bucket', 'SM_SanitizerBucket_01', 14.4, -14.2, 'k', { s: 0 })],
     [staff('Fry cook', 13.4, -20.9, 'b'), HELP]
   ])
 };
@@ -289,7 +299,7 @@ var so0 = strip('k', 14.7, -13.1, [
   ['Root beer keg', 'SM_Keg_Half_01', { s: 0 }],
   ['Under bar fridge', 'SM_Undercounter_Fridge_10', { s: 0 }]
 ]);
-so0.splice(5, 0, up(nm('Back bar shelves'), hang('SM_BackBar_Shelves_20', 14.7, -11.6, -Math.PI / 2, 0.6)));
+so0.splice(5, 0, up(nm('Back bar shelves'), hang('SM_BackBar_Shelves_20', 14.7, -11.6, -Math.PI / 2, 0.75)));
 var so1 = strip('k', 12.7, -12.9, [
   ['Soda fountain', 'SM_Bar_Section_10', { top: [['SM_SodaFountain_01']] }],
   ['Fountain counter', 'SM_Bar_Section_20'],
@@ -309,23 +319,24 @@ AREAS.soda = {
     so2,
     [SIGN, board('Soda menu', 'board.d_soda', 10.6, -13.0, 1.1, 0.95), lights([[12.4, -12.2], [12.4, -9.6]]),
       up(nm('Neon lamps'), hang('SM_Light_Pendant_Diner_01', 11.6, -12.0, 0, 1.2), hang('SM_Light_Pendant_Diner_01', 11.6, -9.8, 0, 1.2)),
-      up(nm('Golden shake'), { sign: 'gold' }, pw('SM_SodaFountain_01', 13.4, -9.2, 'k', { n: 2 }))],
+      up(nm('Golden shake'), { sign: 'gold' }, pw('SM_Bar_Section_20', 13.6, -9.3, 'k', { spots: 0 }), hang('SM_SodaFountain_01', 13.6, -9.55, -Math.PI / 2, 0.55), hang('SM_SodaFountain_01', 13.6, -9.05, -Math.PI / 2, 0.55))],
     [topOf(so1[1], 'Pint glasses', 'pw/SM_BeerGlass_Pint_01', -0.3, 0, 1.4), topOf(so1[1], 'Shaker set', 'pw/SM_Shaker_Set_01', 0.3, 0), topOf(so1[3], 'Pitcher', 'pw/SM_Pitcher_Beer_01', 0, 0),
-      topOf(so1[0], 'Ice bucket', 'pw/SM_IceBucket_01', 0.1, 0.1, 1, 0.6)],
+      topOf(so1[1], 'Ice bucket', 'pw/SM_IceBucket_01', 0, 0)],
     [staff('Soda jerk', 13.5, -11.4, 'k'), HELP]
   ])
 };
 
 // Takeout window: counters along the east wall with the pass window, an order island and the bags and boxes
 var tk0 = strip('k', 14.7, -8.0, [
-  ['Takeout counter', 'SM_Bar_Section_20', { s: 1 }],
+  ['Takeout counter', 'SM_Bar_Section_20'],
   ['Counter corner', 'SM_Bar_Corner_01'],
   ['Second counter', 'SM_Bar_Section_10'],
   ['Pickup station', 'SM_ServerStation_01'],
-  ['Napkin counter', 'SM_Bar_Section_10'],
-  ['Counter end', 'SM_Bar_End_01']
-]);
-var tk0w = up(nm('Order window'), pw('SM_Wall_PassWindow_Heat_2m', 14.5, -3.7, 'k', { spots: 0 }));
+  ['Napkin counter', 'SM_Bar_Section_10']
+], { s: 0 });
+// a heat lamp shelf on the first counter, and the end panel turned across the last one
+var tk0w = up(nm('Heat lamp pass'), hang('SM_PassShelf_HeatLamp_15', tk0[0].at.x, tk0[0].at.z, -Math.PI / 2, tk0[0].at.h));
+var tk0e = put('Counter end', 'SM_Bar_End_01', 14.525, -5.11, 's', { spots: 0 });
 var tk1 = [topOf(tk0[0], 'Takeout bags', 'pw/SM_TakeoutBag_01', -0.25, 0, 1), topOf(tk0[2], 'Takeout boxes', 'pw/SM_TakeoutBoxes_01', 0, 0), topOf(tk0[0], 'Pizza boxes', 'pw/SM_Pizza_Box_Stack_01', 0.25, 0),
   topOf(tk0[4], 'Paper cups', 'pw/SM_Cup_Paper_Stack_01', 0, 0), topOf(tk0[0], 'Call bell', 'pw/CallBell_01', 0, 0.05, 1.5)];
 var tk2 = strip('k', 12.4, -7.9, [
@@ -337,16 +348,20 @@ var tk2 = strip('k', 12.4, -7.9, [
   ['Platform truck', 'SM_PlatformTruck_01', { s: 0 }],
   ['Prep table', 'SM_WorkTable_15']
 ], { mid: true });
+var tkg0 = tk0.slice(0, 5).concat([tk0w], [tk0e]);
+var t3 = tkg0[0];
+tkg0[0] = tk2[0];
+tk2[0] = t3;
 AREAS.takeout = {
   cx: 12.2, cz: -4.9, vacant: [9.7, 14.7, -8.4, -1.4], sign: [12.2, -2.4, 1.9],
   floor: [floor(9.7, 14.7, -8.4, -1.4, 'amber')],
   ups: compose([
-    tk0.slice(0, 5).concat([tk0w], tk0.slice(5)),
+    tkg0,
     tk1,
     tk2,
     [SIGN, board('Takeout menu', 'board.d_takeout', 10.5, -2.0, 1.1, 0.95), lights([[12.4, -6.4], [12.4, -3.6]]),
       up(nm('Window lamps'), hang('SM_Light_Heat_Bulb_Cord_01', 13.4, -6.0, 0, 1.2), hang('SM_Light_Heat_Bulb_Cord_01', 13.4, -3.0, 0, 1.2)),
-      up(nm('Golden bag'), { sign: 'gold' }, hang('SM_TakeoutBag_01', 11.4, -4.6, 0, 0, 5))],
+      up(nm('Golden bag'), { sign: 'gold' }, pw('SM_WorkTable_10', 11.7, -3.4, 'k', { spots: 0 }), hang('SM_TakeoutBag_01', 11.7, -3.4, 0, 0.46, 2))],
     [put('Menu case', 'SM_Outdoor_Menu_Case_01', 10.3, -8.0, 'b', { spots: 0 }), put('A frame sign', 'SM_Sign_AFrame_Blank_01', 10.2, -2.9, 's', { spots: 0 }),
       put('Waiting bench', 'DiningBench_01', 10.2, -5.8, 'b', { spots: 0 }), put('Takeout planter', 'Planter_Tall_01', 10.3, -1.8, 's', { spots: 0 })],
     [staff('Order clerk', 13.4, -6.2, 'k'), HELP]
@@ -361,7 +376,7 @@ var sd0 = strip('s', -12.4, 1.6, [
   ['Prep drawers', 'SM_WorkTable_Drawers_15'],
   ['Wire shelving', 'SM_Shelving_Wire_Chrome_12', { s: 0 }],
   ['Back table', 'SM_WorkTable_Backsplash_15']
-]);
+], { s: 0 });
 sd0.splice(5, 0, up(nm('Second salad bar'), pw('SM_SaladBar_15', 3.4, -10.6, 's')));
 var sd1 = strip('k', 6.8, -11.2, [
   ['Glass door cooler', 'SM_ReachIn_Glass_075'],
@@ -371,8 +386,8 @@ var sd1 = strip('k', 6.8, -11.2, [
   ['Under counter cooler', 'SM_Undercounter_Fridge_10', { s: 0 }]
 ]);
 var sd2 = [topOf(sd0[1], 'Lettuce tray', 'pw/ProduceTray_Lettuce_01', -0.3, 0, 1, 0.55), topOf(sd0[1], 'Tomato tray', 'pw/ProduceTray_Tomatoes_01', 0.3, 0, 1, 0.55),
-  topOf(sd0[3], 'Carrot tray', 'pw/ProduceTray_Carrots_01', -0.3, 0), topOf(sd0[3], 'Onion tray', 'pw/ProduceTray_Onions_01', 0.3, 0), topOf(sd0[2], 'Pepper tray', 'pw/ProduceTray_Peppers_01', -0.3, 0),
-  topOf(sd0[2], 'Pasta bowls', 'pw/SM_Bowl_Pasta_01', 0.1, 0.1), topOf(sd0[5 + 1], 'Salad plates', 'pw/SM_Plate_Salad_01', 0, 0.1, 1, 0.46)];
+  topOf(sd0[2], 'Carrot tray', 'pw/ProduceTray_Carrots_01', -0.25, 0), topOf(sd0[2], 'Onion tray', 'pw/ProduceTray_Onions_01', 0, 0), topOf(sd0[2], 'Pepper tray', 'pw/ProduceTray_Peppers_01', 0.25, 0),
+  topOf(sd0[3], 'Pasta bowls', 'pw/SM_Bowl_Pasta_01', -0.15, 0), topOf(sd0[3], 'Salad plates', 'pw/SM_Plate_Salad_01', 0.15, 0)];
 AREAS.salad = {
   cx: 4.05, cz: -8.6, vacant: [1.25, 6.9, -12.5, -4.7], sign: [4.0, -5.6, 1.9],
   floor: [floor(1.25, 6.9, -12.5, -4.7, 'greentile')],
@@ -382,8 +397,8 @@ AREAS.salad = {
     sd2,
     [SIGN, board('Salad menu', 'board.d_salad', 2.0, -4.9, 1.1, 0.95), lights([[3.2, -10.0], [3.2, -7.0]]),
       put('Entrance mat', 'SM_Mat_Entrance_01', 4.0, -5.2, 's', { spots: 0 }),
-      up(nm('Golden salad'), { sign: 'gold' }, hang('SM_Plate_Salad_01', 3.6, -8.4, 0, 0.0, 5))],
-    [put('Planter', 'Planter_Tall_01', 1.7, -4.9, 's', { spots: 0 }), put('Second planter', 'Planter_Tall_01', 6.4, -4.9, 's', { spots: 0 }), put('Hand sink', 'SM_HandSink_Wall_01', 6.8, -6.5, 'k', { spots: 0, y: 0.25 }),
+      up(nm('Golden salad'), { sign: 'gold' }, pw('SM_WorkTable_10', 5.4, -9.6, 's', { spots: 0 }), hang('SM_Plate_Salad_01', 5.4, -9.6, 0, 0.46, 2))],
+    [put('Planter', 'Planter_Tall_01', 1.7, -4.9, 's', { spots: 0 }), put('Second planter', 'Planter_Tall_01', 6.4, -4.9, 's', { spots: 0 }), put('Hand sink', 'SM_ServiceSink_Floor_01', 6.4, -6.5, 'k', { spots: 0 }),
       put('Wet floor sign', 'WetFloorSign_01', 4.8, -6.2, 's', { spots: 0 })],
     [staff('Salad maker', 4.0, -11.6, 'n'), HELP]
   ])
@@ -395,10 +410,10 @@ var cf0 = strip('k', -3.0, -12.4, [
   ['Coffee grinder', 'SM_Bar_Section_10', { top: [['SM_Coffee_Grinder_01']] }],
   ['Airpot brewer', 'SM_Bar_Section_10', { top: [['SM_Coffee_Brewer_Airpot_01']] }],
   ['Tea urn', 'SM_Bar_Section_10', { top: [['SM_HotWater_Tea_Urn_01']] }],
-  ['Cash counter', 'SM_Bar_Section_10', { top: [['SM_POS_Terminal_01']] }],
-  ['Counter end', 'SM_Bar_End_01']
+  ['Cash counter', 'SM_Bar_Section_10', { top: [['SM_POS_Terminal_01']] }]
 ], { mid: true });
 cf0.splice(5, 0, up(nm('Coffee station'), pw('CoffeeStation_15', -2.1, -11.3, 'k', { spots: 0 })));
+cf0.push(put('Counter end', 'SM_Bar_End_01', -3.0, -9.36, 's', { spots: 0 }));
 var cf1 = strip('b', -6.8, -12.4, [
   ['Bakery case', 'DisplayCase_Bakery_10', { s: 1 }],
   ['Deli case', 'SM_DisplayCase_Deli_15'],
@@ -422,7 +437,7 @@ AREAS.coffee = {
     cf2,
     [SIGN, board('Coffee menu', 'board.d_coffee', -6.0, -5.0, 1.1, 0.95), lights([[-4.6, -11.2], [-4.6, -7.4]]),
       up(nm('Pendant lamps'), hang('SM_Light_Pendant_Diner_01', -4.6, -10.0, 0, 1.2), hang('SM_Light_Pendant_Diner_01', -4.6, -8.2, 0, 1.2), hang('SM_Light_Pendant_Diner_01', -4.6, -6.4, 0, 1.2)),
-      up(nm('Golden cake'), { sign: 'gold' }, hang('food/cake-birthday', -3.0, -4.9, 0, 0.0, 2.2))],
+      up(nm('Golden cake'), { sign: 'gold' }, pw('Table_Cafe_Round_01', -2.5, -5.2, 's', { spots: 0 }), hang('food/cake-birthday', -2.5, -5.2, 0, 0.375, 1.4))],
     [put('Coffee planter', 'Planter_Tall_01', -6.5, -4.9, 's', { spots: 0 }), topOf(cf0[0], 'Paper cups', 'pw/SM_Cup_Paper_Stack_01', 0.3, 0.05), put('Door mat', 'SM_Mat_Entrance_01', -3.5, -5.0, 's', { spots: 0 }),
       put('Bar planter', 'Planter_Tall_01', -2.0, -12.7, 's', { spots: 0 })],
     [staff('Barista', -2.2, -10.4, 'k'), HELP]
@@ -445,7 +460,7 @@ function chairs(name, z, ref) {
 var dn1 = [seat('Four top tables', -8.4, 'Table_Four_01'), seat('Second four tops', -6.7, 'Table_Four_01'), seat('Square tables', -5.0, 'SM_Table_Cafe_Square_01'),
   seat('High top tables', -3.3, 'SM_Table_HighTop_01'), seat('Round tables', -1.7, 'Table_Cafe_Round_01')];
 var dn2 = [chairs('Chairs at row one', -8.4, 'SM_Chair_Diner_01'), chairs('Chairs at row two', -6.7, 'SM_Chair_Diner_01'), chairs('Chairs at row three', -5.0, 'SM_Chair_Bentwood_01'),
-  chairs('Chairs at row four', -3.3, 'SM_Chair_Bentwood_01'), chairs('Chairs at row five', -1.7, 'SM_Chair_Diner_01'),
+  chairs('Chairs at row four', -3.3, 'SM_BarStool_Wood_High_01'), chairs('Chairs at row five', -1.7, 'SM_Chair_Diner_01'),
   put('High chair', 'HighChair_Wood_01', -9.95, -7.5, 'k', { spots: 0 }), put('Second high chair', 'HighChair_Wood_01', -9.95, -4.2, 'k', { spots: 0 })];
 AREAS.dining = {
   cx: -12.2, cz: -7.5, vacant: [-14.7, -9.7, -14.8, -0.3], sign: [-12.2, -1.0, 1.9],
@@ -475,7 +490,7 @@ var WING = {
       pack(nm('A strip curtain'), pw('SM_WalkIn_StripCurtain_01', 17.2, -6.66, 's', { spots: 0 })),
       pack(nm('Chrome shelving'), pw('SM_Shelving_Wire_Chrome_12', 19.9, -7.6, 's', { spots: 0 }), pw('SM_Shelving_Wire_Chrome_12', 20.6, -7.6, 's', { spots: 0 })),
       pack(nm('A condenser and evaporator'), hang('SM_WalkIn_Condenser_01', 17.2, -7.4, 0, 1.43), hang('SM_WalkIn_Evaporator_01', 17.2, -6.9, 0, 1.43)),
-      pack(nm('Milk crates'), pw('SM_MilkCrate_Stack_01', 18.5, -5.2, 's', { spots: 0 }), pw('SM_MilkCrate_Stack_01', 18.9, -5.2, 's', { spots: 0 }), pw('SM_ProduceCrate_01', 19.5, -5.0, 's', { spots: 0 })),
+      pack(nm('Dunnage racks'), pw('SM_DunnageRack_12', 18.6, -5.0, 's', { spots: 0 }), pw('SM_DunnageRack_12', 19.7, -5.0, 's', { spots: 0 })),
       pack(nm('Loaded shelving'), pw('SM_Shelving_Wire_Loaded_12', 21.15, -5.3, 'k', { spots: 0 }), pw('SM_Shelving_Wire_Loaded_12', 21.15, -4.3, 'k', { spots: 0 })),
       pack(nm('Root beer kegs'), pw('SM_Keg_Sixth_01', 16.2, -5.0, 's', { spots: 0 }), pw('SM_Keg_Sixth_01', 16.6, -5.0, 's', { spots: 0 }), pw('SM_Keg_Sixth_01', 16.4, -4.6, 's', { spots: 0 }),
         pw('SM_CO2_Tank_Wall_01', 15.5, -4.7, 'b', { spots: 0 })),
@@ -543,14 +558,14 @@ var DECOR = {
       KIT.tx('board.d_deliveries', -19.2, -13.5, 1.5, 1.1)]
   ),
   wing: cat(
-    [room(15.3, 21.5, -2.9, 2.2, 'quarry'), room(15.3, 21.5, -7.9, -3.1, 'tile'), room(15.3, 21.5, -13.9, -8.1, 'boards'), room(15.3, 21.5, -28.2, -14.1, 'quarry')],
+    [room(15.3, 21.5, -2.9, 2.2, 'tile'), room(15.3, 21.5, -7.9, -3.1, 'tile'), room(15.3, 21.5, -13.9, -8.1, 'boards'), room(15.3, 21.5, -28.2, -14.1, 'cream')],
     low(15.3, 15.9, -3.1, -2.9), low(17.1, 21.5, -3.1, -2.9), low(15.3, 21.5, -8.1, -7.9), low(15.3, 15.9, -14.1, -13.9), low(17.1, 21.5, -14.1, -13.9),
     flat(dish),
     [pw('SM_BusCart_01', 20.6, -1.3, 's', { spots: 0 }), pw('SM_DishRack_Stack_01', 19.9, -2.5, 's', { spots: 0 }), pw('SM_FloorSink_FullGrate_01', 17.2, -1.9, 's', { spots: 0 }),
       pw('SM_ServiceSink_Floor_01', 21.0, -2.4, 's', { spots: 0 }), pw('SM_GreaseInterceptor_01', 18.4, 0.6, 's', { spots: 0 })],
     flat(dry),
     [pw('SM_Sack_Stack_01', 18.4, -26.6, 's', { spots: 0 }), pw('SM_Sack_Stack_01', 19.0, -26.6, 's', { spots: 0 }), pw('SM_CanGoods_Case_01', 20.2, -26.4, 's', { spots: 0, n: 2 }),
-      pw('SM_FoodBox_Bus_01', 18.8, -24.4, 's', { spots: 0 }), pw('SM_Sack_Flour_01', 20.4, -24.6, 's', { spots: 0 }), pw('SM_MilkCrate_Stack_01', 17.4, -24.6, 's', { spots: 0 })]
+      pw('SM_FoodBox_Bus_01', 18.8, -24.4, 's', { spots: 0 }), pw('SM_Sack_Flour_01', 20.4, -24.6, 's', { spots: 0 }), pw('SM_Sack_Stack_01', 17.4, -24.6, 's', { spots: 0 })]
   )
 };
 
@@ -558,12 +573,13 @@ var DECOR = {
 var FRONT = [
   [2, 'pw/SM_TrayStand_Tray_01', -13.6, 1.9, 0], [2, 'pw/SM_TrayStand_Tray_01', -7.0, 1.9, 0], [2, 'pw/SM_TrayStand_Tray_01', 5.0, 1.9, 0], [2, 'pw/SM_TrayStand_Tray_01', 12.0, 1.9, 0],
   [4, 'pw/SM_TrashStation_Tray_01', 13.4, 2.1, Math.PI], [4, 'pw/SM_TrashStation_Tray_01', 14.0, 2.1, Math.PI],
-  [8, 'pw/DrinkCooler_Upright_01', -14.3, 1.95, Math.PI], [8, 'pw/DrinkCooler_Upright_01', -13.75, 1.95, Math.PI], [8, 'pw/SM_Menu_Board_Wall_01', -13.0, 1.95, Math.PI], [8, 'pw/NewspaperRack_01', -12.5, 1.95, Math.PI],
+  [8, 'pw/DrinkCooler_Upright_01', -14.3, 1.95, Math.PI], [8, 'pw/DrinkCooler_Upright_01', -13.75, 1.95, Math.PI], [8, 'pw/SM_Sign_AFrame_Blank_01', -13.0, 1.95, Math.PI], [8, 'pw/NewspaperRack_01', -12.5, 1.95, Math.PI],
   [10, 'pw/DiningBench_01', -6.1, 1.95, Math.PI], [10, 'pw/Planter_Tall_01', -7.0, 1.95, 0], [10, 'pw/Planter_Tall_01', -5.15, 1.95, 0]
 ];
 
 export var DINER = Object.assign({}, PLAN, {
   type: 'diner',
+  home: { x: -3, z: -17 },
   areas: AREAS,
   order: Object.keys(AREAS),
   wing: WING,
@@ -588,6 +604,6 @@ export var DINER = Object.assign({}, PLAN, {
   wingBoard: 'board.d_kitchen',
   bankFloor: 0xe9dcc4,
   carry: { bag: ['pw/SM_TakeoutBag_01*1.4', 0.03], basket: ['pw/SM_TrayStack_01*0.8', 0.07], plant: ['pw/SM_Cup_Paper_Stack_01*1.3', 0.12] },
-  models: ['pw/SM_Patio_Heater_01', 'pw/SM_Awning_Storefront_2m', 'pw/SM_Bar_Section_20', 'pw/SM_Bar_Section_10', 'pw/SM_POS_Terminal_01', 'pw/SM_TrayStack_01', 'pw/SM_TrayStand_Tray_01',
+  models: ['pw/SM_Patio_Heater_01', 'pw/SM_Bar_Section_20', 'pw/SM_Bar_Section_10', 'pw/SM_POS_Terminal_01', 'pw/SM_TrayStack_01', 'pw/SM_TrayStand_Tray_01',
     'pw/SM_ServerStation_01', 'pw/SM_TakeoutBag_01', 'pw/SM_Cup_Paper_Stack_01', 'pw/Table_Cafe_Round_01', 'pw/Chair_Metal_Cafe_01']
 });
