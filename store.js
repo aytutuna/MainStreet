@@ -6483,7 +6483,7 @@ function tagText(id, st, mode) {
     if (mode) return st.name + ' ' + st.lv;
     return st.name + '  ' + (PL[id] ? tl('tag.lv', { n: st.lv }) : tl('tag.lv_max', { n: st.lv, max: UPS }) + '  ' + '★'.repeat(st.stars));
   }
-  return st.name + '  ' + money(st.price);
+  return st.name + '  ' + money(st.price, true);
 }
 
 function clash(a, b) {

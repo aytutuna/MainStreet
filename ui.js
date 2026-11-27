@@ -79,11 +79,15 @@ function $(id) {
 
 var CENTS = null;
 
-function money(v) {
-  var n = short(v);
-  if (v > 0.005 && v < 10 && v !== Math.floor(v)) {
+// cents show only under 10, cut down for what the player has and up for what a thing costs, so a balance never reads as a price it can't pay
+function money(v, up) {
+  var c = up ? Math.ceil(v * 100 - 1e-6) / 100 : Math.floor(v * 100 + 1e-6) / 100;
+  var n;
+  if (c > 0 && c < 10 && c !== Math.floor(c)) {
     if (!CENTS) CENTS = new Intl.NumberFormat(I18N.locale + '-u-nu-latn', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    n = CENTS.format(v);
+    n = CENTS.format(c);
+  } else {
+    n = short(up ? c : v);
   }
   var m = tl('num.money', { n: n });
   // the symbol stays on the side the language put it, whatever the line's direction is
@@ -679,7 +683,7 @@ function far(id) {
 // a button's price, or why it cannot be bought: locked, or too dear for now
 function buyBtn(k, b, label, c, locked) {
   var poor = !locked && S.cash < c;
-  set(k, 'up', b, 'innerHTML', locked ? tl('common.locked') : label + '<small>' + money(c) + '</small>');
+  set(k, 'up', b, 'innerHTML', locked ? tl('common.locked') : label + '<small>' + money(c, true) + '</small>');
   // too dear stays tappable, so the tap can say there is not enough cash yet
   set(k, 'upd', b, 'disabled', locked);
   flag(k, 'lk', b, 'lk', locked);
