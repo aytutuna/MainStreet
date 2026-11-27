@@ -486,6 +486,7 @@ function fitFlush() {
       fitAll(t);
     }
   }
+  overAll();
 }
 
 function fitWire() {
@@ -2610,6 +2611,14 @@ function dragEnd(d, dy, ms) {
 
 // panels are dialogs named by their heading: focus moves in when one opens and back to what opened it when it closes,
 // and while a veil is up the screen behind it is out of reach
+function overFlow(box) {
+  box.classList.toggle('over', box.scrollHeight > box.clientHeight + 1);
+}
+
+function overAll() {
+  [].forEach.call(document.querySelectorAll('.veil:not([hidden]) > .box'), overFlow);
+}
+
 function wireDialogs() {
   var behind = ['top', 'bottom', 'sheet', 'tags'].map($);
   var ids = 0;
@@ -2636,12 +2645,16 @@ function wireDialogs() {
     var from = null;
     new MutationObserver(function () {
       nameBtns(p);
-      if (p.classList.contains('veil')) box.classList.toggle('over', box.scrollHeight > box.clientHeight + 1);
+      if (p.classList.contains('veil')) overFlow(box);
       if (p.hidden === !open) return;
       open = !p.hidden;
       behind.forEach(function (e) { e.inert = veilUp(); });
       if (open) {
-        from = document.activeElement;
+        var at = document.activeElement;
+        var hp = at.closest('.veil, #sheet');
+        // coming back from a panel that was opened from this one keeps this one's own opener
+        if (hp && hp.hidden && opener[hp.id] && p.contains(opener[hp.id]) && opener[p.id]) at = opener[p.id];
+        from = at;
         opener[p.id] = from;
         box.tabIndex = -1;
         box.focus({ preventScroll: true });
@@ -2654,7 +2667,9 @@ function wireDialogs() {
         }
         // inert and the hidden tab bar clear after this task
         setTimeout(function () {
-          if (to && to !== document.body && !veilUp() && $('sheet').hidden && $('card').hidden && document.contains(to) && !to.closest('[hidden]')) to.focus({ preventScroll: true });
+          var now = document.activeElement;
+          if (now !== document.body && !now.closest('[hidden]')) return;
+          if (to && to !== document.body && to.isConnected && !to.closest('[hidden], [inert]')) to.focus({ preventScroll: true });
         }, 0);
       }
     }).observe(p, { attributes: true, attributeFilter: ['hidden'], childList: p.classList.contains('veil'), subtree: p.classList.contains('veil') });
@@ -2668,6 +2683,8 @@ function wireDialogs() {
   dialog($('sheet'), $('sheet'), $('sheet-head').querySelector('b'));
   dialog($('card'), $('card'), null);
   behind.forEach(function (e) { e.inert = veilUp(); });
+  window.addEventListener('resize', overAll);
+  window.addEventListener('orientationchange', overAll);
   document.addEventListener('keydown', function (e) {
     if (e.key === 'Escape' && closeTop()) e.preventDefault();
   });
