@@ -120,7 +120,7 @@ LANG['ml'] = {
   'intro.regs.title': 'Regulars',
   'intro.regs': 'Regulars come back now and then. Tap one for a tip. Each one you meet adds to your sales.',
   'intro.night.title': 'Closing time',
-  'intro.night': 'The store shuts from {a} to {b}, and nothing sells. Keep it open tonight for {n} gems or a short ad. A perk can keep it open for good.',
+  'intro.night': 'The store shuts from {a} to {b}, and nothing sells. Keep it open tonight for {n} gems. A perk can keep it open for good.',
   'intro.chain.title': 'Your chain',
   'intro.chain': 'Every store keeps earning while you are in another one. Open Your stores to switch.',
   'intro.perks.title': 'Perks',

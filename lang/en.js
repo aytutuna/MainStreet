@@ -224,7 +224,7 @@ LANG['en'] = {
   // First-time card, shown the first time the store shuts for the night.
   'intro.night.title': 'Closing time',
   // {a} and {b} are the closing and opening times, {n} a number of gems.
-  'intro.night': 'The store shuts from {a} to {b}, and nothing sells. Keep it open tonight for {n} gems or a short ad. A perk can keep it open for good.',
+  'intro.night': 'The store shuts from {a} to {b}, and nothing sells. Keep it open tonight for {n} gems. A perk can keep it open for good.',
   // First-time card, shown when the second store opens.
   'intro.chain.title': 'Your chain',
   // Your stores is the name of the tab, tab.new_store.
