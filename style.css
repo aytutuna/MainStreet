@@ -2658,6 +2658,40 @@ a.btn {
   gap: 10px;
 }
 
+#chain-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 34vh;
+  overflow-y: auto;
+}
+
+.crow {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0 8px;
+  align-items: center;
+  min-height: 48px;
+  padding: 6px 10px;
+  text-align: start;
+  color: var(--ink);
+  font: inherit;
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  background: var(--gloss);
+  box-shadow: 0 3px 0 var(--edge);
+}
+
+.crow small {
+  grid-column: 1 / -1;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.crow.here {
+  border-color: var(--green2);
+}
+
 #sell-art {
   border: 2px solid var(--ink);
   border-radius: 14px;

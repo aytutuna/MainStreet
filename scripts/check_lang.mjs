@@ -123,6 +123,8 @@ const PENDING = {
   'perk.fx.normal': 'ca da de es-ES es-MX fr-FR fr-CA id no pt-BR pt-PT ro tr',
   'piece.microwave': 'id',
   'product.x2.name': 'da sv',
+  'hud.new_store.aria': '*',
+  'tab.new_store': '*',
   'sell.lose.cash': '*',
   'sell.lose.depts': '*',
   'sell.lose.places': '*',

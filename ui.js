@@ -1885,7 +1885,30 @@ function paintPerks() {
 }
 
 // the sign, the star ring and what the move pays; painted again when a perk takes reputation
+// the stores of the chain, each a button that shows it: its income, how much is open and whether it is closed
+function paintChain() {
+  var html = '';
+  S.cs.forEach(function (r, i) {
+    var here = i === S.cur;
+    var inc = here ? rate() : storeRate(i) * (S.x2 > 0 ? 2 : 1);
+    var open = atStore(i, opened);
+    html += '<button type="button" class="crow' + (here ? ' here' : '') + '"' + (here ? ' aria-current="true"' : '') + ' data-i="' + i + '"><b>' +
+      (here ? '<span aria-hidden="true">✓</span> ' : '') + tl('hud.store', { n: i + 1 }) + '</b><span>' + (shut() ? tl('hud.closed') : tl('hud.rate', { v: money(inc) })) +
+      '</span><small>' + tl('sell.open_depts', { a: open, b: TY[r.t].depts.length }) + '</small></button>';
+  });
+  put($('chain-list'), 'innerHTML', html);
+}
+
+// shows store i without leaving the page
+function showStore(i) {
+  if (i === S.cur || !S.cs[i]) return;
+  view(i);
+  afterLoad();
+  save();
+}
+
 function paintSell() {
+  paintChain();
   var r = rating();
   var g = gate();
   var ok = canMove();
@@ -2129,6 +2152,13 @@ function wire() {
     updateGoals();
   });
   $('t-sell').addEventListener('click', openSell);
+  $('chain-list').addEventListener('click', function (e) {
+    var b = e.target.closest('.crow');
+    if (!b) return;
+    sfx('tap');
+    showStore(+b.dataset.i);
+    $('sell').hidden = true;
+  });
   $('sell-x').addEventListener('click', function () {
     $('sell').hidden = true;
     $('sell-ok').dataset.armed = '';
