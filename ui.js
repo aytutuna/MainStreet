@@ -475,7 +475,8 @@ function fitOne(el) {
   var cur = parseFloat(cs.fontSize);
   if (!el.fitBase) el.fitBase = cur;
   var base = el.fitBase;
-  var want = cur * cw / sw;
+  // a pixel short of the box, since letter spacing does not shrink with the font
+  var want = cur * (cw - 1) / sw;
   // the largest step that still fits, the smallest when none does
   var i = 0;
   while (i < fitSteps.length - 1 && base * fitSteps[i] > want) i++;
