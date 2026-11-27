@@ -136,21 +136,46 @@ html.fb :is(.btn, .btns button, #tabs button, .chip span, .chip em, .box h2, .bo
   gap: 4px;
 }
 
-.pill {
-  pointer-events: auto;
-  height: 44px;
-  border: 2px solid var(--ink);
-  border-radius: 22px;
-  background: var(--gloss);
-  box-shadow: 0 3px 0 var(--edge), inset 0 2px 0 rgba(255, 255, 255, 0.7), 0 6px 10px rgba(20, 10, 0, 0.25);
+/* slimmer than the pills elsewhere, so cash and income get the room */
+#bar .pill {
+  border-width: 2px;
   padding: 0 10px;
-  display: flex;
-  align-items: center;
   gap: 5px;
 }
 
-.pill.sm {
+#bar .pill.sm {
   padding: 0 8px;
+}
+
+#bar .pill.sm .ico {
+  width: 22px;
+  height: 22px;
+}
+
+#bar #gear {
+  padding: 0;
+}
+
+/* the touch area stops at half the gap, so a tap never lands on the neighbour */
+#bar .pill::before {
+  inset: -5px -2px;
+}
+
+.pill {
+  pointer-events: auto;
+  height: 44px;
+  border: 3px solid var(--ink);
+  border-radius: 22px;
+  background: var(--gloss);
+  box-shadow: 0 3px 0 var(--edge), inset 0 2px 0 rgba(255, 255, 255, 0.7), 0 6px 10px rgba(20, 10, 0, 0.25);
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pill.sm {
+  padding: 0 10px;
   font-size: 15px;
   flex: none;
 }
@@ -230,12 +255,28 @@ button.pill:active,
   }
 
   .pill {
-    padding: 0 8px;
+    padding: 0 9px;
   }
 
   .pill.sm {
-    padding: 0 6px;
+    padding: 0 8px;
     font-size: 14px;
+  }
+
+  #bar .pill {
+    padding: 0 8px;
+  }
+
+  #bar .pill.sm {
+    padding: 0 6px;
+  }
+
+  #bar #gear {
+    padding: 0;
+  }
+
+  #bar .pill::before {
+    inset: -5px -1px;
   }
 
   #cash b {
@@ -260,15 +301,15 @@ button.pill:active,
 }
 
 .pill.sm .ico {
-  width: 22px;
-  height: 22px;
+  width: 24px;
+  height: 24px;
 }
 
 #gear {
   flex-direction: column;
   justify-content: center;
   gap: 3px;
-  width: 40px;
+  width: 42px;
   padding: 0;
 }
 
