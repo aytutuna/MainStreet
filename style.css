@@ -1565,6 +1565,7 @@ a.btn {
 .box.over > .btn:last-child {
   outline: 5px solid var(--paper);
   outline-offset: 4px;
+  clip-path: inset(0 -12px -12px -12px);
 }
 
 .box.wide {
