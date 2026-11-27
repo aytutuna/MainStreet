@@ -664,12 +664,18 @@ function words(el) {
 // worth showing by then
 function banner(html, delay, big, now, extra) {
   // what waits behind an open card is kept, up to a point; the cap is for a stream that can show at once
-  if (bq.length > (covered() ? 8 : 2)) {
+  // (held ones keep the larger cap while any is left, and go last)
+  var held = covered() || bq.some(function (q) { return q.held; });
+  if (bq.length > (held ? 8 : 2)) {
     var j = 0;
-    while (j < bq.length && bq[j].now) j++;
+    while (j < bq.length && (bq[j].now || bq[j].held)) j++;
+    if (j === bq.length) {
+      j = 0;
+      while (j < bq.length && bq[j].now) j++;
+    }
     bq.splice(j < bq.length ? j : 0, 1);
   }
-  bq.push({ h: html, d: delay || 0, big: big, now: now, fx: extra && extra.fx, live: extra && extra.live });
+  bq.push({ h: html, d: delay || 0, big: big, now: now, held: covered(), fx: extra && extra.fx, live: extra && extra.live });
   if (!bqBusy) nextBanner();
 }
 

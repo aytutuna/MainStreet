@@ -146,6 +146,19 @@ for (let i = 0; i < 5; i++) {
   advance(2000);
 }
 check('the held banners did not all show in order: ' + order.join(), order.every((h, i) => h.includes('B' + (i + 1))));
+// banners held behind a card are not cut by newer ones while the queue drains
+ctx.cardId = 'hall';
+for (let i = 1; i <= 6; i++) run("banner('<b>H" + i + "</b>', 0)");
+ctx.cardId = null;
+advance(400);
+for (let i = 7; i <= 9; i++) run("banner('<b>H" + i + "</b>', 0)");
+const seenH = [banner().innerHTML];
+for (let i = 0; i < 8; i++) {
+  advance(2000);
+  seenH.push(banner().innerHTML);
+}
+check('held banners were cut while the queue drained: ' + seenH.join(), [1, 2, 3, 4, 5, 6, 7, 8, 9].every(n => seenH.some(h => h.includes('H' + n + '<'))));
+idle();
 // a banner that says it is no longer live is dropped
 ctx.rush = {};
 ctx.cardId = 'hall';
