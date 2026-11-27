@@ -2838,3 +2838,40 @@ html.cx #rate {
     font-size: 11px;
   }
 }
+
+/* long department names wrap in the Upgrades list instead of being cut, the level and stars drop under them */
+.biz .l1 {
+  flex-wrap: wrap;
+  row-gap: 0;
+}
+
+.biz .l1 b {
+  white-space: normal;
+  text-overflow: clip;
+}
+
+/* Korean breaks at spaces only, never between syllables */
+html:lang(ko) body {
+  word-break: keep-all;
+}
+
+/* Tamil and Malayalam words are long: names, titles and buttons keep a word whole and shrink to fit it */
+html:is(:lang(ta), :lang(ml)) :is(.box h2, .feat b, .hero h3, .btn, .btns button, .it .l1 b) {
+  overflow-wrap: normal;
+  word-break: keep-all;
+}
+
+html:is(:lang(ta), :lang(ml)) .box h2 {
+  font-size: 19px;
+  padding-left: 14px;
+  padding-right: 14px;
+}
+
+html:is(:lang(ta), :lang(ml)) .btns button,
+html:is(:lang(ta), :lang(ml)) .it .btns button {
+  font-size: 11px;
+}
+
+html:is(:lang(ta), :lang(ml)) .it .fx {
+  overflow-wrap: anywhere;
+}
