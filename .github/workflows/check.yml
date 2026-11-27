@@ -26,6 +26,8 @@ jobs:
         run: node scripts/check_bundle.mjs
       - name: Language files
         run: node scripts/check_lang.mjs --all
+      - name: Display font covers the texts
+        run: node scripts/check_font.mjs
       - name: Simulation and saves
         run: node scripts/check_sim.mjs
       - name: Cloud save rules

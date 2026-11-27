@@ -1,4 +1,5 @@
-// Lists every Latin, Cyrillic or Greek letter used in lang/*.js that the shipped display font cannot draw.
+// Lists every Latin, Cyrillic or Greek letter, and every punctuation or currency sign, used in lang/*.js that the
+// shipped display font cannot draw.
 import fs from 'node:fs';
 import zlib from 'node:zlib';
 
@@ -69,13 +70,13 @@ const have = cmapOf('assets/fira-sans-extrabold.woff2');
 const used = new Set();
 for (const f of fs.readdirSync('lang').filter((f) => f.endsWith('.js'))) {
   for (const ch of fs.readFileSync('lang/' + f, 'utf8')) {
-    if (/[\p{Script=Latin}\p{Script=Cyrillic}\p{Script=Greek}]/u.test(ch)) used.add(ch);
+    if (/[\p{Script=Latin}\p{Script=Cyrillic}\p{Script=Greek}¡-¿‐-⁞₠-⃏℀-⅏←-⇿−]/u.test(ch)) used.add(ch);
   }
 }
 const missing = [...used].filter((c) => !have.has(c.codePointAt(0)));
-console.log(`${used.size} letters used, ${have.size} in the font`);
+console.log(`${used.size} characters used, ${have.size} in the font`);
 if (missing.length) {
   console.log('missing: ' + missing.map((c) => c + ' U+' + c.codePointAt(0).toString(16).toUpperCase().padStart(4, '0')).join(' '));
   process.exit(1);
 }
-console.log('every letter is in the font');
+console.log('every character is in the font');
