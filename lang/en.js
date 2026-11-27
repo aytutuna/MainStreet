@@ -173,10 +173,10 @@ LANG['en'] = {
   'common.h': '{n} h',
   // Hours and minutes together, such as 2 h 5 min.
   'common.h_min': '{h} h {m} min',
-  // {n} is a number of minutes. A boost that doubles income.
-  'common.x2_min': 'x2 for {n} min',
+  // {t} is a duration such as 30 min or 2 h. A boost that doubles income.
+  'common.x2_min': 'x2 for {t}',
   'common.x2_s': 'x2 for {n} s',
-  'common.income_x2_min': 'Income x2 for {n} min',
+  'common.income_x2_min': 'Income x2 for {t}',
   // {a} of {b}, for example 3 of 12.
   'common.x_of_y': '{a} of {b}',
   'common.pct': '{n}%',
@@ -346,8 +346,8 @@ LANG['en'] = {
   'away.double': 'Double it',
 
   // Daily reward and missions
-  // {n} is a number of minutes of income given as a reward.
-  'daily.cash_min': '{n} min of income',
+  // {t} is a duration such as 20 min or 2 h of income given as a reward.
+  'daily.cash_min': '{t} of income',
   // A mission and its progress. {text} is the mission, {v} such as 3/10.
   'daily.progress': '{text} ({v})',
   'daily.all_done': 'All three done',
@@ -366,12 +366,12 @@ LANG['en'] = {
   // {n} is the player's gems.
   'boost.have': { one: 'You have {n} gem.', other: 'You have {n} gems.' },
   // {t} is the time left, minutes:seconds.
-  'boost.x2.active': 'Active: {t} left. Buying adds 30 min.',
-  'boost.x2.idle': 'All income x2 for 30 minutes.',
+  'boost.x2.active': 'Active: {t} left. Buying adds {m} min.',
+  'boost.x2.idle': 'All income x2 for {m} minutes.',
   // {v} is money.
   'boost.warp.so_far': 'Get {v} now, as much as this store has earned so far.',
   'boost.warp.hour': 'Get {v} now, an hour of income.',
-  'boost.warp.weak': 'Worth less than 10 minutes of income. Better later.',
+  'boost.warp.weak': 'Worth less than {m} minutes of income. Better later.',
   'boost.call.ready_in': 'Ready in {t}, or call one now.',
   // A rush is a burst of shoppers. {n} is minutes to wait before the next free one.
   'boost.call.brings': 'Brings a rush now. Then {n} min to wait.',
@@ -392,7 +392,7 @@ LANG['en'] = {
   'perk.fx.normal': 'normal',
   // The store is shut at night. These two describe the perk that keeps it open. Update the hours if your language writes them differently.
   'perk.fx.night_open': 'open 24 hours',
-  'perk.fx.night_closed': 'closed 11 PM – 1 AM',
+  'perk.fx.night_closed': 'closed {a} – {b}',
   'perk.fx.base': 'base',
   // {what} is the perk's effect name, {now} the current value, {next} the value after buying.
   'perk.line.next': '{what}: {now} → {next}',
@@ -599,7 +599,7 @@ LANG['en'] = {
   'ads.x2': 'Double income',
   // {time} is minutes:seconds left.
   'ads.x2_active': 'Active for {time}',
-  'ads.x2_note': '30 min of x2',
+  'ads.x2_note': '{m} min of x2',
   // Time warp: instantly collects income as if time passed.
   'ads.warp': 'Time warp',
   'ads.warp_note': 'Up to an hour of income',
@@ -1016,7 +1016,7 @@ LANG['en'] = {
   // Shop products bought with real money (gem packs are named by the shop.gems key).
   'product.starter.name': 'Starter pack',
   // What the product gives, shown in the shop.
-  'product.starter.text': '150 gems, 2 hours of double income and 10 rep.',
+  'product.starter.text': '{gems} gems, {h} hours of double income and {rep} rep.',
   'product.noads.name': 'Skip ads',
   // One short line on the product button.
   'product.noads.line': 'Every ad reward comes at once, no ad to watch.',

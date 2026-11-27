@@ -404,6 +404,7 @@ function buzz(kind) {
 }
 
 function clock2(v) {
+  if (v >= 3600) return hms(v);
   var m = Math.floor(v / 60);
   var s = Math.floor(v % 60);
   return m + ':' + (s < 10 ? '0' : '') + s;
@@ -654,7 +655,7 @@ function perMin(v) {
   if (v >= 1000) return short(v);
   if (v >= 10) return fmtn(Math.round(v));
   var r = Math.round(v * 10) / 10;
-  return r ? fmtn(r) : v > 0 ? '<0.1' : '0';
+  return r ? fmtn(r) : v > 0 ? '<' + fmtn(0.1) : '0';
 }
 
 // how many of the departments are open, which is also the one that opens next
@@ -743,7 +744,7 @@ function stat(id, x) {
   if (x.stat === 'sell') return tl('fx.per_shopper', { v: money(perSell(id) * bmul()) });
   if (x.stat === 'draw') {
     var n = DRAW * 60 * (1 + SERV * S.pl.serv);
-    return tl('fx.shoppers_min', { v: n.toFixed(n < 1 ? 2 : 1) });
+    return tl('fx.shoppers_min', { v: numFmt(n < 1 ? 2 : 1).format(n) });
   }
   return tl('fx.stocking', { n: Math.round((1 - STAFF) * 100) });
 }
@@ -1149,7 +1150,7 @@ function claimGoalAt(i, el) {
   var c = centerOf(el);
   popAt(tl('common.gems_plus', { n: g.gems }), c.x, c.y + 20, 'gem');
   flyGems(c.x, c.y + 10, Math.min(8, g.gems));
-  if (g.x2) banner('<b>' + tl('banner.goal_done') + '</b><small>' + tl('common.income_x2_min', { n: g.x2 }) + '</small>', 0);
+  if (g.x2) banner('<b>' + tl('banner.goal_done') + '</b><small>' + tl('common.income_x2_min', { t: hours(g.x2 * 60) }) + '</small>', 0);
   sfx('done');
   buzz('success');
   nudge();
@@ -1646,9 +1647,9 @@ function takeAway(dbl, from, free) {
 
 function dayText(d) {
   var p = [];
-  if (d.cash) p.push(tl('daily.cash_min', { n: d.cash }));
+  if (d.cash) p.push(tl('daily.cash_min', { t: hours(d.cash * 60) }));
   if (d.gems) p.push(tl('common.gems', { n: d.gems }));
-  if (d.x2) p.push(tl('common.x2_min', { n: d.x2 }));
+  if (d.x2) p.push(tl('common.x2_min', { t: hours(d.x2 * 60) }));
   return p.join(tl('common.list_sep'));
 }
 
@@ -1755,15 +1756,15 @@ function gemsLeft(cost) {
 
 function paintBoost() {
   put($('boost-gems'), 'textContent', tl('boost.have', { n: short(S.gems) }));
-  put($('x2-txt'), 'textContent', S.x2 > 0 ? tl('boost.x2.active', { t: clock2(S.x2) }) : tl('boost.x2.idle'));
+  put($('x2-txt'), 'textContent', S.x2 > 0 ? tl('boost.x2.active', { t: clock2(S.x2), m: X2_SECS / 60 }) : tl('boost.x2.idle', { m: X2_SECS / 60 }));
   put($('x2-need'), 'textContent', gemsLeft(X2_COST));
   put($('b-x2'), 'innerHTML', '<img src="assets/ui_gem.png" alt="">' + X2_COST);
   put($('b-x2'), 'disabled', S.gems < X2_COST);
   var full = rate() * WARP_SECS;
   var v = Math.min(full, Math.max(S.run, 100));
-  var weak = v < rate() * 600 || v <= 0;
+  var weak = v < rate() * WARP_WEAK || v <= 0;
   put($('warp-txt'), 'textContent', tl(v < full ? 'boost.warp.so_far' : 'boost.warp.hour', { v: money(v) }));
-  put($('warp-need'), 'textContent', gemsLeft(WARP_COST) || (weak ? tl('boost.warp.weak') : ''));
+  put($('warp-need'), 'textContent', gemsLeft(WARP_COST) || (weak ? tl('boost.warp.weak', { m: WARP_WEAK / 60 }) : ''));
   put($('b-warp'), 'innerHTML', '<img src="assets/ui_gem.png" alt="">' + WARP_COST);
   put($('b-warp'), 'disabled', S.gems < WARP_COST || weak);
   put($('call-txt'), 'textContent', S.call > 0 ? tl('boost.call.ready_in', { t: clock2(S.call) }) : tl('boost.call.brings', { n: CALL.cool / 60 }));
@@ -1792,7 +1793,7 @@ function perkFx(id, l) {
     case 'pace': return v < 1 ? tl('perk.fx.quicker', { n: Math.round((1 - v) * 100) }) : tl('perk.fx.normal');
     case 'away': return tl('common.h', { n: MAX_AWAY / 3600 + S.pl.head + v });
     case 'rush': return tl('common.sec', { n: RUSH.secs + v });
-    case 'night': return tl(v ? 'perk.fx.night_open' : 'perk.fx.night_closed');
+    case 'night': return v ? tl('perk.fx.night_open') : tl('perk.fx.night_closed', { a: fmtClock(SHUT[0] * 60), b: fmtClock(SHUT[1] * 60) });
     case 'sales': return 'x' + v;
   }
   return v ? tl('common.gems_plus', { n: v }) : tl('perk.fx.base');
@@ -2358,7 +2359,7 @@ function collectGift() {
   var at = View.giftTaken() || { x: innerWidth / 2, y: innerHeight / 2 };
   ring(at.x, at.y);
   if (r.x2) {
-    popAt(r.x2 < 60 ? tl('common.x2_s', { n: r.x2 }) : tl('common.x2_min', { n: r.x2 / 60 }), at.x, at.y - 20, 'big');
+    popAt(r.x2 < 60 ? tl('common.x2_s', { n: r.x2 }) : tl('common.x2_min', { t: hours(r.x2) }), at.x, at.y - 20, 'big');
     bumpEl('x2');
   } else if (r.gems) {
     popAt(tl('common.gems_plus', { n: r.gems }), at.x, at.y - 20, 'big gem');
@@ -2370,7 +2371,7 @@ function collectGift() {
   sfx('gift');
   if (r.jack) {
     sfx('gems');
-    banner('<b>' + tl('banner.jackpot') + '</b><small>' + (r.x2 ? tl('common.income_x2_min', { n: r.x2 / 60 }) : plus(money(r.cash))) + '</small>', 0, true);
+    banner('<b>' + tl('banner.jackpot') + '</b><small>' + (r.x2 ? tl('common.income_x2_min', { t: hours(r.x2) }) : plus(money(r.cash))) + '</small>', 0, true);
   }
   buzz('success');
   nudge();
@@ -2680,7 +2681,7 @@ function begin(fromCloud) {
   onShopper = onSale;
   onPerk = onPerkEvent;
   onYesterday = function (g, x) {
-    banner('<b>' + tl('banner.yesterday', { n: g }) + '</b>' + (x ? '<small>' + tl('common.income_x2_min', { n: x / 60 }) + '</small>' : ''), 0);
+    banner('<b>' + tl('banner.yesterday', { n: g }) + '</b>' + (x ? '<small>' + tl('common.income_x2_min', { t: hours(x) }) + '</small>' : ''), 0);
   };
   onMission = function (m) {
     banner('<b>' + tl('banner.mission_done') + '</b><small>' + missionText(m) + '</small>', 0);

@@ -198,8 +198,9 @@ RG.vip = { id: 'vip', name: tl('reg.vip.name'), ref: 'chars/character-male-b@9,2
 // Things sold in the shop, under the ids com.aytutuna.mainstreet.<id> in both stores. A one-time product is kept as a
 // flag in S.iap; a gem pack pays its gems every time. The starter pack is a consumable that pays STARTER once per
 // transaction, and S.iap.starter keeps a second one from being bought
+var STARTER = { gems: 150, x2: 7200, rep: 10 };
 var PRODUCTS = [
-  { id: 'starter1', ic: 'ui_gift', name: tl('product.starter.name'), text: tl('product.starter.text') },
+  { id: 'starter1', ic: 'ui_gift', name: tl('product.starter.name'), text: tl('product.starter.text', { gems: STARTER.gems, h: STARTER.x2 / 3600, rep: STARTER.rep }) },
   { id: 'noads', once: 1, ic: 'ui_star', name: tl('product.noads.name'), line: tl('product.noads.line') },
   { id: 'x2', once: 1, ic: 'ui_bolt', name: tl('product.x2.name'), line: tl('product.x2.line') },
   { id: 'gems1', gems: 80, ic: 'ui_gem', name: tl('shop.gems', { n: 80 }) },
@@ -207,7 +208,6 @@ var PRODUCTS = [
   { id: 'gems3', gems: 1200, ic: 'ui_gem', name: tl('shop.gems', { n: 1200 }) },
   { id: 'gems4', gems: 2800, ic: 'ui_gem', name: tl('shop.gems', { n: 2800 }) }
 ];
-var STARTER = { gems: 150, x2: 7200, rep: 10 };
 // The starter pack is offered in a
 // window of hours that starts when its button is first shown and never comes back. The deal of the day is one of these
 // packs, a day each in turn, with bonus extra gems; no pack follows itself, also where the list starts again

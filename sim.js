@@ -15,6 +15,7 @@ var AWAY_X2 = 5;
 var X2_SECS = 1800;
 var WARP_COST = 50;
 var WARP_SECS = 3600;
+var WARP_WEAK = 600;
 var DAILY = [
   { cash: 2 }, { gems: 5 }, { x2: 30 }, { cash: 30 }, { gems: 10 }, { cash: 60 }, { gems: 25, x2: 60, cash: 120 }
 ];
