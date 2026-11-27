@@ -30,7 +30,7 @@ LANG['pt-BR'] = {
   'boost.regs.title': 'Fregueses',
   'boost.regs.btn': 'Conhecer',
   'boost.shop': 'Loja',
-  'boost.gems_note': 'Ganhe gemas com metas, estrelas, missões, presentes e conquistas, ou compre na loja.',
+  'boost.gems_note': 'Ganhe gemas com metas, estrelas, missões, presentes, conquistas e a recompensa diária, ou compre na loja.',
   'regs.title': 'Fregueses',
   'shop.title': 'Loja',
   'shop.restore': 'Restaurar compras',
@@ -222,10 +222,10 @@ LANG['pt-BR'] = {
 
   'boost.have': { one: 'Você tem {n} gema.', many: 'Você tem {n} gemas.', other: 'Você tem {n} gemas.' },
   'boost.x2.active': 'Ativo: faltam {t}. Comprar soma {m} min.',
-  'boost.x2.idle': 'Toda a renda x2 por {m} minutos.',
+  'boost.x2.idle': 'Toda a renda x2 por {t}.',
   'boost.warp.so_far': 'Receba {v} agora, tudo o que esta loja já ganhou.',
   'boost.warp.hour': 'Receba {v} agora, uma hora de renda.',
-  'boost.warp.weak': 'Vale menos de {m} minutos de renda. Melhor esperar.',
+  'boost.warp.weak': 'Vale menos de {t} de renda. Melhor esperar.',
   'boost.call.ready_in': 'Pronta em {t}, ou chame uma agora.',
   'boost.call.brings': 'Traz uma correria agora. Depois, espere {n} min.',
   'boost.call.rush_on': 'Já há uma correria.',
@@ -295,7 +295,7 @@ LANG['pt-BR'] = {
     other: 'Você tem {n} gemas. Um visual só muda a pintura da loja, e toda loja nova o mantém.'
   },
   'look.need_store': 'Chegue à loja {n}',
-  'look.need_ach': 'Conquiste {name}',
+  'look.need_ach': 'Obtenha a conquista {name}',
   'look.in_use': 'Em uso',
   'look.use': 'Usar',
 
@@ -346,7 +346,7 @@ LANG['pt-BR'] = {
   'mission.star': 'Ganhar uma estrela em {dept}',
   'notify.full': 'Sua loja rendeu tudo o que podia enquanto você esteve fora. Venha coletar.',
   'notify.daily': 'Seu prêmio diário está pronto.',
-  'notify.ask': 'Quer um lembrete quando sua loja estiver cheia ou a recompensa diária estiver pronta?',
+  'notify.ask': 'Quer um lembrete quando sua loja tiver rendido tudo o que pode ou a recompensa diária estiver pronta?',
   'notify.ask.yes': 'Me lembrar',
 
   'shop.owned': 'Comprado',
@@ -741,7 +741,7 @@ LANG['pt-BR'] = {
   'reg.vip.name': 'VIP',
 
   'product.starter.name': 'Pacote inicial',
-  'product.starter.text': '{gems} gemas, {h} horas de renda em dobro e {rep} rep.',
+  'product.starter.text': '{g}, {t} de renda em dobro e {rep} rep.',
   'product.noads.name': 'Pular anúncios',
   'product.noads.line': 'Cada recompensa de anúncio chega na hora, sem assistir a nenhum anúncio.',
   'product.x2.name': 'x2 permanente',

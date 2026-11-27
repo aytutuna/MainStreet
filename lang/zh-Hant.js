@@ -30,7 +30,7 @@ LANG['zh-Hant'] = {
   'boost.regs.title': '熟客',
   'boost.regs.btn': '認識',
   'boost.shop': '商店',
-  'boost.gems_note': '寶石可從目標、星星、任務、禮物和成就取得，也可以在商店購買。',
+  'boost.gems_note': '寶石可從目標、星星、任務、禮物、成就和每日獎勵取得，也可以在商店購買。',
   'regs.title': '熟客',
   'shop.title': '商店',
   'shop.restore': '恢復購買',
@@ -205,7 +205,7 @@ LANG['zh-Hant'] = {
   'away.cap': '離線時只會賺 {n} 小時。',
   'away.double': '加倍領取',
 
-  'daily.cash_min': '{t}',
+  'daily.cash_min': '{t} 的收入',
   'daily.progress': '{text}（{v}）',
   'daily.all_done': '三項全完成',
   'daily.all_done.line': '{gems} 顆寶石，收入 x2 持續 {min} 分鐘',
@@ -218,10 +218,10 @@ LANG['zh-Hant'] = {
 
   'boost.have': { other: '你有 {n} 顆寶石。' },
   'boost.x2.active': '進行中：剩 {t}。購買可延長 {m} 分鐘。',
-  'boost.x2.idle': '所有收入 x2，持續 {m} 分鐘。',
+  'boost.x2.idle': '所有收入 x2，持續 {t}。',
   'boost.warp.so_far': '立即獲得 {v}，等於這家店到目前為止的收入。',
   'boost.warp.hour': '立即獲得 {v}，一小時的收入。',
-  'boost.warp.weak': '還不到 {m} 分鐘的收入，晚點再用比較划算。',
+  'boost.warp.weak': '還不到 {t} 的收入，晚點再用比較划算。',
   'boost.call.ready_in': '{t} 後可用，也可以現在召喚。',
   'boost.call.brings': '立刻帶來一波人潮，之後要等 {n} 分鐘。',
   'boost.call.rush_on': '人潮進行中。',
@@ -338,7 +338,7 @@ LANG['zh-Hant'] = {
   'mission.star': '在「{dept}」拿到一顆星',
   'notify.full': '你不在時，賣場能賺的都賺滿了，快來領取。',
   'notify.daily': '每日獎勵可以領了。',
-  'notify.ask': '商店裝滿或每日獎勵可領取時提醒你嗎？',
+  'notify.ask': '商店賺滿或每日獎勵可領取時提醒你嗎？',
   'notify.ask.yes': '提醒我',
 
   'shop.owned': '已擁有',
@@ -733,7 +733,7 @@ LANG['zh-Hant'] = {
   'reg.vip.name': 'VIP',
 
   'product.starter.name': '新手禮包',
-  'product.starter.text': '{gems} 顆寶石、{h} 小時收入加倍和 {rep} 聲望。',
+  'product.starter.text': '{g}、{t} 收入加倍和 {rep} 聲望。',
   'product.noads.name': '跳過廣告',
   'product.noads.line': '每個廣告獎勵立即入帳，無需觀看廣告。',
   'product.x2.name': '永久 x2',

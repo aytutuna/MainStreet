@@ -71,7 +71,7 @@ LANG['en'] = {
   // Button that opens the shop. Max about 10 characters.
   'boost.shop': 'Shop',
   // Small note under the boosts. Gems are the premium currency.
-  'boost.gems_note': 'Earn gems from goals, stars, missions, gifts and achievements, or buy them in the shop.',
+  'boost.gems_note': 'Earn gems from goals, stars, missions, gifts, achievements and the daily reward, or buy them in the shop.',
   // Title of the box listing regulars (named shoppers who come back to the store).
   'regs.title': 'Regulars',
   // Title of the shop box (gems and offers bought with real money).
@@ -367,11 +367,11 @@ LANG['en'] = {
   'boost.have': { one: 'You have {n} gem.', other: 'You have {n} gems.' },
   // {t} is the time left, minutes:seconds.
   'boost.x2.active': 'Active: {t} left. Buying adds {m} min.',
-  'boost.x2.idle': 'All income x2 for {m} minutes.',
+  'boost.x2.idle': 'All income x2 for {t}.',
   // {v} is money.
   'boost.warp.so_far': 'Get {v} now, as much as this store has earned so far.',
   'boost.warp.hour': 'Get {v} now, an hour of income.',
-  'boost.warp.weak': 'Worth less than {m} minutes of income. Better later.',
+  'boost.warp.weak': 'Worth less than {t} of income. Better later.',
   'boost.call.ready_in': 'Ready in {t}, or call one now.',
   // A rush is a burst of shoppers. {n} is minutes to wait before the next free one.
   'boost.call.brings': 'Brings a rush now. Then {n} min to wait.',
@@ -521,7 +521,7 @@ LANG['en'] = {
   'goal.lane': 'Open checkout {n}',
   // The stocker is the worker who restocks shelves from the stockroom.
   'goal.stocker': 'Hire a second stocker',
-  'goal.parking': 'Build the Parking',
+  'goal.parking': 'Build the parking lot',
   'goal.taxi': 'Open the Taxi Stand',
   // Self checkouts are the machines where shoppers scan and pay themselves.
   'goal.self': 'Put in self checkouts',
@@ -546,7 +546,7 @@ LANG['en'] = {
   'notify.full': 'Your store has earned all it can while you are away. Come and collect.',
   'notify.daily': 'Your daily reward is ready.',
   // Card shown before the phone asks for permission to send notifications, and its yes button.
-  'notify.ask': 'Get a reminder when your store is full or your daily reward is ready?',
+  'notify.ask': 'Get a reminder when your store has earned all it can, or your daily reward is ready?',
   'notify.ask.yes': 'Remind me',
 
   // Label on a shop button for a one-time product the player already bought.
@@ -697,7 +697,7 @@ LANG['en'] = {
 
   // Small labels on the map above departments and over shoppers.
   // A shopper gave up because the checkout lines are full.
-  'tag.lines_too_long': 'Lines too long!',
+  'tag.lines_too_long': 'Checkout lines too long!',
   // Appended to a place's name when its shelves are empty (the stockroom).
   'tag.shelves_empty': 'Shelves empty!',
   // Appended to the name of the main hall when the checkout lines are full.
@@ -1016,7 +1016,7 @@ LANG['en'] = {
   // Shop products bought with real money (gem packs are named by the shop.gems key).
   'product.starter.name': 'Starter pack',
   // What the product gives, shown in the shop.
-  'product.starter.text': '{gems} gems, {h} hours of double income and {rep} rep.',
+  'product.starter.text': '{g}, {t} of double income and {rep} rep.',
   'product.noads.name': 'Skip ads',
   // One short line on the product button.
   'product.noads.line': 'Every ad reward comes at once, no ad to watch.',

@@ -30,7 +30,7 @@ LANG['zh-Hans'] = {
   'boost.regs.title': '熟客',
   'boost.regs.btn': '认识',
   'boost.shop': '商店',
-  'boost.gems_note': '钻石可通过目标、星级、任务、礼物和成就获得，也可以在商店购买。',
+  'boost.gems_note': '钻石可通过目标、星级、任务、礼物、成就和每日奖励获得，也可以在商店购买。',
   'regs.title': '熟客',
   'shop.title': '商店',
   'shop.restore': '恢复购买',
@@ -207,7 +207,7 @@ LANG['zh-Hans'] = {
   'away.cap': '离开期间最多只赚{n}小时。',
   'away.double': '翻倍',
 
-  'daily.cash_min': '{t}',
+  'daily.cash_min': '{t}收入',
   'daily.progress': '{text}（{v}）',
   'daily.all_done': '三个全部完成',
   'daily.all_done.line': '{gems}钻石，收入 x2，{min}分钟',
@@ -220,10 +220,10 @@ LANG['zh-Hans'] = {
 
   'boost.have': { other: '你有{n}钻石。' },
   'boost.x2.active': '生效中，剩余 {t}。购买可延长{m}分钟。',
-  'boost.x2.idle': '所有收入 x2，持续{m}分钟。',
+  'boost.x2.idle': '所有收入 x2，持续{t}。',
   'boost.warp.so_far': '立即获得{v}，相当于本店目前的总收入。',
   'boost.warp.hour': '立即获得{v}，相当于一小时的收入。',
-  'boost.warp.weak': '不足{m}分钟的收入，晚点再用更划算。',
+  'boost.warp.weak': '不足{t}的收入，晚点再用更划算。',
   'boost.call.ready_in': '{t}后可用，也可以现在召集。',
   'boost.call.brings': '立刻带来一波人潮。之后需等待{n}分钟。',
   'boost.call.rush_on': '人潮正在进行。',
@@ -342,7 +342,7 @@ LANG['zh-Hans'] = {
   'mission.star': '在{dept}获得一颗星',
   'notify.full': '你不在时，店里能赚的都赚满了，快来收下吧。',
   'notify.daily': '你的每日奖励已就绪。',
-  'notify.ask': '商店装满或每日奖励可领取时提醒你吗？',
+  'notify.ask': '商店赚满或每日奖励可领取时提醒你吗？',
   'notify.ask.yes': '提醒我',
 
   'shop.owned': '已拥有',
@@ -737,7 +737,7 @@ LANG['zh-Hans'] = {
   'reg.vip.name': 'VIP',
 
   'product.starter.name': '新手礼包',
-  'product.starter.text': '{gems}钻石、{h}小时双倍收入和{rep}声望。',
+  'product.starter.text': '{g}、{t}双倍收入和{rep}声望。',
   'product.noads.name': '跳过广告',
   'product.noads.line': '每个广告奖励立即到账，无需观看广告。',
   'product.x2.name': '永久 x2',

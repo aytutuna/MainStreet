@@ -1756,7 +1756,7 @@ function gemsLeft(cost) {
 
 function paintBoost() {
   put($('boost-gems'), 'textContent', tl('boost.have', { n: short(S.gems) }));
-  put($('x2-txt'), 'textContent', S.x2 > 0 ? tl('boost.x2.active', { t: clock2(S.x2), m: X2_SECS / 60 }) : tl('boost.x2.idle', { m: X2_SECS / 60 }));
+  put($('x2-txt'), 'textContent', S.x2 > 0 ? tl('boost.x2.active', { t: clock2(S.x2), m: X2_SECS / 60 }) : tl('boost.x2.idle', { t: hours(X2_SECS) }));
   put($('x2-need'), 'textContent', gemsLeft(X2_COST));
   put($('b-x2'), 'innerHTML', '<img src="assets/ui_gem.png" alt="">' + X2_COST);
   put($('b-x2'), 'disabled', S.gems < X2_COST);
@@ -1764,7 +1764,7 @@ function paintBoost() {
   var v = Math.min(full, Math.max(S.run, 100));
   var weak = v < rate() * WARP_WEAK || v <= 0;
   put($('warp-txt'), 'textContent', tl(v < full ? 'boost.warp.so_far' : 'boost.warp.hour', { v: money(v) }));
-  put($('warp-need'), 'textContent', gemsLeft(WARP_COST) || (weak ? tl('boost.warp.weak', { m: WARP_WEAK / 60 }) : ''));
+  put($('warp-need'), 'textContent', gemsLeft(WARP_COST) || (weak ? tl('boost.warp.weak', { t: hours(WARP_WEAK) }) : ''));
   put($('b-warp'), 'innerHTML', '<img src="assets/ui_gem.png" alt="">' + WARP_COST);
   put($('b-warp'), 'disabled', S.gems < WARP_COST || weak);
   put($('call-txt'), 'textContent', S.call > 0 ? tl('boost.call.ready_in', { t: clock2(S.call) }) : tl('boost.call.brings', { n: CALL.cool / 60 }));
