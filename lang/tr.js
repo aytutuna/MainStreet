@@ -224,7 +224,7 @@ LANG['tr'] = {
   'boost.x2.idle': 'Tüm gelir {t} x2.',
   'boost.warp.so_far': 'Şimdi {v} al: bu mağazanın şimdiye dek kazandığı kadar.',
   'boost.warp.hour': 'Şimdi {v} al: bir saatlik gelir.',
-  'boost.warp.weak': '{t} gelirden az. Sonra daha iyi.',
+  'boost.warp.weak': '{t} boyunca kazanılacak gelirden az. Sonra daha iyi.',
   'boost.call.ready_in': '{t} sonra hazır ya da şimdi çağır.',
   'boost.call.brings': 'Hemen bir akın getirir. Sonra {n} dk bekleme.',
   'boost.call.rush_on': 'Akın sürüyor.',

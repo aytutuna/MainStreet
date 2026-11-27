@@ -226,7 +226,7 @@ LANG['pt-PT'] = {
   'perk.fx.quicker': '{n}% mais rápido',
   'perk.fx.normal': 'normal',
   'perk.fx.night_open': 'aberto 24 horas',
-  'perk.fx.night_closed': 'fechado das {a} às {b}',
+  'perk.fx.night_closed': 'fechado {a} – {b}',
   'perk.fx.base': 'base',
   'perk.line.next': '{what}: {now} → {next}',
   'perk.line.max': '{what}: {now} (máx.)',
