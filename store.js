@@ -5886,18 +5886,18 @@ function giftStep(dt, now) {
     if (gv.kind === 'vip' && gv.vip.mixer) gv.vip.mixer.update(dt);
   }
   if (gv.kind === 'wallet') o.rotation.y += dt * 0.8;
-  o.position.y = gv.kind === 'vip' ? 0 : Math.abs(Math.sin(now / 260)) * 0.07;
+  o.position.y = gv.kind === 'vip' || calm() ? 0 : Math.abs(Math.sin(now / 260)) * 0.07;
   gv.glow.position.x = o.position.x;
   gv.glow.position.z = o.position.z;
-  sparkMat.opacity = 0.55 + 0.3 * Math.sin(now / 170);
-  gv.glow.scale.setScalar((gv.kind === 'vip' ? 1.5 : 1.1) * (gv.jack ? 1.7 : 1) * (1 + 0.12 * Math.sin(now / 230)));
+  sparkMat.opacity = calm() ? 0.7 : 0.55 + 0.3 * Math.sin(now / 170);
+  gv.glow.scale.setScalar((gv.kind === 'vip' ? 1.5 : 1.1) * (gv.jack ? 1.7 : 1) * (calm() ? 1 : 1 + 0.12 * Math.sin(now / 230)));
   gv.x = o.position.x;
   gv.z = o.position.z;
   toScreen(o.position.x, 1.5, o.position.z, sp);
   // the marker only shows while the gift is on screen
   var seen = !gv.out && sp.z < 1 && sp.x > 16 && sp.x < cw - 16 && sp.y - 30 > IT + 16 && sp.y < ch - IB;
   if (markEl.hidden === seen) markEl.hidden = !seen;
-  if (seen) markEl.style.transform = 'translate(' + Math.round(sp.x) + 'px,' + Math.round(sp.y - 30 - Math.abs(Math.sin(now / 240)) * 10) + 'px) translate(-50%,-50%)';
+  if (seen) markEl.style.transform = 'translate(' + Math.round(sp.x) + 'px,' + Math.round(sp.y - 30 - (calm() ? 0 : Math.abs(Math.sin(now / 240)) * 10)) + 'px) translate(-50%,-50%)';
 }
 
 // where the gift is on screen, or null when it is not there to be tapped
@@ -6577,7 +6577,7 @@ function overlay(now) {
     return;
   }
   // the arrow points down at the place's tag
-  var bob2 = Math.abs(Math.sin(now / 260)) * 9;
+  var bob2 = calm() ? 0 : Math.abs(Math.sin(now / 260)) * 9;
   var x = a2.x;
   var y = a2.top - 22 - bob2;
   var cx = Math.max(24, Math.min(cw - 24, x));
@@ -7041,7 +7041,7 @@ function setMark(id, k) {
 }
 
 function selStep(now) {
-  var u = 0.5 + 0.5 * Math.sin(now / 320);
+  var u = calm() ? 1 : 0.5 + 0.5 * Math.sin(now / 320);
   if (sel) {
     areaEdge.opacity = 0.6 + 0.4 * u;
     areaFill.opacity = 0.05 + 0.09 * u;
@@ -7052,7 +7052,7 @@ function selStep(now) {
     mark.ar.rotation.set(-TILT, focus.az, 0);
     markEdge.opacity = 0.7 + 0.3 * u;
     markPad.opacity = 0.2 + 0.25 * u;
-    mark.ar.position.y = mark.y + Math.abs(Math.sin(now / 260)) * 0.3;
+    mark.ar.position.y = mark.y + (calm() ? 0 : Math.abs(Math.sin(now / 260)) * 0.3);
   }
 }
 
