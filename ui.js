@@ -1390,7 +1390,7 @@ function updateMeters() {
   var f = flow();
   var more = isFinite(st) ? perMin(st) : '-';
   meter('st-in', v[0], k, tl('stats.per_min', { v: perMin(inr) }), tl(v[0] < 0.8 ? 'stats.in.low' : 'stats.in.ok'),
-    tl('stats.in.more', { walk: perMin(f.walk), car: perMin(f.car), taxi: perMin(f.taxi) }));
+    kind().pd.taxi ? tl('stats.in.more', { walk: perMin(f.walk), car: perMin(f.car), taxi: perMin(f.taxi) }) : tl('dplace.stats_in_more', { walk: perMin(f.walk), car: perMin(f.car) }));
   meter('st-tills', v[1], k, tl('stats.per_min', { v: perMin(cap) }), tl(v[1] < 0.8 ? 'stats.tills.low' : 'stats.tills.ok'),
     tl('stats.tills.more', { cap: perMin(cap), come: perMin(inr) }));
   meter('st-shelf', v[2], k, tl('stats.per_min', { v: more }), tl(v[2] < 0.8 ? 'stats.shelf.low' : 'stats.shelf.ok'),
@@ -1604,6 +1604,8 @@ function goalTo(g) {
   var id = g.to;
   if (!id) return;
   sfx('tap');
+  // a goal about something this store's type lacks is shown in the store that has it
+  if (id !== 'sell' && (BZ[id] ? kind().di[id] === undefined : !kind().pd[id]) && homeIndex(id) !== S.cur) showStore(homeIndex(id));
   if (id === 'sell') openSell();
   else if (BZ[id] ? !avail(id) : !has(PL[id].after)) openSheet(id);
   else openPlace(id, g.j);
@@ -2878,6 +2880,8 @@ function begin(fromCloud) {
   var wait = setInterval(function () {
     if (!View.ready()) return;
     clearInterval(wait);
+    typeTexts();
+    orderList();
     View.refresh();
     updateBest();
     View.focusNow();

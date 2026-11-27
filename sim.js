@@ -1368,8 +1368,17 @@ function goTo(g, id, j) {
   g.j = j;
   return g;
 }
+// the store a goal about a department or place reads: the first of the chain whose type has it, so the numbers are the same
+// whichever store is on screen
+function homeIndex(id) {
+  for (var i = 0; i < S.cs.length; i++) {
+    var t = TY[S.cs[i].t];
+    if (t.di[id] !== undefined || t.pd[id]) return i;
+  }
+  return S.cur;
+}
 function gLv(id, n, gems, x2) {
-  return goTo(gl(n === 1 ? tl('goal.open', { dept: BZ[id].name }) : tl('goal.dept_level', { dept: BZ[id].name, n: n }), gems, n, function () { return lv(id); }, x2), id);
+  return goTo(gl(n === 1 ? tl('goal.open', { dept: BZ[id].name }) : tl('goal.dept_level', { dept: BZ[id].name, n: n }), gems, n, function () { var e = S.cs[homeIndex(id)].b[id]; return e ? e.l : 0; }, x2), id);
 }
 function gEarn(n, gems, x2) {
   return gl(tl('goal.earn', { amount: short(n, 1) }), gems, n, function () { return S.all; }, x2);
@@ -1378,11 +1387,11 @@ function gServe(n, gems, x2) {
   return gl(tl('goal.serve', { n: n }), gems, n, function () { return S.st.srv; }, x2);
 }
 function gPl(id, n, t, gems) {
-  return goTo(gl(t, gems, n, function () { return S.pl[id]; }), id);
+  return goTo(gl(t, gems, n, function () { return S.cs[homeIndex(id)].pl[id] || 0; }), id);
 }
 // a goal on one item of a place, since the place's level also counts its other items
 function gIt(id, j, n, t, gems) {
-  return goTo(gl(t, gems, n, function () { return S.pi[id][j]; }), id, j);
+  return goTo(gl(t, gems, n, function () { return S.cs[homeIndex(id)].pi[id][j] || 0; }), id, j);
 }
 // a goal added with the stockroom
 function nw(g) {
@@ -1423,6 +1432,8 @@ function goals() {
   return S.goal.map(function (i) {
     var g = GOALS[i];
     var v = Math.min(g.n, g.f());
+    // a goal that was done stays done
+    if (v >= g.n) S.gd[i] = 1;
     return { i: i, t: g.t, n: g.n, v: v, done: v >= g.n || !!S.gd[i], gems: g.g, x2: g.x2, to: g.to, j: g.j };
   });
 }

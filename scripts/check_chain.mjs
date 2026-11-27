@@ -625,5 +625,24 @@ if (run('nStores()') !== run('MAX_STORES')) fail('the chain grew past ' + run('M
   if (run('here().t') !== 'diner' || run('PL.hall.name') !== 'Counter' || run('opened()') !== 8 || !aliased()) fail('the diner did not come back as saved');
 }
 
+// goals read the same in every store: a goal about a department reads the first store whose type has it, and a done goal
+// stays done on the diner's screen
+{
+  run('reset()');
+  run('fillStore()');
+  run('S.cash = 1e9');
+  run('move()');
+  const gi = run("GOALS.findIndex(function (g) { return g.to === 'kitchen' && g.n > 1; })");
+  const read = () => run('GOALS[' + gi + '].f()');
+  const was = read();
+  if (was !== 30 && was !== run('S.cs[0].b.kitchen.l')) fail('a supercenter goal does not read the supercenter from the diner');
+  run('S.goal = [' + gi + ', ' + gi + ', ' + gi + ']');
+  run('S.gd = {}');
+  if (!run('goals()[0].done') || !run('S.gd[' + gi + ']')) fail('a goal done in the supercenter does not read done on the diner screen');
+  run('S.cs[0].b.kitchen.l = 1');
+  if (!run('goals()[0].done')) fail('a done goal turned undone');
+  if (run('homeIndex(\'grill\')') !== 1 || run('homeIndex(\'kitchen\')') !== 0) fail('a goal reads the wrong store');
+}
+
 if (failed) process.exit(1);
 console.log('chain ok');
