@@ -81,13 +81,13 @@ var CENTS = null;
 
 // cents show only under 10, cut down for what the player has and up for what a thing costs, so a balance never reads as a price it can't pay
 function money(v, up) {
-  var c = up ? Math.ceil(v * 100 - 1e-6) / 100 : Math.floor(v * 100 + 1e-6) / 100;
+  var c = (up ? Math.ceil(v * 100 - 1e-6) / 100 : Math.floor(v * 100 + 1e-6) / 100) + 0;
   var n;
   if (c > 0 && c < 10 && c !== Math.floor(c)) {
     if (!CENTS) CENTS = new Intl.NumberFormat(I18N.locale + '-u-nu-latn', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
     n = CENTS.format(c);
   } else {
-    n = short(up ? c : v);
+    n = short(c < 1000 ? c : v, up ? 1 : -1);
   }
   var m = tl('num.money', { n: n });
   // the symbol stays on the side the language put it, whatever the line's direction is
@@ -1672,7 +1672,7 @@ function missionSig() {
 }
 
 function missLine(m) {
-  var v = m.k === 'earn' ? short(Math.floor(m.p)) + '/' + short(m.n) : Math.floor(m.p) + '/' + m.n;
+  var v = m.k === 'earn' ? short(m.p, -1) + '/' + short(m.n, 1) : Math.floor(m.p) + '/' + m.n;
   return m.k === 'open' || m.k === 'star' ? missionText(m) : tl('daily.progress', { text: missionText(m), v: v });
 }
 
