@@ -838,7 +838,7 @@ function handle(ev) {
     refunds(ev);
     var back = recover(ev.tx);
     if (back) banner('<b>' + tl('shop.recovered', { n: back, count: short(back) }) + '</b><small>' + tl('shop.recovered_note') + '</small>', 0);
-    if (ev.restore) banner('<b>' + tl(S.iap.noads + S.iap.x2 + S.iap.starter > restoreWas ? 'shop.restored' : 'shop.nothing_to_restore') + '</b>', 0);
+    if (ev.restore) banner('<b>' + tl(S.iap.noads + S.iap.x2 + S.iap.starter > restoreWas ? 'shop.restored' : 'shop.nothing_to_restore') + '</b>', 0, false, true);
     save();
     cloudNow();
   } else if (ev.t === 'bought') {
@@ -847,7 +847,7 @@ function handle(ev) {
     var extra = grant(bid, ev.tx, ev.at) ? bonusGot : 0;
     sfx('done');
     buzz('success');
-    banner('<b>' + tl('shop.thanks') + '</b><small>' + (extra ? tl('shop.thanks_bonus', { name: product(bid).name, n: extra }) : product(bid).name) + '</small>', 0, true);
+    banner('<b>' + tl('shop.thanks') + '</b><small>' + (extra ? tl('shop.thanks_bonus', { name: product(bid).name, n: extra }) : product(bid).name) + '</small>', 0, true, true);
   } else if (ev.t === 'pending') {
     var wid = ev.id.slice(PID.length);
     buyDone(wid);
@@ -862,14 +862,14 @@ function handle(ev) {
       }
     }
     save();
-    banner('<b>' + tl('shop.pending') + '</b><small>' + tl('shop.pending_note') + '</small>', 0);
+    banner('<b>' + tl('shop.pending') + '</b><small>' + tl('shop.pending_note') + '</small>', 0, false, true);
   } else if (ev.t === 'restoreFailed') {
-    banner('<b>' + tl('shop.restore_failed') + '</b>', 0);
+    banner('<b>' + tl('shop.restore_failed') + '</b>', 0, false, true);
   } else if (ev.t === 'failed') {
     buyDone(ev.id.slice(PID.length));
     if (ev.why !== 'late' && S.iap.deal && S.iap.deal.id === ev.id.slice(PID.length)) S.iap.deal = null;
-    if (ev.why === 'late') banner('<b>' + tl('shop.late') + '</b><small>' + tl('shop.late_note') + '</small>', 0);
-    else if (ev.why !== 'cancel') banner('<b>' + tl('shop.failed') + '</b>', 0);
+    if (ev.why === 'late') banner('<b>' + tl('shop.late') + '</b><small>' + tl('shop.late_note') + '</small>', 0, false, true);
+    else if (ev.why !== 'cancel') banner('<b>' + tl('shop.failed') + '</b>', 0, false, true);
   } else if (ev.t === 'adId') testAdId(ev.id);
   else if (ev.t === 'privacy') $('m-priv').hidden = !ev.required;
   else if (ev.t === 'ad') adEvent(ev);
@@ -962,7 +962,7 @@ function adEvent(ev) {
     setTimeout(function () {
       if (watching !== w) return;
       watching = null;
-      banner('<b>' + tl('ads.no_reward') + '</b><small>' + tl(ev.state === 'failed' ? 'ads.unavailable' : 'ads.unfinished') + '</small>', 0);
+      banner('<b>' + tl('ads.no_reward') + '</b><small>' + tl(ev.state === 'failed' ? 'ads.unavailable' : 'ads.unfinished') + '</small>', 0, false, true);
     }, ev.state === 'failed' ? 0 : 5000);
   }
 }
@@ -975,9 +975,11 @@ function adGive(k, from) {
   var c = centerOf(from || $('ads'));
   if (k === 'x2') {
     S.x2 += X2_SECS;
-    banner('<b>' + tl('ads.x2') + '</b><small>' + tl('ads.x2_active', { time: clock2(S.x2) }) + '</small>', 0);
+    banner('<b>' + tl('ads.x2') + '</b><small>' + tl('ads.x2_active', { time: clock2(S.x2) }) + '</small>', 0, false, true);
   } else if (k === 'rush') {
     if (callRush(true)) $('boost').hidden = true;
+  } else if (k === 'night') {
+    if (openTonight(true)) tonightOpen();
   } else if (k === 'warp') {
     var v = warp(true);
     popAt(plus(money(v)), c.x, c.y, 'big');
@@ -993,11 +995,12 @@ function adGive(k, from) {
 
 function paintAds() {
   var rows = [['x2', 'ui_bolt', tl('ads.x2'), tl('ads.x2_note', { m: X2_SECS / 60 })], ['warp', 'ui_warp', tl('ads.warp'), tl('ads.warp_note')],
-    ['gems', 'ui_gem', tl('ads.gems'), tl('shop.gems', { n: AD_GEMS })], ['rush', 'ui_bolt', tl('ads.rush'), tl('ads.rush_note')]];
+    ['gems', 'ui_gem', tl('ads.gems'), tl('shop.gems', { n: AD_GEMS })], ['rush', 'ui_bolt', tl('ads.rush'), tl('ads.rush_note')],
+    ['night', 'ui_warp', tl('ads.night'), tl('ads.night_note')]];
   var html = '<p class="small">' + tl('ads.intro') + '</p>';
   rows.forEach(function (r) {
     var left = adLeft(r[0]);
-    var off = !canWatch(r[0]) || (r[0] === 'rush' && (rush || shut() || S.call <= 0));
+    var off = !canWatch(r[0]) || (r[0] === 'rush' && (rush || shut() || S.call <= 0)) || (r[0] === 'night' && !shut());
     html += '<div class="offer"><img src="assets/' + r[1] + '.png" alt=""><div><b>' + r[2] + '</b><span>' + r[3] + ' · ' +
       (left > 0 ? tl('ads.left', { n: left }) : tl('ads.tomorrow')) + '</span></div><button type="button" class="btn" data-a="' + r[0] + '"' +
       (off ? ' disabled' : '') + '>' + adLabel() + '</button></div>';

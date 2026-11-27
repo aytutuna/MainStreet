@@ -68,7 +68,7 @@ var MIXER_KEY = 'mainstreet.mixer';
 var lvl = { mus: 0.5, amb: 1 / 3, fx: 0.8 };
 var humG = null;
 // the button that closes each panel a tap outside or a swipe can dismiss; the away box is left out since it pays out
-var CLOSE = { remind: 'remind-x', pack: 'pack-x', shop: 'shop-x', daily: 'daily-x', sell: 'sell-x', regs: 'regs-x', boost: 'boost-x', langs: 'langs-x',
+var CLOSE = { remind: 'remind-x', intro: 'intro-x', pack: 'pack-x', shop: 'shop-x', daily: 'daily-x', sell: 'sell-x', regs: 'regs-x', boost: 'boost-x', langs: 'langs-x',
   sound: 'sound-x', erase: 'erase-x', stats: 'stats-x', menu: 'm-ok', ach: 'ach-x', look: 'look-x', notices: 'notices-x' };
 var dragging = false;
 var IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
@@ -659,19 +659,26 @@ function words(el) {
   return [].map.call(el.children, function (c) { return c.textContent; }).join('. ') || el.textContent;
 }
 
-function banner(html, delay, big) {
+// now is for the answer to a tap inside an open box, which shows at once; every other banner waits until nothing is open
+function banner(html, delay, big, now) {
   if (bq.length > 2) bq.shift();
-  bq.push({ h: html, d: delay || 0, big: big });
+  bq.push({ h: html, d: delay || 0, big: big, now: now });
   if (!bqBusy) nextBanner();
 }
 
 function nextBanner() {
-  var q = bq.shift();
-  if (!q) {
+  if (!bq.length) {
     bqBusy = false;
     return;
   }
   bqBusy = true;
+  var i = 0;
+  while (i < bq.length && !bq[i].now && covered()) i++;
+  if (i === bq.length) {
+    setTimeout(nextBanner, 250);
+    return;
+  }
+  var q = bq.splice(i, 1)[0];
   setTimeout(function () {
     var b = $('banner');
     hideToast();
@@ -1094,6 +1101,7 @@ function afterBuy(res) {
     sfx('mile');
     View.punch();
     pulse(0.9);
+    want('stars');
     banner('<b>' + tl('banner.star', { name: name, n: res.star, mul: Math.pow(STAR_MUL, res.star) }) + '</b>' + (res.gems ? '<small>' + tl('common.gems_plus', { n: res.gems }) + '</small>' : ''),
       t + 0.3, res.star === STAR_AT.length);
     if (res.gems) flyGems(innerWidth / 2, innerHeight * 0.3, Math.min(6, res.gems));
@@ -1236,6 +1244,7 @@ var saleAvg = 0;
 
 function onSale(ev, c, v, t) {
   var at = View.shopper(ev, c, t);
+  if (ev === 'in' && c.reg === 'vip') want('vip');
   if (ev !== 'paid') return;
   // graded on the sale without a boost, and plant sales stay out of the average
   var u = v / bmul();
@@ -1343,7 +1352,7 @@ function meter(id, v, k, val, why, more) {
 // the first time a meter runs red, once ever, and not over a box or before the first purchase
 function meterHint(i) {
   var h = METERS[i].h;
-  if (hinted[h] || !started() || veilUp() || bqBusy || toastTimer) return;
+  if (hinted[h] || !started() || covered() || bqBusy || toastTimer) return;
   hinted[h] = 1;
   try {
     localStorage.setItem(HINT_KEY, JSON.stringify(hinted));
@@ -1371,6 +1380,70 @@ function hideToast() {
 
 function veilUp() {
   return !!document.querySelector('.veil:not([hidden])');
+}
+
+// something is open over the store: a card, the upgrades sheet or a box
+function covered() {
+  return veilUp() || !!cardId || sheetOpen;
+}
+
+// First-time cards. Each system tells itself once, the first time it matters. They wait for each other, for the banners
+// and for any open card, sheet or box, and the ones shown are kept in the save. The title and text are lang keys
+var INTRO = {
+  stars: ['intro.stars.title', 'intro.stars', function () { return { n: STAR_MUL, a: STAR_AT.slice(1).join(', ') }; }],
+  gifts: ['intro.gifts.title', 'intro.gifts'],
+  rush: ['intro.rush.title', 'intro.rush'],
+  vip: ['intro.vip.title', 'intro.vip'],
+  regs: ['intro.regs.title', 'intro.regs'],
+  night: ['intro.night.title', 'intro.night', function () { return { a: fmtClock(SHUT[0] * 60), b: fmtClock(SHUT[1] * 60), n: NIGHT.gems }; }],
+  chain: ['intro.chain.title', 'intro.chain'],
+  perks: ['intro.perks.title', 'intro.perks'],
+  shop: ['shop.title', 'shop.intro'],
+  missions: ['intro.missions.title', 'intro.missions']
+};
+// the ones that are not a moment but a state, looked at every quarter second
+var INTRO_WHEN = {
+  chain: function () { return nStores() > 1; },
+  perks: function () { return perkDue(); },
+  shop: function () { return S.gems >= X2_COST; }
+};
+var introQ = [];
+
+function want(id) {
+  if (!S.intro[id] && introQ.indexOf(id) < 0) introQ.push(id);
+}
+
+function pumpIntro() {
+  if (!started()) return;
+  for (var k in INTRO_WHEN) if (INTRO_WHEN[k]()) want(k);
+  // the closing card offers a way to stay open, so it is not for a store that is open again
+  while (introQ.length && (S.intro[introQ[0]] || (introQ[0] === 'night' && !shut()))) introQ.shift();
+  if (!introQ.length || covered() || bqBusy || document.hidden) return;
+  var id = introQ.shift();
+  var d = INTRO[id];
+  S.intro[id] = 1;
+  $('intro-h').textContent = tl(d[0]);
+  $('intro-txt').textContent = tl(d[1], d[2] ? d[2]() : undefined);
+  $('intro-night').hidden = id !== 'night';
+  paintNight();
+  sfx('card');
+  $('intro').hidden = false;
+}
+
+// the closing card's two ways to stay open
+function paintNight() {
+  if ($('intro-night').hidden) return;
+  put($('intro-gems'), 'innerHTML', '<img src="assets/ui_gem.png" alt="">' + NIGHT.gems);
+  put($('intro-gems'), 'disabled', S.gems < NIGHT.gems || !shut());
+  put($('intro-ad'), 'hidden', !canWatch('night'));
+  put($('intro-ad'), 'textContent', adLabel());
+  put($('intro-ad'), 'disabled', !shut());
+}
+
+// tonight is open: the store's own Open banner follows
+function tonightOpen() {
+  $('intro').hidden = true;
+  if (!$('boost').hidden) paintBoost();
 }
 
 function updateMeters() {
@@ -1770,7 +1843,7 @@ function paintMissions() {
       var c = centerOf(b);
       var r = go();
       if (!r) return paintMissions();
-      if (r.x2) banner('<b>' + tl('daily.all_done') + '</b><small>' + tl('daily.all_done.line', { gems: r.gems, min: r.x2 }) + '</small>', 0);
+      if (r.x2) banner('<b>' + tl('daily.all_done') + '</b><small>' + tl('daily.all_done.line', { gems: r.gems, min: r.x2 }) + '</small>', 0, false, true);
       flyGems(c.x, c.y, Math.min(8, r.gems));
       sfx('done');
       buzz('success');
@@ -1839,6 +1912,12 @@ function paintBoost() {
   put($('warp-need'), 'textContent', gemsLeft(WARP_COST));
   put($('b-warp'), 'innerHTML', '<img src="assets/ui_gem.png" alt="">' + WARP_COST);
   put($('b-warp'), 'disabled', S.gems < WARP_COST);
+  var tomorrow = fmtClock(SHUT[1] * 60);
+  put($('night-txt'), 'textContent', pv('night') ? tl('boost.night.perk') : S.ot ? tl('boost.night.on', { t: tomorrow }) : shut() ? tl('boost.night.shut', { t: tomorrow }) :
+    tl('boost.night.day', { a: fmtClock(SHUT[0] * 60), b: tomorrow }));
+  put($('night-need'), 'textContent', shut() ? gemsLeft(NIGHT.gems) : '');
+  put($('b-night'), 'innerHTML', '<img src="assets/ui_gem.png" alt="">' + NIGHT.gems);
+  put($('b-night'), 'disabled', !shut() || S.gems < NIGHT.gems);
   put($('call-txt'), 'textContent', S.call > 0 ? tl('boost.call.ready_in', { t: clock2(S.call) }) : tl('boost.call.brings', { n: CALL.cool / 60 }));
   put($('call-need'), 'textContent', rush ? tl('boost.call.rush_on') : shut() ? tl('boost.call.closed') : S.call > 0 ? gemsLeft(CALL.gems) : '');
   put($('b-call'), 'innerHTML', S.call > 0 ? '<img src="assets/ui_gem.png" alt="">' + CALL.gems : tl('boost.call.btn'));
@@ -1983,6 +2062,7 @@ function openSell() {
 function checkRegs() {
   var got = feats();
   if (!got.length) return;
+  want('regs');
   var all = regOwned() === REGS.length;
   sfx('card');
   buzz('success');
@@ -2133,7 +2213,7 @@ function wire() {
   $('b-x2').addEventListener('click', function () {
     if (!buyX2()) return;
     sfx('done');
-    banner('<b>' + tl('banner.double_income') + '</b><small>' + tl('banner.double_income.line', { t: clock2(S.x2) }) + '</small>', 0);
+    banner('<b>' + tl('banner.double_income') + '</b><small>' + tl('banner.double_income.line', { t: clock2(S.x2) }) + '</small>', 0, false, true);
     nudge();
   });
   $('b-warp').addEventListener('click', function () {
@@ -2145,6 +2225,16 @@ function wire() {
     sfx('mile');
     nudge();
   });
+  function nightGems() {
+    if (!openTonight()) return;
+    sfx('done');
+    buzz('success');
+    tonightOpen();
+  }
+  $('b-night').addEventListener('click', nightGems);
+  $('intro-gems').addEventListener('click', nightGems);
+  $('intro-ad').addEventListener('click', function () { watch('night', function () { adGive('night'); }); });
+  $('intro-x').addEventListener('click', function () { $('intro').hidden = true; });
   $('b-call').addEventListener('click', function () {
     if (!(S.call > 0 ? callRushGems() : callRush())) return;
     $('boost').hidden = true;
@@ -2531,10 +2621,14 @@ function tapTill(i) {
 }
 
 function onPerkEvent(ev, o) {
-  if (ev === 'gift') View.gift(o.kind, o.jack);
+  if (ev === 'gift') {
+    View.gift(o.kind, o.jack);
+    want('gifts');
+  }
   else if (ev === 'giftgone') View.giftLeaves();
   else if (ev === 'rush') {
     View.rush(o.kind);
+    want('rush');
     banner('<b>' + tl(o.kind === 'bus' ? 'banner.bus' : 'banner.flash') + '</b><small>' + tl(o.kind === 'bus' ? 'banner.bus.line' : 'banner.flash.line') + '</small>', 0);
     sfx(buf.rush ? 'rush' : 'done');
     buzz('medium');
@@ -2543,6 +2637,7 @@ function onPerkEvent(ev, o) {
     banner('<b>' + tl('banner.rush_over', { v: money(o.extra) }) + '</b>', 0.3);
     sfx('done');
   } else if (ev === 'close') {
+    want('night');
     banner('<b>' + tl('banner.close') + '</b><small>' + tl('banner.close.line', { t: fmtClock(SHUT[1] * 60) }) + '</small>', 0);
     sfx('done');
   } else if (ev === 'open') {
@@ -2599,6 +2694,8 @@ function loop(t) {
     updateDeals();
     checkRegs();
     checkAch();
+    pumpIntro();
+    paintNight();
     autoDaily();
     autoAsk();
     autoRate();
@@ -2885,6 +2982,7 @@ function begin(fromCloud) {
     banner('<b>' + tl('banner.yesterday', { n: g }) + '</b>' + (x ? '<small>' + tl('common.income_x2_min', { t: hours(x) }) + '</small>' : ''), 0);
   };
   onMission = function (m) {
+    want('missions');
     banner('<b>' + tl('banner.mission_done') + '</b><small>' + missionText(m) + '</small>', 0);
     sfx('done');
   };
