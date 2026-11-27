@@ -103,6 +103,21 @@ if (run('S.ads.n.night') !== 1) fail('the ad count came back as ' + run('S.ads.n
 if (run('S.ot') !== 1) fail('Open tonight was lost by a save');
 run('away(3 * 3600)');
 if (run('S.ot')) fail('Open tonight went on after time away');
+// a short absence in the same night keeps it, and is paid as open
+game(23.9);
+play(10);
+run('S.gems = 100');
+run('openTonight()');
+const gain = run('away(90).gain');
+if (run('S.ot') !== 1 || run('shut()')) fail('a minute and a half away shut tonight again');
+if (!(Math.abs(gain - run('baseRate() * 90 * (1 + HEAD * S.pl.head)')) < 1e-6 * gain) || !(gain > 0)) fail('the paid night was not paid as open: ' + gain);
+// later nights are still out of the pay
+game(23.9);
+play(10);
+run('S.gems = 100');
+run('openTonight()');
+const g2 = run('away(1800).gain');
+if (run('S.ot') !== 0 || !(g2 < run('baseRate() * 1800') * 0.9)) fail('time past the morning was paid whole or kept the skip: ' + g2);
 
 // a gift, a rush and the VIP turn up behind an open card, and none of them runs down until it closes
 game(10);
@@ -154,6 +169,7 @@ game(10);
 run('perkOff()');
 run('startRush()');
 play(10);
+run('incRate = 7');
 const left = run('rush.left');
 const got = run('rush.got');
 const kind = run('rush.kind');
@@ -163,6 +179,7 @@ run('rush = null');
 run('load()');
 if (!run('rush') || Math.abs(run('rush.left') - left) > 0.05 || Math.abs(run('rush.got') - got) > 0.01) fail('the rush came back as ' + run('rush && rush.left') + ' left, not ' + left);
 if (run('rush.kind') !== kind) fail('the rush kind changed');
+if (run('incRate') !== 7) fail('the steady rate was not kept with the rush: ' + run('incRate'));
 // a rush that ended before the save does not come back, and two minutes away end it
 play(run('rush.left') + 2);
 run('save()');

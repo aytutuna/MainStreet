@@ -1232,7 +1232,9 @@ function away(sec) {
   var s = Math.max(0, Math.min(sec, maxAway()));
   // the night closing is not played out: the away rate takes the seconds the store is open, and the x2 boost only runs
   // down while the store is open, as it does when played. The clock holds before the first purchase
-  var open = started() ? openSecs(S.clk, s) : shut() ? 0 : s;
+  // tonight's closing, if it was paid off, is open: the seconds up to the morning are given back to what openSecs took out
+  var morn = S.ot && !pv('night') && nightHours() ? (SHUT[1] * CLOCK / 24 - S.clk + CLOCK) % CLOCK : 0;
+  var open = started() ? openSecs(S.clk, s) + Math.min(s, morn) : shut() ? 0 : s;
   var xs = Math.min(open, S.x2);
   var gain = 0;
   var n = 0;
@@ -1252,7 +1254,7 @@ function away(sec) {
     });
   });
   if (started()) S.clk = (S.clk + sec) % CLOCK;
-  S.ot = 0;
+  if (sec >= morn) S.ot = 0;
   shutNow = shut();
   S.x2 -= xs;
   S.call = Math.max(0, S.call - s);
@@ -1898,7 +1900,7 @@ function validate(o) {
   s.intro = {};
   if (o.intro && typeof o.intro === 'object') for (var ik in o.intro) if (/^\w+$/.test(ik) && o.intro[ik]) s.intro[ik] = 1;
   var ru = o.ru;
-  s.ru = ru && typeof ru === 'object' && ru.left > 0 && ru.len > 0 ? { kind: ru.kind === 'bus' ? 'bus' : 'sale', left: num(ru.left, 0), len: num(ru.len, 0), got: num(ru.got, 0), base: num(ru.base, 0) } : null;
+  s.ru = ru && typeof ru === 'object' && ru.left > 0 && ru.len > 0 ? { kind: ru.kind === 'bus' ? 'bus' : 'sale', left: num(ru.left, 0), len: num(ru.len, 0), got: num(ru.got, 0), base: num(ru.base, 0), ir: num(ru.ir, 0) } : null;
   s.clk = num(o.clk, s.clk) % CLOCK;
   var ip = o.iap || {};
   s.iap = { noads: ip.noads ? 1 : 0, x2: ip.x2 ? 1 : 0, starter: ip.starter === 2 ? 2 : ip.starter ? 1 : 0, offered: ip.offered ? 1 : 0,
@@ -2065,7 +2067,7 @@ function resumeRush(sec) {
   S.ru = null;
   if (!r || r.left - sec <= 0 || shut()) return;
   rush = { kind: r.kind, left: r.left - sec, len: r.len, got: r.got, base: r.base };
-  incRate = rate();
+  incRate = r.ir > 0 ? r.ir : rate();
 }
 
 // returns the away summary when the save is old enough, else null
@@ -2369,7 +2371,7 @@ function saved() {
   if (FREE !== null) S.cash = FREE;
   // the store on screen is saved at the top, like the single store of the saves before the chain
   var cs = S.cs.map(function (r, i) { return i === S.cur ? { t: r.t, m: r.m, c: r.c } : r; });
-  var ru = rush ? { kind: rush.kind, left: rush.left, len: rush.len, got: rush.got, base: rush.base || 0 } : null;
+  var ru = rush ? { kind: rush.kind, left: rush.left, len: rush.len, got: rush.got, base: rush.base || 0, ir: incRate } : null;
   var out = JSON.stringify(Object.assign({}, S, { cs: cs, ru: ru }));
   S.cash = c;
   return out;
