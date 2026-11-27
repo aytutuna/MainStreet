@@ -563,6 +563,7 @@ function flyIcons(src, x, y, n, targetId) {
   for (var i = 0; i < n; i++) {
     var d = document.createElement('img');
     d.src = src;
+    d.alt = '';
     d.className = 'fc';
     d.style.left = x - 10 + 'px';
     d.style.top = y - 10 + 'px';
@@ -617,6 +618,18 @@ function centerOf(el) {
 }
 
 // milestone and unlock banners wait for each other and for the camera
+// the polite live region: cleared first so the same words twice are still read
+var sayTimer = 0;
+function say(text) {
+  clearTimeout(sayTimer);
+  $('live').textContent = '';
+  sayTimer = setTimeout(function () { $('live').textContent = text; }, 80);
+}
+
+function words(el) {
+  return [].map.call(el.children, function (c) { return c.textContent; }).join('. ') || el.textContent;
+}
+
 function banner(html, delay, big) {
   if (bq.length > 2) bq.shift();
   bq.push({ h: html, d: delay || 0, big: big });
@@ -635,6 +648,7 @@ function nextBanner() {
     hideToast();
     b.innerHTML = q.h;
     b.hidden = false;
+    say(words(b));
     b.style.animation = 'none';
     void b.offsetWidth;
     b.style.animation = '';
@@ -689,6 +703,15 @@ function buyBtn(k, b, label, c, locked) {
   flag(k, 'poor', b, 'poor', poor);
 }
 
+// a button that shows only a price is read with the name of what it buys
+var nameN = 0;
+function named(nm, btn) {
+  nameN++;
+  nm.id = 'nm' + nameN;
+  btn.id = 'bt' + nameN;
+  btn.setAttribute('aria-labelledby', nm.id + ' ' + btn.id);
+}
+
 function makeRow(id) {
   var b = BZ[id] || PL[id];
   var el = document.createElement('div');
@@ -700,6 +723,7 @@ function makeRow(id) {
     fill: el.querySelector('.pr i'), bt: el.querySelector('.pr em'), ms: el.querySelector('.l3 span'), nx: el.querySelector('.l3 img'),
     up: el.querySelector('.up') };
   r.nm.textContent = b.name;
+  named(r.nm, r.up);
   el.querySelector('.ic').addEventListener('click', function () { focusBiz(id); });
   r.up.addEventListener('click', function () {
     if (room(id)) openPlace(id);
@@ -777,6 +801,7 @@ function makeRoom(id) {
       '<div class="l3 fx"><span></span></div><div class="btns"><button type="button" class="up"></button></div>';
     var q = { el: row, k: {}, pic: row.querySelector('.ic'), nm: row.querySelector('b'), n: row.querySelector('.segs'), fx: row.querySelector('.fx span'),
       up: row.querySelector('.up') };
+    named(q.nm, q.up);
     for (var s = 0; s < (x.got || 0) + x.at.length; s++) q.n.appendChild(document.createElement('i'));
     q.up.addEventListener('click', function () {
       cardSel = j;
@@ -1086,6 +1111,7 @@ function upgrade(id, j) {
     return;
   }
   afterBuy(res);
+  say('+ ' + (PL[id] ? PL[id].next[res.piece] : upName(id, res.piece)));
   var at = View.pieceScreen(res.id, res.piece);
   if (!at) return;
   // above whatever panel is open, so the text is never under it
@@ -1112,6 +1138,7 @@ function rainFall(n) {
   for (var i = 0; i < n; i++) {
     var d = document.createElement('img');
     d.src = 'assets/coin.png';
+    d.alt = '';
     d.className = 'fc';
     d.style.left = Math.random() * (w - 20) + 'px';
     d.style.top = '-24px';
@@ -1294,6 +1321,7 @@ function meterHint(i) {
   var m = $('warn').getBoundingClientRect();
   t.innerHTML = '<b>' + tl(METERS[i].warn) + '</b><small>' + tl('hud.warn_tip') + '</small>';
   t.hidden = false;
+  say(words(t));
   t.style.left = '0px';
   var w = t.offsetWidth;
   var left = Math.max(8, Math.min(a.width - w - 8, m.left - a.left + m.width / 2 - w / 2));
@@ -2577,6 +2605,60 @@ function dragEnd(d, dy, ms) {
   }, 190);
 }
 
+// panels are dialogs named by their heading: focus moves in when one opens and back to what opened it when it closes,
+// and while a veil is up the screen behind it is out of reach
+function wireDialogs() {
+  var behind = ['top', 'bottom', 'sheet', 'tags'].map($);
+  var ids = 0;
+  // buttons that show only a price or a count are read with the heading of the tile they sit in
+  function nameBtns(p) {
+    [].forEach.call(p.querySelectorAll('.offer .btn, .feat .btn, .hero .btn, .tile .btn, .perk .btn, .mrow .btn'), function (b) {
+      if (b.hasAttribute('aria-labelledby') || b.hasAttribute('aria-label')) return;
+      var c = b.closest('.offer, .feat, .hero, .tile, .perk, .mrow');
+      var h = c.querySelector(c.classList.contains('mrow') ? 'span' : 'h3, b');
+      if (!h) return;
+      h.id = h.id || 'hd' + ++ids;
+      b.id = b.id || 'hb' + ++ids;
+      b.setAttribute('aria-labelledby', h.id + ' ' + b.id);
+    });
+  }
+  function dialog(p, box, label) {
+    box.setAttribute('role', 'dialog');
+    if (label) {
+      label.id = label.id || p.id + '-t';
+      box.setAttribute('aria-labelledby', label.id);
+    }
+    var open = !p.hidden;
+    var from = null;
+    new MutationObserver(function () {
+      nameBtns(p);
+      if (p.hidden === !open) return;
+      open = !p.hidden;
+      behind.forEach(function (e) { e.inert = veilUp(); });
+      if (open) {
+        from = document.activeElement;
+        if (box.id === 'card') box.setAttribute('aria-label', (box.querySelector('b') || {}).textContent || '');
+        box.tabIndex = -1;
+        box.focus({ preventScroll: true });
+      } else if (from && from !== document.body && document.contains(from) && !from.closest('[hidden]')) {
+        from.focus({ preventScroll: true });
+      }
+    }).observe(p, { attributes: true, attributeFilter: ['hidden'], childList: p.classList.contains('veil'), subtree: p.classList.contains('veil') });
+  }
+  [].forEach.call(document.querySelectorAll('.veil'), function (v) {
+    var box = v.querySelector('.box');
+    box.setAttribute('aria-modal', 'true');
+    dialog(v, box, box.querySelector('h2, p'));
+    nameBtns(v);
+  });
+  dialog($('sheet'), $('sheet'), $('sheet-head').querySelector('b'));
+  dialog($('card'), $('card'), null);
+  behind.forEach(function (e) { e.inert = veilUp(); });
+  document.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape' && closeTop()) e.preventDefault();
+  });
+}
+
 function wireClose() {
   // a tap on the dark backdrop, outside the box; a box that just opened ignores the tap that may be meant for the game
   var shownAt = {};
@@ -2597,14 +2679,15 @@ function wireClose() {
     edge = null;
     if (e.touches.length !== 1) return;
     // a swipe that starts on the 3D view pans the camera
-    if (IOS && t.clientX <= 24 && !e.target.closest('#view, #tags')) edge = { x: t.clientX, y: t.clientY };
+    var rtl = I18N.rtl;
+    if (IOS && (rtl ? t.clientX >= innerWidth - 24 : t.clientX <= 24) && !e.target.closest('#view, #tags')) edge = { x: t.clientX, y: t.clientY };
     var p = panelOf(e.target);
     if (p && !scrolled(e.target, p.el)) d = { el: p.el, done: p.done, x: t.clientX, y: t.clientY, at: Date.now(), on: false, dy: 0 };
   }, { passive: true });
   document.addEventListener('touchmove', function (e) {
     if (!edge) return;
     var t = e.touches[0];
-    var ex = t.clientX - edge.x;
+    var ex = I18N.rtl ? edge.x - t.clientX : t.clientX - edge.x;
     if (Math.abs(t.clientY - edge.y) > ex) edge = null;
     else if (ex > 70) {
       edge = null;
@@ -2685,6 +2768,7 @@ function begin(fromCloud) {
   fitWire();
   wireSound();
   wireClose();
+  wireDialogs();
   buildStats();
   shopStart();
   setFree(free);

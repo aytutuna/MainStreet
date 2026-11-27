@@ -6424,6 +6424,7 @@ function makeTags() {
   });
   arrowEl = document.createElement('div');
   arrowEl.id = 'arrow';
+  arrowEl.setAttribute('aria-hidden', 'true');
   arrowEl.innerHTML = '<svg viewBox="0 0 24 30"><path d="M12 29 L2 14 H8 V2 H16 V14 H22 Z"/></svg>';
   arrowEl.hidden = true;
   tagsEl.appendChild(arrowEl);

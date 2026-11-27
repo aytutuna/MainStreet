@@ -13,7 +13,7 @@
 </head>
 <body>
 <div id="app">
-  <canvas id="view"></canvas>
+  <canvas id="view" aria-hidden="true"></canvas>
   <div id="tags"></div>
   <div id="top">
     <div id="bar">
@@ -37,7 +37,7 @@
       <button type="button" id="d-x2" data-d="x2" data-t-aria="hud.x2.aria" hidden><img src="assets/ui_bolt.png" alt=""><em data-t="hud.x2_badge"></em></button>
     </div>
   </div>
-  <div id="fly"></div>
+  <div id="fly" aria-hidden="true"></div>
   <div id="bottom">
     <div id="hint" hidden></div>
     <div id="card" hidden>
@@ -62,7 +62,8 @@
   <div id="banner" hidden></div>
   <div id="combo" hidden></div>
   <div id="rcombo" hidden></div>
-  <div id="flash"></div>
+  <div id="flash" aria-hidden="true"></div>
+  <div id="live" class="sr" role="status" aria-live="polite" aria-atomic="true"></div>
   <div id="mtoast" hidden></div>
   <div id="net" class="veil" hidden>
     <div class="box">

@@ -2125,6 +2125,21 @@ a.btn {
 #loading.done {
   opacity: 0;
   pointer-events: none;
+  visibility: hidden;
+  transition: opacity 0.4s, visibility 0s 0.4s;
+}
+
+.sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+[role="dialog"]:focus {
+  outline: none;
 }
 
 #loading .box {
