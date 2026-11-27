@@ -415,7 +415,7 @@ cf2.push(up(nm('Table candles'), hang('SM_TableTent_Candle_01', -5.4, -8.2, 0, 0
   up(nm('Napkin dispensers'), hang('SM_NapkinDispenser_01', -5.4, -5.9, 0, 0.375, 1), hang('SM_NapkinDispenser_01', -3.8, -5.9, 0, 0.375, 1)));
 AREAS.coffee = {
   cx: -4.1, cz: -8.9, vacant: [-6.9, -1.25, -13.0, -4.7], sign: [-4.1, -5.4, 1.9],
-  floor: [floor(-6.9, -1.25, -13.0, -4.7, 'wood')],
+  floor: [floor(-6.9, -1.25, -13.0, -4.7, 'boards')],
   ups: compose([
     cf0,
     cf1,
