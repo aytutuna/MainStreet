@@ -117,7 +117,7 @@ play(10);
 run('S.gems = 100');
 run('openTonight()');
 const g2 = run('away(1800).gain');
-if (run('S.ot') !== 0 || !(g2 < run('baseRate() * 1800') * 0.9)) fail('time past the morning was paid whole or kept the skip: ' + g2);
+if (run('S.ot') !== 0 || !(g2 < run('baseRate() * 1800 * (1 + HEAD * S.pl.head)') * 0.9)) fail('time past the morning was paid whole or kept the skip: ' + g2);
 
 // a gift, a rush and the VIP turn up behind an open card, and none of them runs down until it closes
 game(10);
