@@ -1029,11 +1029,27 @@ DECOR.stock = cat(
     cab(14.3, -27.3, 0.4, 0.4, 0.45, 0x3f7a4a), cab(14.3, -27.9, 0.4, 0.4, 0.45, 0x3c63a8)]
 );
 
-// the apron in front of the glass (z 2.8 to 4), the near sidewalk and street, the tire bay, the service road and the yard
 var WHEELS = ['car/wheel-dark', 'car/wheel-default', 'car/wheel-racing'];
-DECOR.out = cat(
+// what the supercenter keeps at its sides: cart corrals on the apron, and the tire bay with its drive's cones, lines and tires
+var SIDE = [{ m: 'roads/construction-cone', x: -15.9, z: -20, k: 1 }, { m: 'roads/construction-cone', x: -15.9, z: -14, k: 1 }, { m: 'roads/construction-cone', x: -22, z: -20, k: 1 }, { m: 'roads/construction-cone', x: -22, z: -14, k: 1 },
+  { slab: [-21.4, -17.4, -18.55, -18.5, 0.02, 0.008], c: 0xf2c230 }, { slab: [-21.4, -17.4, -15.5, -15.45, 0.02, 0.008], c: 0xf2c230 }, { slab: [-21.4, -21.35, -18.55, -15.45, 0.02, 0.008], c: 0xf2c230 },
+  { m: 'furn/cardboardBoxClosed', x: -16.2, z: -14.8, r: 0.2 }, { m: 'car/wheel-dark', x: -16.5, z: -14.4 }, { m: 'car/wheel-default', x: -17.2, z: -14.4 }];
+DECOR.side = cat(
   carts(-6.7, 3.35), carts(5.9, 3.35), carts(-14.45, 3.35), carts(13.2, 3.35),
   [tx('board.carts', -7.4, 3.35, 0.6, 0.5), tx('board.carts', 8.1, 3.35, 0.6, 0.5)],
+  // the tire bay: a car at the door, tires stacked and in a rack, drums, a bench and the sign
+  [{ m: 'car/sedan', x: -19.2, z: -17, r: Math.PI / 2 }, { m: 'surv/workbench', x: -16.3, z: -14.6, k: 2, r: 3.14 }, cab(-16.3, -14.9, 0.3, 0.2, 0.3, 0xc8402f),
+    { m: 'surv/barrel', x: -16.0, z: -19.4, k: 1.3 }, { m: 'surv/barrel', x: -16.4, z: -19.4, k: 1.3 }, { m: 'surv/barrel', x: -16.2, z: -19.8, k: 1.3 },
+    tx('board.tire_lube', -19.2, -13.5, 1.5, 1.1)],
+  line(4, -21.7, -19.3, 0, 0, function (x, z, i) { return { m: WHEELS[i % 3] + '~z', x: x, z: z, y: i * 0.18, flat: 1 }; }),
+  line(3, -21.15, -19.3, 0, 0, function (x, z, i) { return { m: WHEELS[(i + 1) % 3] + '~z', x: x, z: z, y: i * 0.18, flat: 1 }; }),
+  line(2, -21.7, -18.75, 0, 0, function (x, z, i) { return { m: WHEELS[(i + 2) % 3] + '~z', x: x, z: z, y: i * 0.18, flat: 1 }; }),
+  line(5, -21.6, -14.5, 0.2, 0, function (x, z, i) { return { m: WHEELS[i % 3], x: x, z: z, r: Math.PI / 2, flat: 1 }; }),
+  SIDE
+);
+
+// the apron in front of the glass (z 2.8 to 4), the near sidewalk and street, the tire bay, the service road and the yard
+DECOR.out = cat(
   [{ m: 'furn/bench', x: -12.6, z: 3.15, k: 1.5 }, { m: 'furn/bench', x: 12.6, z: 3.15, k: 1.5 }, { m: 'furn/bench', x: -3.7, z: 3.15, k: 1.5 },
     { m: 'furn/bench', x: 3.7, z: 3.15, k: 1.5 }],
   [-2.4, 2.4, 16.4].map(function (x, i) { return { m: 'sub/planter', x: x, z: 3.45, k: 0.55, flat: 1 }; }),
@@ -1052,14 +1068,6 @@ DECOR.out = cat(
     return Math.abs(Math.abs(b.x) - HOMES.side) > 2.6 && [7, 21].every(function (t) { return Math.abs(Math.abs(b.x) - t) > 1; }) &&
       !HOMES.lots.some(function (l) { return l.walk === 14.4 && (Math.abs(b.x - l.dx) < 1 || Math.abs(b.x - l.x) < 0.7); });
   }),
-  // the tire bay: a car at the door, tires stacked and in a rack, drums, a bench and the sign
-  [{ m: 'car/sedan', x: -19.2, z: -17, r: Math.PI / 2 }, { m: 'surv/workbench', x: -16.3, z: -14.6, k: 2, r: 3.14 }, cab(-16.3, -14.9, 0.3, 0.2, 0.3, 0xc8402f),
-    { m: 'surv/barrel', x: -16.0, z: -19.4, k: 1.3 }, { m: 'surv/barrel', x: -16.4, z: -19.4, k: 1.3 }, { m: 'surv/barrel', x: -16.2, z: -19.8, k: 1.3 },
-    tx('board.tire_lube', -19.2, -13.5, 1.5, 1.1)],
-  line(4, -21.7, -19.3, 0, 0, function (x, z, i) { return { m: WHEELS[i % 3] + '~z', x: x, z: z, y: i * 0.18, flat: 1 }; }),
-  line(3, -21.15, -19.3, 0, 0, function (x, z, i) { return { m: WHEELS[(i + 1) % 3] + '~z', x: x, z: z, y: i * 0.18, flat: 1 }; }),
-  line(2, -21.7, -18.75, 0, 0, function (x, z, i) { return { m: WHEELS[(i + 2) % 3] + '~z', x: x, z: z, y: i * 0.18, flat: 1 }; }),
-  line(5, -21.6, -14.5, 0.2, 0, function (x, z, i) { return { m: WHEELS[i % 3], x: x, z: z, r: Math.PI / 2, flat: 1 }; }),
   // the service road: centre dashes, edge lines, lamps, and bays marked at each dock
   line(18, 24.8, 8.5, 0, -2, function (x, z) { return { slab: [x - 0.03, x + 0.03, z - 0.5, z + 0.5, 0.02, 0.01], c: 0xf2c230 }; }),
   [{ slab: [23.15, 23.2, -38, 9.5, 0.02, 0.01], c: 0xf4f2ea }, { slab: [26.3, 26.35, -38, 9.5, 0.02, 0.01], c: 0xf4f2ea }],
@@ -1328,3 +1336,6 @@ export var NATURE = {
   // street trees where two lots meet away from their drives
   singles: [-21, -7, 7, 21].reduce(function (a, x) { return a.concat([['street', x, 14.85], ['street', x, 30.2], ['street', x, 35.8]]); }, [])
 };
+
+// the helpers other store types lay out their plans with
+export var KIT = { up: up, pw: pw, m: m, on: on, mat: mat, wp: wp, room: room, low: low, hi: hi, det: det, cab: cab, rbox: rbox, tx: tx, lights: lights, SIGN: SIGN, HELP: HELP, pack: pack, rug: rug, cat: cat, bd: bd, clerk: clerk };
