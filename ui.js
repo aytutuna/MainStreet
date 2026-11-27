@@ -1891,9 +1891,10 @@ function paintChain() {
     var here = i === S.cur;
     var inc = here ? rate() : storeRate(i) * (S.x2 > 0 ? 2 : 1);
     var open = atStore(i, opened);
+    var ready = i === S.cs.length - 1 && S.cur !== i && canMove();
     html += '<button type="button" class="crow' + (here ? ' here' : '') + '"' + (here ? ' aria-current="true"' : '') + ' data-i="' + i + '"><b>' +
       (here ? '<span aria-hidden="true">✓</span> ' : '') + tl('hud.store', { n: i + 1 }) + '</b><span>' + (shut() ? tl('hud.closed') : tl('hud.rate', { v: money(inc) })) +
-      '</span><small>' + tl('sell.open_depts', { a: open, b: TY[r.t].depts.length }) + '</small></button>';
+      '</span><small>' + tl('sell.open_depts', { a: open, b: TY[r.t].depts.length }) + (ready ? ' · ' + tl('sell.ready') : '') + '</small></button>';
   });
   put($('chain-list'), 'innerHTML', html);
 }
@@ -1903,6 +1904,12 @@ function showStore(i) {
   if (i === S.cur || !S.cs[i]) return;
   view(i);
   afterLoad();
+  // the floor was rebuilt: a rush and a gift that go on are shown again in this store
+  if (rush) View.rush(rush.kind);
+  if (gift) {
+    View.giftOff();
+    View.gift(gift.kind, gift.jack);
+  }
   save();
 }
 
