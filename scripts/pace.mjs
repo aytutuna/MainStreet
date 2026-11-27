@@ -72,7 +72,7 @@ function simulate(name, cfg) {
   const P = {
     t: 0, play: 0, lastBuy: 0, buys: 0, taps: {}, gaps: {}, gemIn: 0, gemOut: 0, packs: 0, adN: 0, adDay: -1, adUsed: {},
     second: null, moves: [], seen: {}, lastNew: { t: 0, what: 'start' }, tapAcc: 0, giftAt: null, gift: null,
-    maxCash: 0, maxRate: 0, maxAll: 0, over: null, list: null, pick: null, optsAt: 0, secAcc: 0
+    early: {}, maxCash: 0, maxRate: 0, maxAll: 0, over: null, list: null, pick: null, optsAt: 0, secAcc: 0
   };
   const band = t => (t < 6 * 3600 ? 'h' + Math.floor(t / 3600) : 'd' + (Math.floor(t / 86400) + 1));
 
@@ -222,6 +222,7 @@ function simulate(name, cfg) {
       if ((v >= LIMIT || !isFinite(v)) && !P.over) P.over = k + ' at ' + (P.t / 60).toFixed(0) + ' min';
     }
     P.maxRate = Math.max(P.maxRate, X.rate());
+    for (const m of [2, 5, 10, 20]) if (!(m in P.early) && P.play >= m * 60) P.early[m] = [X.S.all, P.buys];
   }
 
   function session(secs, stop) {
@@ -280,6 +281,7 @@ for (const name of names) {
   console.log('  second store at   ' + (P.second === null ? 'not reached' : mmss(P.second) + ' min from start' + (cfg.sessions ? ' (' + mmss(P.secondPlay) + ' min played)' : '')) + (P.moves.length > 1 ? '; stores opened at ' + P.moves.map(mmss).join(' ') : ''));
   console.log('  longest wait      ' + (cfg.sessions ? '(played time) ' : '') + Object.keys(P.gaps).map(b => b + ' ' + mmss(P.gaps[b])).join('  '));
   console.log('  taps per store    ' + Object.keys(P.taps).slice(0, 6).map(i => 'store ' + (+i + 1) + ': ' + P.taps[i]).join('  ') + '  (' + P.buys + ' buys)');
+  console.log('  earned (buys)     ' + Object.keys(P.early).map(m => 'at ' + m + ' min ' + num(P.early[m][0]) + ' (' + P.early[m][1] + ')').join('  '));
   console.log('  gems              ' + P.gemIn.toFixed(0) + ' earned, ' + P.gemOut.toFixed(0) + ' spent; ' + (P.gemIn / (P.play / 3600)).toFixed(0) + ' per hour played' + (days >= 1 ? ', ' + (P.gemIn / days).toFixed(0) + ' per day' : '') + (P.packs ? '; ' + P.packs + ' packs bought' : '') + (P.adN ? '; ' + P.adN + ' ads' : ''));
   console.log('  largest           cash ' + num(P.maxCash) + ', income ' + num(P.maxIncome) + '/s (screen ' + num(P.maxRate) + '/s), total ' + num(P.maxTotal));
   console.log('  last new thing    ' + (P.lastNew.t / 86400).toFixed(2) + ' days (' + mmss(P.lastNew.t) + ' min, ' + P.lastNew.what + ')' + (P.lastNew.t > P.t - 600 ? ' - still appearing at the end of the run' : ''));
