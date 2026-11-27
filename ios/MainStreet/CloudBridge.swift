@@ -10,7 +10,7 @@ import Foundation
 // The whole store holds 1 MB, so keys of devices that have not written for 90 days are removed with each write.
 // The key "save" of earlier builds is read as one more copy while no per-device key exists, and never written.
 final class CloudBridge: NSObject {
-    private let prefix = "save."
+    private var prefix = "save."
     private let store = NSUbiquitousKeyValueStore.default
     private let emit: ([String: Any]) -> Void
     private var dev = ""
@@ -24,6 +24,7 @@ final class CloudBridge: NSObject {
     }
 
     func put(_ msg: [String: Any]) {
+        use(msg)
         guard let json = msg["json"] as? String, let id = msg["dev"] as? String, !id.isEmpty else { return }
         dev = id
         let stamp = msg["stamp"] as? String ?? ""
@@ -34,6 +35,12 @@ final class CloudBridge: NSObject {
         }
         store.synchronize()
         emit(["t": "cloudPut", "ok": true, "stamp": stamp])
+    }
+
+    // the slot the page names keeps its copies apart from main's: "chain.<dev>" in place of "save.<dev>"
+    func use(_ msg: [String: Any]) {
+        let slot = msg["slot"] as? String ?? ""
+        prefix = slot.isEmpty ? "save." : slot + "."
     }
 
     func get(dev id: String?) {
@@ -54,6 +61,7 @@ final class CloudBridge: NSObject {
 
     // the key "save" of earlier builds, while no per-device key exists at all and it is not this device's own
     private func legacy() -> [String: Any]? {
+        guard prefix == "save." else { return nil }
         guard store.dictionaryRepresentation.keys.allSatisfy({ !$0.hasPrefix(prefix) }) else { return nil }
         guard let old = store.dictionary(forKey: "save"), old["dev"] as? String != dev else { return nil }
         return old

@@ -30,6 +30,13 @@ class CloudBridge(private val activity: MainActivity) {
     private var lastState = ""
     private var writing = false
     private var waiting: JSONObject? = null
+    private var slot = "save"
+
+    // the page names the saved game it keeps: "chain" for chain builds, "save" for main
+    fun use(msg: JSONObject) {
+        val name = msg.optString("slot")
+        slot = if (name.isEmpty()) "save" else name
+    }
 
     init {
         try {
@@ -152,7 +159,7 @@ class CloudBridge(private val activity: MainActivity) {
     )
 
     private fun open(fail: () -> Unit, use: (Snapshot) -> Unit) {
-        snapshots.open("save", true, SnapshotsClient.RESOLUTION_POLICY_MOST_RECENTLY_MODIFIED).addOnCompleteListener { t ->
+        snapshots.open(slot, true, SnapshotsClient.RESOLUTION_POLICY_MOST_RECENTLY_MODIFIED).addOnCompleteListener { t ->
             val snap = if (t.isSuccessful) t.result.data else null
             if (snap == null) fail() else use(snap)
         }

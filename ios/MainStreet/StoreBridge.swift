@@ -58,8 +58,10 @@ final class StoreBridge: NSObject, WKScriptMessageHandler, PurchasesDelegate {
         case "cloudPut":
             cloud.put(msg)
         case "cloudGet":
+            cloud.use(msg)
             cloud.get(dev: msg["dev"] as? String)
         case "cloudState":
+            cloud.use(msg)
             cloud.state(dev: msg["dev"] as? String)
         case "ad":
             ads.show(msg["kind"] as? String ?? "", mute: msg["mute"] as? Bool ?? false)
