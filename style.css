@@ -127,30 +127,30 @@ html.fb :is(.btn, .btns button, #tabs button, .chip span, .chip em, .box h2, .bo
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: calc(env(safe-area-inset-top) + 8px) 8px 0;
+  padding: calc(env(safe-area-inset-top) + 8px) 6px 0;
   pointer-events: none;
 }
 
 #bar {
   display: flex;
-  gap: 6px;
+  gap: 4px;
 }
 
 .pill {
   pointer-events: auto;
   height: 44px;
-  border: 3px solid var(--ink);
+  border: 2px solid var(--ink);
   border-radius: 22px;
   background: var(--gloss);
   box-shadow: 0 3px 0 var(--edge), inset 0 2px 0 rgba(255, 255, 255, 0.7), 0 6px 10px rgba(20, 10, 0, 0.25);
-  padding: 0 12px;
+  padding: 0 10px;
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
 }
 
 .pill.sm {
-  padding: 0 10px;
+  padding: 0 8px;
   font-size: 15px;
   flex: none;
 }
@@ -226,15 +226,15 @@ button.pill:active,
 
 @media (max-width: 380px) {
   #bar {
-    gap: 5px;
+    gap: 3px;
   }
 
   .pill {
-    padding: 0 9px;
+    padding: 0 8px;
   }
 
   .pill.sm {
-    padding: 0 8px;
+    padding: 0 6px;
     font-size: 14px;
   }
 
@@ -260,15 +260,15 @@ button.pill:active,
 }
 
 .pill.sm .ico {
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
 }
 
 #gear {
   flex-direction: column;
   justify-content: center;
   gap: 3px;
-  width: 44px;
+  width: 40px;
   padding: 0;
 }
 
