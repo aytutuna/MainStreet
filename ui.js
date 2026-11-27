@@ -958,6 +958,7 @@ function buildList() {
   var list = $('list');
   BIZ.forEach(function (b) {
     rows[b.id] = makeRow(b.id);
+    rows[b.id].el.hidden = !built(b.id);
     list.appendChild(rows[b.id].el);
     PLACES.forEach(function (p) {
       if (p.after !== b.id) return;
@@ -1114,9 +1115,9 @@ function moveParty(rep) {
   View.burst(null, 0.2, 50);
   View.burst(null, 0.7, 40);
   rain(28);
-  banner('<b>' + tl('banner.store_open', { n: S.store }) + '</b><small>' + tl('banner.income_x', { n: storeMul(S.store) }) + '</small>', 0.2, true);
+  banner('<b>' + tl('banner.store_open', { n: nStores() }) + '</b><small>' + tl('banner.income_x', { n: storeMul(nStores()) }) + '</small>', 0.2, true);
   banner('<b>' + tl('banner.rep', { n: rep }) + '</b><small>' + tl('banner.rep.line') + '</small>', 0.1);
-  var ask = S.store === 2;
+  var ask = nStores() === 2;
   if (ask) try { if (!localStorage.getItem(RATED_KEY)) localStorage.setItem(RATED_KEY, 'want'); } catch (e) {}
   setTimeout(function () {
     if (!veilUp() && !sheetOpen && !cardId && !document.hidden) openSell();
@@ -1211,7 +1212,7 @@ function updateHud() {
   flag(shown, 'clc', $('clk'), 'shut', shut());
   set(shown, 'gems', $('gem-n'), 'textContent', short(S.gems));
   set(shown, 'stars', $('star-n'), 'textContent', Math.min(rating(), gate()) + '/' + gate());
-  set(shown, 'store', $('store-n'), 'textContent', tl('hud.store', { n: S.store }));
+  set(shown, 'store', $('store-n'), 'textContent', tl('hud.store', { n: S.cur + 1 }));
   if (!$('away').hidden) awayBtn();
   var x = $('x2');
   set(shown, 'x2h', x, 'hidden', !(S.x2 > 0));
@@ -1331,8 +1332,8 @@ var STATS = [
   ['stats.lost', function () { return short(S.st.lost); }],
   ['stats.earned_store', function () { return money(S.run); }],
   ['stats.earned_all', function () { return money(S.all); }],
-  ['stats.stars', function () { return tl('common.x_of_y', { a: rating(), b: STAR_AT.length * BIZ.length }); }],
-  ['stats.store', function () { return tl('stats.store_val', { n: S.store, mul: storeMul(S.store) }); }],
+  ['stats.stars', function () { return tl('common.x_of_y', { a: rating(), b: STAR_AT.length * kind().depts.length }); }],
+  ['stats.store', function () { return tl('stats.store_val', { n: S.cur + 1, mul: storeMul(S.cur + 1) }); }],
   ['stats.time', function () { return playTime(S.st.t); }],
   ['stats.gems', function () { return short(S.gems); }],
   ['stats.regulars', function () { return tl('common.x_of_y', { a: regOwned(), b: REGS.length }); }],
@@ -1774,8 +1775,9 @@ function paintBoost() {
   paintAds();
 }
 
+// the income multiplier of store n of the chain, or of the one that would open next
 function storeMul(n) {
-  return Math.round(Math.pow(STORE_MUL, n - 1) * 100) / 100;
+  return Math.round((S.cs[n - 1] ? S.cs[n - 1].m : nextType().mul) * 100) / 100;
 }
 
 function perkDue() {
@@ -1842,11 +1844,11 @@ function paintSell() {
     '<rect x="96" y="60" width="9" height="40" fill="#6a5640"/><rect x="195" y="60" width="9" height="40" fill="#6a5640"/>' +
     '<rect x="64" y="12" width="172" height="64" rx="10" fill="#c4432f" stroke="#3b2a1e" stroke-width="3"/><rect x="71" y="19" width="158" height="50" rx="6" fill="none" stroke="#fff" stroke-width="2"/>' +
     '<text x="150" y="37" text-anchor="middle" fill="#fff" font-size="12" font-weight="800" letter-spacing="3">' + tl('sell.sign') + '</text>' +
-    '<text x="150" y="64" text-anchor="middle" fill="#fff" font-size="29" font-weight="800">' + (S.store + 1) + '</text></svg>';
+    '<text x="150" y="64" text-anchor="middle" fill="#fff" font-size="29" font-weight="800">' + (nStores() + 1) + '</text></svg>';
   $('sell-txt').innerHTML = '<div class="sring"><svg viewBox="0 0 88 88" aria-hidden="true"><circle cx="44" cy="44" r="36" fill="none" stroke="#ead9ae" stroke-width="9"/>' +
     '<circle cx="44" cy="44" r="36" fill="none" stroke="' + (ok ? '#4f9a40' : '#f0c040') + '" stroke-width="9" stroke-linecap="round" stroke-dasharray="' + (circ * got / g).toFixed(1) + ' ' + circ.toFixed(1) +
     '" transform="rotate(-90 44 44)"/></svg><div><b>' + got + '/' + g + '</b><span>' + tl('sell.stars') + '</span></div></div><div class="srows">' +
-    '<span>' + tl('sell.open_depts', { a: opened(), b: BIZ.length }) + '</span><span>' + tl('sell.income', { a: storeMul(S.store), b: storeMul(S.store + 1) }) + '</span>' +
+    '<span>' + tl('sell.open_depts', { a: opened(), b: kind().depts.length }) + '</span><span>' + tl('sell.income', { a: storeMul(S.cur + 1), b: storeMul(nStores() + 1) }) + '</span>' +
     '<span class="' + (ok ? 'go' : '') + '">' + (ok ? tl('sell.ready') : tl('sell.reach', { n: g })) + (r > g ? ' ' + tl('sell.extra', { n: r - g }) : '') + '</span></div>';
   $('sell-rep').innerHTML = icon('medal', 'big') + '<div><b>+' + repGain() + '</b><span>' + tl('sell.rep_for_move') + '</span></div><small>' + tl('sell.rep_have', { n: S.rep }) + '</small>';
   $('sell-ok').classList.toggle('ready', ok);
@@ -1864,7 +1866,7 @@ function openSell() {
     }).join('');
   };
   $('sell-keep').innerHTML = '<div class="keep"><h4>' + tl('sell.you_keep') + '</h4><ul>' + list(keep) + '</ul></div><div class="lose"><h4>' + tl('sell.starts_again') + '</h4><ul>' + list(lose) + '</ul></div>';
-  $('sell-ok').textContent = ok ? tl('sell.move', { n: S.store + 1 }) : tl('sell.see');
+  $('sell-ok').textContent = ok ? tl('sell.move', { n: nStores() + 1 }) : tl('sell.see');
   $('sell-ok').classList.toggle('alt', !ok);
   $('sell').hidden = false;
 }
@@ -1956,6 +1958,7 @@ function afterLoad() {
   goalUntil = 0;
   closeCard(true);
   closeSheet(true);
+  BIZ.forEach(function (b) { if (rows[b.id]) rows[b.id].el.hidden = !built(b.id); });
   View.refresh();
   View.focusNow();
   updateBest();

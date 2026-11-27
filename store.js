@@ -3028,12 +3028,12 @@ function paintOpen(on) {
 
 function paintPylon() {
   var big = order.filter(has).length >= 8;
-  var key = (big ? 'b' : 's') + S.store + S.lk.on;
+  var key = (big ? 'b' : 's') + S.cur + S.lk.on;
   if (pylon.big === key) return;
   pylon.big = key;
   var pl = LK[S.lk.on].pylon;
   var x = pylon.c.getContext('2d');
-  var n = S.store > 1;
+  var n = S.cur > 0;
   x.fillStyle = '#2a2e3f';
   x.fillRect(0, 0, 512, 256);
   rr(x, 12, 12, 488, 232, 38);
@@ -3081,8 +3081,8 @@ function paintPylon() {
     x.strokeStyle = '#fff';
     x.stroke();
     x.fillStyle = '#fff';
-    x.font = font(S.store > 9 ? 54 : 70);
-    x.fillText('#' + S.store, 434, 106);
+    x.font = font(S.cur > 8 ? 54 : 70);
+    x.fillText('#' + (S.cur + 1), 434, 106);
   }
   pylon.tex.needsUpdate = true;
 }
@@ -4365,7 +4365,9 @@ function syncArea(s, animate, now) {
   }
   s.open = own;
   s.vacant.visible = !own;
-  lotName(s, !own);
+  // a lot the store's type has no department for stays bare and cannot be tapped
+  lotName(s, !own && built(s.id));
+  s.pick.visible = built(s.id);
   s.floorG.visible = own;
   if (!grew && !s.pcs.some(function (pc) { return pc && pc.rising; })) settle(s);
   var on = standing(s);

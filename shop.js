@@ -1035,7 +1035,7 @@ function paintAwayAd() {
 
 // the starter pack is offered once, after the first store move, and only inside its window
 function offerStarter() {
-  if (!native() || S.iap.starter || S.iap.offered || S.store < 2 || !priceOf(product('starter1')) || starterLeft(true) < 0) return;
+  if (!native() || S.iap.starter || S.iap.offered || nStores() < 2 || !priceOf(product('starter1')) || starterLeft(true) < 0) return;
   S.iap.offered = 1;
   $('pack-note').textContent = tl('pack.limit', { n: STARTER_HOURS });
   $('pack-txt').textContent = tl('pack.once', { text: product('starter1').text });
