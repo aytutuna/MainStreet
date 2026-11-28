@@ -2924,6 +2924,15 @@ function wireClose() {
       if (!v.hidden) shownAt[v.id] = Date.now();
     }).observe(v, { attributes: true, attributeFilter: ['hidden'] });
   });
+  // a box that opens by itself can open under a finger that is already on its way down: those taps are dropped
+  var SELF = ['intro', 'daily', 'away', 'pack', 'remind'];
+  document.addEventListener('click', function (e) {
+    var v = e.target.closest && e.target.closest('.veil');
+    if (v && SELF.indexOf(v.id) >= 0 && Date.now() - (shownAt[v.id] || 0) < 400) {
+      e.stopPropagation();
+      e.preventDefault();
+    }
+  }, true);
   document.addEventListener('click', function (e) {
     var v = e.target;
     if (v.classList && v.classList.contains('veil') && CLOSE[v.id] && Date.now() - (shownAt[v.id] || 0) > 400) closeVeil(v);
