@@ -1326,7 +1326,9 @@ function updateHud() {
   set(shown, 'clk', $('clk'), 'textContent', shut() ? tl('hud.closed_at', { t: stamp() }) : stamp());
   flag(shown, 'clc', $('clk'), 'shut', shut());
   set(shown, 'gems', $('gem-n'), 'textContent', short(S.gems));
-  set(shown, 'stars', $('star-n'), 'textContent', newest(function () { return Math.min(rating(), gate()) + '/' + gate(); }));
+  // the newest store counts toward the next one; an older store shows its own stars out of its total
+  var stars = S.cur === nStores() - 1 ? Math.min(rating(), gate()) + '/' + gate() : rating() + '/' + STAR_AT.length * kind().depts.length;
+  set(shown, 'stars', $('star-n'), 'textContent', stars);
   set(shown, 'store', $('store-n'), 'textContent', tl('hud.store', { n: S.cur + 1 }));
   if (!$('away').hidden) awayBtn();
   var x = $('x2');
