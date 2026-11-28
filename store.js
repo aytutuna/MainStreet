@@ -3355,22 +3355,28 @@ function whFence(b, x0, z0, x1, z1, gaps) {
   var a0 = along ? Math.min(x0, x1) : Math.min(z0, z1);
   var a1 = along ? Math.max(x0, x1) : Math.max(z0, z1);
   var at = along ? z0 : x0;
-  var n = Math.max(1, Math.round((a1 - a0) / 1.6));
-  var st = (a1 - a0) / n;
-  function open(t) { return (gaps || []).some(function (g) { return t > g[0] + 0.01 && t < g[1] - 0.01; }); }
   function put(p0, p1, y0, y1, th) {
     if (along) b.block(flat(0x3f6f4a), p0, p1, at - th, at + th, y0, y1);
     else b.block(flat(0x3f6f4a), at - th, at + th, p0, p1, y0, y1);
   }
-  for (var i = 0; i <= n; i++) {
-    var t = a0 + i * st;
-    put(t - 0.04, t + 0.04, 0, 0.62, 0.04);
-    if (i < n && !open(t + st / 2)) {
-      put(t, t + st, 0.58, 0.62, 0.02);
-      put(t, t + st, 0.3, 0.33, 0.02);
-      put(t + 0.04, t + st - 0.04, 0.1, 0.55, 0.008);
+  var runs = [];
+  var p = a0;
+  (gaps || []).slice().sort(function (g, h) { return g[0] - h[0]; }).forEach(function (g) { runs.push([p, g[0]]); p = g[1]; });
+  runs.push([p, a1]);
+  runs.forEach(function (r) {
+    if (r[1] - r[0] < 0.05) return;
+    var n = Math.max(1, Math.round((r[1] - r[0]) / 1.6));
+    var st = (r[1] - r[0]) / n;
+    for (var i = 0; i <= n; i++) {
+      var t = r[0] + i * st;
+      put(t - 0.04, t + 0.04, 0, 0.62, 0.04);
+      if (i < n) {
+        put(t, t + st, 0.58, 0.62, 0.02);
+        put(t, t + st, 0.3, 0.33, 0.02);
+        put(t + 0.04, t + st - 0.04, 0.1, 0.55, 0.008);
+      }
     }
-  }
+  });
 }
 
 // a trailer on the court backed against a dock, running len north from z
@@ -3400,7 +3406,8 @@ function whCanopy(b, x0, x1, z0, z1, h) {
   });
   for (var j = 0; j <= n; j++) b.block(flat(0x4f5864), x0 - 0.2, x1 + 0.2, z0 + j * step - 0.07, z0 + j * step + 0.07, h - 0.14, h);
   [x0, x1].forEach(function (bx) { b.block(flat(0x4f5864), bx - 0.07, bx + 0.07, z0, z1, h - 0.14, h); });
-  for (var k = 0; k < n; k++) b.block(flat(0xc9d0d8), x0 - 0.2, x1 + 0.2, z0 + k * step + 0.1, z0 + k * step + 0.2, h, h + 0.04);
+  b.block(flat(0xc9d0d8), x0 - 0.3, x1 + 0.3, z0 - 0.2, z1 + 0.2, h, h + 0.08);
+  for (var k = 0; k < n; k++) b.block(flat(0x9aa3ad), x0 - 0.3, x1 + 0.3, z0 + k * step + 0.1, z0 + k * step + 0.18, h + 0.08, h + 0.12);
 }
 
 function buildWarehouse() {
@@ -3735,8 +3742,8 @@ function buildNursery() {
   [[x0 + 0.6, z1 - 1.0], [x1 - 0.6, z1 - 1.0], [x0 + 0.6, z1 - 6.0]].forEach(function (p) { lv[0].add('roads/construction-cone', p[0], p[1], 0); });
   lv[0].add('furn/bench', gx - 1.8, z1 - 0.6, Math.PI);
   whYard(lv, 0xb4a88e, 'board.h_nursery');
-  lv[1].add('skate/pallet', x0 + 0.5, z1 - 0.8, 0.2);
-  for (var sb = 0; sb < 6; sb++) lv[1].add('food/bag', x0 + 0.5 + (sb % 2 - 0.5) * 0.2, z1 - 0.8 + (sb % 3 - 1) * 0.1, sb, 0.16 + (sb >> 1) * 0.06);
+  lv[1].add('skate/pallet', x1 - 1.6, z1 - 0.8, 0.2);
+  for (var sb = 0; sb < 6; sb++) lv[1].add('food/bag', x1 - 1.6 + (sb % 2 - 0.5) * 0.2, z1 - 0.8 + (sb % 3 - 1) * 0.1, sb, 0.16 + (sb >> 1) * 0.06);
   rows.forEach(function (rz, ri) {
     [-1.08, 1.08].forEach(function (o, ci) {
       lv[ri + 1].add(FLOWERS[(ri + ci) % 4], gx + o - 0.42, rz, 0);
