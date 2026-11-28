@@ -737,14 +737,14 @@ if (run('nStores()') !== run('MAX_STORES')) fail('the chain grew past ' + run('M
   }
   const pd = run('Object.keys(kind().pd).sort()');
   if (pd.join() !== 'dock,garden,hall,lot,lounge,rest') fail('the hardware store has the places ' + pd.join());
-  if (run('PL.hall.name') !== 'Counter' || run('PL.garden.name') !== 'Service Bay' || run('PL.rest.name') !== 'Welding Corner' || run('PL.lounge.name') !== 'Break Room' || run('PL.hall.items.length') !== 3) fail('a place is not worded as the hardware store words it');
+  if (run('PL.hall.name') !== 'Counter' || run('PL.garden.name') !== 'Nursery' || run('PL.rest.name') !== 'Welding Corner' || run('PL.lounge.name') !== 'Break Room' || run('PL.hall.items.length') !== 3) fail('a place is not worded as the hardware store words it');
   if (run('PL.lot.after') !== 'paint' || run('PL.dock.after') !== 'hand' || run('PL.garden.after') !== 'tires' || run('PL.rest.after') !== 'lawn' || run('PL.lounge.after') !== 'storage') fail('a hardware place comes after the wrong department');
   run('S.cash = 1e30');
   if (run("placeCost('taxi')") !== 0 || run("buyPlace('taxi', 0)") !== null) fail('a taxi stand could be bought in the hardware store');
   run('view(1)');
   if (run('PL.hall.name') !== 'Counter' || run('PL.garden.name') !== 'Patio') fail('the diner lost its wording after the hardware store was on screen');
   run('view(0)');
-  if (run('PL.hall.name') !== 'Checkouts' || run('PL.garden.name') === 'Service Bay') fail('the supercenter lost its wording after the hardware store was on screen');
+  if (run('PL.hall.name') !== 'Checkouts' || run('PL.garden.name') === 'Nursery') fail('the supercenter lost its wording after the hardware store was on screen');
   run('view(2)');
   run('S.cs[2].b = {}');
   run('fillStore()');
@@ -763,7 +763,7 @@ if (run('nStores()') !== run('MAX_STORES')) fail('the chain grew past ' + run('M
   if (!parsed.cs[2] || parsed.cs[2].t !== 'hardware') fail('the hardware store was saved as another type');
   run('S = fresh()');
   run('load()');
-  if (run('nStores()') !== 3 || run('here().t') !== 'hardware' || run('PL.garden.name') !== 'Service Bay' || run('opened()') !== 8 || !aliased()) fail('the hardware store did not come back as saved');
+  if (run('nStores()') !== 3 || run('here().t') !== 'hardware' || run('PL.garden.name') !== 'Nursery' || run('opened()') !== 8 || !aliased()) fail('the hardware store did not come back as saved');
 }
 
 // goals read the same in every store: a goal about a department reads the first store whose type has it, and a done goal
