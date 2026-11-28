@@ -4,6 +4,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
 import { PLAN as SUPER, PW, NATURE, HOMES } from './plan.js';
 import { DINER } from './diner.js';
+import { HARDWARE } from './hardware.js';
 import * as LAND from './land.js';
 import { buildWalls } from './walls.js';
 
@@ -29,7 +30,7 @@ var STREET = 75;
 var WALKS = [-9.5, 9.5];
 // the building, its doors and its checkout bank are the same for every store type; what stands inside is a type's own plan
 var PLAN = SUPER;
-var PLANS = { super: SUPER, diner: DINER };
+var PLANS = { super: SUPER, diner: DINER, hardware: HARDWARE };
 var CROSS = SUPER.bank.cross;
 var EXIT = SUPER.bank.exit;
 // the kits are drawn at different sizes; these bring them to the shop kit's people
@@ -155,6 +156,7 @@ function parseRef(ref) {
 
 // fixtures whose goods are separate nodes; the bare fixture is stocked with other things in place
 // the tools pack has near black wood and plastic, which would read as holes in the shelves
+var FLAT_TINT = { gold: [0xf2c230, 0x5a3c00], yellow: [0xe8b923, 0x3a2e00] };
 var TOOLTINT = { wood: 'c08a52', plastic: '4f5868', metal: 'e7e7e7', screw: 'e7e7e7' };
 
 var BARE = { 'shop/shelf-boxes': 1, 'shop/shelf-bags': 1, 'shop/shelf-end': 1, 'shop/display-cans': 1, 'shop/display-bread': 1,
@@ -303,6 +305,12 @@ function loadModels(list, progress, done, prev) {
     var see = src.transparent || src.opacity < 1;
     var key = kit + '|' + (src.map ? 'map' : tint ? '' : src.name + src.color.getHex()) + (tint || '') + (see ? 't' + src.opacity : '') + (kit === 'flora' && src.map ? sameTexture(g, src) : '');
     if (mats[key]) return mats[key];
+    // a model tinted gold or safety yellow is one flat colour, as the golden cart is
+    if (FLAT_TINT[tint]) {
+      mats[key] = new THREE.MeshLambertMaterial({ color: FLAT_TINT[tint][0], emissive: FLAT_TINT[tint][1] });
+      mats[key].name = src.name;
+      return mats[key];
+    }
     if (src.map && kit !== 'flora') {
       src.map.magFilter = THREE.NearestFilter;
       src.map.minFilter = THREE.NearestFilter;
@@ -1935,7 +1943,8 @@ function board(e) {
 var DEPT = { produce: '#3f9e47', bakery: '#d98a3d', dairy: '#4a8fd6', meat: '#c8453d', frozen: '#4cb6d8', pantry: '#a87a3d',
   snacks: '#e0592f', toys: '#e04a8e', tech: '#5d6ad6', kitchen: '#d9a21f', clothes: '#a05cc4', home: '#7a9a5a', office: '#3a7a9a',
   pets: '#e8855a', sports: '#2f9e8a', tools: '#d96a20', auto: '#5c6270', seasonal: '#c43a4a', grill: '#c8453d', fry: '#e08a1e', soda: '#3f9ed8',
-  pizza: '#d6402f', coffee: '#8a5a3c', salad: '#4f9a40', takeout: '#d9a21f', dining: '#a8453f' };
+  pizza: '#d6402f', coffee: '#8a5a3c', salad: '#4f9a40', takeout: '#d9a21f', dining: '#a8453f', hand: '#d98a1f', paint: '#2f9e9a', oil: '#8a9a2a', batt: '#c8453d', lawn: '#4f9a40',
+  power: '#6a5acd', tires: '#4a4f5a', storage: '#b0703c' };
 var signIcons = {};
 
 function star(g, x, y, r) {
@@ -2974,17 +2983,7 @@ function buildPatio() {
   var x1 = GARDEN[1];
   var z0 = GARDEN[2];
   var z1 = GARDEN[3];
-  var step = (x1 - x0) / 5;
-  lv[1].slab(flat(0xd9cdb8), x0, x1, z0, z1, 0.006, 0.02);
-  lv[1].slab(flat(PAVE), x0 + 2 * step, x0 + 3 * step, z1, LOT[0], 0.004, 0.02);
-  for (var i = 0; i < 5; i++) {
-    if (i !== 2) lv[1].add('forest/fence', x0 + (i + 0.5) * step, z1, 0);
-    lv[1].add('forest/fence', x0 + (i + 0.5) * step, z0, 0);
-    lv[1].add('forest/fence', x0, z0 + (i + 0.5) * (z1 - z0) / 5, Math.PI / 2);
-  }
-  [-0.74, 0.74].forEach(function (o) { lv[1].block(flat(0x50566a), GATE_X + o - 0.03, GATE_X + o + 0.03, z1 - 0.03, z1 + 0.03, 0, 1.0); });
-  lv[1].block(flat(0x2f3446), GATE_X - 0.8, GATE_X + 0.8, z1 - 0.04, z1 + 0.02, 0.78, 1.08);
-  boardAtlas(lv[1], { text: 'board.patio', x: GATE_X, y: 0.93, z: z1 + 0.03, w: 1.5, h: 0.28 });
+  yardShell(lv, 0xd9cdb8, 'board.patio');
   // a table and two chairs: the chairs north and south of it, facing it
   function set(l, x, z) {
     lv[l].add('pw/Table_Cafe_Round_01', x, z, 0);
@@ -2999,6 +2998,34 @@ function buildPatio() {
   for (var t = 0; t < 4; t++) lv[4].add('furn/pottedPlant', x0 + 0.9 + t * 0.9, -1.85, t);
   lamp(lv[4], 'roads/light-square', x0 + 0.2, -1.85, Math.PI);
   lamp(lv[4], 'roads/light-square', x1 - 0.2, -1.85, Math.PI);
+  finishYard(lv);
+}
+
+// the fenced yard outside the west wall, as the garden center and the patio have it: the slab, the fence with the gate on
+// the lot, the board over the gate
+function yardShell(lv, slab, text) {
+  var x0 = GARDEN[0];
+  var x1 = GARDEN[1];
+  var z0 = GARDEN[2];
+  var z1 = GARDEN[3];
+  var step = (x1 - x0) / 5;
+  lv[1].slab(flat(slab), x0, x1, z0, z1, 0.006, 0.02);
+  lv[1].slab(flat(PAVE), x0 + 2 * step, x0 + 3 * step, z1, LOT[0], 0.004, 0.02);
+  for (var i = 0; i < 5; i++) {
+    if (i !== 2) lv[1].add('forest/fence', x0 + (i + 0.5) * step, z1, 0);
+    lv[1].add('forest/fence', x0 + (i + 0.5) * step, z0, 0);
+    lv[1].add('forest/fence', x0, z0 + (i + 0.5) * (z1 - z0) / 5, Math.PI / 2);
+  }
+  // the gate is the gap in the fence: a post at each side of it and the header across
+  var gx = x0 + 2.5 * step;
+  [-1, 1].forEach(function (o) { lv[1].block(flat(0x50566a), gx + o * step / 2 - 0.03, gx + o * step / 2 + 0.03, z1 - 0.03, z1 + 0.03, 0, 1.0); });
+  lv[1].block(flat(0x2f3446), gx - step / 2, gx + step / 2, z1 - 0.04, z1 + 0.02, 0.78, 1.08);
+  boardAtlas(lv[1], { text: text, x: gx, y: 0.93, z: z1 + 0.03, w: step - 0.04, h: 0.28 });
+}
+
+// the yard's own till outside the gate, its cashier on the east side and the one paying on the west; the next in line
+// waits behind on the paving
+function finishYard(lv) {
   var pl = finishPlace('garden', lv);
   pl.add = true;
   var desk = mesh('arcade/cash-register', TILL_G[0], TILL_G[1], -Math.PI / 2);
@@ -3011,7 +3038,29 @@ function buildPatio() {
   var qx = TILL_G[0] - 0.55;
   gardenTill = { k: 'garden', till: [TILL_G[0], 0.8, TILL_G[1]], cashier: cashier, head: [TILL_G[0] + 0.5, TILL_G[1]],
     spot: function (n) { return n ? [qx, TILL_G[1] + 0.5 * n, Math.PI] : [qx, TILL_G[1], Math.PI / 2]; } };
-  pl.pick = addPick('garden', (x0 + x1) / 2, (z0 + z1) / 2, x1 - x0, z1 - z0);
+  pl.pick = addPick('garden', (GARDEN[0] + GARDEN[1]) / 2, (GARDEN[2] + GARDEN[3]) / 2, GARDEN[1] - GARDEN[0], GARDEN[3] - GARDEN[2]);
+}
+
+// The hardware store's service bay is the same yard as a work yard: a slab with cones round the bare site, then the
+// lifts with a car on each, tires and jacks, and the tire changer and compressor
+function buildBay() {
+  var lv = levels(4);
+  var x0 = GARDEN[0];
+  var x1 = GARDEN[1];
+  [[x0 + 0.6, -1.5], [x1 - 0.6, -1.5], [x0 + 0.6, 1.5]].forEach(function (p) { lv[0].add('roads/construction-cone', p[0], p[1], 0); });
+  yardShell(lv, 0x7d838f, 'board.h_bay');
+  lv[1].block(flat(0xe8b923), x0 + 0.3, x1 - 0.3, -1.45, -1.4, 0.022, 0.026);
+  lv[2].add('pw/SM_CarLift_2Post_01', x0 + 1.6, -0.45, 0);
+  lv[2].add('car/sedan', x0 + 1.6, -0.45, Math.PI);
+  lv[3].add('pw/SM_CarLift_Scissor_01', x1 - 1.1, -0.3, 0);
+  lv[3].raw('car/hatchback-sports', x1 - 1.1, -0.3, Math.PI / 2, 0.28, 1);
+  [[x0 + 0.45, 1.5], [x0 + 0.85, 1.5]].forEach(function (p) { lv[3].add('pw/SM_JackStand_01', p[0], p[1], 0); });
+  lv[3].add('pw/Tire_Stack_01', x0 + 0.5, 0.7, 0);
+  lv[4].add('pw/SM_TireChanger_01', x1 - 0.6, 1.5, -Math.PI / 2);
+  lv[4].add('pw/SM_Compressor_Pancake_01', x1 - 0.5, 0.5, -Math.PI / 2);
+  lamp(lv[4], 'roads/light-square', x0 + 0.2, -1.85, Math.PI);
+  lamp(lv[4], 'roads/light-square', x1 - 0.2, -1.85, Math.PI);
+  finishYard(lv);
 }
 
 // The east wing: four rooms along the east wall, each a place whose levels add one piece from plan.js. Before a room is
@@ -5634,7 +5683,8 @@ function gardenRoute(c) {
     return;
   }
   var sd = Math.random() < 0.5 ? -1 : 1;
-  var gx = GATE_X;
+  // the patio and the yard have their gate in the middle of the fence gap, the garden center's is off to one side
+  var gx = PLAN.patio || PLAN.yard ? GARDEN[0] + (GARDEN[1] - GARDEN[0]) / 2 : GATE_X;
   var rows = [2.0, 0.6, -0.8].slice(0, Math.min(3, S.pl.garden));
   var z = rows[Math.floor(Math.random() * rows.length)];
   var west = Math.random() < 0.5;
@@ -6751,18 +6801,25 @@ var queue = [];
 // the models of one type, loaded one type at a time; cb runs once they are in
 function fetchType(k, cb) {
   if (typeReady[k]) return cb && cb();
+  if (!cb && queue.some(function (e) { return e.k === k; })) return;
   queue.push({ k: k, cb: cb });
-  if (fetching) return;
-  var q = queue.shift();
+  pumpTypes();
+}
+
+function pumpTypes() {
+  while (queue.length && typeReady[queue[0].k]) {
+    var done = queue.shift();
+    if (done.cb) done.cb();
+  }
+  if (fetching || !queue.length) return;
+  var q = queue[0];
   fetching = true;
   var extra = modelList(q.k).filter(function (r) { return !asked[r]; });
   extra.forEach(function (r) { asked[r] = 1; });
   loadModels(extra, null, function () {
     typeReady[q.k] = true;
     fetching = false;
-    if (q.cb) q.cb();
-    var next = queue.shift();
-    if (next) fetchType(next.k, next.cb);
+    pumpTypes();
   }, lib);
 }
 
@@ -6801,6 +6858,7 @@ function buildType(key) {
   try {
     buildAreas();
     if (PLAN.patio) buildPatio();
+    else if (PLAN.yard) buildBay();
     else buildGarden();
     buildFront();
     buildWing();
@@ -6827,7 +6885,10 @@ function buildType(key) {
 // puts the content of the store type on screen in place, building it the first time
 function useType() {
   var key = typeKey();
-  if (ctx && ctx.key === key) return true;
+  if (ctx && ctx.key === key) {
+    stopWaiting();
+    return true;
+  }
   if (!typeReady[key]) {
     waiting = key;
     loadingEl.classList.remove('done');
@@ -6857,7 +6918,15 @@ function useType() {
   nav.dirty = true;
   shadowDirty = true;
   people.forEach(function (p) { carry(p, key); });
+  // draw finishes what a waiting store needs: the outline, the arrow and the camera
+  if (waiting !== key) stopWaiting();
   return true;
+}
+
+// the store on screen is built: the loading card goes, unless it holds a message that must stay
+function stopWaiting() {
+  waiting = null;
+  if (!loadingEl.dataset.hold) loadingEl.classList.add('done');
 }
 
 function build() {
@@ -6885,10 +6954,16 @@ var lastT = 0;
 function draw(now) {
   if (!ready || !ctx) return;
   if (waiting && typeReady[waiting]) {
-    waiting = null;
-    loadingEl.classList.add('done');
+    stopWaiting();
     refresh();
     focusNow();
+    if (selId) {
+      var again = selId;
+      var arrow = lastMark;
+      select(null);
+      select(again, true);
+      if (arrow) setMark(arrow.id, arrow.k);
+    }
   }
   var dt = Math.min(0.1, (now - lastT) / 1000);
   lastT = now;
@@ -7218,7 +7293,7 @@ function select(id, go) {
 
 // the extent of a piece on the floor and how high it stands: { x0, x1, z0, z1, top }
 function pieceBox(id, k) {
-  var key = id + ':' + k;
+  var key = (ctx ? ctx.key : '') + ':' + id + ':' + k;
   if (pboxes[key]) return pboxes[key];
   var s = shops[id];
   var pc = s ? pieceOf(s, k) : null;
@@ -7271,9 +7346,12 @@ function pieceBox(id, k) {
   return out;
 }
 
+var lastMark = null;
+
 function setMark(id, k) {
   if (mark) dropFlat(mark.g);
   mark = null;
+  lastMark = id ? { id: id, k: k } : null;
   if (!id || k < 0 || (!shops[id] && !places[id])) return;
   var b = pieceBox(id, k);
   var w = Math.max(0.9, b.x1 - b.x0 + 0.3);

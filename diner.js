@@ -11,6 +11,8 @@ var pack = KIT.pack;
 var cat = KIT.cat;
 var SIGN = KIT.SIGN;
 var HELP = KIT.HELP;
+// the show pieces are tinted gold
+var GOLD = '%=gold';
 
 // the size in metres, width, depth and height, of every model used here, as the model files have them
 var SZ = {
@@ -198,7 +200,7 @@ AREAS.grill = {
     gl2,
     [SIGN, board('Grill menu', 'board.d_grill', -2.3, -17.6, 1.1, 0.95), lights([[-5.5, -20.6], [-3.0, -20.6]]),
       put('Kitchen mats', 'SM_Mat_AntiFatigue_01', -3.9, -21.3, 's', { spots: 0 }),
-      up(nm('Golden grill'), { sign: 'gold' }, pw('SM_WorkTable_10', -3.5, -20.2, 's', { spots: 0 }), hang('SM_Plate_Burger_01', -3.5, -20.2, 0, 0.46, 2))],
+      up(nm('Golden grill'), { sign: 'gold' }, pw('SM_WorkTable_10', -3.5, -20.2, 's', { spots: 0 }), hang('SM_Plate_Burger_01' + GOLD, -3.5, -20.2, 0, 0.46, 2))],
     [put('Mop sink', 'SM_ServiceSink_Floor_01', -1.6, -21.8, 's', { spots: 0 }), put('Sanitizer bucket', 'SM_SanitizerBucket_01', -2.4, -21.6, 's', { spots: 0 }),
       put('Waste bin', 'SM_TrashCan_Round_Dolly_01', -1.5, -18.2, 's', { spots: 0 }), put('Wet floor sign', 'WetFloorSign_01', -6.2, -18.2, 's', { spots: 0 })],
     [staff('Grill cook', -6.0, -21.35, 'n'), HELP]
@@ -241,7 +243,7 @@ AREAS.pizza = {
     pz2,
     [SIGN, board('Pizza menu', 'board.d_pizza', 6.2, -17.6, 1.1, 0.95), lights([[2.0, -20.6], [5.0, -20.6]]),
       up(nm('Oven lights'), hang('SM_Light_Heat_Bulb_Cord_01', 1.3, -21.2, 0, 1.2), hang('SM_Light_Heat_Bulb_Cord_01', 2.3, -21.2, 0, 1.2)),
-      up(nm('Golden pizza'), { sign: 'gold' }, pw('SM_WorkTable_10', 5.0, -20.2, 's', { spots: 0 }), hang('SM_Pizza_Whole_01', 5.0, -20.2, 0, 0.46, 2))],
+      up(nm('Golden pizza'), { sign: 'gold' }, pw('SM_WorkTable_10', 5.0, -20.2, 's', { spots: 0 }), hang('SM_Pizza_Whole_01' + GOLD, 5.0, -20.2, 0, 0.46, 2))],
     [put('Sheet pan stack', 'SM_SheetPan_Stack_01', 4.6, -21.95, 's', { spots: 0 }), put('Mop sink', 'SM_ServiceSink_Floor_01', 5.6, -21.8, 's', { spots: 0 }),
       put('Waste bin', 'SM_TrashCan_Round_Dolly_01', 7.4, -18.0, 's', { spots: 0 }), put('Kitchen mats', 'SM_Mat_AntiFatigue_01', 4.4, -21.2, 's', { spots: 0 })],
     [staff('Pizza maker', 2.8, -21.2, 'n'), HELP]
@@ -283,7 +285,7 @@ AREAS.fry = {
     fr2,
     [SIGN, board('Fry menu', 'board.d_fry', 10.7, -14.0, 1.1, 0.95), lights([[12.0, -20.4], [12.0, -16.2]]),
       up(nm('Heat lamps'), hang('SM_Light_Heat_Bulb_Cord_01', 13.4, -18.6, 0, 1.2), hang('SM_Light_Heat_Bulb_Cord_01', 13.4, -17.8, 0, 1.2)),
-      up(nm('Golden fryer'), { sign: 'gold' }, pw('SM_Fryer_Double_10', 14.51, -16.7, 'k', { spots: 0 }), hang('SM_Hood_Canopy_10', 14.7, -16.7, -Math.PI / 2, 1.0))],
+      up(nm('Golden fryer'), { sign: 'gold' }, pw('SM_Fryer_Double_10' + GOLD, 14.51, -16.7, 'k', { spots: 0 }), hang('SM_Hood_Canopy_10', 14.7, -16.7, -Math.PI / 2, 1.0))],
     [put('Oil jugs', 'SM_OilJug_Fryer_01', 14.45, -17.4, 'k', { spots: 0, n: 3 }), put('Used oil caddy', 'SM_UsedOil_Caddy_01', 14.4, -15.2, 'k', { spots: 0 }),
       put('Fry mat', 'SM_Mat_AntiFatigue_01', 13.6, -19.0, 'k', { spots: 0 }), put('Sanitizer bucket', 'SM_SanitizerBucket_01', 14.4, -14.2, 'k', { spots: 0 })],
     [staff('Fry cook', 13.4, -20.9, 'b'), HELP]
@@ -323,7 +325,7 @@ AREAS.soda = {
     so2,
     [SIGN, board('Soda menu', 'board.d_soda', 10.6, -13.0, 1.1, 0.95), lights([[12.4, -12.2], [12.4, -9.6]]),
       up(nm('Neon lamps'), hang('SM_Light_Pendant_Diner_01', 11.6, -12.0, 0, 1.2), hang('SM_Light_Pendant_Diner_01', 11.6, -9.8, 0, 1.2)),
-      up(nm('Golden shake'), { sign: 'gold' }, pw('SM_Bar_Section_20', 13.6, -9.3, 'k', { spots: 0 }), hang('SM_SodaFountain_01', 13.6, -9.55, -Math.PI / 2, 0.55), hang('SM_SodaFountain_01', 13.6, -9.05, -Math.PI / 2, 0.55))],
+      up(nm('Golden shake'), { sign: 'gold' }, pw('SM_Bar_Section_20', 13.6, -9.3, 'k', { spots: 0 }), hang('SM_SodaFountain_01' + GOLD, 13.6, -9.55, -Math.PI / 2, 0.55), hang('SM_SodaFountain_01' + GOLD, 13.6, -9.05, -Math.PI / 2, 0.55))],
     [topOf(so1[1], 'Pint glasses', 'pw/SM_BeerGlass_Pint_01', -0.3, 0, 1.4), topOf(so1[1], 'Shaker set', 'pw/SM_Shaker_Set_01', 0.3, 0), topOf(so1[3], 'Pitcher', 'pw/SM_Pitcher_Beer_01', 0, 0),
       topOf(so1[1], 'Ice bucket', 'pw/SM_IceBucket_01', 0, 0)],
     [staff('Soda jerk', 13.5, -11.4, 'k'), HELP]
@@ -365,7 +367,7 @@ AREAS.takeout = {
     tk2,
     [SIGN, board('Takeout menu', 'board.d_takeout', 10.5, -2.0, 1.1, 0.95), lights([[12.4, -6.4], [12.4, -3.6]]),
       up(nm('Window lamps'), hang('SM_Light_Heat_Bulb_Cord_01', 13.4, -6.0, 0, 1.2), hang('SM_Light_Heat_Bulb_Cord_01', 13.4, -3.0, 0, 1.2)),
-      up(nm('Golden bag'), { sign: 'gold' }, pw('SM_WorkTable_10', 11.7, -3.4, 'k', { spots: 0 }), hang('SM_TakeoutBag_01', 11.7, -3.4, 0, 0.46, 2))],
+      up(nm('Golden bag'), { sign: 'gold' }, pw('SM_WorkTable_10', 11.7, -3.4, 'k', { spots: 0 }), hang('SM_TakeoutBag_01' + GOLD, 11.7, -3.4, 0, 0.46, 2))],
     [put('Menu case', 'SM_Outdoor_Menu_Case_01', 10.3, -8.0, 'b', { spots: 0 }), put('A frame sign', 'SM_Sign_AFrame_Blank_01', 10.2, -2.9, 's', { spots: 0 }),
       put('Waiting bench', 'DiningBench_01', 10.2, -5.8, 'b', { spots: 0 }), put('Takeout planter', 'Planter_Tall_01', 10.3, -1.8, 's', { spots: 0 })],
     [staff('Order clerk', 13.4, -6.2, 'k'), HELP]
@@ -401,7 +403,7 @@ AREAS.salad = {
     sd2,
     [SIGN, board('Salad menu', 'board.d_salad', 2.0, -4.9, 1.1, 0.95), lights([[3.2, -10.0], [3.2, -7.0]]),
       put('Entrance mat', 'SM_Mat_Entrance_01', 4.0, -5.2, 's', { spots: 0 }),
-      up(nm('Golden salad'), { sign: 'gold' }, pw('SM_WorkTable_10', 5.4, -9.6, 's', { spots: 0 }), hang('SM_Plate_Salad_01', 5.4, -9.6, 0, 0.46, 2))],
+      up(nm('Golden salad'), { sign: 'gold' }, pw('SM_WorkTable_10', 5.4, -9.6, 's', { spots: 0 }), hang('SM_Plate_Salad_01' + GOLD, 5.4, -9.6, 0, 0.46, 2))],
     [put('Planter', 'Planter_Tall_01', 1.7, -4.9, 's', { spots: 0 }), put('Second planter', 'Planter_Tall_01', 6.4, -4.9, 's', { spots: 0 }), put('Hand sink', 'SM_ServiceSink_Floor_01', 6.4, -6.5, 'k', { spots: 0 }),
       put('Wet floor sign', 'WetFloorSign_01', 4.8, -6.2, 's', { spots: 0 })],
     [staff('Salad maker', 4.0, -11.6, 'n'), HELP]
@@ -441,7 +443,7 @@ AREAS.coffee = {
     cf2,
     [SIGN, board('Coffee menu', 'board.d_coffee', -6.0, -5.0, 1.1, 0.95), lights([[-4.6, -11.2], [-4.6, -7.4]]),
       up(nm('Pendant lamps'), hang('SM_Light_Pendant_Diner_01', -4.6, -10.0, 0, 1.2), hang('SM_Light_Pendant_Diner_01', -4.6, -8.2, 0, 1.2), hang('SM_Light_Pendant_Diner_01', -4.6, -6.4, 0, 1.2)),
-      up(nm('Golden cake'), { sign: 'gold' }, pw('Table_Cafe_Round_01', -2.5, -5.2, 's', { spots: 0 }), hang('food/cake-birthday', -2.5, -5.2, 0, 0.375, 1.4))],
+      up(nm('Golden cake'), { sign: 'gold' }, pw('Table_Cafe_Round_01', -2.5, -5.2, 's', { spots: 0 }), hang('food/cake-birthday' + GOLD, -2.5, -5.2, 0, 0.375, 1.4))],
     [put('Coffee planter', 'Planter_Tall_01', -6.5, -4.9, 's', { spots: 0 }), topOf(cf0[0], 'Paper cups', 'pw/SM_Cup_Paper_Stack_01', 0.3, 0.05), put('Door mat', 'SM_Mat_Entrance_01', -3.5, -5.0, 's', { spots: 0 }),
       put('Bar planter', 'Planter_Tall_01', -2.0, -12.7, 's', { spots: 0 })],
     [staff('Barista', -2.2, -10.4, 'k'), HELP]
@@ -476,7 +478,7 @@ AREAS.dining = {
     [SIGN, board('Seating board', 'board.d_dining', -11.2, -0.8, 1.1, 0.95), lights([[-12.2, -7.6], [-12.2, -3.4]]),
       up(nm('Diner pendants'), hang('SM_Light_Pendant_Diner_01', -12.2, -9.5, 0, 1.2), hang('SM_Light_Pendant_Diner_01', -12.2, -7.0, 0, 1.2), hang('SM_Light_Pendant_Diner_01', -12.2, -4.5, 0, 1.2),
         hang('SM_Light_Pendant_Diner_01', -12.2, -2.0, 0, 1.2)),
-      up(nm('Laid table'), { sign: 'gold' }, pw('SM_Table_Set_Four_01', -13.0, -12.2, 'b'))],
+      up(nm('Laid table'), { sign: 'gold' }, pw('SM_Table_Set_Four_01' + GOLD, -13.0, -12.2, 'b'))],
     [put('Host stand', 'HostStand_01', -10.5, -0.9, 's', { spots: 0 }), put('Rope stanchions', 'SM_Stanchion_Rope_01', -12.4, -0.6, 's', { spots: 0 }),
       put('Menu stand', 'SM_Sign_AFrame_Blank_01', -13.9, -0.9, 's', { spots: 0 }), put('Dining planter', 'Planter_Tall_01', -10.0, -12.8, 's', { spots: 0 })],
     [staff('Server', -11.0, -9.6, 's'), HELP]

@@ -27,7 +27,7 @@ const tags = s => (s.match(/<\/?\w+>/g) || []).join('');
 const breaks = s => s.split('\n').length;
 const en = load('en');
 // The chain's store types are worded in English until their text is final (P4.8), so all their keys are pending in every language.
-const CHAIN = /^(dept\.(grill|fry|soda|pizza|coffee|salad|takeout|dining)$|item\.(grill|fry|soda|pizza|coffee|salad|takeout|dining)\.|dplace\.|piece\.dn_|sign\.(diner|d_)|board\.(patio|d_))/;
+const CHAIN = /^(dept\.(grill|fry|soda|pizza|coffee|salad|takeout|dining|hand|paint|oil|batt|lawn|power|tires|storage)$|item\.(grill|fry|soda|pizza|coffee|salad|takeout|dining|hand|paint|oil|batt|lawn|power|tires|storage)\.|dplace\.|hplace\.|piece\.(dn|hn)_|sign\.(diner|d_|hardware|h_)|board\.(patio|d_|h_))/;
 
 function check(code) {
   const l = langs.find(x => x.code === code);

@@ -28,7 +28,16 @@ var BIZ = [
   { id: 'coffee', name: tl('dept.coffee'), ic: 'shop/coffee-maker', c0: 73000, g: 1.135, s: 804, w: 7.6 },
   { id: 'salad', name: tl('dept.salad'), ic: 'food/apple', c0: 4.5e6, g: 1.1, s: 6860, w: 16.8 },
   { id: 'takeout', name: tl('dept.takeout'), ic: 'shop/hand-truck', c0: 6.1e6, g: 1.156, s: 58700, w: 13.2 },
-  { id: 'dining', name: tl('dept.dining'), ic: 'furn/loungeSofa', c0: 6e7, g: 1.171, s: 5.01e5, w: 14.4 }
+  { id: 'dining', name: tl('dept.dining'), ic: 'furn/loungeSofa', c0: 6e7, g: 1.171, s: 5.01e5, w: 14.4 },
+  // Main Street Hardware and Auto's, on the same curve again
+  { id: 'hand', name: tl('dept.hand'), ic: 'surv/tool-hammer', c0: 4, g: 1.165, s: 6, w: 18.8 },
+  { id: 'paint', name: tl('dept.paint'), ic: 'surv/bucket', c0: 35, g: 1.202, s: 1.29, w: 14 },
+  { id: 'oil', name: tl('dept.oil'), ic: 'surv/barrel', c0: 320, g: 1.169, s: 11, w: 8.1 },
+  { id: 'batt', name: tl('dept.batt'), ic: 'car/box', c0: 3500, g: 1.201, s: 94, w: 10.4 },
+  { id: 'lawn', name: tl('dept.lawn'), ic: 'shop/display-flowers', c0: 73000, g: 1.135, s: 804, w: 7.6 },
+  { id: 'power', name: tl('dept.power'), ic: 'surv/workbench', c0: 4500000, g: 1.1, s: 6860, w: 16.8 },
+  { id: 'tires', name: tl('dept.tires'), ic: 'car/wheel-default', c0: 6100000, g: 1.156, s: 58700, w: 13.2 },
+  { id: 'storage', name: tl('dept.storage'), ic: 'surv/resource-planks', c0: 60000000, g: 1.171, s: 501000, w: 14.4 }
 ];
 
 // a department has UPS upgrades, each one more thing in it, and they come in items of one kind each: sell raises what
@@ -92,6 +101,22 @@ var ITEMS = {
   takeout: { it: [[tl('item.takeout.0'), 'sell'], [tl('item.takeout.1'), 'sell'], [tl('item.takeout.2'), 'sell'], [tl('item.takeout.3'), 'draw'], [tl('item.takeout.4'), 'draw'], [tl('item.takeout.5'), 'staff']],
     of: '020030120532110221132023544443' },
   dining: { it: [[tl('item.dining.0'), 'sell'], [tl('item.dining.1'), 'sell'], [tl('item.dining.2'), 'sell'], [tl('item.dining.3'), 'draw'], [tl('item.dining.4'), 'draw'], [tl('item.dining.5'), 'staff']],
+    of: '020030120532110221132023544443' },
+  hand: { it: [[tl('item.hand.0'), 'sell'], [tl('item.hand.1'), 'sell'], [tl('item.hand.2'), 'sell'], [tl('item.hand.3'), 'draw'], [tl('item.hand.4'), 'draw'], [tl('item.hand.5'), 'staff']],
+    of: '020030120532110221132023544443' },
+  paint: { it: [[tl('item.paint.0'), 'sell'], [tl('item.paint.1'), 'sell'], [tl('item.paint.2'), 'sell'], [tl('item.paint.3'), 'draw'], [tl('item.paint.4'), 'draw'], [tl('item.paint.5'), 'staff']],
+    of: '020030120532110221132023544443' },
+  oil: { it: [[tl('item.oil.0'), 'sell'], [tl('item.oil.1'), 'sell'], [tl('item.oil.2'), 'sell'], [tl('item.oil.3'), 'draw'], [tl('item.oil.4'), 'draw'], [tl('item.oil.5'), 'staff']],
+    of: '020030120532110221132023544443' },
+  batt: { it: [[tl('item.batt.0'), 'sell'], [tl('item.batt.1'), 'sell'], [tl('item.batt.2'), 'sell'], [tl('item.batt.3'), 'draw'], [tl('item.batt.4'), 'draw'], [tl('item.batt.5'), 'staff']],
+    of: '020030120532110221132023544443' },
+  lawn: { it: [[tl('item.lawn.0'), 'sell'], [tl('item.lawn.1'), 'sell'], [tl('item.lawn.2'), 'sell'], [tl('item.lawn.3'), 'draw'], [tl('item.lawn.4'), 'draw'], [tl('item.lawn.5'), 'staff']],
+    of: '020030120532110221132023544443' },
+  power: { it: [[tl('item.power.0'), 'sell'], [tl('item.power.1'), 'sell'], [tl('item.power.2'), 'sell'], [tl('item.power.3'), 'draw'], [tl('item.power.4'), 'draw'], [tl('item.power.5'), 'staff']],
+    of: '020030120532110221132023544443' },
+  tires: { it: [[tl('item.tires.0'), 'sell'], [tl('item.tires.1'), 'sell'], [tl('item.tires.2'), 'sell'], [tl('item.tires.3'), 'draw'], [tl('item.tires.4'), 'draw'], [tl('item.tires.5'), 'staff']],
+    of: '020030120532110221132023544443' },
+  storage: { it: [[tl('item.storage.0'), 'sell'], [tl('item.storage.1'), 'sell'], [tl('item.storage.2'), 'sell'], [tl('item.storage.3'), 'draw'], [tl('item.storage.4'), 'draw'], [tl('item.storage.5'), 'staff']],
     of: '020030120532110221132023544443' }
 };
 
@@ -165,6 +190,19 @@ var TYPES = [
       garden: { name: tl('dplace.garden'), after: 'salad', next: [0, 1, 2, 3].map(function (n) { return tl('dplace.garden.next.' + n); }), it: [tl('dplace.garden.it.0')] },
       rest: { name: tl('dplace.rest'), after: 'takeout', next: [0, 1, 2, 3, 4, 5, 6, 7].map(function (n) { return tl('dplace.rest.next.' + n); }), it: [0, 1, 2].map(function (n) { return tl('dplace.rest.it.' + n); }) },
       lounge: { name: tl('dplace.lounge'), after: 'dining', next: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(function (n) { return tl('dplace.lounge.next.' + n); }), it: [0, 1, 2, 3].map(function (n) { return tl('dplace.lounge.it.' + n); }) }
+    }
+  },
+  {
+    id: 'hardware', mul: 16, cost: 9, sign: ['sign.hardware', 'sign.hardware_big'],
+    depts: ['hand', 'paint', 'oil', 'batt', 'lawn', 'power', 'tires', 'storage'],
+    places: ['lot', 'hall', 'dock', 'garden', 'rest', 'lounge'],
+    pl: {
+      lot: { name: PL.lot.name, after: 'paint', next: PL.lot.next, it: PL.lot.it },
+      hall: { name: tl('hplace.hall'), after: 'hand', next: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(function (n) { return tl('hplace.hall.next.' + n); }), it: [0, 1, 2].map(function (n) { return tl('hplace.hall.it.' + n); }) },
+      dock: { name: PL.dock.name, after: 'hand', next: PL.dock.next, it: PL.dock.it },
+      garden: { name: tl('hplace.garden'), after: 'tires', next: [0, 1, 2, 3].map(function (n) { return tl('hplace.garden.next.' + n); }), it: [tl('hplace.garden.it.0')] },
+      rest: { name: tl('hplace.rest'), after: 'lawn', next: [0, 1, 2, 3, 4, 5, 6, 7].map(function (n) { return tl('hplace.rest.next.' + n); }), it: [0, 1, 2].map(function (n) { return tl('hplace.rest.it.' + n); }) },
+      lounge: { name: tl('hplace.lounge'), after: 'storage', next: [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(function (n) { return tl('hplace.lounge.next.' + n); }), it: [0, 1, 2, 3].map(function (n) { return tl('hplace.lounge.it.' + n); }) }
     }
   },
   { id: 'test', test: true, plan: 'super', depts: BIZ.slice(0, 10).map(function (b) { return b.id; }), places: PLACES.map(function (p) { return p.id; }), mul: 1, cost: 1 }
