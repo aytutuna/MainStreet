@@ -6876,8 +6876,7 @@ function buildType(key) {
 function useType() {
   var key = typeKey();
   if (ctx && ctx.key === key) {
-    waiting = null;
-    loadingEl.classList.add('done');
+    stopWaiting();
     return true;
   }
   if (!typeReady[key]) {
@@ -6909,7 +6908,14 @@ function useType() {
   nav.dirty = true;
   shadowDirty = true;
   people.forEach(function (p) { carry(p, key); });
+  stopWaiting();
   return true;
+}
+
+// the store on screen is built: the loading card goes, unless it holds a message that must stay
+function stopWaiting() {
+  waiting = null;
+  if (!loadingEl.dataset.hold) loadingEl.classList.add('done');
 }
 
 function build() {
@@ -6937,14 +6943,15 @@ var lastT = 0;
 function draw(now) {
   if (!ready || !ctx) return;
   if (waiting && typeReady[waiting]) {
-    waiting = null;
-    loadingEl.classList.add('done');
+    stopWaiting();
     refresh();
     focusNow();
     if (selId) {
       var again = selId;
+      var arrow = lastMark;
       select(null);
       select(again, true);
+      if (arrow) setMark(arrow.id, arrow.k);
     }
   }
   var dt = Math.min(0.1, (now - lastT) / 1000);
@@ -7275,7 +7282,7 @@ function select(id, go) {
 
 // the extent of a piece on the floor and how high it stands: { x0, x1, z0, z1, top }
 function pieceBox(id, k) {
-  var key = id + ':' + k;
+  var key = (ctx ? ctx.key : '') + ':' + id + ':' + k;
   if (pboxes[key]) return pboxes[key];
   var s = shops[id];
   var pc = s ? pieceOf(s, k) : null;
@@ -7328,9 +7335,12 @@ function pieceBox(id, k) {
   return out;
 }
 
+var lastMark = null;
+
 function setMark(id, k) {
   if (mark) dropFlat(mark.g);
   mark = null;
+  lastMark = id ? { id: id, k: k } : null;
   if (!id || k < 0 || (!shops[id] && !places[id])) return;
   var b = pieceBox(id, k);
   var w = Math.max(0.9, b.x1 - b.x0 + 0.3);
