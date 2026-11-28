@@ -2838,7 +2838,11 @@ function dragEnd(d, dy, ms) {
 // panels are dialogs named by their heading: focus moves in when one opens and back to what opened it when it closes,
 // and while a veil is up the screen behind it is out of reach
 function overFlow(box) {
-  box.classList.toggle('over', box.scrollHeight > box.clientHeight + 1);
+  var more = box.scrollHeight - box.clientHeight;
+  var last = box.lastElementChild;
+  box.classList.toggle('over', more > 1);
+  // the closing button floats only when the panel runs well past it, else it would sit on the last rows
+  box.classList.toggle('float', !!last && last.classList.contains('btn') && more > last.offsetHeight + 23);
 }
 
 function overAll() {
