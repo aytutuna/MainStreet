@@ -88,6 +88,12 @@ function makeEnv(renderer) {
   return t;
 }
 
+export function envFor(renderer) {
+  var env = envs.get(renderer);
+  if (!env) envs.set(renderer, env = makeEnv(renderer));
+  return env;
+}
+
 // o: root, outer, renderer, the wall lines (back, sb, front, edge, wing), tire, docks, doors, entrances. Returns the
 // groups west, east and wing, which the camera cuts down, and fixed, which it leaves alone; wall and trim, the parts a
 // store look tints; lit, the materials that take their sheen from the env map, and glare

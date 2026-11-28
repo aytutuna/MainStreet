@@ -742,7 +742,7 @@ if (run('nStores()') !== run('MAX_STORES')) fail('the chain grew past ' + run('M
   run('S.cash = 1e30');
   if (run("placeCost('taxi')") !== 0 || run("buyPlace('taxi', 0)") !== null) fail('a taxi stand could be bought in the hardware store');
   run('view(1)');
-  if (run('PL.hall.name') !== 'Counter' || run('PL.garden.name') !== 'Patio') fail('the diner lost its wording after the hardware store was on screen');
+  if (run('PL.hall.name') !== 'Counter' || run('PL.garden.name') !== 'Drive-through') fail('the diner lost its wording after the hardware store was on screen');
   run('view(0)');
   if (run('PL.hall.name') !== 'Checkouts' || run('PL.garden.name') === 'Nursery') fail('the supercenter lost its wording after the hardware store was on screen');
   run('view(2)');
