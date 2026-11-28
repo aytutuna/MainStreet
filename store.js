@@ -2763,7 +2763,7 @@ function buildFront() {
     // the floor of the bank grows with its tills
     hall.lv[t.lv] = hall.lv[t.lv] || new Batch();
     hall.lv[t.lv].geom(patch(square([[cx, bk.z - 1.75], [cx + tw, bk.z + 0.85]])), finishMat(PLAN.bankFloor || 0xc4cad8), 0.045);
-    hall.tills.push(t.k === 'lane' ? lane(hall, li++, t.lv, cx + tw - 0.95) : kiosk(hall, ki++, t.lv, cx + 0.35));
+    hall.tills.push(t.k === 'lane' ? lane(hall, li++, t.lv, cx + 0.95) : kiosk(hall, ki++, t.lv, cx + 0.35));
   });
   hall.tills.push(gardenTill);
   hall.staff.push(gardenTill.cashier);
@@ -5027,8 +5027,9 @@ function trafficStep(dt) {
     // down the service road to the yard, then backing into a dock
     var dx = PLAN.docks[2 + (docked++ & 1)];
     var dz = SH.sb - 1.95;
-    var van = addCar('car/delivery', [{ x: STREET, z: LANE_W }, { x: SH.road + 0.6, z: LANE_W, lane: -1 }, { x: SH.road, z: SH.curb }, { x: SH.road, z: SH.yard }, { x: dx, z: SH.yard },
-      { x: dx, z: dz, rev: true, stop: 5, unload: true }, { x: dx, z: SH.yard }, { x: SH.road, z: SH.yard }, { x: SH.road, z: SH.curb }, { x: SH.road - 0.6, z: LANE_W, lane: -1 },
+    var tx = SH.truckX === undefined ? SH.road : SH.truckX;
+    var van = addCar('car/delivery', [{ x: STREET, z: LANE_W }, { x: tx + 0.6, z: LANE_W, lane: -1 }, { x: tx, z: SH.curb }, { x: tx, z: SH.yard }, { x: dx, z: SH.yard },
+      { x: dx, z: dz, rev: true, stop: 5, unload: true }, { x: dx, z: SH.yard }, { x: tx, z: SH.yard }, { x: tx, z: SH.curb }, { x: tx - 0.6, z: LANE_W, lane: -1 },
       { x: -STREET, z: LANE_W, lane: -1 }], 'truck', { lane: 0 });
     van.o.scale.setScalar(1.7);
   }
@@ -7016,7 +7017,7 @@ function buildDiner() {
   [L0 + 0.1, L1 - 0.1].forEach(function (x) { b.slab(paint, x - 0.025, x + 0.025, -9.0, 9.4, 0.02, 0.008); });
   [3.0, -6.5].forEach(function (z) {
     b.slab(paint, SH.road - 0.04, SH.road + 0.04, z, z + 0.5, 0.02, 0.008);
-    b.slab(paint, SH.road - 0.16, SH.road + 0.16, z - 0.12, z - 0.04, 0.02, 0.008);
+    [[0.3, 0.12], [0.2, 0.22], [0.1, 0.32]].forEach(function (h) { b.slab(paint, SH.road - h[0] / 2 - 0.02, SH.road + h[0] / 2 + 0.02, z - h[1], z - h[1] + 0.1, 0.02, 0.008); });
   });
   // the yard behind: only the truck apron, fenced all round with a gate on the lane side and a bin pen in the corner
   b.slab(conc, yard[0], yard[1], yard[2], SH.sb, 0.006, 0.02);
@@ -7025,6 +7026,7 @@ function buildDiner() {
     b.slab(flat(0xb9b4a8), d - 0.9, d + 0.9, SH.sb - 0.3, SH.sb + 0.1, 0.1, 0.1);
   });
   var gate = SH.yardGate;
+  b.slab(conc, yard[1], L0, yard[2], SH.sb, 0.006, 0.02);
   dinerFence(b, yard[0], yard[2], yard[1], yard[2]);
   dinerFence(b, yard[0], SH.sb, yard[0], yard[2]);
   dinerFence(b, yard[1], SH.sb, yard[1], gate[1]);
@@ -7033,14 +7035,13 @@ function buildDiner() {
   dinerFence(b, SH.annex, SH.sb, yard[1], SH.sb);
   // the gate stands open, its leaves folded back against the fence
   var leaf = flat(0x7ea886);
-  b.block(leaf, yard[1] - 0.04, yard[1] + 0.04, gate[0] - 1.3, gate[0] - 0.05, 0.12, 0.8);
-  b.block(leaf, yard[1] - 0.04, yard[1] + 0.04, gate[1] + 0.05, gate[1] + 1.3, 0.12, 0.8);
+  b.block(leaf, yard[1] - 0.11, yard[1] - 0.03, gate[0] - 1.3, gate[0] - 0.05, 0.12, 0.8);
+  b.block(leaf, yard[1] - 0.11, yard[1] - 0.03, gate[1] + 0.05, gate[1] + 1.3, 0.12, 0.8);
   // the bin pen: three fenced sides and a gate on the yard side
   var pz = yard[2] + 3;
   dinerFence(b, 6.0, yard[2], 6.0, pz);
-  dinerFence(b, 9.4, yard[2], 9.4, pz);
   dinerFence(b, 6.0, pz, 7.2, pz);
-  dinerFence(b, 8.2, pz, 9.4, pz);
+  dinerFence(b, 8.2, pz, yard[1], pz);
   b.block(leaf, 7.2 - 0.02, 7.2 + 0.02, pz - 0.9, pz - 0.05, 0.12, 0.8);
   // the lot's drives and the paved corner east of the lane, with a small gas station on it
   b.slab(asph, SH.exit - 1.2, SH.drive + 1.2, SH.aisle - 1.2, SH.curb + 0.3, 0.008, 0.02);
@@ -7065,8 +7066,12 @@ function buildDiner() {
   // paving beside the annex and the building up to the lane, a bed with a hedge on the west side of the annex
   b.slab(pave, SH.annex, L0, SH.sb, SH.back, 0.004, 0.02);
   b.slab(pave, SH.edge, L0, SH.back, SH.window[0], 0.004, 0.02);
-  b.slab(flat(0x6b5a45), -SH.edge + 0.4, -SH.annex - 0.4, SH.sb + 0.2, SH.back - 0.2, 0.1, 0.1);
-  for (var bz = SH.sb + 0.8; bz < SH.back - 0.4; bz += 1) [-9, -7.4, -6.2].forEach(function (bx) { b.add('nature/plant_bush', bx, bz, bz * 1.7 + bx); });
+  b.slab(pave, SH.lotX[1], L0, SH.lot[0], SH.lot[1] + 0.6, 0.004, 0.02);
+  var soil = flat(0x6b5a45);
+  b.slab(soil, -SH.annex - 0.9, -SH.annex - 0.3, SH.sb + 0.2, SH.back - 0.1, 0.1, 0.1);
+  b.slab(soil, -SH.edge + 1.2, -SH.annex - 0.9, SH.back - 0.7, SH.back - 0.1, 0.1, 0.1);
+  for (var bz = SH.sb + 0.6; bz < SH.back - 0.3; bz += 0.8) b.add('nature/plant_bush', -SH.annex - 0.6, bz, bz * 1.7);
+  for (var bx = -SH.edge + 1.5; bx < -SH.annex - 0.9; bx += 0.8) b.add('nature/plant_bush', bx, SH.back - 0.4, bx * 1.7);
   decor(SH.decor.out);
   root.add(b.group());
   var grounds = scatterNature(SH.nature.zones, SH.nature.clear, null, NATURE_SEED);
@@ -7103,6 +7108,7 @@ function buildDinerLot() {
   var rows = [[z0 + 0.2, z0 + 1.8, -1], [z1 - 1.6, z1, 1]];
   var lines = {};
   for (var bx = X0 + 0.5; bx < X1; bx++) {
+    if (SH.walks.some(function (w) { return Math.abs(bx - w) < 1.5; })) continue;
     for (var r = 0; r < 2; r++) {
       var rz = rows[r];
       var unlock = Math.abs(bx) < 6 ? 1 + r : 3 + r;
@@ -7119,12 +7125,23 @@ function buildDinerLot() {
     lv[hu].slab(flat(0x3c63a8), -3.42, -2.58, rows[0][0] + 0.15, rows[0][1] - 0.15, 0.018, 0.008);
     lv[hu].slab(paint, -3.12, -2.88, rows[0][0] + 0.55, rows[0][0] + 0.9, 0.026, 0.008);
   }
-  [[1, -9, z0 + 0.1], [1, 9, z0 + 0.1], [3, -4.5, z1 - 0.1], [3, 5, z1 - 0.1], [4, -10.5, z1 - 0.1], [4, 10, z1 - 0.1]].forEach(function (p) {
+  // the walkway from the front to the street, over the stalls it crosses
+  for (var wl = 0; wl <= 4; wl++) SH.walks.forEach(function (w) { lv[wl].slab(flat(PAVE), w - 1.2, w + 1.2, z0, z1 + 0.6, 0.012, 0.02); });
+  // lamps stand on stall lines
+  [[1, -8.6, z0 + 0.1], [1, 8.4, z0 + 0.1], [3, -4.6, z1 - 0.1], [3, 4.4, z1 - 0.1], [4, -6.6, z1 - 0.1], [4, 9.4, z1 - 0.1]].forEach(function (p) {
     for (var u = p[0]; u <= 4; u++) lamp(lv[u], 'roads/light-square', p[1], p[2], p[2] < 4 ? Math.PI : 0);
   });
-  // a kerbed bed with a hedge along the street edge
-  for (var hx = X0 + 0.5; hx < X1; hx += 0.9) lv[4].add('nature/plant_bush', hx, z1 + 0.38, hx * 1.7);
-  lv[4].slab(flat(0x6b5a45), X0, X1, z1 + 0.15, z1 + 0.6, 0.1, 0.1);
+  // a kerbed bed with a hedge along the street edge, open at the walkway and clear of the pylon's posts
+  var cuts = [[X0, X1]];
+  SH.walks.forEach(function (w) {
+    cuts = [[X0, w - 1.2], [w + 1.2, X1]];
+  });
+  cuts.forEach(function (c) { lv[4].slab(flat(0x6b5a45), c[0], c[1], z1 + 0.15, z1 + 0.6, 0.1, 0.1); });
+  for (var hx = X0 + 0.5; hx < X1; hx += 0.9) {
+    var inBed = cuts.some(function (c) { return hx > c[0] + 0.2 && hx < c[1] - 0.2; });
+    var atPost = SH.pylon && [-1.1, 1.1].some(function (o) { return Math.abs(hx - SH.pylon[0] - o) < 0.4; });
+    if (inBed && !atPost) lv[4].add('nature/plant_bush', hx, z1 + 0.38, hx * 1.7);
+  }
   var pl = finishPlace('lot', lv);
   pl.pick = addPick('lot', (X0 + X1) / 2, (z0 + z1) / 2, X1 - X0, z1 - z0);
 }
@@ -7142,8 +7159,7 @@ function buildDinerDock() {
   });
   var pl = finishPlace('dock', lv);
   pl.add = true;
-  var y = SH.yardRect;
-  pl.pick = addPick('dock', (y[0] + y[1]) / 2, (y[2] + SH.sb) / 2, y[1] - y[0], SH.sb - y[2]);
+  pl.pick = addPick('dock', PLAN.docks[0], (SH.sb + SH.back) / 2, 2.3, SH.back - SH.sb);
 }
 
 // the walk-up window and the lane past it: the place that was the patio. Bare, it is a few cones; the levels add the menu
@@ -7166,34 +7182,34 @@ function buildDrive() {
   var red = flat(0xd3302c);
   var chrome = flat(0xd9dee4);
   [z0 + 0.5, z1 - 0.5].forEach(function (z) {
-    lv[2].block(red, x0 - 0.1, lx + 0.5, z - 0.07, z + 0.07, 0.96, 1.08);
-    lv[2].block(chrome, x0 - 0.1, lx + 0.5, z - 0.08, z + 0.08, 1.08, 1.12);
+    lv[2].block(red, x0 - 0.1, x1 + 0.2, z - 0.07, z + 0.07, 0.96, 1.08);
+    lv[2].block(chrome, x0 - 0.1, x1 + 0.2, z - 0.08, z + 0.08, 1.08, 1.12);
   });
-  [x0 - 0.05, lx + 0.45].forEach(function (x) { lv[2].block(chrome, x - 0.04, x + 0.04, z0 + 0.5, z1 - 0.5, 1.0, 1.04); });
-  [[x0 - 0.05, z0 + 0.55], [x0 - 0.05, z1 - 0.55], [lx + 0.45, z0 + 0.55], [lx + 0.45, z1 - 0.55]].forEach(function (p) { lv[2].block(chrome, p[0] - 0.04, p[0] + 0.04, p[1] - 0.04, p[1] + 0.04, 0, 1.0); });
+  [x0 - 0.05, x1 + 0.15].forEach(function (x) { lv[2].block(chrome, x - 0.04, x + 0.04, z0 + 0.5, z1 - 0.5, 1.0, 1.04); });
+  [[x0 - 0.05, z0 + 0.55], [x0 - 0.05, z1 - 0.55], [x1 + 0.15, z0 + 0.55], [x1 + 0.15, z1 - 0.55]].forEach(function (p) { lv[2].block(chrome, p[0] - 0.04, p[0] + 0.04, p[1] - 0.04, p[1] + 0.04, 0, 1.0); });
   [z1 + 4, z1 + 6, z1 + 8].forEach(function (z) {
     lv[3].slab(paint, lx - 0.04, lx + 0.04, z, z + 0.6, 0.02, 0.008);
     lv[3].slab(paint, lx - 0.16, lx + 0.16, z - 0.12, z - 0.04, 0.02, 0.008);
   });
   lv[3].block(flat(0x4a4f57), lx - 1.0, lx - 0.94, z1 + 3.6, z1 + 3.66, 0, 0.9);
   lamp(lv[3], 'roads/light-square', x1 + 0.1, z0 - 0.3, Math.PI);
-  lv[4].raw('car/sedan', lx, z1 + 1.8, 0, 0, 1);
-  lv[4].raw('car/suv', lx, z1 + 3.4, 0, 0, 1);
-  lv[4].raw('car/hatchback-sports', lx, z1 + 5.0, 0, 0, 1);
+  lv[4].raw('car/sedan', lx - 0.5, z0 + 2.0, 0, 0, 1);
+  lv[4].raw('car/suv', lx - 0.5, z0 + 3.6, 0, 0, 1);
+  lv[4].raw('car/hatchback-sports', lx - 0.5, z0 + 5.2, 0, 0, 1);
   lv[4].add('pw/Planter_Tall_01', x0 + 0.3, z0 + 0.3, 0);
   var pl = finishPlace('garden', lv);
   pl.add = true;
   var gt = g.till;
-  var desk = mesh('arcade/cash-register', gt[0], gt[1], -Math.PI / 2);
+  var desk = mesh('arcade/cash-register', gt[0], gt[1], Math.PI / 2);
   var cashier = crew('shop/character-employee', 'idle');
   cashier.obj.position.set(0, 0, -0.5);
   desk.add(cashier.obj);
   desk.visible = false;
   root.add(desk);
   pl.items.push({ g: desk, lv: 1 });
-  var qx = gt[0] - 0.55;
-  gardenTill = { k: 'garden', till: [gt[0], 0.8, gt[1]], cashier: cashier, head: [gt[0] + 0.5, gt[1]],
-    spot: function (n) { return n ? [qx, gt[1] + 0.5 * n, Math.PI] : [qx, gt[1], Math.PI / 2]; } };
+  var qx = gt[0] + 0.55;
+  gardenTill = { k: 'garden', till: [gt[0], 0.8, gt[1]], cashier: cashier, head: [gt[0] - 0.5, gt[1]],
+    spot: function (n) { return n ? [qx, gt[1] + 0.5 * n, Math.PI] : [qx, gt[1], -Math.PI / 2]; } };
   pl.pick = addPick('garden', (x0 + lx) / 2, (z0 + z1) / 2 + 2, lx - x0 + 1, z1 - z0 + 6);
 }
 
@@ -7224,11 +7240,8 @@ function buildDinerPylon() {
   cx.textAlign = 'center';
   cx.textBaseline = 'middle';
   cx.fillStyle = '#fff6e4';
-  cx.font = font(150);
-  cx.fillText('DINER', 256, 108, 440);
-  cx.fillStyle = '#f6d44c';
-  cx.font = font(46);
-  cx.fillText('OPEN 24 HRS', 256, 205, 440);
+  cx.font = font(170);
+  cx.fillText(tl('sign.diner'), 256, 128, 440);
   var tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   var mat = new THREE.MeshLambertMaterial({ map: tex, emissiveMap: tex, emissive: 0x000000 });
