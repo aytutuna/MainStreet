@@ -485,7 +485,7 @@ AREAS.takeout = {
     [SIGN, board('Takeout menu', 'board.d_takeout', 8.4, -1.0, 1.1, 0.95), lights([[11.8, -3.4], [10.0, -3.4]]),
       up(nm('Window lamps'), hang('SM_Light_Heat_Bulb_Cord_01', 12.0, -3.0, 0, 1.2), hang('SM_Light_Heat_Bulb_Cord_01', 12.0, -2.2, 0, 1.2)),
       up(nm('Golden bag'), { sign: 'gold' }, pw('SM_WorkTable_10', 9.6, -2.0, 's', { spots: 0 }), hang('SM_TakeoutBag_01' + GOLD, 9.6, -2.0, 0, 0.46, 2))],
-    [put('Menu case', 'SM_Outdoor_Menu_Case_01', 17.4, -6.0, 'k', { spots: 0 }), put('A frame sign', 'SM_Sign_AFrame_Blank_01', 13.7, -0.2, 's', { spots: 0 }),
+    [put('Menu case', 'SM_Outdoor_Menu_Case_01', 13.6, 1.6, 'b', { spots: 0 }), put('A frame sign', 'SM_Sign_AFrame_Blank_01', 13.6, 3.0, 's', { spots: 0 }),
       put('Waiting bench', 'DiningBench_01', 8.0, -1.5, 'b', { spots: 0 }), put('Takeout planter', 'Planter_Tall_01', 11.8, -1.1, 's', { spots: 0 })],
     [staff('Order clerk', 11.7, -2.6, 'b'), HELP]
   ])
@@ -553,15 +553,15 @@ var SHELL = {
     walls: [[-14, -12.7, -11, 0], [12.7, 14, -11, 0], [-12.75, -12.3, -1.15, -0.4], [12.3, 12.75, -1.15, -0.4], [-12.75, -12.3, -10.4, -9.8], [12.3, 12.75, -10.4, -9.8]],
     back: [-13.3, 13.3, 99], front: [-13.3, 13.3, 13.3], gaps: []
   },
-  lot: [3.8, 9.6], lotX: [-14.3, 12.8], walks: [-1.5, 1.5], aisle: 6.8, drive: 15.4, exit: -15.9, road: 20.8, curb: 10.2, yard: -23.5,
-  yardRect: [-13.3, 13.3, -27.5], yardGate: [-26.5, -22.5], window: [-4.8, -1.2], pylon: [17.9, 8.9],
+  lot: [1.3, 9.0], lotX: [-14.3, 12.3], walks: [0], aisle: 5.15, drive: -16.0, exit: -17.6, road: 15.4, curb: 10.2, yard: -23.5, lobby: 1.2,
+  yardRect: [-9.8, 13.3, -26.5], yardGate: [-25, -21], window: [-4.8, -1.2], pylon: [-12.5, 9.3],
   stand: 0, busX: 6.5,
   // the rooms are in the annex behind the back wall, so nobody walks in from the floor
   wingDoor: { out: [0, -11.3], in: [0, -11.9] },
   spots: { lot: [0, 6.8], taxi: [0, 10], dock: [0, -22.5] },
   tags: { hall: [0, 1.3, -1.0], lot: [-4, 0.8, 6.8], taxi: [0, 1.2, 10.2], dock: [0, 1.0, -22.5] },
-  garden: { rect: [-18.25, -13.25, -2.1, 2.86], gate: -15.75, till: [-14.7, 3.4], lane: -17.1 },
-  bounds: [-26, 32, -32, 14], zoom: [8, 100], fit: 40, turn: Math.PI / 4,
+  garden: { rect: [13.2, 14.2, -5.0, -0.2], gate: 13.7, till: [13.7, 0.5], lane: 13.0 },
+  bounds: [-26, 32, -32, 14], zoom: [8, 100], fit: 44, turn: Math.PI / 4,
   light: { target: [0, -8], at: [-19, 23, 9], box: [-30, 30, 32, -30] },
   nature: {
     zones: [
@@ -592,17 +592,15 @@ var DECOR = {
       pw('SM_Sack_Stack_01', 4.0, -16.8, 's', { spots: 0 }), pw('SM_HandTruck_01', 0.0, -16.9, 0.5, { spots: 0 })]
   ),
   out: cat(
-    [{ m: 'furn/bench', x: -4.5, z: 2.0, r: Math.PI, k: 1.5 }, { m: 'furn/bench', x: 4.5, z: 2.0, r: Math.PI, k: 1.5 },
-      pw('Planter_Tall_01', -2.5, 2.2, 's', { spots: 0 }), pw('Planter_Tall_01', 2.5, 2.2, 's', { spots: 0 }), pw('SM_TrashCan_Steel_01', 7.0, 2.2, 's', { spots: 0 }),
-      pw('SM_Sign_AFrame_Blank_01', -8.5, 1.0, 's', { spots: 0 })],
+    [{ m: 'furn/bench', x: -5.5, z: 0.7, r: Math.PI, k: 1.5 }, { m: 'furn/bench', x: 5.5, z: 0.7, r: Math.PI, k: 1.5 },
+      pw('Planter_Tall_01', -2.8, 0.75, 's', { spots: 0 }), pw('Planter_Tall_01', 2.8, 0.75, 's', { spots: 0 }), pw('SM_TrashCan_Steel_01', 7.0, 0.75, 's', { spots: 0 }),
+      pw('SM_Sign_AFrame_Blank_01', -8.5, 0.6, 's', { spots: 0 }),
+      { text: 'sign.diner_big', x: 21, z: 8.2, r: 0, y: 2.6, w: 3.6, h: 1.4, post: true }],
     // the bin corner of the yard, fenced on three sides
-    [{ m: 'forest/fence', x: 7.5, z: -24.6, r: 0 }, { m: 'forest/fence', x: 8.5, z: -24.6, r: 0 }, { m: 'forest/fence', x: 9.5, z: -24.6, r: 0 },
-      { m: 'forest/fence', x: 7.0, z: -25.1, r: Math.PI / 2 }, { m: 'forest/fence', x: 7.0, z: -26.1, r: Math.PI / 2 },
-      { m: 'forest/fence', x: 10.0, z: -25.1, r: Math.PI / 2 }, { m: 'forest/fence', x: 10.0, z: -26.1, r: Math.PI / 2 },
-      pw('SM_Dumpster_01', 8.0, -26.0, 'b', { spots: 0 }), pw('SM_Dumpster_01', 9.3, -26.0, 'b', { spots: 0 }),
-      pw('SM_GreaseBin_Outdoor_01', -8.6, -19.6, 's', { spots: 0 }), pw('SM_PropaneTank_01', -12.2, -26.2, 's', { spots: 0 }), pw('SM_PropaneTank_01', -11.7, -26.2, 's', { spots: 0 }),
-      pw('SM_TrashBin_Wheeled_01', -12.3, -21.0, 's', { spots: 0 }), pw('SM_RecycleBin_01', -11.6, -21.0, 's', { spots: 0 }), pw('Pallet_01', -9.5, -24.0, 's', { spots: 0 }),
-      KIT.tx('board.d_deliveries', 0.0, -19.2, 1.5, 1.1)]
+    [pw('SM_Dumpster_01', 7.6, -25.0, 's', { spots: 0 }), pw('SM_Dumpster_01', 9.4, -25.0, 's', { spots: 0 }),
+      pw('SM_GreaseBin_Outdoor_01', 4.2, -19.0, 's', { spots: 0 }), pw('SM_PropaneTank_01', -8.6, -19.2, 's', { spots: 0 }), pw('SM_PropaneTank_01', -8.1, -19.2, 's', { spots: 0 }),
+      pw('SM_TrashBin_Wheeled_01', -8.8, -23.5, 's', { spots: 0 }), pw('SM_RecycleBin_01', -8.0, -23.5, 's', { spots: 0 }), pw('Pallet_01', -6.0, -20.5, 's', { spots: 0 }),
+      KIT.tx('board.d_deliveries', -2.6, -19.2, 1.5, 1.1)]
   ),
   side: [],
   wing: cat(
@@ -632,18 +630,19 @@ SHELL.decor = { out: DECOR.out, stock: DECOR.stock };
 export var DINER = Object.assign({}, PLAN, {
   type: 'diner',
   shell: SHELL,
-  home: { x: -1, z: -5, w: 24 },
+  home: { x: 0, z: -7, w: 36 },
   areas: AREAS,
   order: Object.keys(AREAS),
   wing: WING,
   decor: DECOR,
   front: FRONT,
-  patio: true,
+  drive: true,
+  plainLanes: true,
   hall: [-13, 13, -10.5, -0.5],
   stock: [-9, 9, -18, -10.5],
   doors: [-8.2, 0.4, 8.4],
-  docks: [-6, -2, 2, 6],
-  idle: [-8.6, -6.6, -4.6, -2.6, 1.6, 3.6, 5.6, 7.6].map(function (x) { return [x, -11.8]; }),
+  docks: [0, 0, 0, 0],
+  idle: [[-7.5, -11.8], [-3.2, -11.8], [4.2, -11.8], [7.5, -11.8], [-8, -16.7], [-6.5, -17], [6.5, -17], [8, -16.7]],
   bank: { x: -6.75, z: -2.5, cross: -5.3, exit: -1.7, span: 6.4 },
   desk: { x: 9.6, z: -1.1, n: 2 },
   floor: [
@@ -651,12 +650,9 @@ export var DINER = Object.assign({}, PLAN, {
     { r: [-9, 9, -18, -10.5], finish: 0xd5d5d8 }
   ],
   tint: { wall: 0xffe8c8 },
-  entrances: [
-    { x: -1.5, w: 2.6, name: 'sign.d_dining', basket: [-2.65, -1.2], greeter: [-3.25, -1.25, Math.PI / 2] },
-    { x: 1.5, w: 2.6, name: 'sign.d_takeout', basket: [0.35, -1.2], greeter: [-0.25, -1.25, Math.PI / 2] }
-  ],
+  entrances: [{ x: 0, w: 3.2, name: 'sign.diner', basket: [-1.35, -1.2], greeter: [-1.95, -1.25, Math.PI / 2] }],
   laneM: [['pw/SM_Bar_Section_20', -0.15, -0.6, -Math.PI / 2], ['pw/SM_Bar_Section_10', -0.15, 0.15, -Math.PI / 2], ['pw/SM_POS_Terminal_01', -0.15, 0.2, -Math.PI / 2, 0.55]],
-  laneRack: [['pw/LaneLight_Pole_01', -0.4, -1.12, 0], ['pw/SM_TrayStack_01', -0.15, 0.62, 0]],
+  laneRack: [['pw/SM_TrayStack_01', -0.15, 0.62, 0]],
   stackM: 'pw/SM_TrayStand_Tray_01',
   attM: 'pw/HostStand_01',
   deskM: 'pw/SM_ServerStation_01',

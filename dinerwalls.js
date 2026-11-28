@@ -36,7 +36,7 @@ export function buildDinerWalls(o) {
   var cream = std(CREAM, 0.9, 0, 'wall');
   var neon = new THREE.MeshBasicMaterial({ color: 0xff4a3d });
   neon.userData.role = 'none';
-  var glassMat = new THREE.MeshPhysicalMaterial({ color: 0x9fcad8, roughness: 0.1, metalness: 0, transparent: true, opacity: 0.3, side: THREE.DoubleSide,
+  var glassMat = new THREE.MeshPhysicalMaterial({ color: 0x8cc6e0, roughness: 0.1, metalness: 0, transparent: true, opacity: 0.55, side: THREE.DoubleSide,
     depthWrite: false, envMap: env, envMapIntensity: 2.2 });
   glassMat.userData.role = 'glass';
   glassMat.userData.lit = 2.2;
@@ -90,75 +90,84 @@ export function buildDinerWalls(o) {
   var R = o.r;
   var F = o.front;
   var B = o.back;
-  // low wall profile: chrome skirt, an optional red band and the chrome cap
-  function low(group, f) {
-    f(0, 0.3, chrome, 0.28);
-    f(0.3, 0.5, red, 0.26);
-    f(0.5, 0.55, chrome, 0.3);
+  var HS = 1.28;
+  var HB = 0.95;
+  // the whole profile along a run of wall, a to b, with its outward side at (nx, nz): chrome skirt, red band, chrome cap, a
+  // pale glass band between mullions, a cream fascia under a neon tube; H is how high the fascia ends
+  function prof(group, ax, az, bx, bz, nx, nz, H) {
+    var len = Math.hypot(bx - ax, bz - az);
+    if (len < 0.02) return;
+    var gt = H - 0.26;
+    run(group, chrome, ax, az, bx, bz, 0, 0.3, 0.28);
+    run(group, red, ax, az, bx, bz, 0.3, 0.52, 0.26);
+    run(group, chrome, ax, az, bx, bz, 0.52, 0.55, 0.3);
+    run(group, chrome, ax, az, bx, bz, gt, gt + 0.06, 0.3);
+    run(group, cream, ax, az, bx, bz, gt + 0.06, H, 0.24);
+    run(group, neon, ax + nx * 0.125, az + nz * 0.125, bx + nx * 0.125, bz + nz * 0.125, gt + 0.12, gt + 0.16, 0.025);
+    var ang = Math.atan2(bz - az, bx - ax);
+    var g = new THREE.PlaneGeometry(len - 0.02, gt - 0.55);
+    g.rotateY(-ang);
+    g.translate((ax + bx) / 2, (0.55 + gt) / 2, (az + bz) / 2);
+    put(group, glassMat, g);
+    var n = Math.max(1, Math.round(len / 1.5));
+    for (var i = 0; i <= n; i++) {
+      var t = i / n;
+      box(group, chrome, ax + (bx - ax) * t - 0.04, ax + (bx - ax) * t + 0.04, 0.55, gt, az + (bz - az) * t - 0.04, az + (bz - az) * t + 0.04);
+    }
   }
-  // the front, between the entrances
+  function pro(group, a, b, H) {
+    prof(group, a[0], a[1], b[0], b[1], b[2], b[3], H);
+  }
+  // the straight front, low, between the entrance and the corners
   var gaps = o.entrances.map(function (e) { return [e.x, e.w]; });
   runs(-hw + R, hw - R, gaps).forEach(function (s) {
-    low('fixed', function (y0, y1, m, t) { run('fixed', m, s[0], F, s[1], F, y0, y1, t); });
+    run('fixed', chrome, s[0], F, s[1], F, 0, 0.3, 0.28);
+    run('fixed', red, s[0], F, s[1], F, 0.3, 0.5, 0.26);
+    run('fixed', chrome, s[0], F, s[1], F, 0.5, 0.55, 0.3);
   });
+  // the lobby: glass sides, a glass roof on a red beam and a cream fascia with the lettering above it
   o.entrances.forEach(function (e) {
-    [-1, 1].forEach(function (sd) { box('fixed', chrome, e.x + sd * (e.w / 2 + 0.07) - 0.07, e.x + sd * (e.w / 2 + 0.07) + 0.07, 0, 0.9, F - 0.14, F + 0.14); });
-    box('fixed', chrome, e.x - e.w / 2 - 0.14, e.x + e.w / 2 + 0.14, 0.88, 0.96, F - 0.1, F + 0.1);
-  });
-  // the wall to the annex, low, with the stock doors open
-  runs(-hw + R, hw - R, o.doors.map(function (d) { return [d, 1]; })).forEach(function (s) {
-    run('fixed', chrome, s[0], B, s[1], B, 0, 0.3, 0.28);
-    run('fixed', chrome, s[0], B, s[1], B, 0.3, 0.34, 0.32);
-  });
-  // the four rounded corners: the front ones as the front, the back ones as the wall to the annex
-  [[-1, -1], [1, -1]].forEach(function (c) {
-    var cx = c[0] * (hw - R);
-    var cz = B + R;
-    arc('fixed', chrome, cx, cz, R, c[0] < 0 ? Math.PI : Math.PI * 1.5, 0, 0.3, 0.28);
-    arc('fixed', chrome, cx, cz, R, c[0] < 0 ? Math.PI : Math.PI * 1.5, 0.3, 0.34, 0.32);
-  });
-  [[-1, 1], [1, 1]].forEach(function (c) {
-    var cx = c[0] * (hw - R);
-    var cz = F - R;
-    var a0 = c[0] < 0 ? Math.PI / 2 : 0;
-    arc('fixed', chrome, cx, cz, R, a0, 0, 0.3, 0.28);
-    arc('fixed', red, cx, cz, R, a0, 0.3, 0.5, 0.26);
-    arc('fixed', chrome, cx, cz, R, a0, 0.5, 0.55, 0.3);
-  });
-
-  // a long side: skirt, band, glass, fascia and its neon tube, from z0 to z1 at x
-  function side(group, x, sd) {
-    var z0 = B + R;
-    var z1 = F - R;
-    var t = 0.24;
-    box(group, chrome, x - 0.14, x + 0.14, 0, 0.3, z0, z1);
-    box(group, red, x - 0.13, x + 0.13, 0.3, 0.52, z0, z1);
-    box(group, chrome, x - 0.16, x + 0.16, 0.52, 0.55, z0, z1);
-    box(group, chrome, x - 0.16, x + 0.16, 1.02, 1.08, z0, z1);
-    box(group, cream, x - 0.12, x + 0.12, 1.08, 1.28, z0, z1);
-    box(group, neon, x + sd * 0.125, x + sd * 0.15, 1.16, 1.2, z0, z1);
-    var n = Math.max(1, Math.round((z1 - z0) / 1.5));
-    var pw = (z1 - z0) / n;
-    for (var i = 0; i <= n; i++) box(group, chrome, x - 0.04, x + 0.04, 0.55, 1.02, z0 + i * pw - 0.035, z0 + i * pw + 0.035);
-    for (i = 0; i < n; i++) {
-      var g = new THREE.PlaneGeometry(pw - 0.07, 0.47);
+    var h = e.w / 2 + 0.1;
+    var d = o.lobby;
+    [-1, 1].forEach(function (sd) {
+      var x = e.x + sd * h;
+      box('fixed', chrome, x - 0.06, x + 0.06, 0, 0.98, F - 0.1, F + d + 0.06);
+      run('fixed', chrome, x, F, x, F + d, 0, 0.3, 0.1);
+      var g = new THREE.PlaneGeometry(d, 0.62);
       g.rotateY(Math.PI / 2);
-      g.translate(x, 0.785, z0 + (i + 0.5) * pw);
-      put(group, glassMat, g);
-      var sh = new THREE.Shape();
-      sh.moveTo(0, 0);
-      sh.lineTo(0.12, 0);
-      sh.lineTo(0.42, 0.45);
-      sh.lineTo(0.3, 0.45);
-      var st = new THREE.ShapeGeometry(sh);
-      st.rotateY(Math.PI / 2);
-      st.translate(x + 0.004, 0.55, z0 + (i + 0.25) * pw);
-      put(group, glareMat, st);
+      g.translate(x, 0.64, F + d / 2);
+      put('fixed', glassMat, g);
+    });
+    var rg = new THREE.PlaneGeometry(h * 2, d);
+    rg.rotateX(-Math.PI / 2);
+    rg.translate(e.x, 0.98, F + d / 2);
+    put('fixed', glassMat, rg);
+    box('fixed', red, e.x - h - 0.06, e.x + h + 0.06, 0.86, 1.02, F + d - 0.07, F + d + 0.07);
+    box('fixed', chrome, e.x - h - 0.06, e.x + h + 0.06, 1.02, 1.05, F + d - 0.08, F + d + 0.08);
+    box('fixed', cream, e.x - h - 0.06, e.x + h + 0.06, 1.05, 1.3, F - 0.05, F + 0.05);
+    box('fixed', neon, e.x - h, e.x + h, 1.28, 1.31, F + 0.06, F + 0.09);
+  });
+  // the back wall to the annex, whole profile but lower, with the stock doors open
+  runs(-hw + R, hw - R, o.doors.map(function (d) { return [d, 1]; })).forEach(function (s) {
+    prof('fixed', s[0], B, s[1], B, 0, -1, HB);
+  });
+  // the four rounded corners, each a quarter of the whole profile
+  function corner(group, cx, cz, a0, H) {
+    var n = 6;
+    for (var i = 0; i < n; i++) {
+      var a = a0 + Math.PI / 2 * i / n;
+      var b = a0 + Math.PI / 2 * (i + 1) / n;
+      var m = (a + b) / 2;
+      prof(group, cx + R * Math.cos(a), cz + R * Math.sin(a), cx + R * Math.cos(b), cz + R * Math.sin(b), Math.cos(m), Math.sin(m), H);
     }
-    return t;
   }
-  side('west', -hw, -1);
-  side('east', hw, 1);
+  corner('bl', -hw + R, B + R, Math.PI, HB);
+  corner('br', hw - R, B + R, Math.PI * 1.5, HB);
+  corner('fl', -hw + R, F - R, Math.PI / 2, HS);
+  corner('fr', hw - R, F - R, 0, HS);
+  // a long side from the back corner to the front one
+  prof('west', -hw, B + R, -hw, F - R, -1, 0, HS);
+  prof('east', hw, B + R, hw, F - R, 1, 0, HS);
 
   // the annex: plain stucco with a chrome cap, the dock doors open in its far wall
   var ax = o.ax;
@@ -197,6 +206,6 @@ export function buildDinerWalls(o) {
     if (at[1] === 'wall') wall.push(part);
     if (at[1] === 'trim') trim.push(part);
   });
-  o.outer.push({ g: groups.west, n: [-1, 0] }, { g: groups.east, n: [1, 0] });
+  o.outer.push({ g: groups.west, n: [-1, 0] }, { g: groups.east, n: [1, 0] }, { g: groups.fl, n: [-0.7, 0.7] }, { g: groups.fr, n: [0.7, 0.7] });
   return { wall: wall, trim: trim, lit: lit, glare: glareMat };
 }
