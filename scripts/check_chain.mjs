@@ -216,15 +216,15 @@ if (run('saved().length') > 300000) fail('thirty full stores make a save of ' + 
   same(got.goal, o.goal, 'the goals');
   if (got.b.clothes) fail('the v11 save kept a department the supercenter does not have');
   same(Object.keys(got.b), Object.keys(o.b).filter(k => k !== 'clothes'), 'a department of the supercenter');
-  if (!near(run('here().m'), Math.pow(1.45, 3), 1e-9) || !near(run('here().c'), Math.pow(1.35, 2), 1e-9)) fail('a store moved to three times keeps neither its income nor its prices');
+  if (!near(run('here().m'), run('TYPES[0].mul') * Math.pow(1.45, 3), 1e-9) || !near(run('here().c'), run('TYPES[0].cost') * Math.pow(1.35, 2), 1e-9)) fail('a store moved to three times keeps neither its income nor its prices');
   if (run('S.cash') !== o.cash) fail('the v11 save lost its cash');
   if (!aliased()) fail('the migrated store is not the one on screen');
-  // and a v11 save made before any move is the plain supercenter
+  // and a v11 save made before any move is the supercenter at its type's income and prices
   o.store = 1;
   store[key] = JSON.stringify(o);
   run('S = fresh()');
   run('load()');
-  if (run('here().m') !== 1 || run('here().c') !== 1) fail('a first store got a factor');
+  if (run('here().m') !== run('TYPES[0].mul') || run('here().c') !== run('TYPES[0].cost')) fail('a first store got a factor');
 }
 
 // a look bought at store 5 stays usable, and so do the free ones of the stores before it

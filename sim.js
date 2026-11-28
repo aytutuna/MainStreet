@@ -1967,8 +1967,8 @@ function validate(o) {
       r.m = num(e.m, t.mul);
       r.c = num(e.c, t.cost);
     } else {
-      r.m = Math.pow(1.45, n - 1);
-      r.c = Math.pow(1.35, Math.max(0, n - 2));
+      r.m = TYPES[0].mul * Math.pow(1.45, n - 1);
+      r.c = TYPES[0].cost * Math.pow(1.35, Math.max(0, n - 2));
     }
     return r;
   });
