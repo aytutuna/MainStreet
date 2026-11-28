@@ -28,6 +28,8 @@
 //                  houses across it are the world's); shell.decor.out and .stock are the outside's and the stockroom's pieces
 // The street (z 10 to 14), the houses beyond it and the country are shared, and the ground is flat only inside land.js FLAT,
 // so a site has to fit inside it.
+// A type starts from KIT.copy(PLAN.shell) and replaces whatever differs wholesale: a changed nav, garden, nature, decor, light,
+// spots or tags is a whole new object or list, never a field edited in place, since the supercenter's must stay as it is.
 
 // the Pipework kit is drawn at this size against the shop kit's people (store.js SCALE)
 export var PW = 0.5;
@@ -1410,5 +1412,16 @@ export var SHELL = {
 SHELL.decor = { out: DECOR.out, stock: DECOR.stock };
 PLAN.shell = SHELL;
 
+// a copy that shares no array or object with the original, for a shell a type starts from the supercenter's
+function copy(v) {
+  if (Array.isArray(v)) return v.map(copy);
+  if (v && typeof v === 'object') {
+    var o = {};
+    Object.keys(v).forEach(function (k) { o[k] = copy(v[k]); });
+    return o;
+  }
+  return v;
+}
+
 // the helpers other store types lay out their plans with
-export var KIT = { up: up, pw: pw, m: m, on: on, mat: mat, wp: wp, room: room, low: low, hi: hi, det: det, cab: cab, rbox: rbox, tx: tx, lights: lights, SIGN: SIGN, HELP: HELP, pack: pack, rug: rug, cat: cat, bd: bd, clerk: clerk };
+export var KIT = { copy: copy, up: up, pw: pw, m: m, on: on, mat: mat, wp: wp, room: room, low: low, hi: hi, det: det, cab: cab, rbox: rbox, tx: tx, lights: lights, SIGN: SIGN, HELP: HELP, pack: pack, rug: rug, cat: cat, bd: bd, clerk: clerk };
