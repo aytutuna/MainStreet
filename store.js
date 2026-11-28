@@ -156,6 +156,7 @@ function parseRef(ref) {
 
 // fixtures whose goods are separate nodes; the bare fixture is stocked with other things in place
 // the tools pack has near black wood and plastic, which would read as holes in the shelves
+var FLAT_TINT = { gold: [0xf2c230, 0x5a3c00], yellow: [0xe8b923, 0x3a2e00] };
 var TOOLTINT = { wood: 'c08a52', plastic: '4f5868', metal: 'e7e7e7', screw: 'e7e7e7' };
 
 var BARE = { 'shop/shelf-boxes': 1, 'shop/shelf-bags': 1, 'shop/shelf-end': 1, 'shop/display-cans': 1, 'shop/display-bread': 1,
@@ -304,6 +305,12 @@ function loadModels(list, progress, done, prev) {
     var see = src.transparent || src.opacity < 1;
     var key = kit + '|' + (src.map ? 'map' : tint ? '' : src.name + src.color.getHex()) + (tint || '') + (see ? 't' + src.opacity : '') + (kit === 'flora' && src.map ? sameTexture(g, src) : '');
     if (mats[key]) return mats[key];
+    // a model tinted gold or safety yellow is one flat colour, as the golden cart is
+    if (FLAT_TINT[tint]) {
+      mats[key] = new THREE.MeshLambertMaterial({ color: FLAT_TINT[tint][0], emissive: FLAT_TINT[tint][1] });
+      mats[key].name = src.name;
+      return mats[key];
+    }
     if (src.map && kit !== 'flora') {
       src.map.magFilter = THREE.NearestFilter;
       src.map.minFilter = THREE.NearestFilter;
@@ -3013,7 +3020,7 @@ function yardShell(lv, slab, text) {
   var gx = x0 + 2.5 * step;
   [-1, 1].forEach(function (o) { lv[1].block(flat(0x50566a), gx + o * step / 2 - 0.03, gx + o * step / 2 + 0.03, z1 - 0.03, z1 + 0.03, 0, 1.0); });
   lv[1].block(flat(0x2f3446), gx - step / 2, gx + step / 2, z1 - 0.04, z1 + 0.02, 0.78, 1.08);
-  boardAtlas(lv[1], { text: text, x: gx, y: 0.93, z: z1 + 0.03, w: 1.5, h: 0.28 });
+  boardAtlas(lv[1], { text: text, x: gx, y: 0.93, z: z1 + 0.03, w: step - 0.04, h: 0.28 });
 }
 
 // the yard's own till outside the gate, its cashier on the east side and the one paying on the west; the next in line
@@ -3046,7 +3053,7 @@ function buildBay() {
   lv[2].add('pw/SM_CarLift_2Post_01', x0 + 1.6, -0.45, 0);
   lv[2].add('car/sedan', x0 + 1.6, -0.45, Math.PI);
   lv[3].add('pw/SM_CarLift_Scissor_01', x1 - 1.1, -0.3, 0);
-  lv[3].raw('car/hatchback-sports', x1 - 1.1, -0.3, Math.PI, 0.28, 1);
+  lv[3].raw('car/hatchback-sports', x1 - 1.1, -0.3, Math.PI / 2, 0.28, 1);
   [[x0 + 0.45, 1.5], [x0 + 0.85, 1.5]].forEach(function (p) { lv[3].add('pw/SM_JackStand_01', p[0], p[1], 0); });
   lv[3].add('pw/Tire_Stack_01', x0 + 0.5, 0.7, 0);
   lv[4].add('pw/SM_TireChanger_01', x1 - 0.6, 1.5, -Math.PI / 2);
@@ -5676,7 +5683,8 @@ function gardenRoute(c) {
     return;
   }
   var sd = Math.random() < 0.5 ? -1 : 1;
-  var gx = GATE_X;
+  // the patio and the yard have their gate in the middle of the fence gap, the garden center's is off to one side
+  var gx = PLAN.patio || PLAN.yard ? GARDEN[0] + (GARDEN[1] - GARDEN[0]) / 2 : GATE_X;
   var rows = [2.0, 0.6, -0.8].slice(0, Math.min(3, S.pl.garden));
   var z = rows[Math.floor(Math.random() * rows.length)];
   var west = Math.random() < 0.5;
@@ -6910,7 +6918,8 @@ function useType() {
   nav.dirty = true;
   shadowDirty = true;
   people.forEach(function (p) { carry(p, key); });
-  stopWaiting();
+  // draw finishes what a waiting store needs: the outline, the arrow and the camera
+  if (waiting !== key) stopWaiting();
   return true;
 }
 
