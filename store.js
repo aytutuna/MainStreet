@@ -7036,29 +7036,32 @@ function buildDiner() {
   b.block(leaf, yard[1] - 0.04, yard[1] + 0.04, gate[0] - 1.3, gate[0] - 0.05, 0.12, 0.8);
   b.block(leaf, yard[1] - 0.04, yard[1] + 0.04, gate[1] + 0.05, gate[1] + 1.3, 0.12, 0.8);
   // the bin pen: three fenced sides and a gate on the yard side
-  dinerFence(b, 6.6, yard[2], 6.6, -23.6);
-  dinerFence(b, 10.4, yard[2], 10.4, -23.6);
-  dinerFence(b, 6.6, -23.6, 8.0, -23.6);
-  dinerFence(b, 9.0, -23.6, 10.4, -23.6);
-  b.block(leaf, 8.0 - 0.02, 8.0 + 0.02, -23.6, -22.7, 0.12, 0.8);
+  var pz = yard[2] + 3;
+  dinerFence(b, 6.0, yard[2], 6.0, pz);
+  dinerFence(b, 9.4, yard[2], 9.4, pz);
+  dinerFence(b, 6.0, pz, 7.2, pz);
+  dinerFence(b, 8.2, pz, 9.4, pz);
+  b.block(leaf, 7.2 - 0.02, 7.2 + 0.02, pz - 0.9, pz - 0.05, 0.12, 0.8);
   // the lot's drives and the paved corner east of the lane, with a small gas station on it
   b.slab(asph, SH.exit - 1.2, SH.drive + 1.2, SH.aisle - 1.2, SH.curb + 0.3, 0.008, 0.02);
-  b.slab(pave, L1, 24, -9.0, 10.5, 0.004, 0.02);
+  b.slab(pave, L1, L1 + 8.6, -9.0, 10.5, 0.004, 0.02);
   b.slab(flat(0x6b5a45), L1, L1 + 0.15, -9.0, 10.5, 0.1, 0.1);
   var pr = flat(0xd3302c);
   var pc = flat(0xf3ead6);
-  b.block(pc, 19.2, 22.2, 4.4, 4.46, 0.02, 1.0);
-  b.block(pr, 18.6, 22.8, 3.2, 6.0, 1.0, 1.1);
-  b.block(pc, 18.6, 22.8, 3.2, 6.0, 1.1, 1.14);
-  [[18.7, 3.3], [22.7, 3.3], [18.7, 5.9], [22.7, 5.9]].forEach(function (p) { b.block(pc, p[0] - 0.05, p[0] + 0.05, p[1] - 0.05, p[1] + 0.05, 0, 1.0); });
+  var gs = SH.road - 15.4;
+  b.block(pc, gs + 19.2, gs + 22.2, 4.4, 4.46, 0.02, 1.0);
+  b.block(pr, gs + 18.6, gs + 22.8, 3.2, 6.0, 1.0, 1.1);
+  b.block(pc, gs + 18.6, gs + 22.8, 3.2, 6.0, 1.1, 1.14);
+  [[18.7, 3.3], [22.7, 3.3], [18.7, 5.9], [22.7, 5.9]].forEach(function (p) { b.block(pc, gs + p[0] - 0.05, gs + p[0] + 0.05, p[1] - 0.05, p[1] + 0.05, 0, 1.0); });
   [19.6, 21.8].forEach(function (x) {
+    x += gs;
     b.block(pr, x - 0.2, x + 0.2, 4.4, 4.9, 0.0, 0.7);
     b.block(flat(0x2f3446), x - 0.14, x + 0.14, 4.88, 4.92, 0.35, 0.6);
     b.block(pc, x - 0.21, x + 0.21, 4.4, 4.9, 0.7, 0.74);
   });
-  b.block(pc, 18.6, 21.2, 7.4, 9.0, 0.0, 0.85);
-  b.block(pr, 18.5, 21.3, 7.3, 9.1, 0.85, 0.95);
-  b.block(flat(0x8cc6e0), 18.9, 20.9, 7.36, 7.42, 0.2, 0.7);
+  b.block(pc, gs + 18.6, gs + 21.2, 7.4, 9.0, 0.0, 0.85);
+  b.block(pr, gs + 18.5, gs + 21.3, 7.3, 9.1, 0.85, 0.95);
+  b.block(flat(0x8cc6e0), gs + 18.9, gs + 20.9, 7.36, 7.42, 0.2, 0.7);
   decor(SH.decor.out);
   root.add(b.group());
   var grounds = scatterNature(SH.nature.zones, SH.nature.clear, null, NATURE_SEED);
@@ -7111,7 +7114,7 @@ function buildDinerLot() {
     lv[hu].slab(flat(0x3c63a8), -3.42, -2.58, rows[0][0] + 0.15, rows[0][1] - 0.15, 0.018, 0.008);
     lv[hu].slab(paint, -3.12, -2.88, rows[0][0] + 0.55, rows[0][0] + 0.9, 0.026, 0.008);
   }
-  [[1, -9, z0 + 0.1], [1, 9, z0 + 0.1], [3, -4.5, z1 - 0.1], [3, 5, z1 - 0.1], [4, -13, z1 - 0.1], [4, 11, z1 - 0.1]].forEach(function (p) {
+  [[1, -9, z0 + 0.1], [1, 9, z0 + 0.1], [3, -4.5, z1 - 0.1], [3, 5, z1 - 0.1], [4, -10.5, z1 - 0.1], [4, 10, z1 - 0.1]].forEach(function (p) {
     for (var u = p[0]; u <= 4; u++) lamp(lv[u], 'roads/light-square', p[1], p[2], p[2] < 4 ? Math.PI : 0);
   });
   // a kerbed bed with a hedge along the street edge
@@ -7125,7 +7128,7 @@ function buildDinerLot() {
 function buildDinerDock() {
   decor(SH.decor.stock);
   var docks = PLAN.docks;
-  var t = mesh('car/delivery', -3.5, -22.0, Math.PI / 2);
+  var t = mesh('car/delivery', -2.0, SH.yard - 0.2, Math.PI / 2);
   t.scale.setScalar(1.7);
   root.add(t);
   var lv = levels(10);
