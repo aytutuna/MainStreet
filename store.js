@@ -6751,18 +6751,25 @@ var queue = [];
 // the models of one type, loaded one type at a time; cb runs once they are in
 function fetchType(k, cb) {
   if (typeReady[k]) return cb && cb();
+  if (!cb && queue.some(function (e) { return e.k === k; })) return;
   queue.push({ k: k, cb: cb });
-  if (fetching) return;
-  var q = queue.shift();
+  pumpTypes();
+}
+
+function pumpTypes() {
+  while (queue.length && typeReady[queue[0].k]) {
+    var done = queue.shift();
+    if (done.cb) done.cb();
+  }
+  if (fetching || !queue.length) return;
+  var q = queue[0];
   fetching = true;
   var extra = modelList(q.k).filter(function (r) { return !asked[r]; });
   extra.forEach(function (r) { asked[r] = 1; });
   loadModels(extra, null, function () {
     typeReady[q.k] = true;
     fetching = false;
-    if (q.cb) q.cb();
-    var next = queue.shift();
-    if (next) fetchType(next.k, next.cb);
+    pumpTypes();
   }, lib);
 }
 
