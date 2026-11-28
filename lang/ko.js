@@ -1760,7 +1760,7 @@ LANG['ko'] = {
   'board.h_service': 'KEY CUTTING\n& RETURNS',
   'board.h_workshop': 'WORKSHOP\nSTAFF ONLY',
   'board.h_deliveries': 'DELIVERIES',
-  'board.h_garden': 'GARDEN\nCENTER',
+  'board.h_nursery': '화원',
   'board.h_lumber': 'PRO LUMBER',
   'board.h_receiving': 'RECEIVING',
   'board.h_trucks': 'RECEIVING\nTRUCKS ONLY',
