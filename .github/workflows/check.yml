@@ -32,6 +32,8 @@ jobs:
         run: node scripts/check_sim.mjs
       - name: Chain of stores
         run: node scripts/check_chain.mjs
+      - name: Shells of the store types
+        run: node scripts/check_shell.mjs
       - name: Pacing of the first store
         run: node scripts/pace.mjs --check
       - name: Cloud save rules
