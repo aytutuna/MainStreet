@@ -7062,6 +7062,11 @@ function buildDiner() {
   b.block(pc, gs + 18.6, gs + 21.2, 7.4, 9.0, 0.0, 0.85);
   b.block(pr, gs + 18.5, gs + 21.3, 7.3, 9.1, 0.85, 0.95);
   b.block(flat(0x8cc6e0), gs + 18.9, gs + 20.9, 7.36, 7.42, 0.2, 0.7);
+  // paving beside the annex and the building up to the lane, a bed with a hedge on the west side of the annex
+  b.slab(pave, SH.annex, L0, SH.sb, SH.back, 0.004, 0.02);
+  b.slab(pave, SH.edge, L0, SH.back, SH.window[0], 0.004, 0.02);
+  b.slab(flat(0x6b5a45), -SH.edge + 0.4, -SH.annex - 0.4, SH.sb + 0.2, SH.back - 0.2, 0.1, 0.1);
+  for (var bz = SH.sb + 0.8; bz < SH.back - 0.4; bz += 1) [-9, -7.4, -6.2].forEach(function (bx) { b.add('nature/plant_bush', bx, bz, bz * 1.7 + bx); });
   decor(SH.decor.out);
   root.add(b.group());
   var grounds = scatterNature(SH.nature.zones, SH.nature.clear, null, NATURE_SEED);
