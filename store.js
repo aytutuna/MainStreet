@@ -8482,9 +8482,10 @@ function boxOf(group) {
 }
 
 function snap(group, box) {
+  var given = !!box;
   if (!box) box = boxOf(group);
   if (box.isEmpty()) return null;
-  if (box.getSize(new THREE.Vector3()).length() > 20) {
+  if (!given && box.getSize(new THREE.Vector3()).length() > 20) {
     // a piece spread over the whole site: the first mesh and what stands round it
     var part = null;
     group.traverse(function (o) {
@@ -8701,7 +8702,9 @@ function placeIcon(id, k) {
   if (people && id !== 'dock') g.traverse(function (o) { if (o.isSkinnedMesh) o.visible = false; });
   g.updateMatrixWorld(true);
   // the lot's levels spread paving, bays and lamps over the whole front, so each is shown by the stretch of bays it opens
-  var lotBox = new THREE.Box3(new THREE.Vector3(k < 3 ? -6 : -9, 0, SH.lot[0]), new THREE.Vector3(k < 3 ? 6 : 9, 0.3, SH.lot[1]));
+  var lx = (SH.lotX[0] + SH.lotX[1]) / 2;
+  var lw = Math.min(k < 3 ? 6 : 9, (SH.lotX[1] - SH.lotX[0]) / 2);
+  var lotBox = new THREE.Box3(new THREE.Vector3(lx - lw, 0, SH.lot[0]), new THREE.Vector3(lx + lw, 0.3, SH.lot[1]));
   icons[key] = snap(g, id === 'dock' ? null : id === 'lot' ? lotBox : focusOf(g));
   return icons[key];
 }
