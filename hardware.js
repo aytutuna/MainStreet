@@ -43,6 +43,7 @@ var SZ = {
   SM_BeltSander_Bench_01: [0.54, 0.353, 0.383],
   SM_BenchGrinder_01: [0.42, 0.245, 0.322],
   SM_BenchGrinder_Stand_01: [0.42, 0.36, 1.132],
+  SM_BenchVise_01: [0.214, 0.236, 0.225],
   SM_BottleJack_01: [0.185, 0.142, 0.225],
   SM_BrakeRotor_01: [0.3, 0.3, 0.056],
   SM_Broom_Push_01: [0.6, 0.112, 1.45],
@@ -271,12 +272,12 @@ function put(name, ref, x, z, face, o) {
 // a show piece on a table
 function plinth(name, table, x, z, face, goods) {
   return up.apply(null, [nm(name), { sign: 'gold' }, pw(table, x, z, face, { spots: 0 })].concat(goods.map(function (g) {
-    return { m: 'pw/' + g[0], x: x + (g[1] || 0), z: z + (g[2] || 0), r: TURN[face], k: g[3] || 1, y: 0.45, flat: 1 };
+    return { m: 'pw/' + g[0] + GOLD, x: x + (g[1] || 0), z: z + (g[2] || 0), r: TURN[face], k: g[3] || 1, y: 0.45, flat: 1 };
   })));
 }
 // a show piece on a pallet, raised to the pallet's top: n pallets side by side
 function dais(name, ref, x, z, o) {
-  return up(nm(name), { sign: 'gold' }, pw('Pallet_01', x, z, 's', { spots: 0, n: o.n }), { m: 'pw/' + ref, x: x, z: z, r: TURN[o.face || 's'], k: o.k, y: 0.061, flat: 1 });
+  return up(nm(name), { sign: 'gold' }, pw('Pallet_01', x, z, 's', { spots: 0, n: o.n }), { m: 'pw/' + ref + GOLD, x: x, z: z, r: TURN[o.face || 's'], k: o.k, y: 0.061, flat: 1 });
 }
 // a floor piece of one or more entries
 function floorSet(name, list) {
@@ -285,6 +286,8 @@ function floorSet(name, list) {
 
 // goods of the benches: on a bench top at 0.45
 var BT = 0.45;
+// the show pieces are tinted gold
+var GOLD = '%=gold';
 
 var AREAS = {};
 
@@ -386,8 +389,8 @@ var oi1 = strip('k', 12.5, -21.4, [
   ['Oil table', 'Workbench_Wood_01', { on: [['pw/OilJug_01', -0.28, 0, 2], ['pw/OilJug_01', 0, 0, 2], ['pw/OilBottle_01', 0.28, 0, 2.6]] }],
   ['Oil drain', 'SM_OilDrain_Upright_01', { gap: 0.4 }],
   ['Grease bench', 'SM_Workbench_Steel_01', { gap: 0.4, on: [['pw/SM_GreaseGun_01', -0.17, 0, 1.6], ['pw/SM_OilCan_Squirt_01', 0.2, 0, 2.2]] }],
-  ['Jerry can pallet', 'Pallet_01', { gap: 0.4, on: [['pw/JerryCan_01', -0.21, 0, 1.2, 0.061], ['pw/JerryCan_01', 0.0, 0, 1.2, 0.061], ['pw/JerryCan_01', 0.21, 0, 1.2, 0.061]] }],
-  ['Gas can pallet', 'Pallet_01', { gap: 0.4, on: [['pw/SM_GasCan_Plastic_01', -0.18, 0, 1.2, 0.061], ['pw/SM_GasCan_Plastic_01', 0, 0, 1.2, 0.061], ['pw/SM_GasCan_Plastic_01', 0.18, 0, 1.2, 0.061]] }]
+  ['Jerry can pallet', 'Pallet_01', { gap: 0.4, on: [['pw/JerryCan_01', -0.24, 0, 1.1, 0.061], ['pw/JerryCan_01', 0.0, 0, 1.1, 0.061], ['pw/JerryCan_01', 0.24, 0, 1.1, 0.061]] }],
+  ['Gas can pallet', 'Pallet_01', { gap: 0.4, on: [['pw/SM_GasCan_Plastic_01', -0.24, 0, 1.2, 0.061], ['pw/SM_GasCan_Plastic_01', 0, 0, 1.2, 0.061], ['pw/SM_GasCan_Plastic_01', 0.24, 0, 1.2, 0.061]] }]
 ], { mid: true, s: 2 });
 var oi2 = strip('k', 10.9, -21.5, [
   ['Spray bench', 'SM_Workbench_Steel_01'],
@@ -449,7 +452,7 @@ AREAS.batt = {
     batt2,
     [SIGN, board('Parts board', 'board.h_batt', 10.6, -13.0, 1.1, 0.95), lights([[12.4, -12.2], [12.4, -9.6]]),
       floorSet('Spare totes', [pw('SM_Tote_Stack_01', 10.15, -13.0, 'b', { spots: 0, n: 2 })]),
-      up(nm('Golden engine'), { sign: 'gold' }, pw('SM_EngineStand_01', 13.4, -9.0, 'k', { spots: 0 }), { m: 'pw/SM_EngineBlock_V8_01', x: 13.4, z: -9.0, r: TURN.k, k: 1, y: 0.445, flat: 1 })],
+      up(nm('Golden engine'), { sign: 'gold' }, pw('SM_EngineStand_01' + GOLD, 13.4, -9.0, 'k', { spots: 0 }), { m: 'pw/SM_EngineBlock_V8_01' + GOLD, x: 13.4, z: -9.0, r: TURN.k, k: 1, y: 0.445, flat: 1 })],
     [put('Shop mat', 'SM_FloorMat_01', 12.0, -8.7, 'k', { spots: 0 }), put('Rolling stool', 'ShopStool_Rolling_01', 10.1, -9.0, 'k', { spots: 0 }),
       put('Steel bin', 'SM_TrashCan_Steel_01', 14.3, -8.7, 'k', { spots: 0 }), put('Wet floor sign', 'WetFloorSign_01', 11.2, -8.7, 'k', { spots: 0 })],
     [staff('Parts clerk', 13.5, -11.4, 'k'), HELP]
@@ -574,8 +577,8 @@ AREAS.tires = {
     ti1,
     tire2,
     [SIGN, board('Tire board', 'board.h_tires', -6.0, -5.0, 1.1, 0.95), lights([[-4.6, -11.6], [-4.6, -7.4]]),
-      floorSet('Tire pile', [pw('Tire_Stack_01', -2.0, -7.0, 's', { spots: 0, n: 2 })]),
-      up(nm('Golden tire'), { sign: 'gold' }, pw('Pallet_01', -2.4, -6.2, 's', { spots: 0 }), { m: 'pw/Tire_Stack_01', x: -2.4, z: -6.2, r: 0, k: 1.3, y: 0.061, flat: 1 })],
+      floorSet('Tire pile', [pw('Tire_Stack_01', -6.3, -6.4, 's', { spots: 0 })]),
+      up(nm('Golden tire'), { sign: 'gold' }, pw('Pallet_01', -2.4, -6.2, 's', { spots: 0 }), { m: 'pw/Tire_Stack_01' + GOLD, x: -2.4, z: -6.2, r: 0, k: 1.3, y: 0.061, flat: 1 })],
     [put('Shop mat', 'SM_FloorMat_01', -4.1, -5.1, 's', { spots: 0 }), put('Steel bin', 'SM_TrashCan_Steel_01', -6.4, -5.1, 's', { spots: 0 }),
       put('Parking stop', 'SM_ParkingStop_01', -4.1, -4.9, 's', { spots: 0 }), put('Wet floor sign', 'WetFloorSign_01', -2.0, -5.1, 's', { spots: 0 })],
     [staff('Tire clerk', -2.0, -9.5, 'n'), HELP]
@@ -616,7 +619,7 @@ AREAS.storage = {
     st1,
     st2,
     [SIGN, board('Storage board', 'board.h_storage', -11.2, -0.8, 1.1, 0.95), lights([[-12.2, -9.0], [-12.2, -4.0]]),
-      floorSet('Sawhorses', [pw('SM_Sawhorse_Wood_01', -10.5, -1.6, 'b', { spots: 0, n: 2 })]),
+      floorSet('Sawhorses', [pw('SM_Sawhorse_Wood_01', -10.5, -1.6, 'b', { spots: 0, n: 2 }), { m: 'pw/SM_Lumber_Stack_01', x: -10.5, z: -1.6, r: Math.PI / 2, y: 0.38, flat: 1 }]),
       dais('Golden cabinet', 'GarageCab_Tall_05', -10.6, -3.4, { k: 1.2 })],
     [put('Shop mat', 'SM_FloorMat_01', -12.2, -0.7, 's', { spots: 0 }), put('Steel bin', 'SM_TrashCan_Steel_01', -14.3, -0.6, 's', { spots: 0 }),
       put('Rag can', 'SM_OilyRagCan_01', -10.2, -0.7, 's', { spots: 0 }), put('Wet floor sign', 'WetFloorSign_01', -11.4, -0.8, 's', { spots: 0 })],
@@ -632,13 +635,14 @@ var WING = {
     visit: [],
     ups: [
       pack(nm('A welding table'), pw('SM_WeldingTable_01', 18.2, -6.0, 's', { spots: 0 }), pw('SM_ShopStool_01', 18.2, -5.3, 'n', { spots: 0 })),
-      pack(nm('A wire welder and a mat'), pw('SM_Welder_MIG_01', 19.3, -6.1, 's', { spots: 0 }), pw('SM_FloorMat_01', 19.0, -5.2, 's', { spots: 0 })),
+      pack(nm('A wire welder and a mat'), pw('SM_Welder_MIG_01', 19.3, -6.1, 's', { spots: 0 }), pw('SM_FloorMat_01%=yellow', 19.0, -5.2, 's', { spots: 0, y: 0.06 })),
       pack(nm('A welding helmet'), { m: 'pw/SM_WeldingHelmet_01', x: 17.95, z: -6.0, r: 0, k: 1.6, y: 0.426, flat: 1 }),
       pack(nm('Gas cylinders'), pw('SM_GasCylinder_01', 20.95, -7.7, 's', { spots: 0, n: 3 })),
       pack(nm('A gas cart'), pw('SM_OxyAcetylene_Cart_01', 20.2, -7.55, 's', { spots: 0 })),
       pack(nm('A stick welder and a sandblaster'), pw('SM_Welder_Stick_01', 16.7, -7.65, 's', { spots: 0 }), pw('SM_SandblastCabinet_01', 21.0, -4.2, 'n', { spots: 0 })),
-      pack(nm('An anvil and a shop press'), pw('SM_Anvil_Stump_01', 16.9, -3.7, 'n', { spots: 0 }), pw('SM_ShopPress_01', 19.3, -3.6, 'n', { spots: 0 })),
-      pack(nm('A fan, a heater and a screen'), pw('SM_FloorFan_Drum_01', 20.4, -3.65, 'n', { spots: 0 }), pw('SM_Heater_Torpedo_01', 21.2, -5.8, 'k', { spots: 0 }), pw('SM_WalkIn_StripCurtain_01', 17.4, -4.4, 's', { spots: 0 }))
+      pack(nm('An anvil, a press and a vise bench'), pw('SM_Anvil_Stump_01', 17.7, -3.7, 'n', { spots: 0 }), pw('SM_ShopPress_01', 19.3, -3.6, 'n', { spots: 0 }),
+        pw('SM_Workbench_Steel_01', 16.0, -5.6, 'b', { spots: 0, on: [['pw/SM_BenchVise_01', 0, 0, 1.6, 0.45]] })),
+      pack(nm('A fan, a heater and a screen'), pw('SM_FloorFan_Drum_01', 20.4, -3.65, 'n', { spots: 0 }), pw('SM_Heater_Torpedo_01', 21.2, -5.8, 'k', { spots: 0 }), pw('SM_WalkIn_StripCurtain_01', 17.3, -5.9, 'b', { spots: 0 }))
     ]
   },
   lounge: {
@@ -647,7 +651,7 @@ var WING = {
     ups: [
       pack(nm('Lockers'), pw('EmployeeLockers_3_01', 15.6, -9.2, 'b', { spots: 0 }), pw('EmployeeLockers_3_01', 15.6, -10.1, 'b', { spots: 0 })),
       pack(nm('A time clock and first aid'), KIT.wp('TimeClock_Wall_01', 15.32, -12.0, 'b', 0.3), KIT.wp('FirstAid_Box_Wall_01', 15.32, -12.7, 'b', 0.3)),
-      pack(nm('A job board and lockers'), KIT.wp('Menu_Board_Wall_01', 18.4, -13.9, 's', 0.35), pw('Locker_Double_01', 19.6, -8.3, 's', { spots: 0, n: 2 })),
+      pack(nm('A job board and lockers'), KIT.wp('Menu_Board_Wall_01', 18.4, -13.9, 's', 0.35), pw('Locker_Double_01', 19.6, -8.3, 'n', { spots: 0, n: 2 })),
       pack(nm('A work table'), pw('Workbench_Wood_01', 18.4, -11.2, 's', { spots: 0 })),
       pack(nm('Stools'), pw('SM_ShopStool_01', 17.9, -11.75, 's', { spots: 0 }), pw('SM_ShopStool_01', 18.9, -11.75, 's', { spots: 0 }), pw('SM_ShopStool_01', 17.9, -10.65, 'n', { spots: 0 }),
         pw('SM_ShopStool_01', 18.9, -10.65, 'n', { spots: 0 })),
