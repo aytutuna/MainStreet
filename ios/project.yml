@@ -57,6 +57,8 @@ targets:
         buildPhase: resources
       - path: ../diner.js
         buildPhase: resources
+      - path: ../hardware.js
+        buildPhase: resources
       - path: ../land.js
         buildPhase: resources
       - path: ../walls.js

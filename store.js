@@ -4,6 +4,7 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { clone } from 'three/addons/utils/SkeletonUtils.js';
 import { PLAN as SUPER, PW, NATURE, HOMES } from './plan.js';
 import { DINER } from './diner.js';
+import { HARDWARE } from './hardware.js';
 import * as LAND from './land.js';
 import { buildWalls } from './walls.js';
 
@@ -29,7 +30,7 @@ var STREET = 75;
 var WALKS = [-9.5, 9.5];
 // the building, its doors and its checkout bank are the same for every store type; what stands inside is a type's own plan
 var PLAN = SUPER;
-var PLANS = { super: SUPER, diner: DINER };
+var PLANS = { super: SUPER, diner: DINER, hardware: HARDWARE };
 var CROSS = SUPER.bank.cross;
 var EXIT = SUPER.bank.exit;
 // the kits are drawn at different sizes; these bring them to the shop kit's people
@@ -1935,7 +1936,8 @@ function board(e) {
 var DEPT = { produce: '#3f9e47', bakery: '#d98a3d', dairy: '#4a8fd6', meat: '#c8453d', frozen: '#4cb6d8', pantry: '#a87a3d',
   snacks: '#e0592f', toys: '#e04a8e', tech: '#5d6ad6', kitchen: '#d9a21f', clothes: '#a05cc4', home: '#7a9a5a', office: '#3a7a9a',
   pets: '#e8855a', sports: '#2f9e8a', tools: '#d96a20', auto: '#5c6270', seasonal: '#c43a4a', grill: '#c8453d', fry: '#e08a1e', soda: '#3f9ed8',
-  pizza: '#d6402f', coffee: '#8a5a3c', salad: '#4f9a40', takeout: '#d9a21f', dining: '#a8453f' };
+  pizza: '#d6402f', coffee: '#8a5a3c', salad: '#4f9a40', takeout: '#d9a21f', dining: '#a8453f', hand: '#d98a1f', paint: '#2f9e9a', oil: '#8a9a2a', batt: '#c8453d', lawn: '#4f9a40',
+  power: '#6a5acd', tires: '#4a4f5a', storage: '#b0703c' };
 var signIcons = {};
 
 function star(g, x, y, r) {
@@ -2974,17 +2976,7 @@ function buildPatio() {
   var x1 = GARDEN[1];
   var z0 = GARDEN[2];
   var z1 = GARDEN[3];
-  var step = (x1 - x0) / 5;
-  lv[1].slab(flat(0xd9cdb8), x0, x1, z0, z1, 0.006, 0.02);
-  lv[1].slab(flat(PAVE), x0 + 2 * step, x0 + 3 * step, z1, LOT[0], 0.004, 0.02);
-  for (var i = 0; i < 5; i++) {
-    if (i !== 2) lv[1].add('forest/fence', x0 + (i + 0.5) * step, z1, 0);
-    lv[1].add('forest/fence', x0 + (i + 0.5) * step, z0, 0);
-    lv[1].add('forest/fence', x0, z0 + (i + 0.5) * (z1 - z0) / 5, Math.PI / 2);
-  }
-  [-0.74, 0.74].forEach(function (o) { lv[1].block(flat(0x50566a), GATE_X + o - 0.03, GATE_X + o + 0.03, z1 - 0.03, z1 + 0.03, 0, 1.0); });
-  lv[1].block(flat(0x2f3446), GATE_X - 0.8, GATE_X + 0.8, z1 - 0.04, z1 + 0.02, 0.78, 1.08);
-  boardAtlas(lv[1], { text: 'board.patio', x: GATE_X, y: 0.93, z: z1 + 0.03, w: 1.5, h: 0.28 });
+  yardShell(lv, 0xd9cdb8, 'board.patio');
   // a table and two chairs: the chairs north and south of it, facing it
   function set(l, x, z) {
     lv[l].add('pw/Table_Cafe_Round_01', x, z, 0);
@@ -2999,6 +2991,32 @@ function buildPatio() {
   for (var t = 0; t < 4; t++) lv[4].add('furn/pottedPlant', x0 + 0.9 + t * 0.9, -1.85, t);
   lamp(lv[4], 'roads/light-square', x0 + 0.2, -1.85, Math.PI);
   lamp(lv[4], 'roads/light-square', x1 - 0.2, -1.85, Math.PI);
+  finishYard(lv);
+}
+
+// the fenced yard outside the west wall, as the garden center and the patio have it: the slab, the fence with the gate on
+// the lot, the board over the gate
+function yardShell(lv, slab, text) {
+  var x0 = GARDEN[0];
+  var x1 = GARDEN[1];
+  var z0 = GARDEN[2];
+  var z1 = GARDEN[3];
+  var step = (x1 - x0) / 5;
+  lv[1].slab(flat(slab), x0, x1, z0, z1, 0.006, 0.02);
+  lv[1].slab(flat(PAVE), x0 + 2 * step, x0 + 3 * step, z1, LOT[0], 0.004, 0.02);
+  for (var i = 0; i < 5; i++) {
+    if (i !== 2) lv[1].add('forest/fence', x0 + (i + 0.5) * step, z1, 0);
+    lv[1].add('forest/fence', x0 + (i + 0.5) * step, z0, 0);
+    lv[1].add('forest/fence', x0, z0 + (i + 0.5) * (z1 - z0) / 5, Math.PI / 2);
+  }
+  [-0.74, 0.74].forEach(function (o) { lv[1].block(flat(0x50566a), GATE_X + o - 0.03, GATE_X + o + 0.03, z1 - 0.03, z1 + 0.03, 0, 1.0); });
+  lv[1].block(flat(0x2f3446), GATE_X - 0.8, GATE_X + 0.8, z1 - 0.04, z1 + 0.02, 0.78, 1.08);
+  boardAtlas(lv[1], { text: text, x: GATE_X, y: 0.93, z: z1 + 0.03, w: 1.5, h: 0.28 });
+}
+
+// the yard's own till outside the gate, its cashier on the east side and the one paying on the west; the next in line
+// waits behind on the paving
+function finishYard(lv) {
   var pl = finishPlace('garden', lv);
   pl.add = true;
   var desk = mesh('arcade/cash-register', TILL_G[0], TILL_G[1], -Math.PI / 2);
@@ -3011,7 +3029,29 @@ function buildPatio() {
   var qx = TILL_G[0] - 0.55;
   gardenTill = { k: 'garden', till: [TILL_G[0], 0.8, TILL_G[1]], cashier: cashier, head: [TILL_G[0] + 0.5, TILL_G[1]],
     spot: function (n) { return n ? [qx, TILL_G[1] + 0.5 * n, Math.PI] : [qx, TILL_G[1], Math.PI / 2]; } };
-  pl.pick = addPick('garden', (x0 + x1) / 2, (z0 + z1) / 2, x1 - x0, z1 - z0);
+  pl.pick = addPick('garden', (GARDEN[0] + GARDEN[1]) / 2, (GARDEN[2] + GARDEN[3]) / 2, GARDEN[1] - GARDEN[0], GARDEN[3] - GARDEN[2]);
+}
+
+// The hardware store's service bay is the same yard as a work yard: a slab with cones round the bare site, then the
+// lifts with a car on each, tires and jacks, and the tire changer and compressor
+function buildBay() {
+  var lv = levels(4);
+  var x0 = GARDEN[0];
+  var x1 = GARDEN[1];
+  [[x0 + 0.6, -1.5], [x1 - 0.6, -1.5], [x0 + 0.6, 1.5]].forEach(function (p) { lv[0].add('roads/construction-cone', p[0], p[1], 0); });
+  yardShell(lv, 0x7d838f, 'board.h_bay');
+  lv[1].block(flat(0xe8b923), x0 + 0.3, x1 - 0.3, -1.45, -1.4, 0.022, 0.026);
+  lv[2].add('pw/SM_CarLift_2Post_01', x0 + 1.6, -0.45, 0);
+  lv[2].add('car/sedan', x0 + 1.6, -0.45, Math.PI / 2);
+  lv[3].add('pw/SM_CarLift_Scissor_01', x1 - 1.1, -0.3, 0);
+  lv[3].add('car/hatchback-sports', x1 - 1.1, -0.3, Math.PI / 2);
+  [[x0 + 0.45, 1.5], [x0 + 0.85, 1.5]].forEach(function (p) { lv[3].add('pw/SM_JackStand_01', p[0], p[1], 0); });
+  lv[3].add('pw/Tire_Stack_01', x0 + 0.5, 0.7, 0);
+  lv[4].add('pw/SM_TireChanger_01', x1 - 0.6, 1.5, -Math.PI / 2);
+  lv[4].add('pw/SM_Compressor_Pancake_01', x1 - 0.5, 0.5, -Math.PI / 2);
+  lamp(lv[4], 'roads/light-square', x0 + 0.2, -1.85, Math.PI);
+  lamp(lv[4], 'roads/light-square', x1 - 0.2, -1.85, Math.PI);
+  finishYard(lv);
 }
 
 // The east wing: four rooms along the east wall, each a place whose levels add one piece from plan.js. Before a room is
@@ -6808,6 +6848,7 @@ function buildType(key) {
   try {
     buildAreas();
     if (PLAN.patio) buildPatio();
+    else if (PLAN.yard) buildBay();
     else buildGarden();
     buildFront();
     buildWing();
