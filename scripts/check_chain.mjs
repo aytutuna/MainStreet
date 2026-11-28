@@ -713,6 +713,59 @@ if (run('nStores()') !== run('MAX_STORES')) fail('the chain grew past ' + run('M
   if (run('here().t') !== 'diner' || run('PL.hall.name') !== 'Counter' || run('opened()') !== 8 || !aliased()) fail('the diner did not come back as saved');
 }
 
+// the Hardware and Auto store is the third store type: it opens after the diner with its own eight departments, six places
+// in its own words, earns like the model says and saves as the type it is
+{
+  run('reset()');
+  run('fillStore()');
+  run('S.cash = 1e9');
+  run('move()');
+  run('fillStore()');
+  run('S.cash = 1e12');
+  if (run('nextType().id') !== 'hardware') fail('the type after the diner is not hardware');
+  if (!run('move()') || run('here().t') !== 'hardware' || run('S.cur') !== 2 || run('nStores()') !== 3 || !aliased()) fail('a full diner did not open the hardware store as store three');
+  const depts = run('kind().depts');
+  if (depts.join() !== 'hand,paint,oil,batt,lawn,power,tires,storage') fail('the hardware store has the departments ' + depts.join());
+  if (depts.some(id => run('ITEMS.' + id + '.of.length') !== 30 || run('BZ.' + id + '.items.reduce(function (n, x) { return n + x.at.length; }, 0)') !== 30)) fail('a hardware department does not have 30 upgrades');
+  if (run('opened()') !== 1 || !run("has('hand')") || run("avail('oil')") || !run("avail('paint')")) fail('the hardware store does not start with hand tools alone');
+  for (const other of ['produce', 'grill']) if (run("avail('" + other + "')") || run("buy('" + other + "', 0)") !== null) fail(other + ' could be bought in the hardware store');
+  for (let i = 1; i < depts.length; i++) {
+    run('S.cash = 1e30');
+    run("S.b['" + depts[i - 1] + "'] = atLevel('" + depts[i - 1] + "', 30)");
+    if (!run("avail('" + depts[i] + "')")) fail(depts[i] + ' did not open after ' + depts[i - 1]);
+    if (!run("buy('" + depts[i] + "', 0)")) fail(depts[i] + ' could not be bought');
+  }
+  const pd = run('Object.keys(kind().pd).sort()');
+  if (pd.join() !== 'dock,garden,hall,lot,lounge,rest') fail('the hardware store has the places ' + pd.join());
+  if (run('PL.hall.name') !== 'Counter' || run('PL.garden.name') !== 'Service Bay' || run('PL.rest.name') !== 'Welding Corner' || run('PL.lounge.name') !== 'Break Room' || run('PL.hall.items.length') !== 3) fail('a place is not worded as the hardware store words it');
+  if (run('PL.lot.after') !== 'paint' || run('PL.dock.after') !== 'hand' || run('PL.garden.after') !== 'tires' || run('PL.rest.after') !== 'lawn' || run('PL.lounge.after') !== 'storage') fail('a hardware place comes after the wrong department');
+  run('S.cash = 1e30');
+  if (run("placeCost('taxi')") !== 0 || run("buyPlace('taxi', 0)") !== null) fail('a taxi stand could be bought in the hardware store');
+  run('view(1)');
+  if (run('PL.hall.name') !== 'Counter' || run('PL.garden.name') !== 'Patio') fail('the diner lost its wording after the hardware store was on screen');
+  run('view(0)');
+  if (run('PL.hall.name') !== 'Checkouts' || run('PL.garden.name') === 'Service Bay') fail('the supercenter lost its wording after the hardware store was on screen');
+  run('view(2)');
+  run('S.cs[2].b = {}');
+  run('fillStore()');
+  if (run('S.pl.taxi') !== 0 || run('S.pl.serv') !== 0 || run('S.pl.head') !== 0) fail('a hardware store that was filled has a place it does not have');
+  if (run('S.pl.hall') !== 10 || run('S.pl.rest') !== 8 || run('S.pl.lounge') !== 10 || run('S.pl.garden') !== 4) fail('a filled hardware store is missing a place level');
+  if (run('opened()') !== 8 || !(run('rate()') > 0)) fail('a filled hardware store does not earn');
+  const a1 = run('S.all');
+  const model = run('rate()');
+  play(600);
+  const got = run('S.all') - a1;
+  if (!near(got, model * 600 + run('offRate()') * 600, 0.12)) fail('a filled hardware store on screen earned ' + got + ' in 600 s, the model says ' + (model + run('offRate()')) * 600);
+  // the third store pays more than the second by its type's factors
+  if (!(run('TY.hardware.mul') > run('TY.diner.mul') && run('TY.hardware.cost') > run('TY.diner.cost'))) fail('the hardware store is not worth more than the diner');
+  run('save()');
+  const parsed = JSON.parse(store[key]);
+  if (!parsed.cs[2] || parsed.cs[2].t !== 'hardware') fail('the hardware store was saved as another type');
+  run('S = fresh()');
+  run('load()');
+  if (run('nStores()') !== 3 || run('here().t') !== 'hardware' || run('PL.garden.name') !== 'Service Bay' || run('opened()') !== 8 || !aliased()) fail('the hardware store did not come back as saved');
+}
+
 // goals read the same in every store: a goal about a department reads the first store whose type has it, and a done goal
 // stays done on the diner's screen
 {
