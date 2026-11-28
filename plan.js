@@ -1359,6 +1359,8 @@ export var SHELL = {
   // what people and cars cannot cross: the walkable grid (its corner x, z and the cells across and down; a cell is 0.25), the
   // walls (x0, x1, z0, z1), the back wall's reach [from, to, end marker] and the front's, and the gaps carved through them
   // (the doorway into the wing)
+  // the doorway into the wing shoppers carry nothing through: the spot outside it and the spot just inside
+  wingDoor: { out: [14.2, 1], in: [15.6, 1] },
   nav: { grid: [-15, -22.5, 148, 100], walls: [[-16, -14.7, -23, 3], [14.7, 15.3, -23, 3], [21.5, 22.4, -23, 3]], back: [-16, 16, 16.5], front: [-16, 17.5, 22.4], gaps: [[14.3, 15.9, 0.55, 1.45]] },
   // the lot between the front and the sidewalk: its z range, the walkways' x, the aisle behind the bays, the drives' x,
   // the service road's x, where the drives and the service road meet the street, and the yard line trucks turn on
