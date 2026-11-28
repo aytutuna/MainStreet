@@ -742,8 +742,8 @@ var stockRacks = [];
   for (var sx = -10.6; sx < 11; sx += 1.85) if ([-6, 0, 6].every(function (a) { return Math.abs(sx - a) > 1.3; })) stockRacks.push({ m: 'pw/SM_Shelving_HD_Loaded_01', x: sx, z: rz, r: i ? Math.PI : 0, k: 2 });
 });
 DECOR.stock = cat(stockRacks, [
-  { m: 'car/tractor-shovel', x: -7.4, z: -29.6, r: 1.3, k: 1 }, { m: 'car/tractor-shovel', x: 6.2, z: -29.4, r: -1.6, k: 1 },
-  { text: 'board.h_receiving', x: 1.6, z: -29.0, r: 0, y: 0.9, w: 2.2, h: 0.5, post: true },
+  { m: 'car/tractor-shovel', x: -6.0, z: -27.4, r: 0, k: 1 }, { m: 'car/tractor-shovel', x: 6.05, z: -27.4, r: 0, k: 1 },
+  { text: 'board.h_receiving', x: 0.5, z: -29.0, r: 0, y: 2.0, w: 2.2, h: 0.5, post: true },
   pw('PalletJack_01', -4.6, -29.4, 's', { spots: 0 }), pw('Pallet_01', 3.4, -29.2, 's', { spots: 0 }), pw('PalletLoad_Cases_01', 3.4, -29.2, 's', { spots: 0 })
 ]);
 
@@ -758,7 +758,7 @@ DECOR.out = cat(lumberOut, [
   { text: 'board.h_trucks', x: 16.5, z: -35.2, r: 0, y: 1.05, w: 2.6, h: 0.8, post: true },
   { text: 'board.h_lumber', x: 22.0, z: -8.5, r: 0, y: 2.0, w: 3.4, h: 0.9, post: true },
   { m: 'car/tractor-shovel', x: 22.0, z: -22.4, r: 3.14, k: 1 },
-  pw('Pallet_01', 28.2, -12.0, 's', { spots: 0 }), pw('PalletLoad_Water_01', 28.2, -12.0, 's', { spots: 0 }), pw('Pallet_01', 28.2, -14.0, 's', { spots: 0 }), pw('PalletLoad_Cases_01', 28.2, -14.0, 's', { spots: 0 }),
+  pw('Pallet_01', 27.4, -12.0, 's', { spots: 0 }), pw('PalletLoad_Water_01', 27.4, -12.0, 's', { spots: 0 }), pw('Pallet_01', 27.4, -14.0, 's', { spots: 0 }), pw('PalletLoad_Cases_01', 27.4, -14.0, 's', { spots: 0 }),
   pw('PropaneCage_01', -28.6, -20.0, 's', { spots: 0 }), pw('PropaneCage_01', -26.6, -20.0, 's', { spots: 0 }), pw('PropaneCage_01', -24.6, -20.0, 's', { spots: 0 }),
   pw('SM_Dumpster_01', -20.4, -29.6, 'b', { spots: 0 }),
   { box: [-29.6, -26.0, -29.8, -27.0, 0, 1.0], c: 0x4a8a4a }, { box: [-29.7, -25.9, -29.9, -26.9, 1.0, 1.15], c: 0x2f5f33 },
@@ -779,13 +779,13 @@ var SHELL_HW = {
   front: FRONT_Z, back: -25, edge: 18, wing: 18.4, sb: -31.5, lane: -25.6,
   nav: { grid: [-31, -25, 200, 86], walls: [[-18.5, -17.5, -26, -3.5], [17.5, 18.5, -26, -3.5]], back: [-19, 19, 99], front: [-19, 19.5, 19.5],
     gaps: [[-18.8, -17.2, -8.2, -7.0]] },
-  lot: [-2.2, 9.6], lotX: [-26, 26], walks: [0], aisle: 0.5, drive: 27.6, road: 30, curb: 10.2, yard: -37.2,
+  lot: [-2.2, 9.6], lotX: [-26, 26], walks: [0], aisle: 0.5, drive: 27.6, road: 29.4, curb: 10.2, yard: -37.2,
   stand: 0, busX: 6.5,
   spots: { lot: [0, 3.5], taxi: [0, 10], dock: [0, -30.5] },
   tags: { hall: [0, 1.3, -5.2], lot: [-4, 0.8, 3.5], taxi: [0, 1.2, 10.2], dock: [0, 1.0, -30.8] },
-  garden: { rect: [-30.5, -19.4, -17, -3.0], gate: -24.95, till: [-23.5, -2.7], lane: -29.6 },
+  garden: { rect: [-30.5, -19.4, -17, -3.0], gate: -24.95, till: [-23.5, -2.45], lane: -29.6 },
   wingDoor: { out: [17.2, -8], in: [18.6, -8], bar: false },
-  warehouse: { court: [-30.5, 32.5, -40], canopy: [18.6, 25.2, -22, -9], pylon: [-14, 3.7], westDoor: [-7.6, 1.2], bays: [[-2.2, -0.6, -1, 0.5], [1.6, 3.2, 1, 0.5], [4.2, 5.8, -1, 6.9], [8.0, 9.6, 1, 6.9]] },
+  warehouse: { court: [-30.5, 30.8, -40], canopy: [18.6, 25.2, -22, -9], pylon: [-14, 3.7], westDoor: [-7.6, 1.2], bays: [[-2.2, -0.6, -1, 0.5], [1.6, 3.2, 1, 0.5], [4.2, 5.8, -1, 6.9], [8.0, 9.6, 1, 6.9]] },
   site: [[-31.5, 34, -43.5, 9.4], [34, 38, -26, -6], [-38, -31.5, -26, -6]],
   bounds: [-31, 31, -41, 16], zoom: [8, 150], fit: 36, turn: Math.PI / 4,
   light: { target: [0, -18], at: [-19, 23, 9], box: [-34, 34, 36, -36] },
