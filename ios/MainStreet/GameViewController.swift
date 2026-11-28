@@ -181,7 +181,7 @@ final class GameViewController: UIViewController, WKNavigationDelegate, WKUIDele
 
     override func viewDidLayoutSubviews() {
         super.viewDidLayoutSubviews()
-        guard #available(iOS 26.0, *), UIDevice.current.userInterfaceIdiom == .pad else { return }
+        guard #available(iOS 26.0, *) else { return }
         NSLog("WCINSET idiom=%d sa=%@ saV=%@ saH=%@ mV=%@ mH=%@ bounds=%@ win=%@", UIDevice.current.userInterfaceIdiom.rawValue, NSCoder.string(for: view.safeAreaInsets), NSCoder.string(for: view.edgeInsets(for: .safeArea(cornerAdaptation: .vertical))), NSCoder.string(for: view.edgeInsets(for: .safeArea(cornerAdaptation: .horizontal))), NSCoder.string(for: view.edgeInsets(for: .margins(cornerAdaptation: .vertical))), NSCoder.string(for: view.edgeInsets(for: .margins(cornerAdaptation: .horizontal))), NSCoder.string(for: view.bounds), NSCoder.string(for: view.window?.frame ?? .zero))
         let top = view.edgeInsets(for: .safeArea(cornerAdaptation: .vertical)).top
         if top != controlsInset {
