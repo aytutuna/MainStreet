@@ -283,16 +283,16 @@ AREAS.fry = {
     fr2,
     [SIGN, board('Fry menu', 'board.d_fry', 10.7, -14.0, 1.1, 0.95), lights([[12.0, -20.4], [12.0, -16.2]]),
       up(nm('Heat lamps'), hang('SM_Light_Heat_Bulb_Cord_01', 13.4, -18.6, 0, 1.2), hang('SM_Light_Heat_Bulb_Cord_01', 13.4, -17.8, 0, 1.2)),
-      up(nm('Golden fryer'), { sign: 'gold' }, pw('SM_Fryer_Double_10', 14.325, -16.7, 'k', { spots: 0 }), hang('SM_Hood_Canopy_10', 14.7, -16.7, -Math.PI / 2, 1.0))],
-    [put('Oil jugs', 'SM_OilJug_Fryer_01', 14.45, -17.4, 'k', { s: 0, n: 3 }), put('Used oil caddy', 'SM_UsedOil_Caddy_01', 14.4, -15.2, 'k', { s: 0 }),
-      put('Fry mat', 'SM_Mat_AntiFatigue_01', 13.6, -19.0, 'k', { s: 0 }), put('Sanitizer bucket', 'SM_SanitizerBucket_01', 14.4, -14.2, 'k', { s: 0 })],
+      up(nm('Golden fryer'), { sign: 'gold' }, pw('SM_Fryer_Double_10', 14.51, -16.7, 'k', { spots: 0 }), hang('SM_Hood_Canopy_10', 14.7, -16.7, -Math.PI / 2, 1.0))],
+    [put('Oil jugs', 'SM_OilJug_Fryer_01', 14.45, -17.4, 'k', { spots: 0, n: 3 }), put('Used oil caddy', 'SM_UsedOil_Caddy_01', 14.4, -15.2, 'k', { spots: 0 }),
+      put('Fry mat', 'SM_Mat_AntiFatigue_01', 13.6, -19.0, 'k', { spots: 0 }), put('Sanitizer bucket', 'SM_SanitizerBucket_01', 14.4, -14.2, 'k', { spots: 0 })],
     [staff('Fry cook', 13.4, -20.9, 'b'), HELP]
   ])
 };
 
 // Soda fountain: syrups and taps along the east wall, a counter with stools in front of it
 var so0 = strip('k', 14.7, -13.1, [
-  ['Syrup rack', 'SM_BagInBox_Rack_01', { s: 1 }],
+  ['Syrup rack', 'SM_BagInBox_Rack_01', { s: 0 }],
   ['Ice machine', 'SM_IceMachine_Bin_01', { s: 0 }],
   ['Back bar cooler', 'SM_BackBar_Cooler_15', { s: 0 }],
   ['Root beer tap', 'SM_Kegerator_01', { s: 0 }],
@@ -310,6 +310,10 @@ var so1 = strip('k', 12.7, -12.9, [
 var so2 = strip('b', 11.75, -12.8, ['First stool', 'Second stool', 'Third stool', 'Fourth stool', 'Fifth stool', 'Sixth stool', 'Seventh stool'].map(function (n) {
   return [n, 'SM_BarStool_Diner_01', { s: 0, gap: 0.18 }];
 }));
+// the first piece bought is the fountain counter, which has a front a shopper can stand at
+var t4 = so0[0];
+so0[0] = so1[0];
+so1[0] = t4;
 AREAS.soda = {
   cx: 12.2, cz: -10.9, vacant: [9.7, 14.7, -13.4, -8.4], sign: [12.2, -9.1, 1.9],
   floor: [floor(9.7, 14.7, -13.4, -8.4, 'checker')],
