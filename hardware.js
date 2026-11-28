@@ -295,7 +295,7 @@ var AREAS = {};
 // front aisle; every department's pieces run front to back in three runs. Lawn and Garden has its bay in the garden center
 var BX = [-17.8, -12.6, -7.4, -2.2, 3.0, 8.2, 13.4];
 var BZ0 = -23.2;
-var BZF = -10.7;
+var BZF = -15.5;
 var LX = -25.0;
 var LZ0 = -16.8;
 var LZF = -8.6;
@@ -591,28 +591,28 @@ AREAS.tires = {
 // Storage and garage: cabinets and lockers along the west wall, cabinet islands and totes beside them
 var st0 = strip('b', BX[6] + 0.05, BZ0 + 0.4, [
   ['Garage shelf one', 'SM_Shelving_HD_Loaded_01'],
-  ['Garage shelf two', 'SM_Shelving_HD_Loaded_01', { gap: 0.8 }],
-  ['Locker pair', 'Locker_Double_01', { gap: 0.8 }],
-  ['Tall cabinet', 'GarageCab_Tall_05', { gap: 0.8 }],
-  ['Garage shelf three', 'SM_Shelving_HD_Loaded_01', { gap: 0.8 }],
-  ['Door cabinet', 'SM_GarageCab_Base_Door_10', { gap: 0.8 }],
-  ['Parts bench', 'SM_Workbench_Backboard_01', { gap: 0.8, on: [['pw/PartsBin_01', -0.3, 0.05, 2.4, 0.45], ['pw/PartsBin_01', -0.1, 0.05, 2.4, 0.45], ['pw/PartsBin_01', 0.1, 0.05, 2.4, 0.45], ['pw/PartsBin_01', 0.3, 0.05, 2.4, 0.45]] }]
+  ['Garage shelf two', 'SM_Shelving_HD_Loaded_01', { gap: 0.25 }],
+  ['Locker pair', 'Locker_Double_01', { gap: 0.25 }],
+  ['Tall cabinet', 'GarageCab_Tall_05', { gap: 0.25 }],
+  ['Garage shelf three', 'SM_Shelving_HD_Loaded_01', { gap: 0.25 }],
+  ['Door cabinet', 'SM_GarageCab_Base_Door_10', { gap: 0.25 }],
+  ['Parts bench', 'SM_Workbench_Backboard_01', { gap: 0.25, on: [['pw/PartsBin_01', -0.3, 0.05, 2.4, 0.45], ['pw/PartsBin_01', -0.1, 0.05, 2.4, 0.45], ['pw/PartsBin_01', 0.1, 0.05, 2.4, 0.45], ['pw/PartsBin_01', 0.3, 0.05, 2.4, 0.45]] }]
 ]);
 var st1 = strip('b', BX[6] + 1.75, BZ0 + 0.9, [
   ['Door cabinet island', 'SM_GarageCab_Base_Door_10', { n: 2, top: [['SM_GarageCab_Top_20']] }],
-  ['Drawer cabinet island', 'SM_GarageCab_Base_Drawers_05', { gap: 0.8, n: 4, top: [['SM_GarageCab_Top_20']] }],
-  ['Steel workbench', 'SM_Workbench_Steel_01', { gap: 0.8 }],
-  ['Wood workbench', 'Workbench_Wood_01', { gap: 0.8 }],
-  ['Tote stacks', 'SM_Tote_Stack_01', { gap: 0.8, n: 3 }]
+  ['Drawer cabinet island', 'SM_GarageCab_Base_Drawers_05', { gap: 0.25, n: 4, top: [['SM_GarageCab_Top_20']] }],
+  ['Steel workbench', 'SM_Workbench_Steel_01', { gap: 0.25 }],
+  ['Wood workbench', 'Workbench_Wood_01', { gap: 0.25 }],
+  ['Tote stacks', 'SM_Tote_Stack_01', { gap: 0.25, n: 3 }]
 ], { mid: true, s: 2 });
 var st2 = strip('k', BX[6] + 3.65, BZ0 + 0.6, [
   ['Locker bank', 'Locker_Double_01', { n: 2 }],
-  ['Plastic crates', 'SM_Crate_Plastic_01', { gap: 0.8, n: 3 }],
-  ['Wood crates', 'SM_Crate_Wood_01', { gap: 0.8, n: 2 }],
-  ['Lidded totes', 'SM_Tote_Lidded_01', { gap: 0.8, n: 2 }],
-  ['Shop stools', 'SM_ShopStool_01', { gap: 0.8, n: 3 }],
-  ['Parts drawers', 'SM_GarageCab_Base_Drawers_05', { gap: 0.8, n: 3 }],
-  ['Folding chairs', 'SM_FoldingChair_01', { gap: 0.8, n: 2 }]
+  ['Plastic crates', 'SM_Crate_Plastic_01', { gap: 0.25, n: 3 }],
+  ['Wood crates', 'SM_Crate_Wood_01', { gap: 0.25, n: 2 }],
+  ['Lidded totes', 'SM_Tote_Lidded_01', { gap: 0.25, n: 2 }],
+  ['Shop stools', 'SM_ShopStool_01', { gap: 0.25, n: 3 }],
+  ['Parts drawers', 'SM_GarageCab_Base_Drawers_05', { gap: 0.25, n: 3 }],
+  ['Folding chairs', 'SM_FoldingChair_01', { gap: 0.25, n: 2 }]
 ], { mid: true });
 AREAS.storage = {
   cx: BX[6] + 2.2, cz: (BZ0 + BZF) / 2, vacant: [BX[6], BX[6] + 4.4, BZ0, BZF], sign: [BX[6] + 2.2, BZF - 0.7, 1.9],
@@ -707,30 +707,43 @@ var DECOR = {
 
 // tall racking across the back of the hall, open at the stock doors, and the front end: mats at the way in, benches, pallet
 // displays in the corners and a yellow line along the aisle
+var promo = [];
+// a promotion row in front of each bay: pallets, tires, lumber and planters between the bay floor and the aisle line
+[['cases', 'water'], ['water', 'lumber'], ['tires', 'cases'], ['lumber', 'tires'], ['propane', 'water'], ['cases', 'propane'], ['planters', 'lumber']].forEach(function (kinds, i) {
+  kinds.forEach(function (k, j) {
+    var x = BX[i] + 1.2 + j * 2.1;
+    var z = -13.0 + (j ? 0.3 : -0.2);
+    if (k === 'cases' || k === 'water') promo.push(pw('Pallet_01', x, z, 's', { spots: 0 }), pw(k === 'cases' ? 'PalletLoad_Cases_01' : 'PalletLoad_Water_01', x, z, 's', { spots: 0 }));
+    else if (k === 'tires') promo.push(pw('Tire_Stack_01', x - 0.3, z, 's', { spots: 0 }), pw('Tire_Stack_01', x + 0.4, z, 's', { spots: 0 }));
+    else if (k === 'lumber') promo.push(pw('SM_Sawhorse_Wood_01', x, z, 's', { spots: 0, n: 2 }), { m: 'pw/SM_Lumber_Stack_01', x: x, z: z, r: 0, y: 0.38, flat: 1 });
+    else if (k === 'propane') promo.push(pw('PropaneCage_01', x, z, 's', { spots: 0 }));
+    else promo.push(pw('Planter_Tall_01', x - 0.4, z, 's', { spots: 0 }), pw('Planter_Tall_01', x + 0.4, z, 's', { spots: 0 }));
+  });
+});
 var backRacks = [];
 for (var rx = -16.9; rx < 17; rx += 1.85) {
   if (DOORS.every(function (d) { return Math.abs(rx - d) > 2.1; })) backRacks.push({ m: 'pw/SM_Shelving_HD_Loaded_01', x: rx, z: -24.6, r: 0, k: 2 });
 }
-DECOR.front = cat(backRacks, [
+DECOR.front = cat(backRacks, promo, [
   { patch: rbox(-1.6, 1.6, FRONT_Z - 1.2, FRONT_Z - 0.2, 0.25), finish: 0x5a5f69 },
   { text: 'board.h_order', x: -5.4, z: -7.95, r: 0, y: 1.75, w: 2.0, h: 0.5, post: true },
   pw('Tire_Stack_01', -3.6, FRONT_Z - 0.7, 's', { spots: 0 }), pw('Tire_Stack_01', 3.6, FRONT_Z - 0.7, 's', { spots: 0 }),
   { m: 'furn/bench', x: -4.8, z: FRONT_Z - 0.5, r: Math.PI, k: 1.5 }, { m: 'furn/bench', x: 4.8, z: FRONT_Z - 0.5, r: Math.PI, k: 1.5 },
   pw('VendingMachine_Drink_01', 6.2, FRONT_Z - 0.6, 'n', { spots: 0 }), pw('VendingMachine_Drink_01', -6.2, FRONT_Z - 0.6, 'n', { spots: 0 }),
-  pw('SM_Sign_AFrame_Blank_01', -2.9, FRONT_Z - 1.4, 's', { spots: 0 }), pw('SM_Sign_AFrame_Blank_01', 2.9, FRONT_Z - 1.4, 's', { spots: 0 }),
+  pw('SM_Sign_AFrame_Blank_01', -2.6, FRONT_Z - 0.45, 's', { spots: 0 }), pw('SM_Sign_AFrame_Blank_01', 2.6, FRONT_Z - 0.45, 's', { spots: 0 }),
   room(-17.4, 17.4, -10.45, -10.35, 0xe8b923),
   pw('Pallet_01', -16.2, -8.6, 's', { spots: 0 }), pw('PalletLoad_Cases_01', -16.2, -8.6, 's', { spots: 0 }), pw('Tire_Stack_01', -14.6, -8.8, 's', { spots: 0 }),
   pw('Pallet_01', 15.8, -9.0, 's', { spots: 0 }), pw('PalletLoad_Water_01', 15.8, -9.0, 's', { spots: 0 }), pw('SM_HandTruck_01', 17.0, -8.4, 's', { spots: 0 })
 ]);
 
-// the stockroom: two double rows of tall racking, forklifts in the aisle by the docks and the receiving sign
+// the stockroom: two back-to-back rows of tall racking with forklift aisles at x 0 and +-6, forklifts by the docks and the receiving sign
 var stockRacks = [];
 [-27.0, -27.8].forEach(function (rz, i) {
-  for (var sx = -10.6; sx < 11; sx += 1.85) stockRacks.push({ m: 'pw/SM_Shelving_HD_Loaded_01', x: sx, z: rz, r: i ? Math.PI : 0, k: 2 });
+  for (var sx = -10.6; sx < 11; sx += 1.85) if ([-6, 0, 6].every(function (a) { return Math.abs(sx - a) > 1.3; })) stockRacks.push({ m: 'pw/SM_Shelving_HD_Loaded_01', x: sx, z: rz, r: i ? Math.PI : 0, k: 2 });
 });
 DECOR.stock = cat(stockRacks, [
   { m: 'car/tractor-shovel', x: -7.4, z: -29.6, r: 1.3, k: 1 }, { m: 'car/tractor-shovel', x: 6.2, z: -29.4, r: -1.6, k: 1 },
-  { text: 'board.h_receiving', x: 0, z: -29.0, r: 0, y: 0.9, w: 2.2, h: 0.5, post: true },
+  { text: 'board.h_receiving', x: 1.6, z: -29.0, r: 0, y: 0.9, w: 2.2, h: 0.5, post: true },
   pw('PalletJack_01', -4.6, -29.4, 's', { spots: 0 }), pw('Pallet_01', 3.4, -29.2, 's', { spots: 0 }), pw('PalletLoad_Cases_01', 3.4, -29.2, 's', { spots: 0 })
 ]);
 
@@ -766,19 +779,19 @@ var SHELL_HW = {
   front: FRONT_Z, back: -25, edge: 18, wing: 18.4, sb: -31.5, lane: -25.6,
   nav: { grid: [-31, -25, 200, 86], walls: [[-18.5, -17.5, -26, -3.5], [17.5, 18.5, -26, -3.5]], back: [-19, 19, 99], front: [-19, 19.5, 19.5],
     gaps: [[-18.8, -17.2, -8.2, -7.0]] },
-  lot: [-2.2, 9.6], lotX: [-26, 26], walks: [0], aisle: 0.5, drive: 27.6, road: 30, curb: 10.2, yard: -38,
+  lot: [-2.2, 9.6], lotX: [-26, 26], walks: [0], aisle: 0.5, drive: 27.6, road: 30, curb: 10.2, yard: -37.2,
   stand: 0, busX: 6.5,
   spots: { lot: [0, 3.5], taxi: [0, 10], dock: [0, -30.5] },
   tags: { hall: [0, 1.3, -5.2], lot: [-4, 0.8, 3.5], taxi: [0, 1.2, 10.2], dock: [0, 1.0, -30.8] },
-  garden: { rect: [-30.5, -19.4, -17, -3.0], gate: -24.95, till: [-23.5, -2.4], lane: -29.2 },
+  garden: { rect: [-30.5, -19.4, -17, -3.0], gate: -24.95, till: [-23.5, -2.7], lane: -29.6 },
   wingDoor: { out: [17.2, -8], in: [18.6, -8], bar: false },
-  warehouse: { court: [-30.5, 30.5, -42.2], canopy: [18.6, 25.2, -22, -9], pylon: [-14, 3.7], westDoor: [-7.6, 1.2], bays: [[-2.2, -0.6, -1, 0.5], [1.6, 3.2, 1, 0.5], [4.2, 5.8, -1, 6.9], [8.0, 9.6, 1, 6.9]] },
-  site: [[-31.5, 31.5, -43.5, 9.4], [31.5, 43, -26, -6], [-43, -31.5, -26, -6]],
+  warehouse: { court: [-30.5, 32.5, -40], canopy: [18.6, 25.2, -22, -9], pylon: [-14, 3.7], westDoor: [-7.6, 1.2], bays: [[-2.2, -0.6, -1, 0.5], [1.6, 3.2, 1, 0.5], [4.2, 5.8, -1, 6.9], [8.0, 9.6, 1, 6.9]] },
+  site: [[-31.5, 34, -43.5, 9.4], [34, 38, -26, -6], [-38, -31.5, -26, -6]],
   bounds: [-31, 31, -41, 16], zoom: [8, 150], fit: 36, turn: Math.PI / 4,
   light: { target: [0, -18], at: [-19, 23, 9], box: [-34, 34, 36, -36] },
   nature: {
     zones: [
-      { r: [-31, -30.2, -30, -4], tr: [], t: 0, b: 6, g: 6, f: 4, k: 0 }
+      { r: [-30.5, 31, -42.9, -41.2], tr: [], t: 0, b: 4, g: 0, f: 0, k: 0 }
     ],
     clear: []
   },
