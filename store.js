@@ -2322,7 +2322,7 @@ function vacantSite(s) {
     for (var i = 0; i < n; i++) {
       var x = e[0] + (e[2] - e[0]) * (i + 0.5) / n;
       var z = e[1] + (e[3] - e[1]) * (i + 0.5) / n;
-      if (x < -14.4 || x > 14.4 || z < SH.back + 0.3 || sharedWithLater(s, x, z)) continue;
+      if (Math.abs(x) > SH.edge - 0.6 || z < SH.back + 0.3 || sharedWithLater(s, x, z)) continue;
       var hx = e[4] ? 0.04 : 0.38;
       var hz = e[4] ? 0.38 : 0.04;
       b.block(panel, x - hx, x + hx, z - hz, z + hz, 0.02, 0.4);
@@ -2566,7 +2566,7 @@ function sheen(f) {
   wallsLit.glare.emissiveIntensity = 0.3 * f;
 }
 
-function buildShell() {
+function boxShell() {
   var tz = PLAN.tireBay.z;
   var tw = PLAN.tireBay.w;
   var walls = buildWalls({ root: root, outer: outer, renderer: renderer, back: SH.back, sb: SH.sb, front: SH.front, edge: SH.edge, wing: SH.wing, tire: PLAN.tireBay,
@@ -2595,7 +2595,7 @@ function buildShell() {
     hb.add('nature/plant_bush', SH.wing + 0.85, z, z * 1.7);
   }
   root.add(hb.group());
-  buildWallArt();
+  boxWallArt();
 }
 
 // Posters, signs, a clock, pictures and a notice board on the stockroom's north wall, one mesh of quads cut from a single
@@ -2726,7 +2726,7 @@ function wallArt(items, tex) {
   return g;
 }
 
-function buildWallArt() {
+function boxWallArt() {
   wallArt([['sun', -13, 0.74, 0.4, 0.4], ['board', -7.5, 0.64, 0.8, 0.6], ['fresh', -2.2, 0.74, 1.6, 0.4], ['clock', 2.6, 0.76, 0.36, 0.36], ['low', 7.5, 0.76, 1.3, 0.33],
     ['fruit', 13, 0.74, 0.4, 0.4]], wallSheet());
 }
@@ -3055,8 +3055,9 @@ function buildWing() {
   // the bar and sign over the doorway in the x 15 wall follow that wall's cutaway
   var dw = new THREE.Group();
   var lb = new Batch();
-  lb.block(flat(0x7f8597), 14.7, 15.3, 0.5, 1.5, 0.82, 1.0);
-  dw.add(lb.group(), boardFace({ text: PLAN.wingBoard || 'board.service_restrooms', x: 14.68, z: 1.0, y: 0.9, w: 1.1, h: 0.3, r: -Math.PI / 2 }));
+  var dz = SH.wingDoor.in[1];
+  lb.block(flat(0x7f8597), SH.edge - 0.3, SH.edge + 0.3, dz - 0.5, dz + 0.5, 0.82, 1.0);
+  dw.add(lb.group(), boardFace({ text: PLAN.wingBoard || 'board.service_restrooms', x: SH.edge - 0.32, z: dz, y: 0.9, w: 1.1, h: 0.3, r: -Math.PI / 2 }));
   root.add(dw);
   outer.push({ g: dw, n: [1, 0], both: 1, hide: 1 });
   wingIds().forEach(function (id) {
@@ -3085,7 +3086,7 @@ function buildWing() {
 }
 
 // a pylon sign by the street with the store's name; "Market" until most of the store is open
-function buildPylon() {
+function boxPylon() {
   var g = new THREE.Group();
   var posts = [];
   [-1, 1].forEach(function (sd) {
@@ -3272,17 +3273,20 @@ function buildOutside() {
   });
   root.add(b.group());
   var yards = scatterNature(SUPER.shell.nature.zones, SUPER.shell.nature.clear, null, NATURE_SEED);
-  var town = scatterNature(NATURE.town.zones, NATURE.town.clear, NATURE.town.singles, yards.seed);
+  var woods = scatterNature(NATURE.outer.zones, [], null, yards.seed);
+  var town = scatterNature(NATURE.town.zones, NATURE.town.clear, NATURE.town.singles, woods.seed);
+  plantNature(woods, root);
   plantNature(town, root);
-  townTrees = town.trees;
-  natureTrees = yards.trees.concat(town.trees);
+  townTrees = woods.trees.concat(town.trees);
+  natureTrees = yards.trees.concat(townTrees);
   buildLand();
   buildCabin();
 }
 
 // The building and its site, drawn into the group of the store type on screen by the builder its shell names: the paving
 // round it, the scenery, the lot, the taxi stand, the stockroom and its dock, the pylon, the walls and the doors. A type
-// with another kind of building adds a builder here; the supercenter's is the box
+// with another kind of building adds a builder here; the supercenter's is the box. The box* functions (lot, taxi stand, dock,
+// walls, pylon, racking) are laid out for that building's own plan and are not for another kind to reuse
 var NATURE_SEED = 7;
 var siteTrees = [];
 
@@ -3308,11 +3312,11 @@ function buildBox() {
   wash.position.set((SH.wing - SH.edge) / 2, 0.08, (SH.front + SH.sb) / 2);
   wash.renderOrder = 2;
   root.add(wash);
-  buildLot();
-  buildTaxi();
-  buildDock();
-  buildPylon();
-  buildShell();
+  boxLot();
+  boxTaxi();
+  boxDock();
+  boxPylon();
+  boxShell();
   buildDoors();
 }
 var SHELLS = { box: buildBox };
@@ -3710,7 +3714,8 @@ function buildCabin() {
 
 // the ground round the building that a store's own trees shade: the vertices there, with the colour they have before the
 // forest floor and the shade the street's and the country's trees already give
-var SITE_ZONE = [56, -50, 52];
+// (a site lies inside the flat ground, and a crown shades about 8 units beyond its tree)
+var SITE_ZONE = [LAND.FLAT[0][1] + 8, LAND.FLAT[0][2] - 8, LAND.FLAT[0][3] + 8];
 var groundNear = [];
 var floorTint = new THREE.Color(0x3a722e);
 var shaded = null;
@@ -4014,7 +4019,7 @@ function buildLand() {
   buildLife(sc);
 }
 // parking bays: two rows across the front split by a walkway to each entrance; the lot paints more of them at each level
-function buildLot() {
+function boxLot() {
   var lv = levels(4);
   var X0 = SH.lotX[0];
   var X1 = SH.lotX[1];
@@ -4080,7 +4085,7 @@ function buildLot() {
 }
 
 // the taxi stand on the curb in the middle of the lot
-function buildTaxi() {
+function boxTaxi() {
   var lv = levels(4);
   for (var l = 1; l <= 4; l++) {
     lv[l].add('roads/road-sign-street', 1.4, 10.3, Math.PI);
@@ -4105,7 +4110,7 @@ function buildTaxi() {
 
 // the stockroom behind the sales floor: racking, pallets and boxes, a baler and a stack of boxes for each level that loads
 // the dollies heavier. A new stocker shows by itself, with a puff, where it waits
-function rackRow(b, x0, x1, z) {
+function boxRackRow(b, x0, x1, z) {
   var n = Math.floor((x1 - x0) / 0.8);
   if (n < 1) return;
   var goods = [];
@@ -4126,18 +4131,18 @@ function buildCrewKit() {
   root.add(blobs);
 }
 
-function buildDock() {
+function boxDock() {
   var sb = new Batch();
   var doors = PLAN.doors;
   var docks = PLAN.docks;
-  var x = -14.4;
+  var x = 0.6 - SH.edge;
   doors.concat([99]).forEach(function (d) {
-    rackRow(sb, x, Math.min(14.4, d - 2), -24.9);
+    boxRackRow(sb, x, Math.min(SH.edge - 0.6, d - 2), -24.9);
     x = d + 2;
   });
-  x = -14.4;
+  x = 0.6 - SH.edge;
   docks.concat([99]).forEach(function (d) {
-    rackRow(sb, x, Math.min(14.4, d - 1.4), -27.8);
+    boxRackRow(sb, x, Math.min(SH.edge - 0.6, d - 1.4), -27.8);
     x = d + 1.4;
   });
   docks.forEach(function (d, i) {

@@ -1319,6 +1319,17 @@ export var NATURE = {
   flower: ['flora/flower-2-clump*0.7', 'flora/flower-3-clump*0.7', 'flora/flower-4-clump*0.7', 'flora/flower-5-clump*0.7'],
   fern: ['flora/fern-1*0.15'],
   rock: ['flora/kk-rock-1-a*0.5', 'flora/kk-rock-1-e*0.35', 'flora/kk-rock-3-a*0.4'],
+  // the woods beyond the lot's drives and behind the yard: world, scattered once after the zones of the store the world was
+  // drawn for
+  outer: {
+    zones: [
+      // beyond the service road and the west drive, then behind the yard
+      { r: [27.4, 40, -41, 9.4], tr: ['pine', 'oak', 'col'], t: 20, b: 8, g: 0, f: 0, k: 0 },
+      { r: [40, 48, -41, 9.4], tr: ['col', 'lol', 'oak', 'pine'], t: 20, b: 8, g: 0, f: 0, k: 0 },
+      { r: [-40, -27.3, -41, 9.4], tr: ['oak', 'pine', 'lol'], t: 20, b: 8, g: 0, f: 0, k: 0 },
+      { r: [-48, -40, -41, 9.4], tr: ['col', 'lol', 'oak', 'pine'], t: 20, b: 8, g: 0, f: 0, k: 0 }
+    ]
+  },
   // the street and the houses across it belong to the world, not to a building; they are scattered after the zones of the
   // store the world was drawn for, so the random sequence stays as it was
   town: {
@@ -1390,12 +1401,7 @@ export var SHELL = {
       { r: [-22.4, -16.6, -28.5, -20.8], tr: ['pine', 'oak'], t: 4, b: 0, g: 0, f: 0, k: 0 },
       { r: [-27.3, -19.6, -40.5, -28.9], tr: ['pine', 'col'], t: 4, b: 0, g: 0, f: 0, k: 0 },
       // between the wing's hedge and the service road
-      { r: [22.0, 22.35, -28, 2.2], tr: [], t: 0, b: 0, g: 20, f: 40, k: 0 },
-      // beyond the service road and the west drive, then behind the yard
-      { r: [27.4, 40, -41, 9.4], tr: ['pine', 'oak', 'col'], t: 20, b: 8, g: 0, f: 0, k: 0 },
-      { r: [40, 48, -41, 9.4], tr: ['col', 'lol', 'oak', 'pine'], t: 20, b: 8, g: 0, f: 0, k: 0 },
-      { r: [-40, -27.3, -41, 9.4], tr: ['oak', 'pine', 'lol'], t: 20, b: 8, g: 0, f: 0, k: 0 },
-      { r: [-48, -40, -41, 9.4], tr: ['col', 'lol', 'oak', 'pine'], t: 20, b: 8, g: 0, f: 0, k: 0 }
+      { r: [22.0, 22.35, -28, 2.2], tr: [], t: 0, b: 0, g: 20, f: 40, k: 0 }
     ],
     // the garden center and the pylon sign by the street
     clear: [[-20.6, -15, -2.5, 3.1], [20.4, 22.1, 8.0, 9.6]]
