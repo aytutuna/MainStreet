@@ -556,6 +556,8 @@ var SHELL = {
   lot: [3.8, 9.6], lotX: [-14.3, 12.8], walks: [-1.5, 1.5], aisle: 6.8, drive: 15.4, exit: -15.9, road: 20.8, curb: 10.2, yard: -23.5,
   yardRect: [-13.3, 13.3, -27.5], yardGate: [-26.5, -22.5], window: [-4.8, -1.2], pylon: [17.9, 8.9],
   stand: 0, busX: 6.5,
+  // the rooms are in the annex behind the back wall, so nobody walks in from the floor
+  wingDoor: { out: [0, -11.3], in: [0, -11.9] },
   spots: { lot: [0, 6.8], taxi: [0, 10], dock: [0, -22.5] },
   tags: { hall: [0, 1.3, -1.0], lot: [-4, 0.8, 6.8], taxi: [0, 1.2, 10.2], dock: [0, 1.0, -22.5] },
   garden: { rect: [-18.25, -13.25, -2.1, 2.86], gate: -15.75, till: [-14.7, 3.4], lane: -17.1 },
@@ -566,11 +568,7 @@ var SHELL = {
       { r: [-27.3, -20, -6, 9.4], tr: ['oak', 'lol'], t: 3, b: 10, g: 10, f: 8, k: 1.5 },
       { r: [22.6, 28, -30, 9.4], tr: ['col', 'oak'], t: 5, b: 8, g: 8, f: 6, k: 1.5 },
       { r: [-30, 30, -39, -29.5], tr: ['pine', 'col'], t: 16, b: 0, g: 0, f: 0, k: 0 },
-      { r: [-30, -14.5, -29, -7], tr: ['pine', 'oak'], t: 5, b: 0, g: 0, f: 0, k: 0 },
-      { r: [27.4, 40, -41, 9.4], tr: ['pine', 'oak', 'col'], t: 20, b: 8, g: 0, f: 0, k: 0 },
-      { r: [40, 48, -41, 9.4], tr: ['col', 'lol', 'oak', 'pine'], t: 20, b: 8, g: 0, f: 0, k: 0 },
-      { r: [-40, -27.3, -41, 9.4], tr: ['oak', 'pine', 'lol'], t: 20, b: 8, g: 0, f: 0, k: 0 },
-      { r: [-48, -40, -41, 9.4], tr: ['col', 'lol', 'oak', 'pine'], t: 20, b: 8, g: 0, f: 0, k: 0 }
+      { r: [-30, -14.5, -29, -7], tr: ['pine', 'oak'], t: 5, b: 0, g: 0, f: 0, k: 0 }
     ],
     clear: [[16.8, 19, 8, 9.8]]
   }
