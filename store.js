@@ -6834,7 +6834,11 @@ function buildType(key) {
 // puts the content of the store type on screen in place, building it the first time
 function useType() {
   var key = typeKey();
-  if (ctx && ctx.key === key) return true;
+  if (ctx && ctx.key === key) {
+    waiting = null;
+    loadingEl.classList.add('done');
+    return true;
+  }
   if (!typeReady[key]) {
     waiting = key;
     loadingEl.classList.remove('done');
