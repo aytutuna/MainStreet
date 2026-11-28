@@ -233,7 +233,7 @@ var pz0 = strip('s', BACK, px + 0.05, [
 pz0.splice(5, 0, up(nm('Oven hood'), hang('SM_Hood_Canopy_20', px + 0.55, BACK + 0.15, 0, 1.0), hang('SM_Hood_Canopy_20', px + 1.55, BACK + 0.15, 0, 1.0)));
 var pz1 = strip('s', ISL, px + 0.1, [
   ['Pizza prep table', 'SM_PrepTable_Pizza_20', { on: [['pw/SM_Pizza_Whole_01', -0.25, 0], ['pw/SM_Pizza_Whole_01', 0.25, 0]] }],
-  ['Peel and pizzas', 'SM_WorkTable_15', { on: [['pw/SM_Pizza_Peel_01', -0.12, 0], ['pw/SM_Pizza_Whole_01', 0.2, 0]] }],
+  ['Peel and pizzas', 'SM_WorkTable_15', { on: [['pw/SM_Pizza_Peel_01', -0.12, 0, 0.5], ['pw/SM_Pizza_Whole_01', 0.2, 0]] }],
   ['Toppings table', 'SM_PrepTable_Sandwich_15', { on: [['pw/SM_FoodTub_Square_01', -0.25, 0], ['pw/SM_FoodTub_Square_01', 0, 0], ['pw/SM_FoodTub_Square_01', 0.25, 0]] }],
   ['Boxed pizzas', 'SM_WorkTable_15', { on: [['pw/SM_Pizza_Box_Stack_01', -0.2, 0], ['pw/SM_Pizza_Box_Stack_01', 0.2, 0]] }],
   ['Cutting table', 'SM_WorkTable_10', { on: [['pw/SM_CuttingBoard_Com_01', 0, 0]] }]
@@ -244,7 +244,7 @@ var pz2 = strip('s', AIS, px + 0.1, [
   ['Sauce bin', 'SM_IngredientBin_01', { s: 0 }],
   ['Can shelving', 'SM_Shelving_Wire_Loaded_12', { s: 0 }]
 ], { mid: true });
-pz2.push(topOf(pz2[1], 'Tomato cans', 'pw/SM_Can_No10_01', 0, 0, 1, 0.36), topOf(pz2[2], 'Flour bags', 'pw/Bag_Flour_01', 0, 0, 1, 0.36), topOf(pz2[2], 'Olive oil', 'pw/OilBottle_01', 0.1, 0, 1, 0.36));
+pz2.push(topOf(pz2[1], 'Tomato cans', 'pw/SM_Can_No10_01', 0, 0, 1, 0.36), topOf(pz2[2], 'Flour bags', 'pw/Bag_Flour_01', 0, 0, 1, 0.36), topOf(pz2[2], 'Olive oil', 'pw/OilBottle_01', 0.06, 0, 1, 0.36));
 var t1 = pz0[0];
 pz0[0] = pz1[0];
 pz1[0] = t1;
@@ -374,7 +374,7 @@ var sd1 = [sdi[0], sda[0], sda[1], sdi[2], sda[2]];
 var t5 = sd0[0];
 sd0[0] = sd1[0];
 sd1[0] = t5;
-var sd2 = [topOf(sd0[1], 'Lettuce tray', 'pw/ProduceTray_Lettuce_01', -0.3, 0, 1, 0.55), topOf(sd0[1], 'Tomato tray', 'pw/ProduceTray_Tomatoes_01', 0.3, 0, 1, 0.55),
+var sd2 = [topOf(sd0[1], 'Lettuce tray', 'pw/ProduceTray_Lettuce_01', -0.22, 0, 1, 0.55), topOf(sd0[1], 'Tomato tray', 'pw/ProduceTray_Tomatoes_01', 0.3, 0, 1, 0.55),
   topOf(sd0[2], 'Carrot tray', 'pw/ProduceTray_Carrots_01', -0.25, 0), topOf(sd0[2], 'Onion tray', 'pw/ProduceTray_Onions_01', 0, 0), topOf(sd0[2], 'Pepper tray', 'pw/ProduceTray_Peppers_01', 0.25, 0),
   topOf(sd0[3], 'Pasta bowls', 'pw/SM_Bowl_Pasta_01', -0.15, 0), topOf(sd0[3], 'Salad plates', 'pw/SM_Plate_Salad_01', 0.15, 0)];
 AREAS.salad = {
@@ -386,10 +386,10 @@ AREAS.salad = {
     sd2,
     [SIGN, board('Salad menu', 'board.d_salad', -6.75, BOT + 0.05, 1.1, 0.95), lights([[-9.0, -8.6], [-7.6, -8.6]]),
       put('Entrance mat', 'SM_Mat_Entrance_01', -8.0, -8.6, 's', { spots: 0 }),
-      up(nm('Golden salad'), { sign: 'gold' }, pw('SM_WorkTable_10', -7.75, -8.2, 's', { spots: 0 }), hang('SM_Plate_Salad_01' + GOLD, -7.75, -8.2, 0, 0.46, 2))],
-    [put('Planter', 'Planter_Tall_01', -6.9, -8.2, 's', { spots: 0 }), put('Second planter', 'Planter_Tall_01', -6.55, -8.2, 's', { spots: 0 }), put('Hand sink', 'SM_ServiceSink_Floor_01', -7.3, -8.2, 's', { spots: 0 }),
+      up(nm('Golden salad'), { sign: 'gold' }, pw('SM_WorkTable_10', -7.45, -8.2, 's', { spots: 0 }), hang('SM_Plate_Salad_01' + GOLD, -7.45, -8.2, 0, 0.46, 2))],
+    [put('Planter', 'Planter_Tall_01', -6.7, -8.2, 's', { spots: 0 }), put('Second planter', 'Planter_Tall_01', -6.4, -8.2, 's', { spots: 0 }), put('Hand sink', 'SM_ServiceSink_Floor_01', -7.0, -8.2, 's', { spots: 0 }),
       put('Wet floor sign', 'WetFloorSign_01', -6.45, -8.65, 's', { spots: 0 })],
-    [staff('Salad maker', -7.4, -8.65, 'n'), HELP]
+    [staff('Salad maker', -7.6, -8.7, 'n'), HELP]
   ])
 };
 
