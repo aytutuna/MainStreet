@@ -682,7 +682,7 @@ function cutaway() {
   outer.forEach(function (w) {
     var d = w.n[0] * sx + w.n[1] * sz;
     if (w.both) d = Math.abs(d);
-    var s = d > 0.3 ? 0.12 : 1;
+    var s = d > 0.3 || (w.close && focus.dist < w.close) ? 0.12 : 1;
     if (w.hide) w.g.visible = s === 1;
     if (w.g.scale.y !== s) {
       w.g.scale.y = s;
@@ -2752,28 +2752,32 @@ function buildFront() {
   var li = 0;
   var ki = 0;
   // the first till stands at the east end, by the grocery entrance
-  var cx = bk.x + TILLS.reduce(function (w, t) { return w + (t.k === 'lane' ? 1.9 : 1.3); }, 0);
+  // a bank may leave a gap for the way in (bank.gap, the x range kept clear), and moves with its z
+  var bz = bk.z - 0.5;
+  var gap = bk.gap;
+  var cx = bk.x + TILLS.reduce(function (w, t) { return w + (t.k === 'lane' ? 1.9 : 1.3); }, 0) + (gap ? gap[1] - gap[0] : 0);
   TILLS.forEach(function (t) {
     var tw = t.k === 'lane' ? 1.9 : 1.3;
     cx -= tw;
+    if (gap && cx < gap[1] && cx + tw > gap[0]) cx = gap[0] - tw;
     // the floor of the bank grows with its tills
     hall.lv[t.lv] = hall.lv[t.lv] || new Batch();
-    hall.lv[t.lv].geom(patch(square([[cx, -1.25], [cx + tw, 1.35]])), finishMat(PLAN.bankFloor || 0xc4cad8), 0.045);
+    hall.lv[t.lv].geom(patch(square([[cx, bz - 1.25], [cx + tw, bz + 1.35]])), finishMat(PLAN.bankFloor || 0xc4cad8), 0.045);
     hall.tills.push(t.k === 'lane' ? lane(hall, li++, t.lv, cx + 0.95) : kiosk(hall, ki++, t.lv, cx + 0.35));
   });
   hall.tills.push(gardenTill);
   hall.staff.push(gardenTill.cashier);
   // the attendant who watches the self checkouts, and the service desk by the grocery entrance
   var att = crew('shop/character-employee', 'idle');
-  att.obj.position.set(-7.0, 0, 0.3);
+  att.obj.position.set(bk.x - 0.25, 0, bz + 0.3);
   att.obj.rotation.y = Math.PI / 2;
   att.obj.visible = false;
   root.add(att.obj);
   hall.items.push({ g: att.obj, lv: 3 });
   hall.staff.push(att);
-  hall.solids.push({ r: [-7.2, -6.6, 0.1, 0.5], lv: 3 });
+  hall.solids.push({ r: [bk.x - 0.45, bk.x + 0.15, bz + 0.1, bz + 0.5], lv: 3 });
   hall.lv[3] = hall.lv[3] || new Batch();
-  hall.lv[3].add(PLAN.attM || 'pw/SelfCheckout_Attendant_01', -6.72, 0.3, -Math.PI / 2);
+  hall.lv[3].add(PLAN.attM || 'pw/SelfCheckout_Attendant_01', bk.x + 0.03, bz + 0.3, -Math.PI / 2);
   var desk = new THREE.Group();
   for (var di = 0; di < PLAN.desk.n; di++) {
     var dm = mesh(PLAN.deskM || 'pw/ServiceDesk_20', PLAN.desk.x + di * 1.0, PLAN.desk.z, Math.PI);
@@ -2785,7 +2789,7 @@ function buildFront() {
     }
     desk.add(dm);
   }
-  desk.add(board({ text: PLAN.deskBoard || 'board.courtesy', x: PLAN.desk.x + (PLAN.desk.n - 1) / 2, z: 0.1, y: 1.7, w: 1.6, h: 0.45, post: true }));
+  desk.add(board({ text: PLAN.deskBoard || 'board.courtesy', x: PLAN.desk.x + (PLAN.desk.n - 1) / 2, z: bz + 0.1, y: 1.7, w: 1.6, h: 0.45, post: true }));
   desk.visible = false;
   root.add(desk);
   hall.items.push({ g: desk, lv: 7 });
@@ -2808,7 +2812,7 @@ function buildFront() {
     hall.items.push({ g: g, lv: +lv });
   });
   places.hall = hall;
-  addPick('hall', 0, 0.5, SH.edge * 2, 3.2);
+  addPick('hall', 0, bz + 0.5, SH.edge * 2, 3.2);
   decor(PLAN.decor.front, true);
 }
 
@@ -3031,13 +3035,15 @@ function wingIds() {
 function buildWing() {
   decor(PLAN.decor.wing, true);
   // the bar and sign over the doorway in the x 15 wall follow that wall's cutaway
-  var dw = new THREE.Group();
-  var lb = new Batch();
-  var dz = SH.wingDoor.in[1];
-  lb.block(flat(0x7f8597), SH.edge - 0.3, SH.edge + 0.3, dz - 0.5, dz + 0.5, 0.82, 1.0);
-  dw.add(lb.group(), boardFace({ text: PLAN.wingBoard || 'board.service_restrooms', x: SH.edge - 0.32, z: dz, y: 0.9, w: 1.1, h: 0.3, r: -Math.PI / 2 }));
-  root.add(dw);
-  outer.push({ g: dw, n: [1, 0], both: 1, hide: 1 });
+  if (SH.wingDoor.bar !== false) {
+    var dw = new THREE.Group();
+    var lb = new Batch();
+    var dz = SH.wingDoor.in[1];
+    lb.block(flat(0x7f8597), SH.edge - 0.3, SH.edge + 0.3, dz - 0.5, dz + 0.5, 0.82, 1.0);
+    dw.add(lb.group(), boardFace({ text: PLAN.wingBoard || 'board.service_restrooms', x: SH.edge - 0.32, z: dz, y: 0.9, w: 1.1, h: 0.3, r: -Math.PI / 2 }));
+    root.add(dw);
+    outer.push({ g: dw, n: [1, 0], both: 1, hide: 1 });
+  }
   wingIds().forEach(function (id) {
     var r = PLAN.wing[id];
     var cx = (r.rect[0] + r.rect[1]) / 2;
@@ -3253,7 +3259,7 @@ function buildOutside() {
   var yards = scatterNature(SUPER.shell.nature.zones, SUPER.shell.nature.clear, null, NATURE_SEED);
   var woods = scatterNature(NATURE.outer.zones, [], null, yards.seed);
   var town = scatterNature(NATURE.town.zones, NATURE.town.clear, NATURE.town.singles, woods.seed);
-  plantNature(woods, root);
+  plantWoods(woods);
   plantNature(town, root);
   townTrees = woods.trees.concat(town.trees);
   natureTrees = yards.trees.concat(townTrees);
@@ -3778,6 +3784,25 @@ function scatterNature(zones, clear, singles, seed) {
     put(pick(NATURE.tree[q[0]]), q[1], q[2], true);
   });
   return set;
+}
+
+// the world's woods, planted once; a store type that clears ground for its site (shell.site, a list of x0, x1, z0, z1)
+// has the trees inside those rectangles hidden while it is on screen
+var woodSets = [];
+function plantWoods(set) {
+  var tiles = {};
+  set.puts.forEach(function (p) {
+    var hide = Object.keys(PLANS).filter(function (k) {
+      return (PLANS[k].shell.site || []).some(function (r) { return p[1] >= r[0] && p[1] <= r[1] && p[3] >= r[2] && p[3] <= r[3]; });
+    });
+    var key = Math.floor(p[1] / TILE) + ',' + Math.floor(p[3] / TILE) + ':' + hide.join('+');
+    (tiles[key] = tiles[key] || { b: new Batch(), hide: hide }).b.model(p[0], p[1], p[2], p[3], p[4], p[5]);
+  });
+  Object.keys(tiles).forEach(function (k) {
+    var g = tiles[k].b.group();
+    root.add(g);
+    woodSets.push({ g: g, hide: tiles[k].hide });
+  });
 }
 
 function plantNature(set, into) {
@@ -5365,6 +5390,11 @@ function entranceAt(x) {
   return at;
 }
 
+// the aisle a bay opens on: a lot with more than one has it on the bay
+function aisleOf(b) {
+  return b.aisle === undefined ? SH.aisle : b.aisle;
+}
+
 function freeBay() {
   var l = S.pl.lot;
   var free = bays.filter(function (b) { return b.lv <= l && !b.car; });
@@ -5392,8 +5422,8 @@ function trafficStep(dt) {
   if (carT <= 0 && carQ.length && coming < 8) {
     var bay = freeBay();
     if (bay) {
-      var p = [{ x: STREET, z: LANE_W }, { x: SH.drive + 0.6, z: LANE_W, lane: -1 }, { x: SH.drive, z: SH.curb }, { x: SH.drive, z: SH.aisle + 0.4 }, { x: SH.drive - 0.6, z: SH.aisle },
-        { x: bay.x + 0.6, z: SH.aisle }, { x: bay.x, z: SH.aisle + bay.nose * 0.6 }, { x: bay.x, z: bay.z, park: true }];
+      var p = [{ x: STREET, z: LANE_W }, { x: SH.drive + 0.6, z: LANE_W, lane: -1 }, { x: SH.drive, z: SH.curb }, { x: SH.drive, z: aisleOf(bay) + 0.4 }, { x: SH.drive - 0.6, z: aisleOf(bay) },
+        { x: bay.x + 0.6, z: aisleOf(bay) }, { x: bay.x, z: aisleOf(bay) + bay.nose * 0.6 }, { x: bay.x, z: bay.z, park: true }];
       bay.car = addCar(CARS[Math.floor(Math.random() * CARS.length)], p, 'shop', { bay: bay, lane: -1, cust: carQ.shift(), inn: true });
     }
     carT = 1.2 + Math.random();
@@ -5572,7 +5602,7 @@ function carStep(c, dt) {
 function leaveBay(c) {
   var b = c.bay;
   c.parked = false;
-  c.path = [{ x: b.x, z: b.z }, { x: b.x, z: SH.aisle, rev: true }, { x: b.x - 0.6, z: SH.aisle }, { x: -SH.drive + 0.6, z: SH.aisle }, { x: -SH.drive, z: SH.aisle + 0.4 },
+  c.path = [{ x: b.x, z: b.z }, { x: b.x, z: aisleOf(b), rev: true }, { x: b.x - 0.6, z: aisleOf(b) }, { x: -SH.drive + 0.6, z: aisleOf(b) }, { x: -SH.drive, z: aisleOf(b) + 0.4 },
     { x: -SH.drive, z: SH.curb }, { x: -SH.drive - 0.6, z: LANE_W, lane: -1 }, { x: -STREET, z: LANE_W, lane: -1 }];
   c.i = 1;
   c.speed = 0;
@@ -6104,11 +6134,11 @@ function spawnFrom(kind, c, n, cu) {
     var b = c.bay;
     var ex = b.x + 0.5;
     ei = entranceAt(b.x);
-    pts.push({ x: ex, z: b.z }, { x: ex, z: SH.aisle }, { x: SH.walks[ei], z: SH.aisle }, { x: SH.walks[ei], z: SH.lot[0] - 0.2 });
+    pts.push({ x: ex, z: b.z }, { x: ex, z: aisleOf(b) }, { x: SH.walks[ei], z: aisleOf(b) }, { x: SH.walks[ei], z: SH.lot[0] - 0.2 });
     // the bag goes in the trunk, at the end of the car that faces the aisle, and then the driver gets in
     var tz = b.z - b.nose * 0.85;
     back = function (e) {
-      return [{ x: SH.walks[e], z: SH.lot[0] - 0.2 }, { x: SH.walks[e], z: SH.aisle }, { x: ex, z: SH.aisle }, { x: b.x, z: tz, wait: 1.4, act: 'pick-up', face: b.nose > 0 ? 0 : Math.PI, stow: true },
+      return [{ x: SH.walks[e], z: SH.lot[0] - 0.2 }, { x: SH.walks[e], z: aisleOf(b) }, { x: ex, z: aisleOf(b) }, { x: b.x, z: tz, wait: 1.4, act: 'pick-up', face: b.nose > 0 ? 0 : Math.PI, stow: true },
         { x: ex, z: tz }, { x: ex, z: b.z }];
     };
   } else if (kind === 'taxi') {
@@ -6168,7 +6198,7 @@ function gardenRoute(c) {
   var sd = Math.random() < 0.5 ? -1 : 1;
   // the patio and the yard have their gate in the middle of the fence gap, the garden center's is off to one side
   var gx = PLAN.patio || PLAN.yard ? SH.garden.rect[0] + (SH.garden.rect[1] - SH.garden.rect[0]) / 2 : SH.garden.gate;
-  var rows = [4.1, 2.7, 1.3].map(function (o) { return SH.garden.rect[2] + o; }).slice(0, Math.min(3, S.pl.garden));
+  var rows = [0.86, 2.26, 3.66].map(function (o) { return SH.garden.rect[3] - o; }).slice(0, Math.min(3, S.pl.garden));
   var z = rows[Math.floor(Math.random() * rows.length)];
   var west = Math.random() < 0.5;
   var ex = sd * (16 + Math.random() * 4) - 2;
@@ -7444,6 +7474,7 @@ function useType() {
   if (!ctxs[key]) ctxs[key] = buildType(key);
   ctx = ctxs[key];
   ctx.group.visible = true;
+  woodSets.forEach(function (w) { w.g.visible = w.hide.indexOf(key) < 0; });
   PLAN = ctx.plan;
   SH = PLAN.shell;
   useSite(ctx.site);
