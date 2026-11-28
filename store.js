@@ -3009,9 +3009,11 @@ function yardShell(lv, slab, text) {
     lv[1].add('forest/fence', x0 + (i + 0.5) * step, z0, 0);
     lv[1].add('forest/fence', x0, z0 + (i + 0.5) * (z1 - z0) / 5, Math.PI / 2);
   }
-  [-0.74, 0.74].forEach(function (o) { lv[1].block(flat(0x50566a), GATE_X + o - 0.03, GATE_X + o + 0.03, z1 - 0.03, z1 + 0.03, 0, 1.0); });
-  lv[1].block(flat(0x2f3446), GATE_X - 0.8, GATE_X + 0.8, z1 - 0.04, z1 + 0.02, 0.78, 1.08);
-  boardAtlas(lv[1], { text: text, x: GATE_X, y: 0.93, z: z1 + 0.03, w: 1.5, h: 0.28 });
+  // the gate is the gap in the fence: a post at each side of it and the header across
+  var gx = x0 + 2.5 * step;
+  [-1, 1].forEach(function (o) { lv[1].block(flat(0x50566a), gx + o * step / 2 - 0.03, gx + o * step / 2 + 0.03, z1 - 0.03, z1 + 0.03, 0, 1.0); });
+  lv[1].block(flat(0x2f3446), gx - step / 2, gx + step / 2, z1 - 0.04, z1 + 0.02, 0.78, 1.08);
+  boardAtlas(lv[1], { text: text, x: gx, y: 0.93, z: z1 + 0.03, w: 1.5, h: 0.28 });
 }
 
 // the yard's own till outside the gate, its cashier on the east side and the one paying on the west; the next in line
@@ -3042,9 +3044,9 @@ function buildBay() {
   yardShell(lv, 0x7d838f, 'board.h_bay');
   lv[1].block(flat(0xe8b923), x0 + 0.3, x1 - 0.3, -1.45, -1.4, 0.022, 0.026);
   lv[2].add('pw/SM_CarLift_2Post_01', x0 + 1.6, -0.45, 0);
-  lv[2].add('car/sedan', x0 + 1.6, -0.45, Math.PI / 2);
+  lv[2].add('car/sedan', x0 + 1.6, -0.45, Math.PI);
   lv[3].add('pw/SM_CarLift_Scissor_01', x1 - 1.1, -0.3, 0);
-  lv[3].add('car/hatchback-sports', x1 - 1.1, -0.3, Math.PI / 2);
+  lv[3].raw('car/hatchback-sports', x1 - 1.1, -0.3, Math.PI, 0.28, 1);
   [[x0 + 0.45, 1.5], [x0 + 0.85, 1.5]].forEach(function (p) { lv[3].add('pw/SM_JackStand_01', p[0], p[1], 0); });
   lv[3].add('pw/Tire_Stack_01', x0 + 0.5, 0.7, 0);
   lv[4].add('pw/SM_TireChanger_01', x1 - 0.6, 1.5, -Math.PI / 2);
