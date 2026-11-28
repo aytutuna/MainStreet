@@ -6997,8 +6997,10 @@ function buildType(key) {
     PLAN.entrances.forEach(doorSign);
     decor(PLAN.decor.side || []);
     root.add(still.b.group(), still.x);
+    // the lot's, the taxi stand's and the dock's tags first, so they draw under the areas'
+    ['lot', 'taxi', 'dock'].forEach(function (id) { if (places[id]) makeTag(id, places[id]); });
     order.forEach(function (id) { makeTag(id, shops[id]); });
-    Object.keys(places).forEach(function (id) { makeTag(id, places[id]); });
+    Object.keys(places).forEach(function (id) { if (!places[id].tag) makeTag(id, places[id]); });
     c.fixed = fixed;
     c.site = siteState();
     c.trees = siteTrees;
