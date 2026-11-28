@@ -6900,6 +6900,11 @@ function draw(now) {
     loadingEl.classList.add('done');
     refresh();
     focusNow();
+    if (selId) {
+      var again = selId;
+      select(null);
+      select(again, true);
+    }
   }
   var dt = Math.min(0.1, (now - lastT) / 1000);
   lastT = now;
