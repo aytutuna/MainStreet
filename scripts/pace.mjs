@@ -20,8 +20,9 @@ const DT = +val('dt', 1);
 // seconds of real time a profile may run before it is cut off
 // a run ends once this many stores are open: later stores slow the sim down, and the stand-in types open them in minutes
 const LONG = flag('long');
-const STORES = +val('stores', LONG ? 10 : 6);
-const BUDGET = +val('budget', LONG ? 900 : 16) * 1000;
+const STORES = +val('stores', CHECK ? 4 : LONG ? 10 : 6);
+// --check has no budget: a slow machine must not turn into a pacing result
+const BUDGET = CHECK ? Infinity : +val('budget', LONG ? 900 : 16) * 1000;
 
 // what each profile does. claims: goals, daily, missions, achievements; taps: gifts, regulars and the tills in a rush;
 // ads: every rewarded offer within the day's caps; warp: use the hour of income when the next buy is far off
@@ -61,9 +62,9 @@ function load() {
 // Types 1 and 2 are the game's own; a built type 3 or later replaces its stand-in when it is merged (--types counts all)
 const TYPES_N = +val('types', 10);
 const MR = +val('mr', 3);
-const CR = +val('cr', 15);
-// the third type costs this much more than the diner; the later ones CR times the one before
-const C3 = +val('c3', 1.5);
+const CR = +val('cr', 9);
+// the third type costs this much more than the diner (as the built hardware type does); the later ones CR times the one before
+const C3 = +val('c3', 9);
 function standIns(X) {
   const have = X.TYPES.filter(t => !t.test);
   for (let n = have.length + 1; n <= TYPES_N; n++) {
@@ -312,7 +313,7 @@ function simulate(name, cfg) {
     actions();
   }
 
-  const stop = CHECK && cfg === PROFILES.claimer ? () => P.second !== null || P.play >= 3600 : null;
+  const stop = CHECK && cfg === PROFILES.claimer ? () => P.play >= 10800 : null;
   if (!cfg.sessions) {
     session(Math.round(+val('hours', cfg.hours) * 3600), stop);
   } else {
@@ -360,6 +361,10 @@ for (const name of names) {
   if (CHECK) {
     const min = P.second === null ? Infinity : P.second / 60;
     if (min < 30 || min > 45) { console.error('FAIL: the claimer opens the second store after ' + (min === Infinity ? 'more than 60' : min.toFixed(1)) + ' minutes, not 30-45'); failed = true; }
+    for (const [i, what] of [[1, 'second to the third'], [2, 'third to the fourth']]) {
+      const w = P.moves.length > i ? (P.moves[i] - P.moves[i - 1]) / 60 : Infinity;
+      if (w < 30 || w > 60) { console.error('FAIL: the claimer needs ' + (w === Infinity ? 'more than 3 hours' : w.toFixed(1) + ' minutes') + ' from the ' + what + ' store, not 30-60'); failed = true; }
+    }
     if (P.over) { console.error('FAIL: an amount passes the last suffix (' + P.over + ')'); failed = true; }
   }
 }
