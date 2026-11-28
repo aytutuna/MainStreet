@@ -52,6 +52,8 @@ function col(pts, y0, h) {
   return g;
 }
 
+// one per renderer, shared by every building drawn with it
+var envs = new Map();
 // a pale sky with two bright strips, for the sheen on glass and aluminium
 function makeEnv(renderer) {
   var sc = new THREE.Scene();
@@ -93,7 +95,8 @@ export function buildWalls(o) {
   var groups = {};
   var buckets = {};
   var mats = {};
-  var env = makeEnv(o.renderer);
+  var env = envs.get(o.renderer);
+  if (!env) envs.set(o.renderer, env = makeEnv(o.renderer));
 
   var lit = [];
   // role: wall and trim take a store look's tint, none and glass stay as they are
