@@ -1587,21 +1587,22 @@ a.btn {
   display: none;
 }
 
-/* on a long panel the closing button stays in view while the rest scrolls */
-.box > .btn:last-child {
+/* on a long panel the closing button stays in view while the rest scrolls. A panel that overflows by less than the
+   button itself keeps it in the flow, so it never hides the row above it at rest */
+.box.float > .btn:last-child {
   position: sticky;
   bottom: -11px;
   z-index: 1;
 }
 
 /* paper around it, so rows scrolling past do not show beside it; only a box that scrolls needs it */
-.box.over > .btn:last-child {
+.box.float > .btn:last-child {
   outline: 5px solid var(--paper);
   outline-offset: 4px;
   clip-path: inset(0 -12px -12px -12px);
 }
 
-.box.over > .btn:last-child:focus-visible {
+.box.float > .btn:last-child:focus-visible {
   outline-color: #ffd34a;
 }
 
