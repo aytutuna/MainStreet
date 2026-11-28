@@ -173,7 +173,7 @@ PLACES.forEach(function (p) { PL[p.id] = p; });
 
 // Store types. A store is built from a type's departments, in the order they open, and its places; mul scales the
 // income of the whole store and cost its prices. The curve for the types to come, from the pacing check (scripts/pace.mjs):
-// the third type has 3 times the income and 1.5 times the prices of the diner, then each has 3 and 15 times the one before it. The supercenter is the first type and keeps the first ten departments
+// the third type (hardware) has 3 times the income and 1.5 times the prices of the diner, then each has 3 and 15 times the one before it. The supercenter is the first type and keeps the first ten departments
 // of the old 18, so every place still has the department it comes after. A type words its places itself (pl, see
 // typeTexts in sim.js): the levels and prices of a place are the same in every type. The last entry is a stand-in that
 // builds like the supercenter, for the checks that need two stores with the same departments
@@ -193,7 +193,7 @@ var TYPES = [
     }
   },
   {
-    id: 'hardware', mul: 16, cost: 9, sign: ['sign.hardware', 'sign.hardware_big'],
+    id: 'hardware', mul: 30, cost: 60, sign: ['sign.hardware', 'sign.hardware_big'],
     depts: ['hand', 'paint', 'oil', 'batt', 'lawn', 'power', 'tires', 'storage'],
     places: ['lot', 'hall', 'dock', 'garden', 'rest', 'lounge'],
     pl: {
