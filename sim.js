@@ -1666,7 +1666,7 @@ function claimDaily() {
   return r;
 }
 
-// three missions a day, picked the first time the day needs them. Targets are about 8 minutes of the income and
+// three missions a day, picked the first time the day needs them. Targets are ten minutes of the base income, about 8 minutes of play with the extras, and
 // traffic of that moment, so they stay in reach as the store grows
 var MISS_BONUS = { gems: 5, x2: 20 };
 var MISS_KINDS = ['serve', 'earn', 'gift', 'rush', 'buy', 'open', 'star'];
@@ -1692,8 +1692,8 @@ function upsLeft() {
 
 function missionPool() {
   var pool = [
-    { k: 'serve', n: Math.max(10, nice((served() + gardenServed()) * 480)) },
-    { k: 'earn', n: Math.max(20, nice(baseRate() * (1 + HEAD * S.pl.head) * 480)) },
+    { k: 'serve', n: Math.max(10, nice((served() + gardenServed()) * 600)) },
+    { k: 'earn', n: Math.max(20, nice(baseRate() * (1 + HEAD * S.pl.head) * 600)) },
     { k: 'gift', n: 4 }, { k: 'rush', n: 12 }
   ];
   if (upsLeft() >= 6) pool.push({ k: 'buy', n: 6 });
