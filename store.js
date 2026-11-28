@@ -3156,6 +3156,7 @@ function paintOpen(on) {
 }
 
 function paintPylon() {
+  if (pylon.own) return;
   var big = order.filter(has).length >= Math.min(8, Math.ceil(kind().depts.length * 0.75));
   var key = (big ? 'b' : 's') + S.cur + S.lk.on + kind().id;
   if (pylon.big === key) return;
@@ -7039,6 +7040,24 @@ function buildDiner() {
   dinerFence(b, 6.6, -23.6, 8.0, -23.6);
   dinerFence(b, 9.0, -23.6, 10.4, -23.6);
   b.block(leaf, 8.0 - 0.02, 8.0 + 0.02, -23.6, -22.7, 0.12, 0.8);
+  // the lot's drives and the paved corner east of the lane, with a small gas station on it
+  b.slab(asph, SH.exit - 1.2, SH.drive + 1.2, SH.aisle - 1.2, SH.curb + 0.3, 0.008, 0.02);
+  b.slab(pave, L1, 24, -9.0, 10.5, 0.004, 0.02);
+  b.slab(flat(0x6b5a45), L1, L1 + 0.15, -9.0, 10.5, 0.1, 0.1);
+  var pr = flat(0xd3302c);
+  var pc = flat(0xf3ead6);
+  b.block(pc, 19.2, 22.2, 4.4, 4.46, 0.02, 1.0);
+  b.block(pr, 18.6, 22.8, 3.2, 6.0, 1.0, 1.1);
+  b.block(pc, 18.6, 22.8, 3.2, 6.0, 1.1, 1.14);
+  [[18.7, 3.3], [22.7, 3.3], [18.7, 5.9], [22.7, 5.9]].forEach(function (p) { b.block(pc, p[0] - 0.05, p[0] + 0.05, p[1] - 0.05, p[1] + 0.05, 0, 1.0); });
+  [19.6, 21.8].forEach(function (x) {
+    b.block(pr, x - 0.2, x + 0.2, 4.4, 4.9, 0.0, 0.7);
+    b.block(flat(0x2f3446), x - 0.14, x + 0.14, 4.88, 4.92, 0.35, 0.6);
+    b.block(pc, x - 0.21, x + 0.21, 4.4, 4.9, 0.7, 0.74);
+  });
+  b.block(pc, 18.6, 21.2, 7.4, 9.0, 0.0, 0.85);
+  b.block(pr, 18.5, 21.3, 7.3, 9.1, 0.85, 0.95);
+  b.block(flat(0x8cc6e0), 18.9, 20.9, 7.36, 7.42, 0.2, 0.7);
   decor(SH.decor.out);
   root.add(b.group());
   var grounds = scatterNature(SH.nature.zones, SH.nature.clear, null, NATURE_SEED);
@@ -7183,6 +7202,24 @@ function buildDinerPylon() {
   var c = document.createElement('canvas');
   c.width = 512;
   c.height = 256;
+  var cx = c.getContext('2d');
+  cx.fillStyle = '#fff6e4';
+  cx.fillRect(0, 0, 512, 256);
+  rr(cx, 14, 14, 484, 228, 26);
+  cx.fillStyle = '#d3302c';
+  cx.fill();
+  cx.lineWidth = 6;
+  cx.strokeStyle = '#fff6e4';
+  cx.stroke();
+  dir(cx);
+  cx.textAlign = 'center';
+  cx.textBaseline = 'middle';
+  cx.fillStyle = '#fff6e4';
+  cx.font = font(150);
+  cx.fillText('DINER', 256, 108, 440);
+  cx.fillStyle = '#f6d44c';
+  cx.font = font(46);
+  cx.fillText('OPEN 24 HRS', 256, 205, 440);
   var tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   var mat = new THREE.MeshLambertMaterial({ map: tex, emissiveMap: tex, emissive: 0x000000 });
@@ -7192,10 +7229,7 @@ function buildDinerPylon() {
   g.add(board);
   g.position.set(SH.pylon[0], 0, SH.pylon[1]);
   root.add(g);
-  pylon = { c: c, tex: tex, mat: mat, big: null, posts: posts, board: board };
-  var sg = new THREE.Mesh(openBoard(), openSign.faces);
-  sg.position.set(0, 3.1, 0.03);
-  g.add(sg);
+  pylon = { c: c, tex: tex, mat: mat, big: null, posts: posts, board: board, own: true };
 }
 
 function buildType(key) {

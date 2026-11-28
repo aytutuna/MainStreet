@@ -561,18 +561,16 @@ var SHELL = {
   spots: { lot: [0, 6.8], taxi: [0, 10], dock: [0, -22.5] },
   tags: { hall: [0, 1.3, -1.0], lot: [-4, 0.8, 6.8], taxi: [0, 1.2, 10.2], dock: [0, 1.0, -22.5] },
   garden: { rect: [13.2, 14.2, -5.0, -0.2], gate: 13.7, till: [13.7, 0.5], lane: 13.0 },
-  bounds: [-26, 32, -32, 14], zoom: [8, 100], fit: 44, turn: Math.PI / 4,
+  bounds: [-26, 32, -32, 14], zoom: [8, 150], fit: 44, turn: Math.PI / 4,
   light: { target: [0, -8], at: [-19, 23, 9], box: [-30, 30, 32, -30] },
   nature: {
     zones: [
       { r: [-27.3, -20, -6, 9.4], tr: ['oak', 'lol'], t: 3, b: 10, g: 10, f: 8, k: 1.5 },
       { r: [22.6, 28, -30, 9.4], tr: ['col', 'oak'], t: 5, b: 8, g: 8, f: 6, k: 1.5 },
-      { r: [16.9, 19.3, -30, 8], tr: [], t: 0, b: 12, g: 8, f: 10, k: 0 },
-      { r: [-20, -18.4, -28, 9], tr: [], t: 0, b: 12, g: 8, f: 10, k: 0 },
       { r: [-30, 30, -39, -29.5], tr: ['pine', 'col'], t: 16, b: 0, g: 0, f: 0, k: 0 },
       { r: [-30, -14.5, -29, -7], tr: ['pine', 'oak'], t: 5, b: 0, g: 0, f: 0, k: 0 }
     ],
-    clear: [[16.8, 19, 8, 9.8]]
+    clear: [[17, 24, -9, 10.5], [-19, -14, 4, 10.5]]
   }
 };
 
@@ -595,7 +593,7 @@ var DECOR = {
     [{ m: 'furn/bench', x: -5.5, z: 0.7, r: Math.PI, k: 1.5 }, { m: 'furn/bench', x: 5.5, z: 0.7, r: Math.PI, k: 1.5 },
       pw('Planter_Tall_01', -2.8, 0.75, 's', { spots: 0 }), pw('Planter_Tall_01', 2.8, 0.75, 's', { spots: 0 }), pw('SM_TrashCan_Steel_01', 7.0, 0.75, 's', { spots: 0 }),
       pw('SM_Sign_AFrame_Blank_01', -8.5, 0.6, 's', { spots: 0 }),
-      { text: 'sign.diner_big', x: 21, z: 8.2, r: 0, y: 2.6, w: 3.6, h: 1.4, post: true }],
+      { text: 'sign.diner_big', x: 20.2, z: -5.0, r: 0, y: 2.6, w: 3.6, h: 1.4, post: true }],
     // the bin corner of the yard, fenced on three sides
     [pw('SM_Dumpster_01', 7.6, -25.0, 's', { spots: 0 }), pw('SM_Dumpster_01', 9.4, -25.0, 's', { spots: 0 }),
       pw('SM_GreaseBin_Outdoor_01', 4.2, -19.0, 's', { spots: 0 }), pw('SM_PropaneTank_01', -8.6, -19.2, 's', { spots: 0 }), pw('SM_PropaneTank_01', -8.1, -19.2, 's', { spots: 0 }),
@@ -630,7 +628,7 @@ SHELL.decor = { out: DECOR.out, stock: DECOR.stock };
 export var DINER = Object.assign({}, PLAN, {
   type: 'diner',
   shell: SHELL,
-  home: { x: 0, z: -7, w: 36 },
+  home: { x: 2, z: -7, w: 40 },
   areas: AREAS,
   order: Object.keys(AREAS),
   wing: WING,
@@ -651,7 +649,7 @@ export var DINER = Object.assign({}, PLAN, {
   ],
   tint: { wall: 0xffe8c8 },
   entrances: [{ x: 0, w: 3.2, name: 'sign.diner', basket: [-1.35, -1.2], greeter: [-1.95, -1.25, Math.PI / 2] }],
-  laneM: [['pw/SM_Bar_Section_20', -0.15, -0.6, -Math.PI / 2], ['pw/SM_Bar_Section_10', -0.15, 0.15, -Math.PI / 2], ['pw/SM_POS_Terminal_01', -0.15, 0.2, -Math.PI / 2, 0.55]],
+  laneM: [['pw/SM_Bar_Section_20', -0.15, -0.6, -Math.PI / 2], ['pw/SM_Bar_Section_10', -0.15, 0.15, -Math.PI / 2], ['pw/SM_POS_Terminal_01', -0.15, 0.2, -Math.PI / 2, 0.55], ['pw/SM_BarStool_Diner_01', 0.22, -0.85, 0], ['pw/SM_BarStool_Diner_01', 0.22, 0.55, 0]],
   laneRack: [['pw/SM_TrayStack_01', -0.15, 0.62, 0]],
   stackM: 'pw/SM_TrayStand_Tray_01',
   attM: 'pw/HostStand_01',
