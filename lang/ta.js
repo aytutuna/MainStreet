@@ -291,6 +291,7 @@ LANG['ta'] = {
   'sell.lose.stars': 'நட்சத்திரங்கள் (மீண்டும் ரத்தினம் தரும்)',
   'sell.move': 'கடை {n}-க்கு மாறு',
   'sell.see': 'பிரிவுகளைப் பார்',
+  'sell.soon': 'More store types are coming.',
   'sell.tap_again': 'மாற மீண்டும் தட்டுங்கள்',
 
   'regs.new': 'புதிய வழக்கமானவர்: {name}',

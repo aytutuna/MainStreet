@@ -291,6 +291,7 @@ LANG['te'] = {
   'sell.lose.stars': 'స్టార్‌లు (మళ్లీ రత్నాలు ఇస్తాయి)',
   'sell.move': 'స్టోర్ {n} కు మారండి',
   'sell.see': 'విభాగాలు చూడండి',
+  'sell.soon': 'More store types are coming.',
   'sell.tap_again': 'మారడానికి మళ్లీ నొక్కండి',
 
   'regs.new': 'కొత్త రెగ్యులర్: {name}',

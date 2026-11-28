@@ -291,6 +291,7 @@ LANG['tr'] = {
   'sell.lose.stars': 'Yıldızlar (yine elmas öder)',
   'sell.move': 'Taşın: Mağaza {n}',
   'sell.see': 'Bölümleri gör',
+  'sell.soon': 'More store types are coming.',
   'sell.tap_again': 'Taşınmak için tekrar dokun',
 
   'regs.new': 'Yeni müdavim: {name}',

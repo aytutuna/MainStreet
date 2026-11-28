@@ -288,6 +288,7 @@ LANG['ja'] = {
   'sell.lose.stars': '星 (またジェムがもらえる)',
   'sell.move': '{n}号店へ移転',
   'sell.see': '部門を見る',
+  'sell.soon': 'More store types are coming.',
   'sell.tap_again': 'もう一度タップで移転',
 
   'regs.new': '新しい常連: {name}',

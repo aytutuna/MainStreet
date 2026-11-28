@@ -291,6 +291,7 @@ LANG['ml'] = {
   'sell.lose.stars': 'നക്ഷത്രങ്ങൾ (വീണ്ടും രത്നം തരും)',
   'sell.move': 'കട {n}-ലേക്ക് മാറൂ',
   'sell.see': 'വിഭാഗങ്ങൾ കാണൂ',
+  'sell.soon': 'More store types are coming.',
   'sell.tap_again': 'മാറാൻ വീണ്ടും ടാപ്പ് ചെയ്യൂ',
 
   'regs.new': 'പുതിയ സ്ഥിരക്കാരൻ: {name}',

@@ -292,6 +292,7 @@ LANG['fr-CA'] = {
   'sell.lose.stars': 'Étoiles (elles redonnent des gemmes)',
   'sell.move': 'Aller au magasin {n}',
   'sell.see': 'Voir les rayons',
+  'sell.soon': 'More store types are coming.',
   'sell.tap_again': 'Touche encore pour déménager',
 
   'regs.new': 'Nouvel habitué : {name}',

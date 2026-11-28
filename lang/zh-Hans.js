@@ -290,6 +290,7 @@ LANG['zh-Hans'] = {
   'sell.lose.stars': '星级（可再次获得钻石）',
   'sell.move': '搬到{n}号店',
   'sell.see': '查看部门',
+  'sell.soon': 'More store types are coming.',
   'sell.tap_again': '再点一次确认搬店',
 
   'regs.new': '新熟客：{name}',

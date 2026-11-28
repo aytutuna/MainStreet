@@ -291,6 +291,7 @@ LANG['pa'] = {
   'sell.lose.stars': 'ਤਾਰੇ (ਇਹ ਫਿਰ ਜੈਮ ਦਿੰਦੇ ਹਨ)',
   'sell.move': 'ਸਟੋਰ {n} ਵਿੱਚ ਜਾਓ',
   'sell.see': 'ਵਿਭਾਗ ਦੇਖੋ',
+  'sell.soon': 'More store types are coming.',
   'sell.tap_again': 'ਜਾਣ ਲਈ ਫਿਰ ਟੈਪ ਕਰੋ',
 
   'regs.new': 'ਨਵਾਂ ਪੱਕਾ ਗਾਹਕ: {name}',

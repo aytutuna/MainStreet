@@ -274,6 +274,7 @@ LANG['no'] = {
   'sell.lose.stars': 'Stjerner (de gir juveler igjen)',
   'sell.move': 'Flytt til butikk {n}',
   'sell.see': 'Se avdelinger',
+  'sell.soon': 'More store types are coming.',
   'sell.tap_again': 'Trykk igjen for å flytte',
   'regs.new': 'Ny stamkunde: {name}',
   'regs.new.line': 'Salg +{n} % · se Boostere',

@@ -292,6 +292,7 @@ LANG['he'] = {
   'sell.lose.stars': 'כוכבים (הם משלמים שוב באבני חן)',
   'sell.move': 'מעבר לחנות {n}',
   'sell.see': 'צפייה במחלקות',
+  'sell.soon': 'More store types are coming.',
   'sell.tap_again': 'הקישו שוב כדי לעבור',
 
   'regs.new': 'קבוע חדש: {name}',

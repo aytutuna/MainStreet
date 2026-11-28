@@ -288,6 +288,7 @@ LANG['zh-Hant'] = {
   'sell.lose.stars': '星星（會再發寶石）',
   'sell.move': '搬到第 {n} 家店',
   'sell.see': '看專區',
+  'sell.soon': 'More store types are coming.',
   'sell.tap_again': '再點一次就搬',
 
   'regs.new': '新熟客：{name}',

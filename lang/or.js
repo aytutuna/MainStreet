@@ -291,6 +291,7 @@ LANG['or'] = {
   'sell.lose.stars': 'ତାରା (ପୁଣି ରତ୍ନ ଦେବ)',
   'sell.move': 'ଦୋକାନ {n} କୁ ଯାଅ',
   'sell.see': 'ବିଭାଗ ଦେଖ',
+  'sell.soon': 'More store types are coming.',
   'sell.tap_again': 'ଯିବାକୁ ପୁଣି ଟ୍ୟାପ୍ କର',
 
   'regs.new': 'ନୂଆ ନିୟମିତ: {name}',

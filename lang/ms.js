@@ -290,6 +290,7 @@ LANG['ms'] = {
   'sell.lose.stars': 'Bintang (bayar permata lagi)',
   'sell.move': 'Pindah ke kedai {n}',
   'sell.see': 'Lihat jabatan',
+  'sell.soon': 'More store types are coming.',
   'sell.tap_again': 'Ketik lagi untuk berpindah',
 
   'regs.new': 'Pelanggan tetap baru: {name}',

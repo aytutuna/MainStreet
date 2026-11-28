@@ -292,6 +292,7 @@ LANG['hr'] = {
   'sell.lose.stars': 'Zvjezdice (opet donose dragulje)',
   'sell.move': 'Preseli u trgovinu {n}',
   'sell.see': 'Pogledaj odjele',
+  'sell.soon': 'More store types are coming.',
   'sell.tap_again': 'Dodirni opet za selidbu',
 
   'regs.new': 'Novi stalni kupac: {name}',

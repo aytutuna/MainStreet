@@ -273,6 +273,7 @@ LANG['ar'] = {
   "sell.lose.stars": "النجوم (تدفع جواهر من جديد)",
   "sell.move": "انتقل إلى الفرع {n}",
   "sell.see": "عرض الأقسام",
+  "sell.soon": "More store types are coming.",
   "sell.tap_again": "اضغط مرة أخرى للانتقال",
   "regs.new": "زبون دائم جديد: {name}",
   "regs.new.line": "المبيعات +{n}% · انظر التعزيزات",

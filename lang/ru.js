@@ -293,6 +293,7 @@ LANG['ru'] = {
   'sell.lose.stars': 'Звёзды (снова дадут кристаллы)',
   'sell.move': 'Переехать в магазин {n}',
   'sell.see': 'Смотреть отделы',
+  'sell.soon': 'More store types are coming.',
   'sell.tap_again': 'Нажми ещё раз',
 
   'regs.new': 'Новый завсегдатай: {name}',

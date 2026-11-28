@@ -291,6 +291,7 @@ LANG['hu'] = {
   'sell.lose.stars': 'Csillagok (újra drágakövet fizetnek)',
   'sell.move': 'Költözés: {n}. áruház',
   'sell.see': 'Osztályok megtekintése',
+  'sell.soon': 'More store types are coming.',
   'sell.tap_again': 'Koppints újra a költözéshez',
 
   'regs.new': 'Új törzsvendég: {name}',

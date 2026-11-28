@@ -293,6 +293,7 @@ LANG['cs'] = {
   'sell.lose.stars': 'Hvězdy (zase platí drahokamy)',
   'sell.move': 'Přesunout do obchodu {n}',
   'sell.see': 'Zobrazit oddělení',
+  'sell.soon': 'More store types are coming.',
   'sell.tap_again': 'Klepni znovu pro přesun',
 
   'regs.new': 'Nový štamgast: {name}',

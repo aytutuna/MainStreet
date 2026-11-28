@@ -291,6 +291,7 @@ LANG['de'] = {
   'sell.lose.stars': 'Sterne (sie zahlen wieder Edelsteine)',
   'sell.move': 'Zu Markt {n} umziehen',
   'sell.see': 'Abteilungen ansehen',
+  'sell.soon': 'More store types are coming.',
   'sell.tap_again': 'Nochmal tippen zum Umzug',
 
   'regs.new': 'Neuer Stammkunde: {name}',

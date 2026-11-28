@@ -291,6 +291,7 @@ LANG['nl'] = {
   'sell.lose.stars': 'Sterren (ze leveren weer edelstenen op)',
   'sell.move': 'Verhuis naar winkel {n}',
   'sell.see': 'Bekijk afdelingen',
+  'sell.soon': 'More store types are coming.',
   'sell.tap_again': 'Tik nogmaals om te verhuizen',
 
   'regs.new': 'Nieuwe vaste klant: {name}',

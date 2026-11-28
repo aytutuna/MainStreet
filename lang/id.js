@@ -290,6 +290,7 @@ LANG['id'] = {
   'sell.lose.stars': 'Bintang (membayar gem lagi)',
   'sell.move': 'Pindah ke toko {n}',
   'sell.see': 'Lihat departemen',
+  'sell.soon': 'More store types are coming.',
   'sell.tap_again': 'Ketuk lagi untuk pindah',
 
   'regs.new': 'Pelanggan tetap baru: {name}',

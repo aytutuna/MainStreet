@@ -292,6 +292,7 @@ LANG['es-ES'] = {
   'sell.lose.stars': 'Estrellas (vuelven a dar gemas)',
   'sell.move': 'Mudarse a la tienda {n}',
   'sell.see': 'Ver secciones',
+  'sell.soon': 'More store types are coming.',
   'sell.tap_again': 'Toca otra vez para mudarte',
 
   'regs.new': 'Nuevo habitual: {name}',

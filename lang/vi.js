@@ -290,6 +290,7 @@ LANG['vi'] = {
   'sell.lose.stars': 'Sao (sẽ tặng ngọc lại)',
   'sell.move': 'Chuyển sang siêu thị {n}',
   'sell.see': 'Xem khu hàng',
+  'sell.soon': 'More store types are coming.',
   'sell.tap_again': 'Chạm lần nữa để chuyển',
 
   'regs.new': 'Khách quen mới: {name}',

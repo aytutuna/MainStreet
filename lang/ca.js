@@ -292,6 +292,7 @@ LANG['ca'] = {
   'sell.lose.stars': 'Estrelles (tornen a pagar gemmes)',
   'sell.move': 'Passa a la botiga {n}',
   'sell.see': 'Mira les seccions',
+  'sell.soon': 'More store types are coming.',
   'sell.tap_again': 'Torna a tocar per canviar',
 
   'regs.new': 'Nou habitual: {name}',

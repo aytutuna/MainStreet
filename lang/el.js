@@ -291,6 +291,7 @@ LANG['el'] = {
   'sell.lose.stars': 'Αστέρια (πληρώνουν ξανά πετράδια)',
   'sell.move': 'Πήγαινε στο μαγαζί {n}',
   'sell.see': 'Δες τα τμήματα',
+  'sell.soon': 'More store types are coming.',
   'sell.tap_again': 'Πάτα ξανά για μετακόμιση',
 
   'regs.new': 'Νέος τακτικός: {name}',

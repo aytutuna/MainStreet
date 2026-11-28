@@ -291,6 +291,7 @@ LANG['sv'] = {
   'sell.lose.stars': 'Stjärnor (de ger juveler igen)',
   'sell.move': 'Flytta till butik {n}',
   'sell.see': 'Se avdelningar',
+  'sell.soon': 'More store types are coming.',
   'sell.tap_again': 'Tryck igen för att flytta',
 
   'regs.new': 'Ny stamkund: {name}',

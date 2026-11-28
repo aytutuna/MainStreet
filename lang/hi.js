@@ -291,6 +291,7 @@ LANG['hi'] = {
   'sell.lose.stars': 'स्टार (वे फिर से जेम देंगे)',
   'sell.move': 'स्टोर {n} में जाएँ',
   'sell.see': 'विभाग देखें',
+  'sell.soon': 'More store types are coming.',
   'sell.tap_again': 'जाने के लिए फिर टैप करें',
 
   'regs.new': 'नए नियमित ग्राहक: {name}',

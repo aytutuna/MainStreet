@@ -1327,7 +1327,7 @@ function updateHud() {
   flag(shown, 'clc', $('clk'), 'shut', shut());
   set(shown, 'gems', $('gem-n'), 'textContent', short(S.gems));
   set(shown, 'stars', $('star-n'), 'textContent', newest(function () { return Math.min(rating(), gate()) + '/' + gate(); }));
-  set(shown, 'store', $('store-n'), 'textContent', tl('hud.store', { n: S.cur + 1 }));
+  set(shown, 'store', $('store-n'), 'textContent', tl('hud.store', { n: nStores() }));
   if (!$('away').hidden) awayBtn();
   var x = $('x2');
   set(shown, 'x2h', x, 'hidden', !(S.x2 > 0));
@@ -2073,6 +2073,11 @@ function paintSell() {
   [[34, 28], [262, 22], [22, 66], [276, 62]].forEach(function (q) {
     stars += '<polygon transform="translate(' + q[0] + ' ' + q[1] + ')" points="0,-7 2,-2.4 6.7,-2.2 3.2,1 4.1,5.7 0,3.2 -4.1,5.7 -3.2,1 -6.7,-2.2 -2,-2.4" fill="#f0c040"/>';
   });
+  if (!moreTypes()) {
+    $('sell-txt').innerHTML = '<div class="srows"><span>' + tl('sell.soon') + '</span></div>';
+    $('sell-rep').hidden = $('sell-keep').hidden = $('sell-ok').hidden = $('sell-art').hidden = true;
+    return;
+  }
   $('sell-art').innerHTML = '<svg viewBox="0 0 300 110" aria-hidden="true"><defs><linearGradient id="sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8fd4ff"/>' +
     '<stop offset="1" stop-color="#f6ecd2"/></linearGradient></defs><rect width="300" height="110" fill="url(#sky)"/><rect y="94" width="300" height="16" fill="#4f9a40"/>' + stars +
     '<rect x="96" y="60" width="9" height="40" fill="#6a5640"/><rect x="195" y="60" width="9" height="40" fill="#6a5640"/>' +

@@ -291,6 +291,7 @@ LANG['ur'] = {
   'sell.lose.stars': 'ستارے (دوبارہ جیمز دیتے ہیں)',
   'sell.move': 'اسٹور {n} میں جائیں',
   'sell.see': 'شعبے دیکھیں',
+  'sell.soon': 'More store types are coming.',
   'sell.tap_again': 'منتقل ہونے کے لیے دوبارہ ٹیپ کریں',
 
   'regs.new': 'نیا مستقل گاہک: {name}',

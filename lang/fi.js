@@ -291,6 +291,7 @@ LANG['fi'] = {
   'sell.lose.stars': 'Tähdet (ne maksavat taas jalokiviä)',
   'sell.move': 'Muuta kauppaan {n}',
   'sell.see': 'Näytä osastot',
+  'sell.soon': 'More store types are coming.',
   'sell.tap_again': 'Napauta uudelleen muuttaaksesi',
 
   'regs.new': 'Uusi kanta-asiakas: {name}',

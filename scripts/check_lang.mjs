@@ -85,7 +85,7 @@ for (const code of codes) {
 if (args.includes('--all')) {
   const all = codes.map(load);
   const same = Object.keys(en).filter(k => !CHAIN.test(k) && /\p{L}{3}/u.test(JSON.stringify(en[k]).replace(/\{\w+\}/g, ''))
-    && !/^(native\.|intro\.|boost\.night\.|ads\.night|app\.title$|reg\.vip\.name$|cloud\.(sign_in|taken_title|taken_line|play_here)$|menu\.remind_(on|off|denied)$)/.test(k) && all.every(t => t && JSON.stringify(t[k]) === JSON.stringify(en[k])));
+    && !/^(native\.|intro\.|sell\.soon$|boost\.night\.|ads\.night|app\.title$|reg\.vip\.name$|cloud\.(sign_in|taken_title|taken_line|play_here)$|menu\.remind_(on|off|denied)$)/.test(k) && all.every(t => t && JSON.stringify(t[k]) === JSON.stringify(en[k])));
   for (const k of same) console.log(`untranslated in every language: ${k}`);
   if (same.length) bad++;
 }
@@ -109,7 +109,7 @@ const SAME_WORD = {
 };
 // Texts still in English in these languages, to be translated (key: language codes).
 const PENDING = {
-  'intro.ok': '*',
+  'intro.ok': '*', 'sell.soon': '*',
   'intro.stars.title': '*',
   'intro.stars': '*',
   'intro.gifts.title': '*',

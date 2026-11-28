@@ -293,6 +293,7 @@ LANG['uk'] = {
   'sell.lose.stars': 'Зірки (знову дають самоцвіти)',
   'sell.move': 'Переїхати в магазин {n}',
   'sell.see': 'Показати відділи',
+  'sell.soon': 'More store types are coming.',
   'sell.tap_again': 'Торкнись ще раз, щоб переїхати',
 
   'regs.new': 'Новий постійний покупець: {name}',

@@ -273,6 +273,7 @@ LANG['ko'] = {
   'sell.lose.stars': '별 (다시 보석을 줘요)',
   'sell.move': '매장 {n}: 이전하기',
   'sell.see': '코너 보기',
+  'sell.soon': 'More store types are coming.',
   'sell.tap_again': '한 번 더 탭하면 이전',
   'regs.new': '새 단골: {name}',
   'regs.new.line': '매출 +{n}% · 부스트 확인',

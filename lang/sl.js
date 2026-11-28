@@ -313,6 +313,7 @@ LANG['sl'] = {
   'sell.lose.stars': 'Zvezdice (spet plačajo dragulje)',
   'sell.move': 'Preseli se v trgovino {n}',
   'sell.see': 'Poglej oddelke',
+  'sell.soon': 'More store types are coming.',
   'sell.tap_again': 'Tapni znova za selitev',
 
   'regs.new': 'Nova stalna stranka: {name}',

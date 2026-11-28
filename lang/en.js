@@ -475,6 +475,7 @@ LANG['en'] = {
   // {n} is the number of the next store.
   'sell.move': 'Move to store {n}',
   'sell.see': 'See departments',
+  'sell.soon': 'More store types are coming.',
   // The button asks for a second tap to confirm.
   'sell.tap_again': 'Tap again to move',
 

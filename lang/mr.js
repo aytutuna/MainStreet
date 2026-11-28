@@ -291,6 +291,7 @@ LANG['mr'] = {
   'sell.lose.stars': 'तारे (ते पुन्हा रत्ने देतात)',
   'sell.move': 'स्टोअर {n} मध्ये जा',
   'sell.see': 'विभाग पहा',
+  'sell.soon': 'More store types are coming.',
   'sell.tap_again': 'जाण्यासाठी पुन्हा टॅप करा',
 
   'regs.new': 'नवीन नेहमीचे ग्राहक: {name}',

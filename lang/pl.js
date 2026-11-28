@@ -313,6 +313,7 @@ LANG['pl'] = {
   'sell.lose.stars': 'Gwiazdki (znów płacą klejnotami)',
   'sell.move': 'Przenieś się do sklepu {n}',
   'sell.see': 'Zobacz działy',
+  'sell.soon': 'More store types are coming.',
   'sell.tap_again': 'Dotknij ponownie',
 
   'regs.new': 'Nowy stały klient: {name}',

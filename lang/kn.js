@@ -276,6 +276,7 @@ LANG['kn'] = {
   'sell.lose.stars': 'ನಕ್ಷತ್ರಗಳು (ಮತ್ತೆ ರತ್ನ ಕೊಡುತ್ತವೆ)',
   'sell.move': 'ಅಂಗಡಿ {n}ಕ್ಕೆ ಹೋಗಿ',
   'sell.see': 'ವಿಭಾಗಗಳನ್ನು ನೋಡಿ',
+  'sell.soon': 'More store types are coming.',
   'sell.tap_again': 'ಹೋಗಲು ಮತ್ತೆ ಟ್ಯಾಪ್ ಮಾಡಿ',
   'regs.new': 'ಹೊಸ ಖಾಯಂ ಗ್ರಾಹಕ: {name}',
   'regs.new.line': 'ಮಾರಾಟ +{n}% · ಬೂಸ್ಟ್ ನೋಡಿ',

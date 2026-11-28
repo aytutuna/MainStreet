@@ -1525,7 +1525,7 @@ function newest(f) {
 }
 
 function canMove() {
-  return nStores() < MAX_STORES && newest(function () { return rating() >= gate(); });
+  return nStores() < MAX_STORES && moreTypes() && newest(function () { return rating() >= gate(); });
 }
 
 // reputation a move pays: a point for each star and each open department, and one for each digit earned in the store
@@ -1558,6 +1558,12 @@ function startBiz(t) {
   b[t.depts[0]] = atLevel(t.depts[0], v[0]);
   if (v[1]) b[t.depts[1]] = atLevel(t.depts[1], v[1]);
   return b;
+}
+
+// whether the chain has a store type it has not used yet. Until the sample's types are decided the chain ends at the last one,
+// since a copy of it at the same prices would open in minutes
+function moreTypes() {
+  return nStores() < TYPES.filter(function (t) { return !t.test; }).length;
 }
 
 // the type the next store of the chain is

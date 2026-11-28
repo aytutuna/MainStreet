@@ -292,6 +292,7 @@ LANG['ro'] = {
   'sell.lose.stars': 'Stelele (plătesc din nou nestemate)',
   'sell.move': 'Mută-te în magazinul {n}',
   'sell.see': 'Vezi raioanele',
+  'sell.soon': 'More store types are coming.',
   'sell.tap_again': 'Atinge din nou ca să te muți',
 
   'regs.new': 'Client fidel nou: {name}',

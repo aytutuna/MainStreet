@@ -290,6 +290,7 @@ LANG['th'] = {
   'sell.lose.stars': 'ดาว (ได้เพชรอีกรอบ)',
   'sell.move': 'ย้ายไปร้าน {n}',
   'sell.see': 'ดูแผนก',
+  'sell.soon': 'More store types are coming.',
   'sell.tap_again': 'แตะอีกครั้งเพื่อย้าย',
 
   'regs.new': 'ขาประจำใหม่: {name}',

@@ -291,6 +291,7 @@ LANG['bn'] = {
   'sell.lose.stars': 'তারা (আবার জেম দেবে)',
   'sell.move': 'স্টোর {n}-এ যান',
   'sell.see': 'বিভাগ দেখুন',
+  'sell.soon': 'More store types are coming.',
   'sell.tap_again': 'যেতে আবার ট্যাপ করুন',
 
   'regs.new': 'নতুন নিয়মিত: {name}',

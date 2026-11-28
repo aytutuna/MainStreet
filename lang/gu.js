@@ -291,6 +291,7 @@ LANG['gu'] = {
   'sell.lose.stars': 'તારા (તે ફરી રત્નો આપે છે)',
   'sell.move': 'સ્ટોર {n} માં જાઓ',
   'sell.see': 'વિભાગો જુઓ',
+  'sell.soon': 'More store types are coming.',
   'sell.tap_again': 'નવા સ્ટોરમાં જવા ફરી ટૅપ કરો',
 
   'regs.new': 'નવા નિયમિત ગ્રાહક: {name}',

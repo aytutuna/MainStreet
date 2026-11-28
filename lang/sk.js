@@ -293,6 +293,7 @@ LANG['sk'] = {
   'sell.lose.stars': 'Hviezdy (znova dajú drahokamy)',
   'sell.move': 'Presun do obchodu {n}',
   'sell.see': 'Zobraziť oddelenia',
+  'sell.soon': 'More store types are coming.',
   'sell.tap_again': 'Klepni znova na presun',
 
   'regs.new': 'Nový stály zákazník: {name}',

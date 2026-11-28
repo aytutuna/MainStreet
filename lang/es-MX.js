@@ -277,6 +277,7 @@ LANG['es-MX'] = {
   'sell.lose.stars': 'Estrellas (vuelven a dar gemas)',
   'sell.move': 'Mudarte a la tienda {n}',
   'sell.see': 'Ver departamentos',
+  'sell.soon': 'More store types are coming.',
   'sell.tap_again': 'Toca otra vez para mudarte',
   'regs.new': 'Nuevo frecuente: {name}',
   'regs.new.line': 'Ventas +{n}% · mira Impulsos',
