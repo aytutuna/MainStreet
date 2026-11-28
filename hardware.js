@@ -21,7 +21,6 @@ var SZ = {
   FirstAid_Box_Wall_01: [0.3, 0.118, 0.3],
   GarageCab_Tall_05: [0.5, 0.495, 2],
   JerryCan_01: [0.355, 0.189, 0.47],
-  Light_Shop_01: [1.21, 0.18, 0.34],
   Locker_Double_01: [0.76, 0.445, 1.8],
   Menu_Board_Wall_01: [1.52, 0.09, 0.7],
   NewspaperRack_01: [0.9, 0.365, 1.1],
@@ -44,7 +43,6 @@ var SZ = {
   SM_BeltSander_Bench_01: [0.54, 0.353, 0.383],
   SM_BenchGrinder_01: [0.42, 0.245, 0.322],
   SM_BenchGrinder_Stand_01: [0.42, 0.36, 1.132],
-  SM_BinRack_Wall_01: [0.9, 0.171, 0.6],
   SM_BottleJack_01: [0.185, 0.142, 0.225],
   SM_BrakeRotor_01: [0.3, 0.3, 0.056],
   SM_Broom_Push_01: [0.6, 0.112, 1.45],
@@ -142,7 +140,6 @@ var SZ = {
   SM_ShopVac_Drum_01: [0.618, 0.59, 0.72],
   SM_Shovel_01: [0.26, 1.446, 0.08],
   SM_Sign_AFrame_Blank_01: [0.6, 0.634, 0.963],
-  SM_Sledge_01: [0.921, 0.2, 0.109],
   SM_SocketSet_Case_01: [0.4, 0.572, 0.057],
   SM_SprayCan_01: [0.09, 0.09, 0.218],
   SM_Square_Framing_01: [0.6, 0.4, 0.014],
@@ -161,6 +158,7 @@ var SZ = {
   SM_TrashCan_Steel_01: [0.503, 0.476, 0.707],
   SM_TroubleLight_01: [0.425, 0.125, 0.191],
   SM_UtilityKnife_01: [0.185, 0.045, 0.039],
+  SM_WalkIn_StripCurtain_01: [0.86, 0.075, 1.95],
   SM_Welder_MIG_01: [0.606, 0.865, 0.89],
   SM_Welder_Stick_01: [0.36, 0.51, 0.421],
   SM_WeldingHelmet_01: [0.26, 0.306, 0.32],
@@ -179,6 +177,7 @@ var SZ = {
   TireRack_Wall_01: [1.22, 0.652, 0.7],
   Tire_Stack_01: [0.685, 0.695, 0.88],
   ToolChest_Roller_01: [0.692, 0.472, 0.862],
+  TrashRecycle_Station_01: [1, 0.583, 1.1],
   VendingMachine_Drink_01: [0.95, 0.863, 1.83],
   WetFloorSign_01: [0.28, 0.523, 0.655],
   Wheel_01: [0.65, 0.228, 0.65],
@@ -235,7 +234,7 @@ function tools(base, name, list, y) {
   return up.apply(null, [nm(name)].concat(list.map(function (t) {
     var x = f[0] ? a.x + f[0] * (t[2] || 0) : a.x + t[1];
     var z = f[0] ? a.z + t[1] : a.z + f[1] * (t[2] || 0);
-    return { m: 'pw/' + t[0], x: x, z: z, r: TURN[a.face], k: t[3] || 1, y: y === undefined ? a.h : y, flat: 1 };
+    return { m: 'pw/' + t[0], x: x, z: z, r: t[4] === undefined ? TURN[a.face] : t[4], k: t[3] || 1, y: y === undefined ? a.h : y, flat: 1 };
   })));
 }
 
@@ -269,18 +268,19 @@ function floor(x0, x1, z0, z1, finish) {
 function put(name, ref, x, z, face, o) {
   return up(nm(name), pw(ref, x, z, face, o));
 }
-// a show piece: a model enlarged, standing on the floor
-function big(name, ref, x, z, face, k) {
-  return up(nm(name), { sign: 'gold' }, { m: 'pw/' + ref, x: x, z: z, r: TURN[face], k: k });
-}
 // a show piece on a table
 function plinth(name, table, x, z, face, goods) {
   return up.apply(null, [nm(name), { sign: 'gold' }, pw(table, x, z, face, { spots: 0 })].concat(goods.map(function (g) {
     return { m: 'pw/' + g[0], x: x + (g[1] || 0), z: z + (g[2] || 0), r: TURN[face], k: g[3] || 1, y: 0.45, flat: 1 };
   })));
 }
-function lamps(name, list) {
-  return up.apply(null, [nm(name)].concat(list.map(function (q) { return hang('Light_Shop_01', q[0], q[1], q[2] || 0, 1.2, 0.7); })));
+// a show piece on a pallet, raised to the pallet's top: n pallets side by side
+function dais(name, ref, x, z, o) {
+  return up(nm(name), { sign: 'gold' }, pw('Pallet_01', x, z, 's', { spots: 0, n: o.n }), { m: 'pw/' + ref, x: x, z: z, r: TURN[o.face || 's'], k: o.k, y: 0.061, flat: 1 });
+}
+// a floor piece of one or more entries
+function floorSet(name, list) {
+  return up.apply(null, [nm(name)].concat(list));
 }
 
 // goods of the benches: on a bench top at 0.45
@@ -291,10 +291,10 @@ var AREAS = {};
 // Hand tools: tool walls and benches along the back wall, a row of roller chests, a bench row with the small tools
 var ha0 = strip('s', -22.15, -7.75, [
   ['Tool wall', 'SM_Workbench_Backboard_01', { on: [['pw/SM_Hammer_Claw_01', -0.28, 0.05, 1.8, BT], ['pw/SM_Wrench_Combo_01', 0, 0.05, 2.4, BT], ['pw/SM_Pliers_01', 0.28, 0.05, 2.2, BT]] }],
-  ['Wrench bench', 'SM_Workbench_Steel_01', { gap: 0.08, on: [['pw/SM_SocketSet_Case_01', -0.2, 0, 1.4], ['pw/SM_Ratchet_01', 0.2, 0.05, 2]] }],
-  ['Saw bench', 'Workbench_Wood_01', { gap: 0.08, on: [['pw/SM_HandSaw_01', -0.2, 0, 1.6], ['pw/SM_Hacksaw_01', 0.2, 0.05, 1.6]] }],
+  ['Wrench bench', 'SM_Workbench_Steel_01', { gap: 0.08, on: [['pw/SM_SocketSet_Case_01', -0.2, 0, 1], ['pw/SM_Ratchet_01', 0.2, 0.05, 2]] }],
+  ['Saw bench', 'Workbench_Wood_01', { gap: 0.08, on: [['pw/SM_HandSaw_01', -0.22, 0, 1.4], ['pw/SM_Hacksaw_01', 0.24, 0.05, 1.4]] }],
   ['Tall tool cabinet', 'GarageCab_Tall_05', { gap: 0.08 }],
-  ['Second tool wall', 'SM_Workbench_Backboard_01', { gap: 0.08, on: [['pw/SM_Hammer_BallPeen_01', -0.28, 0.05, 1.8, BT], ['pw/SM_Sledge_01', 0, 0.05, 1.3, BT], ['pw/SM_Mallet_Rubber_01', 0.28, 0.05, 1.8, BT]] }],
+  ['Second tool wall', 'SM_Workbench_Backboard_01', { gap: 0.08, on: [['pw/SM_Hammer_BallPeen_01', -0.28, 0.05, 1.8, BT], ['pw/SM_UtilityKnife_01', 0, 0.05, 2.4, BT], ['pw/SM_Mallet_Rubber_01', 0.28, 0.05, 1.8, BT]] }],
   ['Measuring bench', 'SM_Workbench_Steel_01', { gap: 0.08, on: [['pw/SM_TapeMeasure_01', -0.25, 0, 2.4], ['pw/SM_Level_Box_01', 0.12, 0.05, 1.6]] }],
   ['Clamp bench', 'Workbench_Wood_01', { gap: 0.08, on: [['pw/SM_Clamp_Bar_01', -0.2, 0, 1.7], ['pw/SM_Clamp_C_01', 0.2, 0, 2.4]] }]
 ]);
@@ -311,9 +311,9 @@ var ha2 = strip('s', -18.95, -7.4, [
   ['Plier bench', 'SM_Workbench_Steel_01', { gap: 0.4 }]
 ], { mid: true });
 var hand2 = [ha2[0], tools(ha2[0], 'Level and square', [['SM_Level_Box_01', 0, 0, 1.6], ['SM_Square_Framing_01', 0.15, 0, 1]]), ha2[1],
-  tools(ha2[1], 'Screwdriver set', [['SM_Screwdriver_Flat_01', -0.25, 0, 2.2], ['SM_Screwdriver_Phillips_01', -0.05, 0, 2.2], ['SM_File_01', 0.2, 0, 1.4]]),
-  tools(ha2[1], 'Hex keys and pry bar', [['SM_HexKeys_01', -0.1, 0.1, 2.4], ['SM_PryBar_01', 0.18, -0.05, 1.2]]), ha2[2],
-  tools(ha2[2], 'Pliers and cutters', [['SM_Pliers_01', -0.2, 0, 2.2], ['SM_Pliers_Locking_01', 0.0, 0, 2], ['SM_UtilityKnife_01', 0.22, 0, 2.4]])];
+  tools(ha2[1], 'Screwdriver set', [['SM_Screwdriver_Flat_01', -0.3, 0.08, 2], ['SM_Screwdriver_Phillips_01', -0.04, 0.08, 2.2], ['SM_File_01', 0.22, 0.08, 1.4]]),
+  tools(ha2[1], 'Hex keys and pry bar', [['SM_HexKeys_01', -0.25, -0.08, 2.4], ['SM_PryBar_01', 0.15, -0.08, 1]]), ha2[2],
+  tools(ha2[2], 'Pliers and cutters', [['SM_Pliers_01', -0.23, 0, 2], ['SM_Pliers_Locking_01', 0.0, 0, 1.8], ['SM_UtilityKnife_01', 0.27, 0, 2]])];
 AREAS.hand = {
   cx: -4.5, cz: -19.7, vacant: [-8.0, -1.0, -22.2, -17.2], sign: [-4.5, -17.9, 1.9],
   floor: [floor(-8.0, -1.0, -22.2, -17.2, 0x46566c)],
@@ -322,8 +322,8 @@ AREAS.hand = {
     ha1,
     hand2,
     [SIGN, board('Hand tools board', 'board.h_hand', -2.3, -17.6, 1.1, 0.95), lights([[-5.5, -20.9], [-3.0, -20.9]]),
-      lamps('Bench lights', [[-6.4, -21.0], [-3.2, -21.0]]),
-      big('Golden tool chest', 'SM_ToolChest_Stack_01', -1.55, -20.2, 's', 1.5)],
+      floorSet('Tool trolley', [pw('ToolChest_Roller_01', -7.7, -17.6, 's', { spots: 0 }), { m: 'pw/SM_ToolChest_Top_01', x: -7.7, z: -17.6, r: 0, y: 0.431, flat: 1 }]),
+      dais('Golden tool chest', 'SM_ToolChest_Stack_01', -1.7, -20.2, { k: 1.2 })],
     [put('Shop mat', 'SM_FloorMat_01', -4.5, -17.75, 's', { spots: 0 }), put('Rolling stool', 'ShopStool_Rolling_01', -7.7, -20.7, 's', { spots: 0 }),
       put('Steel bin', 'SM_TrashCan_Steel_01', -1.4, -17.6, 's', { spots: 0 }), put('Wet floor sign', 'WetFloorSign_01', -6.2, -17.6, 's', { spots: 0 })],
     [staff('Tool clerk', -2.3, -18.8, 's'), HELP]
@@ -353,7 +353,7 @@ var pa2 = strip('s', -18.95, 1.0, [
   ['Bucket bench', 'SM_Workbench_Steel_01', { gap: 0.4 }],
   ['Safety gear bench', 'Workbench_Wood_01', { gap: 0.4 }]
 ], { mid: true });
-var paint2 = [pa2[0], tools(pa2[0], 'Caulk guns', [['SM_CaulkGun_01', -0.2, 0, 1.8], ['SM_CaulkGun_01', 0.15, 0.04, 1.8], ['SM_DuctTape_01', 0.35, 0, 2]]), pa2[1], pa2[2],
+var paint2 = [pa2[0], tools(pa2[0], 'Caulk guns', [['SM_CaulkGun_01', -0.25, 0, 1.5], ['SM_CaulkGun_01', 0.0, 0.04, 1.5], ['SM_DuctTape_01', 0.3, 0, 2]]), pa2[1], pa2[2],
   tools(pa2[2], 'Buckets', [['SM_Bucket_01', -0.15, 0, 1.2], ['SM_Bucket_01', 0.2, 0, 1.2]]), pa2[3],
   tools(pa2[3], 'Gloves and goggles', [['SM_WorkGloves_01', -0.25, 0, 1.8], ['SM_SafetyGlasses_01', 0, 0, 2], ['SM_EarMuffs_01', 0.25, 0, 1.8]])];
 AREAS.paint = {
@@ -364,7 +364,7 @@ AREAS.paint = {
     pa1,
     paint2,
     [SIGN, board('Paint board', 'board.h_paint', 6.4, -17.6, 1.1, 0.95), lights([[2.0, -20.9], [5.5, -20.9]]),
-      lamps('Paint lights', [[2.3, -21.0], [5.5, -21.0]]),
+      floorSet('Extra ladder', [pw('SM_StepLadder_01', 0.45, -19.2, 's', { spots: 0 })]),
       plinth('Golden paint can', 'Workbench_Wood_01', 7.2, -20.2, 's', [['SM_PaintCan_Open_01', 0, 0, 3.4]])],
     [put('Shop mat', 'SM_FloorMat_01', 4.0, -17.75, 's', { spots: 0 }), put('Rag can', 'SM_OilyRagCan_01', 7.6, -17.7, 's', { spots: 0 }),
       put('Steel bin', 'SM_TrashCan_Steel_01', 0.5, -17.6, 's', { spots: 0 }), put('Wet floor sign', 'WetFloorSign_01', 2.6, -17.6, 's', { spots: 0 })],
@@ -385,9 +385,9 @@ var oi0 = strip('k', 14.7, -21.9, [
 var oi1 = strip('k', 12.5, -21.4, [
   ['Oil table', 'Workbench_Wood_01', { on: [['pw/OilJug_01', -0.28, 0, 2], ['pw/OilJug_01', 0, 0, 2], ['pw/OilBottle_01', 0.28, 0, 2.6]] }],
   ['Oil drain', 'SM_OilDrain_Upright_01', { gap: 0.4 }],
-  ['Grease bench', 'SM_Workbench_Steel_01', { gap: 0.4, on: [['pw/SM_GreaseGun_01', -0.2, 0, 2], ['pw/SM_OilCan_Squirt_01', 0.2, 0, 2.2]] }],
-  ['Jerry can pallet', 'Pallet_01', { gap: 0.4, on: [['pw/JerryCan_01', -0.18, 0, 1.4, 0.061], ['pw/JerryCan_01', 0.0, 0, 1.4, 0.061], ['pw/JerryCan_01', 0.18, 0, 1.4, 0.061]] }],
-  ['Propane cage', 'PropaneCage_01', { gap: 0.4 }]
+  ['Grease bench', 'SM_Workbench_Steel_01', { gap: 0.4, on: [['pw/SM_GreaseGun_01', -0.17, 0, 1.6], ['pw/SM_OilCan_Squirt_01', 0.2, 0, 2.2]] }],
+  ['Jerry can pallet', 'Pallet_01', { gap: 0.4, on: [['pw/JerryCan_01', -0.21, 0, 1.2, 0.061], ['pw/JerryCan_01', 0.0, 0, 1.2, 0.061], ['pw/JerryCan_01', 0.21, 0, 1.2, 0.061]] }],
+  ['Gas can pallet', 'Pallet_01', { gap: 0.4, on: [['pw/SM_GasCan_Plastic_01', -0.18, 0, 1.2, 0.061], ['pw/SM_GasCan_Plastic_01', 0, 0, 1.2, 0.061], ['pw/SM_GasCan_Plastic_01', 0.18, 0, 1.2, 0.061]] }]
 ], { mid: true, s: 2 });
 var oi2 = strip('k', 10.9, -21.5, [
   ['Spray bench', 'SM_Workbench_Steel_01'],
@@ -396,8 +396,8 @@ var oi2 = strip('k', 10.9, -21.5, [
   ['Rag can', 'SM_OilyRagCan_01', { gap: 0.4 }]
 ], { mid: true });
 var oil2 = [oi2[0], tools(oi2[0], 'Spray cans', [['SM_SprayCan_01', -0.22, 0, 2], ['SM_SprayCan_01', 0, 0, 2], ['SM_SprayCan_01', 0.22, 0, 2]]), oi2[1],
-  tools(oi2[1], 'Gas cans', [['SM_GasCan_Plastic_01', -0.2, 0, 1.4], ['SM_GasCan_Plastic_01', 0.25, 0, 1.4]]),
-  tools(oi2[1], 'Funnels and drain pan', [['SM_Funnel_01', -0.38, 0.02, 1.6], ['SM_OilDrainPan_01', 0.05, 0.02, 1]]), oi2[2], oi2[3]];
+  tools(oi2[1], 'Gas cans', [['SM_GasCan_Plastic_01', -0.33, 0, 1.2], ['SM_GasCan_Plastic_01', 0.35, 0, 1.2]]),
+  tools(oi2[1], 'Funnels and drain pan', [['SM_Funnel_01', -0.1, 0.02, 1.6], ['SM_OilDrainPan_01', 0.12, 0.02, 1]]), oi2[2], oi2[3]];
 AREAS.oil = {
   cx: 12.2, cz: -17.8, vacant: [9.7, 14.7, -22.2, -13.4], sign: [12.2, -14.4, 1.9],
   floor: [floor(9.7, 14.7, -22.2, -13.4, 0x56603a)],
@@ -406,8 +406,8 @@ AREAS.oil = {
     oi1,
     oil2,
     [SIGN, board('Oil board', 'board.h_oil', 10.7, -14.0, 1.1, 0.95), lights([[12.0, -20.4], [12.0, -16.2]]),
-      lamps('Oil lights', [[12.4, -20.0, Math.PI / 2], [12.4, -16.0, Math.PI / 2]]),
-      plinth('Golden oil jug', 'Workbench_Steel_01', 10.5, -16.0, 'k', [['OilJug_01', 0, 0, 3.4]])],
+      floorSet('Shop fan', [pw('SM_FloorFan_Drum_01', 14.45, -15.3, 'k', { spots: 0 })]),
+      plinth('Golden oil jug', 'Workbench_Steel_01', 10.5, -16.0, 'k', [['OilJug_01', 0, 0, 3], ['OilBottle_01', 0, -0.28, 2.6], ['OilBottle_01', 0, 0.28, 2.6]])],
     [put('Shop mat', 'SM_FloorMat_01', 12.0, -14.0, 'k', { spots: 0 }), put('Rag can', 'SM_OilyRagCan_01', 14.35, -14.3, 'k', { spots: 0 }),
       put('Steel bin', 'SM_TrashCan_Steel_01', 10.0, -13.7, 'k', { spots: 0 }), put('Wet floor sign', 'WetFloorSign_01', 13.4, -14.0, 'k', { spots: 0 })],
     [staff('Oil clerk', 13.4, -17.0, 'k'), HELP]
@@ -439,7 +439,7 @@ var ba2 = strip('k', 10.9, -12.9, [
   ['Parts washer', 'SM_PartsWasher_01', { gap: 0.2 }]
 ], { mid: true });
 var batt2 = [ba2[0], ba2[1], tools(ba2[1], 'V8 block', [['SM_EngineBlock_V8_01', 0, 0, 0.7]]), ba2[2], ba2[3], ba2[4],
-  tools(ba2[1], 'Trouble lights', [['SM_TroubleLight_01', -0.25, 0, 2], ['SM_Flashlight_01', 0.25, 0, 2]])];
+  tools(ba2[1], 'Trouble lights', [['SM_TroubleLight_01', -0.28, 0, 0.8], ['SM_Flashlight_01', 0.27, 0, 2]])];
 AREAS.batt = {
   cx: 12.2, cz: -10.9, vacant: [9.7, 14.7, -13.4, -8.4], sign: [12.2, -9.1, 1.9],
   floor: [floor(9.7, 14.7, -13.4, -8.4, 0x5e3a3f)],
@@ -448,8 +448,8 @@ AREAS.batt = {
     ba1,
     batt2,
     [SIGN, board('Parts board', 'board.h_batt', 10.6, -13.0, 1.1, 0.95), lights([[12.4, -12.2], [12.4, -9.6]]),
-      lamps('Parts lights', [[12.4, -12.0, Math.PI / 2], [12.4, -9.6, Math.PI / 2]]),
-      big('Golden engine', 'SM_EngineBlock_V8_01', 13.4, -9.0, 'k', 1.5)],
+      floorSet('Spare totes', [pw('SM_Tote_Stack_01', 10.15, -13.0, 'b', { spots: 0, n: 2 })]),
+      up(nm('Golden engine'), { sign: 'gold' }, pw('SM_EngineStand_01', 13.4, -9.0, 'k', { spots: 0 }), { m: 'pw/SM_EngineBlock_V8_01', x: 13.4, z: -9.0, r: TURN.k, k: 1, y: 0.445, flat: 1 })],
     [put('Shop mat', 'SM_FloorMat_01', 12.0, -8.7, 'k', { spots: 0 }), put('Rolling stool', 'ShopStool_Rolling_01', 10.1, -9.0, 'k', { spots: 0 }),
       put('Steel bin', 'SM_TrashCan_Steel_01', 14.3, -8.7, 'k', { spots: 0 }), put('Wet floor sign', 'WetFloorSign_01', 11.2, -8.7, 'k', { spots: 0 })],
     [staff('Parts clerk', 13.5, -11.4, 'k'), HELP]
@@ -457,7 +457,7 @@ AREAS.batt = {
 };
 
 // Lawn and garden: tool racks on the east wall, mowers and barrows in the middle
-var la0 = strip('k', 14.7, -8.1, [
+var la0 = strip('k', 14.83, -8.1, [
   ['Garden tool rack', 'SM_GardenTools_Rack_01', { y: 0.15 }],
   ['Second tool rack', 'SM_GardenTools_Rack_01', { y: 0.15, gap: 0.05 }],
   ['Hose hangers', 'SM_HoseHanger_Garden_01', { y: 0.45, gap: 0.2, n: 2 }],
@@ -480,18 +480,18 @@ var la2 = strip('k', 10.6, -7.6, [
   ['Propane tanks', 'SM_PropaneTank_01', { gap: 0.4, n: 3 }],
   ['Furniture dolly', 'SM_Dolly_Furniture_01', { gap: 0.4 }]
 ], { mid: true });
-var lawn2 = [la2[0], tools(la2[0], 'Rake and shovel', [['SM_Rake_01', -0.2, 0, 1.2], ['SM_Shovel_01', 0.2, 0, 1.2]]), la2[1], la2[2], la2[3], la2[4],
-  tools(la2[0], 'Work lights', [['SM_TroubleLight_01', -0.1, 0.05, 2], ['SM_Flashlight_01', 0.3, 0, 2]])];
+var lawn2 = [la2[0], tools(la2[0], 'Rake and shovel', [['SM_Rake_01', 0, -0.08, 0.9, 0], ['SM_Shovel_01', 0, 0.08, 0.9, 0]]), la2[1], la2[2], la2[3], la2[4],
+  tools(la2[2], 'Work lights', [['SM_Flashlight_01', -0.15, 0, 2], ['SM_Flashlight_01', 0.15, 0, 2]])];
 AREAS.lawn = {
-  cx: 12.2, cz: -4.9, vacant: [9.7, 14.7, -8.4, -1.4], sign: [12.2, -2.4, 1.9],
+  cx: 12.2, cz: -4.9, vacant: [9.7, 14.85, -8.4, -1.4], sign: [12.2, -2.4, 1.9],
   floor: [floor(9.7, 14.7, -8.4, -1.4, 0x3c5a6e)],
   ups: compose([
     la0,
     la1,
     lawn2,
     [SIGN, board('Lawn board', 'board.h_lawn', 10.5, -2.0, 1.1, 0.95), lights([[12.4, -6.4], [12.4, -3.6]]),
-      lamps('Yard lights', [[12.4, -6.0, Math.PI / 2], [12.4, -3.4, Math.PI / 2]]),
-      big('Golden mower', 'SM_LawnMower_01', 13.4, -2.6, 'k', 1.4)],
+      floorSet('Garden ladder', [pw('SM_StepLadder_01', 14.35, -2.8, 'k', { spots: 0 })]),
+      dais('Golden mower', 'SM_LawnMower_01', 13.3, -2.5, { n: 2, k: 1.2, face: 'k' })],
     [put('Shop mat', 'SM_FloorMat_01', 12.0, -1.8, 'k', { spots: 0 }), put('Steel bin', 'SM_TrashCan_Steel_01', 14.3, -1.8, 'k', { spots: 0 }),
       put('Broom', 'SM_Broom_Push_01', 10.1, -2.0, 'k', { spots: 0 }), put('Wet floor sign', 'WetFloorSign_01', 11.0, -1.8, 'k', { spots: 0 })],
     [staff('Garden clerk', 13.5, -4.9, 'k'), HELP]
@@ -532,8 +532,8 @@ AREAS.power = {
     po1,
     po2,
     [SIGN, board('Power tool board', 'board.h_power', 2.0, -4.9, 1.1, 0.95), lights([[3.2, -11.2], [3.2, -7.2]]),
-      lamps('Shop lights', [[2.6, -11.0], [5.4, -11.0]]),
-      big('Golden drill press', 'SM_DrillPress_Floor_01', 5.4, -6.2, 's', 1.4)],
+      floorSet('Anvil', [pw('SM_Anvil_Stump_01', 6.5, -10.6, 's', { spots: 0 })]),
+      dais('Golden drill press', 'SM_DrillPress_Floor_01', 5.4, -6.2, { k: 1.2 })],
     [put('Shop mat', 'SM_FloorMat_01', 4.0, -5.1, 's', { spots: 0 }), put('Steel bin', 'SM_TrashCan_Steel_01', 6.4, -5.1, 's', { spots: 0 }),
       put('Rolling stool', 'ShopStool_Rolling_01', 1.8, -5.3, 's', { spots: 0 }), put('Wet floor sign', 'WetFloorSign_01', 2.8, -5.2, 's', { spots: 0 })],
     [staff('Tool clerk', 5.9, -9.5, 'n'), HELP]
@@ -545,10 +545,10 @@ var ti0 = strip('s', -12.9, -6.5, [
   ['Tire rack', 'TireRack_Wall_01'],
   ['Second tire rack', 'TireRack_Wall_01', { gap: 0.1 }],
   ['Tire stack', 'Tire_Stack_01', { gap: 0.2 }],
-  ['Wheel pallet', 'Pallet_01', { gap: 0.2, on: [['pw/Wheel_01', -0.1, 0, 1, 0.061], ['pw/Wheel_01', 0.1, 0.05, 1, 0.061]] }],
+  ['Wheel pallet', 'Pallet_01', { gap: 0.2, on: [['pw/Wheel_01', -0.15, 0, 0.8, 0.061], ['pw/Wheel_01', 0.15, 0, 0.8, 0.061]] }],
   ['Third tire rack', 'TireRack_Wall_01', { gap: 0.2 }],
   ['Second tire stack', 'Tire_Stack_01', { gap: 0.2 }],
-  ['Steel wheel pallet', 'Pallet_01', { gap: 0.2, on: [['pw/SM_Wheel_Steel_01', -0.1, 0, 1, 0.061], ['pw/SM_Wheel_Steel_01', 0.1, 0.05, 1, 0.061]] }]
+  ['Steel wheel pallet', 'Pallet_01', { gap: 0.2, on: [['pw/SM_Wheel_Steel_01', -0.15, 0, 0.8, 0.061], ['pw/SM_Wheel_Steel_01', 0.15, 0, 0.8, 0.061]] }]
 ]);
 var ti1 = strip('s', -10.8, -6.4, [
   ['Tire changer', 'SM_TireChanger_01'],
@@ -564,8 +564,8 @@ var ti2 = strip('s', -8.6, -6.4, [
   ['Car ramps', 'SM_CarRamp_01', { gap: 0.3, n: 2 }],
   ['Creeper', 'SM_Creeper_01', { gap: 0.3 }]
 ], { mid: true });
-var tire2 = [ti2[0], tools(ti2[0], 'Bottle jacks', [['SM_BottleJack_01', -0.2, 0, 2], ['SM_BottleJack_01', 0.1, 0, 2]]), ti2[1], ti2[2], ti2[3], ti2[4],
-  tools(ti2[0], 'Lug wrenches', [['SM_LugWrench_Cross_01', 0.28, 0, 1.6]])];
+var tire2 = [ti2[0], tools(ti2[0], 'Bottle jacks', [['SM_BottleJack_01', -0.25, 0, 2], ['SM_BottleJack_01', -0.03, 0, 2]]), ti2[1], ti2[2], ti2[3], ti2[4],
+  tools(ti2[0], 'Lug wrenches', [['SM_LugWrench_Cross_01', 0.27, 0, 1]])];
 AREAS.tires = {
   cx: -4.1, cz: -8.9, vacant: [-6.9, -1.25, -13.0, -4.7], sign: [-4.1, -5.4, 1.9],
   floor: [floor(-6.9, -1.25, -13.0, -4.7, 'quarrybw')],
@@ -574,7 +574,7 @@ AREAS.tires = {
     ti1,
     tire2,
     [SIGN, board('Tire board', 'board.h_tires', -6.0, -5.0, 1.1, 0.95), lights([[-4.6, -11.6], [-4.6, -7.4]]),
-      lamps('Tire lights', [[-5.2, -11.6], [-3.0, -11.6]]),
+      floorSet('Tire pile', [pw('Tire_Stack_01', -2.0, -7.0, 's', { spots: 0, n: 2 })]),
       up(nm('Golden tire'), { sign: 'gold' }, pw('Pallet_01', -2.4, -6.2, 's', { spots: 0 }), { m: 'pw/Tire_Stack_01', x: -2.4, z: -6.2, r: 0, k: 1.3, y: 0.061, flat: 1 })],
     [put('Shop mat', 'SM_FloorMat_01', -4.1, -5.1, 's', { spots: 0 }), put('Steel bin', 'SM_TrashCan_Steel_01', -6.4, -5.1, 's', { spots: 0 }),
       put('Parking stop', 'SM_ParkingStop_01', -4.1, -4.9, 's', { spots: 0 }), put('Wet floor sign', 'WetFloorSign_01', -2.0, -5.1, 's', { spots: 0 })],
@@ -590,7 +590,7 @@ var st0 = strip('b', -14.7, -14.4, [
   ['Tall cabinet', 'GarageCab_Tall_05', { gap: 0.8 }],
   ['Garage shelf three', 'SM_Shelving_HD_Loaded_01', { gap: 0.8 }],
   ['Door cabinet', 'SM_GarageCab_Base_Door_10', { gap: 0.8 }],
-  ['Bin rack', 'SM_BinRack_Wall_01', { gap: 0.8, y: 0.6 }]
+  ['Parts bench', 'SM_Workbench_Backboard_01', { gap: 0.8, on: [['pw/PartsBin_01', -0.3, 0.05, 2.4, 0.45], ['pw/PartsBin_01', -0.1, 0.05, 2.4, 0.45], ['pw/PartsBin_01', 0.1, 0.05, 2.4, 0.45], ['pw/PartsBin_01', 0.3, 0.05, 2.4, 0.45]] }]
 ]);
 var st1 = strip('b', -12.3, -14.0, [
   ['Door cabinet island', 'SM_GarageCab_Base_Door_10', { n: 2, top: [['SM_GarageCab_Top_20']] }],
@@ -605,7 +605,7 @@ var st2 = strip('b', -10.7, -13.9, [
   ['Wood crates', 'SM_Crate_Wood_01', { gap: 0.8, n: 2 }],
   ['Lidded totes', 'SM_Tote_Lidded_01', { gap: 0.8, n: 2 }],
   ['Shop stools', 'SM_ShopStool_01', { gap: 0.8, n: 3 }],
-  ['Parts bins', 'PartsBin_01', { gap: 0.8, n: 4 }],
+  ['Parts drawers', 'SM_GarageCab_Base_Drawers_05', { gap: 0.8, n: 3 }],
   ['Folding chairs', 'SM_FoldingChair_01', { gap: 0.8, n: 2 }]
 ], { mid: true });
 AREAS.storage = {
@@ -616,8 +616,8 @@ AREAS.storage = {
     st1,
     st2,
     [SIGN, board('Storage board', 'board.h_storage', -11.2, -0.8, 1.1, 0.95), lights([[-12.2, -9.0], [-12.2, -4.0]]),
-      lamps('Garage lights', [[-12.2, -9.5, Math.PI / 2], [-12.2, -4.5, Math.PI / 2]]),
-      plinth('Golden cabinet', 'Workbench_Steel_01', -13.0, -2.0, 'b', [['SM_ToolBag_01', 0, 0, 2.2]])],
+      floorSet('Sawhorses', [pw('SM_Sawhorse_Wood_01', -10.5, -1.6, 'b', { spots: 0, n: 2 })]),
+      dais('Golden cabinet', 'GarageCab_Tall_05', -10.6, -3.4, { k: 1.2 })],
     [put('Shop mat', 'SM_FloorMat_01', -12.2, -0.7, 's', { spots: 0 }), put('Steel bin', 'SM_TrashCan_Steel_01', -14.3, -0.6, 's', { spots: 0 }),
       put('Rag can', 'SM_OilyRagCan_01', -10.2, -0.7, 's', { spots: 0 }), put('Wet floor sign', 'WetFloorSign_01', -11.4, -0.8, 's', { spots: 0 })],
     [staff('Garage clerk', -11.4, -7.5, 'b'), HELP]
@@ -631,14 +631,14 @@ var WING = {
     rect: [15.3, 21.5, -8, -3],
     visit: [],
     ups: [
-      pack(nm('A welding table'), pw('SM_WeldingTable_01', 16.9, -7.65, 's', { spots: 0 })),
-      pack(nm('A wire welder'), pw('SM_Welder_MIG_01', 18.0, -7.55, 's', { spots: 0 })),
-      pack(nm('A welding helmet'), { m: 'pw/SM_WeldingHelmet_01', x: 16.65, z: -7.65, r: 0, k: 1.6, y: 0.426, flat: 1 }),
-      pack(nm('Gas cylinders'), pw('SM_GasCylinder_01', 19.2, -7.7, 's', { spots: 0, n: 3 })),
-      pack(nm('A gas cart'), pw('SM_OxyAcetylene_Cart_01', 20.1, -7.55, 's', { spots: 0 })),
-      pack(nm('A stick welder and a sandblaster'), pw('SM_Welder_Stick_01', 20.95, -7.65, 's', { spots: 0 }), pw('SM_SandblastCabinet_01', 16.5, -3.55, 'n', { spots: 0 })),
-      pack(nm('An anvil and a shop press'), pw('SM_Anvil_Stump_01', 18.0, -3.65, 'n', { spots: 0 }), pw('SM_ShopPress_01', 19.3, -3.6, 'n', { spots: 0 })),
-      pack(nm('A drum fan and a heater'), pw('SM_FloorFan_Drum_01', 20.6, -3.65, 'n', { spots: 0 }), pw('SM_Heater_Torpedo_01', 21.0, -5.2, 'k', { spots: 0 }))
+      pack(nm('A welding table'), pw('SM_WeldingTable_01', 18.2, -6.0, 's', { spots: 0 }), pw('SM_ShopStool_01', 18.2, -5.3, 'n', { spots: 0 })),
+      pack(nm('A wire welder and a mat'), pw('SM_Welder_MIG_01', 19.3, -6.1, 's', { spots: 0 }), pw('SM_FloorMat_01', 19.0, -5.2, 's', { spots: 0 })),
+      pack(nm('A welding helmet'), { m: 'pw/SM_WeldingHelmet_01', x: 17.95, z: -6.0, r: 0, k: 1.6, y: 0.426, flat: 1 }),
+      pack(nm('Gas cylinders'), pw('SM_GasCylinder_01', 20.95, -7.7, 's', { spots: 0, n: 3 })),
+      pack(nm('A gas cart'), pw('SM_OxyAcetylene_Cart_01', 20.2, -7.55, 's', { spots: 0 })),
+      pack(nm('A stick welder and a sandblaster'), pw('SM_Welder_Stick_01', 16.7, -7.65, 's', { spots: 0 }), pw('SM_SandblastCabinet_01', 21.0, -4.2, 'n', { spots: 0 })),
+      pack(nm('An anvil and a shop press'), pw('SM_Anvil_Stump_01', 16.9, -3.7, 'n', { spots: 0 }), pw('SM_ShopPress_01', 19.3, -3.6, 'n', { spots: 0 })),
+      pack(nm('A fan, a heater and a screen'), pw('SM_FloorFan_Drum_01', 20.4, -3.65, 'n', { spots: 0 }), pw('SM_Heater_Torpedo_01', 21.2, -5.8, 'k', { spots: 0 }), pw('SM_WalkIn_StripCurtain_01', 17.4, -4.4, 's', { spots: 0 }))
     ]
   },
   lounge: {
@@ -647,12 +647,13 @@ var WING = {
     ups: [
       pack(nm('Lockers'), pw('EmployeeLockers_3_01', 15.6, -9.2, 'b', { spots: 0 }), pw('EmployeeLockers_3_01', 15.6, -10.1, 'b', { spots: 0 })),
       pack(nm('A time clock and first aid'), KIT.wp('TimeClock_Wall_01', 15.32, -12.0, 'b', 0.3), KIT.wp('FirstAid_Box_Wall_01', 15.32, -12.7, 'b', 0.3)),
-      pack(nm('A job board'), KIT.wp('Menu_Board_Wall_01', 18.4, -13.9, 's', 0.35)),
+      pack(nm('A job board and lockers'), KIT.wp('Menu_Board_Wall_01', 18.4, -13.9, 's', 0.35), pw('Locker_Double_01', 19.6, -8.3, 's', { spots: 0, n: 2 })),
       pack(nm('A work table'), pw('Workbench_Wood_01', 18.4, -11.2, 's', { spots: 0 })),
       pack(nm('Stools'), pw('SM_ShopStool_01', 17.9, -11.75, 's', { spots: 0 }), pw('SM_ShopStool_01', 18.9, -11.75, 's', { spots: 0 }), pw('SM_ShopStool_01', 17.9, -10.65, 'n', { spots: 0 }),
         pw('SM_ShopStool_01', 18.9, -10.65, 'n', { spots: 0 })),
       pack(nm('A mechanic on break'), { staff: [18.9, -10.65, 'n', 'sit'] }),
-      pack(nm('A second table'), pw('Table_Cafe_Round_01', 20.5, -11.0, 's', { spots: 0 }), pw('SM_FoldingChair_01', 20.5, -11.5, 's', { spots: 0 }), pw('SM_FoldingChair_01', 20.5, -10.5, 'n', { spots: 0 })),
+      pack(nm('Two round tables'), pw('Table_Cafe_Round_01', 20.5, -11.0, 's', { spots: 0 }), pw('SM_FoldingChair_01', 20.5, -11.5, 's', { spots: 0 }), pw('SM_FoldingChair_01', 20.5, -10.5, 'n', { spots: 0 }),
+        pw('Table_Cafe_Round_01', 17.2, -9.2, 's', { spots: 0 }), pw('SM_FoldingChair_01', 17.2, -9.7, 's', { spots: 0 }), pw('SM_FoldingChair_01', 17.2, -8.7, 'n', { spots: 0 })),
       pack(nm('A fridge and a radio'), pw('SM_MiniFridge_01', 17.4, -13.6, 's', { spots: 0, on: [['pw/SM_Radio_Jobsite_01', 0, 0, 0, 0.41, 1]] })),
       pack(nm('A clerk on break'), { staff: [20.5, -10.5, 'n', 'sit'] }),
       pack(nm('A coffee corner and a clock'), pw('CoffeeStation_15', 20.4, -13.6, 's', { spots: 0 }), KIT.wp('ShopClock_01', 15.32, -13.3, 'b', 0.6))
@@ -665,7 +666,7 @@ var low = KIT.low;
 function flat(list) {
   return list.reduce(function (a, u) { return a.concat(u.piece); }, []);
 }
-var rets = strip('s', -2.8, 15.9, [
+var rets = strip('s', -2.8, 17.2, [
   ['Returns shelf one', 'SM_Shelving_HD_Loaded_01', { s: 0 }], ['Returns shelf two', 'SM_Shelving_HD_Loaded_01', { s: 0, gap: 0.05 }],
   ['Key cutting bench', 'SM_Workbench_Steel_01', { s: 0, gap: 0.3 }], ['Returns cabinet', 'SM_GarageCab_Base_Door_10', { s: 0, gap: 0.1 }]
 ]);
@@ -686,8 +687,9 @@ var DECOR = {
     pw('SM_Sign_AFrame_Blank_01', -8.3, 0.6, 's', { spots: 0 }), pw('SM_Sign_AFrame_Blank_01', 8.3, 0.6, 's', { spots: 0 }),
     // a pallet display and a lumber stand where the middle of the floor was bare, and a safety line down the aisle
     room(-14.0, 9.4, -16.35, -16.2, 0xe8b923),
-    pw('Pallet_01', -5.8, -14.4, 's', { spots: 0 }), pw('PalletLoad_Cases_01', -5.8, -14.4, 's', { spots: 0 }), pw('SM_Lumber_Stack_01', -3.2, -14.6, 's', { spots: 0 }),
-    pw('SM_Sawhorse_Wood_01', 3.4, -14.6, 's', { spots: 0 }), pw('SM_Sawhorse_Wood_01', 4.6, -14.6, 's', { spots: 0 }), pw('PropaneCage_01', 6.6, -14.6, 's', { spots: 0 })
+    pw('Pallet_01', -5.8, -14.4, 's', { spots: 0 }), pw('PalletLoad_Cases_01', -5.8, -14.4, 's', { spots: 0 }), pw('Tire_Stack_01', -3.2, -14.6, 's', { spots: 0 }),
+    pw('SM_Sawhorse_Wood_01', 3.4, -14.6, 's', { spots: 0 }), pw('SM_Sawhorse_Wood_01', 4.6, -14.6, 's', { spots: 0 }), { m: 'pw/SM_Lumber_Stack_01', x: 4.0, z: -14.6, r: 0, y: 0.38, flat: 1 },
+    pw('Pallet_01', 6.6, -14.6, 's', { spots: 0 }), pw('PalletLoad_Water_01', 6.6, -14.6, 's', { spots: 0 })
   ]),
   stock: [],
   out: [],
@@ -712,7 +714,7 @@ var DECOR = {
 var FRONT = [
   [2, 'pw/SM_Wheelbarrow_01', -13.6, 1.8, 0], [2, 'pw/SM_Wheelbarrow_01', -7.0, 1.8, 0], [2, 'pw/SM_Wheelbarrow_01', 5.0, 1.8, 0], [2, 'pw/SM_Wheelbarrow_01', 12.0, 1.8, 0],
   [4, 'pw/SM_HandTruck_01', 13.4, 2.0, Math.PI], [4, 'pw/SM_HandTruck_01', 14.0, 2.0, Math.PI],
-  [8, 'pw/PropaneCage_01', -14.3, 1.95, Math.PI], [8, 'pw/Tire_Stack_01', -13.6, 1.95, Math.PI], [8, 'pw/SM_Sign_AFrame_Blank_01', -13.0, 1.95, Math.PI], [8, 'pw/NewspaperRack_01', -12.5, 1.95, Math.PI],
+  [8, 'pw/TrashRecycle_Station_01', -14.3, 1.95, Math.PI], [8, 'pw/Tire_Stack_01', -13.6, 1.95, Math.PI], [8, 'pw/SM_Sign_AFrame_Blank_01', -13.0, 1.95, Math.PI], [8, 'pw/NewspaperRack_01', -12.5, 1.95, Math.PI],
   [10, 'pw/DiningBench_01', -6.1, 1.95, Math.PI], [10, 'pw/SM_Sawhorse_Wood_01', -7.0, 1.95, 0], [10, 'pw/Planter_Tall_01', -5.15, 1.95, 0]
 ];
 
