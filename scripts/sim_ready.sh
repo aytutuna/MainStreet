@@ -3,7 +3,7 @@
 save_state() {
   data=$(xcrun simctl get_app_container "$UDID" com.aytutuna.mainstreet data)
   for db in $(find "$data/Library" -ipath '*localstorage*' -name '*.sqlite3' 2>/dev/null); do
-    sqlite3 "$db" "select hex(value) from ItemTable where key like 'mainstreet.v%'" 2>/dev/null
+    sqlite3 "$db" "select hex(value) from ItemTable where key like 'mainstreet.v%' or key = 'mainstreet.chain'" 2>/dev/null
   done | shasum | cut -d ' ' -f 1
 }
 
