@@ -1326,8 +1326,8 @@ function updateHud() {
   set(shown, 'clk', $('clk'), 'textContent', shut() ? tl('hud.closed_at', { t: stamp() }) : stamp());
   flag(shown, 'clc', $('clk'), 'shut', shut());
   set(shown, 'gems', $('gem-n'), 'textContent', short(S.gems));
-  set(shown, 'stars', $('star-n'), 'textContent', newest(function () { return Math.min(rating(), gate()) + '/' + gate(); }));
-  set(shown, 'store', $('store-n'), 'textContent', tl('hud.store', { n: nStores() }));
+  set(shown, 'stars', $('star-n'), 'textContent', Math.min(rating(), gate()) + '/' + gate());
+  set(shown, 'store', $('store-n'), 'textContent', tl('hud.store', { n: S.cur + 1 }));
   if (!$('away').hidden) awayBtn();
   var x = $('x2');
   set(shown, 'x2h', x, 'hidden', !(S.x2 > 0));
