@@ -1605,7 +1605,7 @@ function goalTo(g) {
   if (!id) return;
   sfx('tap');
   // a goal about something this store's type lacks is shown in the store that has it
-  if (id !== 'sell' && (BZ[id] ? kind().di[id] === undefined : !kind().pd[id]) && homeIndex(id) !== S.cur) showStore(homeIndex(id));
+  if (id !== 'sell' && homeIndex(id) !== S.cur) showStore(homeIndex(id));
   if (id === 'sell') openSell();
   else if (BZ[id] ? !avail(id) : !has(PL[id].after)) openSheet(id);
   else openPlace(id, g.j);

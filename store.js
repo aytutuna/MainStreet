@@ -544,6 +544,7 @@ function modelList(key) {
   walk(p.decor);
   walk(p.wing);
   walk(p.models);
+  walk(p.carry);
   walk(NATURE);
   walk(LAND.REFS);
   walk(SWAP);
@@ -6725,8 +6726,11 @@ function init(canvas, tap) {
     setTimeout(function () {
       try {
         typeReady[first] = true;
-        build();
-        loadOthers();
+        // the store on screen may be another type by now, when a cloud copy came in while the models loaded
+        fetchType(typeKey(), function () {
+          build();
+          loadOthers();
+        });
       } catch (e) {
         console.error(e);
         loadFail(tl('scene.build_failed'));
@@ -6741,16 +6745,32 @@ var asked = {};
 var typeReady = {};
 var waiting = null;
 
-function loadOthers() {
-  var todo = Object.keys(PLANS).filter(function (k) { return !typeReady[k]; });
-  if (!todo.length) return;
-  var k = todo[0];
-  var extra = modelList(k).filter(function (r) { return !asked[r]; });
+var fetching = false;
+var queue = [];
+
+// the models of one type, loaded one type at a time; cb runs once they are in
+function fetchType(k, cb) {
+  if (typeReady[k]) return cb && cb();
+  queue.push({ k: k, cb: cb });
+  if (fetching) return;
+  var q = queue.shift();
+  fetching = true;
+  var extra = modelList(q.k).filter(function (r) { return !asked[r]; });
   extra.forEach(function (r) { asked[r] = 1; });
   loadModels(extra, null, function () {
-    typeReady[k] = true;
-    loadOthers();
+    typeReady[q.k] = true;
+    fetching = false;
+    if (q.cb) q.cb();
+    var next = queue.shift();
+    if (next) fetchType(next.k, next.cb);
   }, lib);
+}
+
+// in the background: the types of the stores opened and the type the next store will be; the rest come when asked for
+function loadOthers() {
+  S.cs.forEach(function (r) { var t = TY[r.t]; fetchType(t.plan || t.id); });
+  var n = nextType();
+  fetchType(n.plan || n.id);
 }
 
 function typeKey() {
@@ -6811,8 +6831,10 @@ function useType() {
   if (!typeReady[key]) {
     waiting = key;
     loadingEl.classList.remove('done');
+    fetchType(key);
     return false;
   }
+  loadOthers();
   if (ctx) {
     ctx.group.visible = false;
     ctx.order.concat(Object.keys(ctx.places), Object.keys(shared.places)).forEach(function (id) {
@@ -6861,7 +6883,7 @@ function build() {
 var lastT = 0;
 
 function draw(now) {
-  if (!ready) return;
+  if (!ready || !ctx) return;
   if (waiting && typeReady[waiting]) {
     waiting = null;
     loadingEl.classList.add('done');
