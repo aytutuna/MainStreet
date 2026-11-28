@@ -2110,6 +2110,9 @@ function openSell() {
   $('sell-ok').textContent = ok ? tl('sell.move', { n: nStores() + 1 }) : tl('sell.see');
   $('sell-ok').classList.toggle('alt', !ok);
   $('sell').hidden = false;
+  // the box and the store list are laid out only now, so they are put back to the top after showing
+  $('sell').querySelector('.box').scrollTop = 0;
+  $('chain-list').scrollTop = 0;
 }
 
 // a regular whose feat got done arrives with a card banner; the whole set gets one more
