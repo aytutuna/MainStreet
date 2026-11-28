@@ -7023,7 +7023,7 @@ function buildDiner() {
   root.add(wash);
   buildDinerLot();
   buildDinerDock();
-  buildPylon();
+  buildDinerPylon();
   var walls = buildDinerWalls({ root: root, outer: outer, renderer: renderer, hw: SH.edge, front: F, back: SH.back, sb: SH.sb, ax: SH.annex, r: SH.corner,
     entrances: PLAN.entrances, doors: PLAN.doors, docks: PLAN.docks });
   lookG.wall.push.apply(lookG.wall, walls.wall);
@@ -7102,6 +7102,35 @@ function buildDinerDock() {
   pl.add = true;
   var y = SH.yardRect;
   pl.pick = addPick('dock', (y[0] + y[1]) / 2, (y[2] + SH.sb) / 2, y[1] - y[0], SH.sb - y[2]);
+}
+
+// the pylon at the highway: the board the looks repaint with the store's name, high on two posts, its OPEN sign on the face
+function buildDinerPylon() {
+  var g = new THREE.Group();
+  var posts = [];
+  [-1, 1].forEach(function (sd) {
+    var post = new THREE.Mesh(new THREE.BoxGeometry(0.16, 2.9, 0.16), flat(0x50566a));
+    post.position.set(sd * 0.9, 1.45, -0.16);
+    post.castShadow = true;
+    g.add(post);
+    posts.push(post);
+  });
+  var c = document.createElement('canvas');
+  c.width = 512;
+  c.height = 256;
+  var tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  var mat = new THREE.MeshLambertMaterial({ map: tex, emissiveMap: tex, emissive: 0x000000 });
+  var board = new THREE.Mesh(new THREE.BoxGeometry(2.3, 1.15, 0.14), [flat(0x3a3d4a), flat(0x3a3d4a), flat(0x3a3d4a), flat(0x3a3d4a), mat, flat(0x3a3d4a)]);
+  board.position.y = 2.5;
+  board.castShadow = true;
+  g.add(board);
+  g.position.set(SH.pylon[0], 0, SH.pylon[1]);
+  root.add(g);
+  pylon = { c: c, tex: tex, mat: mat, big: null, posts: posts, board: board };
+  var sg = new THREE.Mesh(openBoard(), openSign.faces);
+  sg.position.set(0, 1.62, 0.03);
+  g.add(sg);
 }
 
 function buildType(key) {
