@@ -24,7 +24,7 @@
   --gloss-red: linear-gradient(#e0705a, #c4432f 48%, #a8321f 52%, #b83a27);
   --sys: ui-rounded, "SF Pro Rounded", system-ui, -apple-system, "Segoe UI", Roboto, "Noto Sans", sans-serif;
   --head: "Fira Sans", var(--sys);
-  --st: env(safe-area-inset-top);
+  --st: max(env(safe-area-inset-top), var(--wc, 0px));
   --sb: env(safe-area-inset-bottom);
 }
 
@@ -127,7 +127,7 @@ html.fb :is(.btn, .btns button, #tabs button, .chip span, .chip em, .box h2, .bo
   display: flex;
   flex-direction: column;
   gap: 8px;
-  padding: calc(env(safe-area-inset-top) + 8px) 6px 0;
+  padding: calc(var(--st) + 8px) 6px 0;
   pointer-events: none;
 }
 
