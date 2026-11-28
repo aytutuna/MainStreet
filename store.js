@@ -3303,10 +3303,10 @@ function buildBox() {
   boxShell();
   buildDoors();
 }
-// The hardware warehouse: a steel shed with a garden center on its west, a lumber canopy over the service road on its east,
-// loading docks and a fenced truck court behind. Its walls are low like the others', so the floor shows. Everything is laid
-// out from the shell's numbers: the lot, the docks and the yard take nothing from the supercenter
-var WH = { base: 0x8e939c, steel: 0xaab5c3, band: 0xe8821a, cap: 0x5d6672, blue: 0x2f56a8, rib: 0x8d99a9 };
+// The hardware warehouse: a steel shed with a garden center and a storage yard on its west, a lumber canopy against its east
+// wall, loading docks and a fenced truck court behind, and one entrance tower on the lot. Everything is laid out from the
+// shell's numbers; the lot, the docks, the yards and the signs take nothing from the supercenter
+var WH = { base: 0x8e939c, steel: 0xaab5c3, band: 0xe8821a, cap: 0x5d6672, blue: 0x2f56a8, rib: 0x8d99a9, deck: 0xcfc9bd };
 
 function whCuts(a, c, gaps) {
   var cuts = [a];
@@ -3319,19 +3319,20 @@ function whCuts(a, c, gaps) {
 }
 
 function whBlock(b, x0, x1, z0, z1, H) {
-  b.block(flat(WH.base), x0 - 0.03, x1 + 0.03, z0 - 0.03, z1 + 0.03, 0, 0.3);
-  b.block(flat(WH.steel), x0, x1, z0, z1, 0.3, H - 0.1);
-  b.block(flat(WH.band), x0 - 0.02, x1 + 0.02, z0 - 0.02, z1 + 0.02, 0.5, 0.64);
-  b.block(flat(WH.cap), x0 - 0.05, x1 + 0.05, z0 - 0.05, z1 + 0.05, H - 0.1, H);
+  b.block(flat(WH.base), x0 - 0.03, x1 + 0.03, z0 - 0.03, z1 + 0.03, 0, 0.35);
+  b.block(flat(WH.steel), x0, x1, z0, z1, 0.35, H - 0.14);
+  b.block(flat(WH.band), x0 - 0.02, x1 + 0.02, z0 - 0.02, z1 + 0.02, 0.62, 0.8);
+  b.block(flat(WH.band), x0 - 0.02, x1 + 0.02, z0 - 0.02, z1 + 0.02, H - 0.5, H - 0.36);
+  b.block(flat(WH.cap), x0 - 0.06, x1 + 0.06, z0 - 0.06, z1 + 0.06, H - 0.14, H);
 }
 
-// a wall along x at z, and one along z at x, each with gaps given as [middle, width]
+// a wall along x at z, and one along z at x, each with gaps given as [middle, width], H high
 function whWallX(b, z, a, c, H, gaps) {
   whCuts(a, c, gaps).forEach(function (s) {
     whBlock(b, s[0], s[1], z - 0.12, z + 0.12, H);
     for (var x = Math.ceil(s[0] / 0.9) * 0.9; x < s[1]; x += 0.9) {
-      b.block(flat(WH.rib), x - 0.02, x + 0.02, z - 0.14, z - 0.12, 0.66, H - 0.12);
-      b.block(flat(WH.rib), x - 0.02, x + 0.02, z + 0.12, z + 0.14, 0.66, H - 0.12);
+      b.block(flat(WH.rib), x - 0.02, x + 0.02, z - 0.14, z - 0.12, 0.82, H - 0.52);
+      b.block(flat(WH.rib), x - 0.02, x + 0.02, z + 0.12, z + 0.14, 0.82, H - 0.52);
     }
   });
 }
@@ -3340,13 +3341,52 @@ function whWallZ(b, x, a, c, H, gaps) {
   whCuts(a, c, gaps).forEach(function (s) {
     whBlock(b, x - 0.12, x + 0.12, s[0], s[1], H);
     for (var z = Math.ceil(s[0] / 0.9) * 0.9; z < s[1]; z += 0.9) {
-      b.block(flat(WH.rib), x - 0.14, x - 0.12, z - 0.02, z + 0.02, 0.66, H - 0.12);
-      b.block(flat(WH.rib), x + 0.12, x + 0.14, z - 0.02, z + 0.02, 0.66, H - 0.12);
+      b.block(flat(WH.rib), x - 0.14, x - 0.12, z - 0.02, z + 0.02, 0.82, H - 0.52);
+      b.block(flat(WH.rib), x + 0.12, x + 0.14, z - 0.02, z + 0.02, 0.82, H - 0.52);
     }
   });
 }
 
-// a post and beam shelter: columns on a grid and beams across, with open slats instead of a roof so the stock stays in view
+// green chain link along a line: posts, a top rail, a mid rail and a thin mesh band, with gaps [from, to] left open
+function whFence(b, x0, z0, x1, z1, gaps) {
+  var along = Math.abs(x1 - x0) >= Math.abs(z1 - z0);
+  var a0 = along ? Math.min(x0, x1) : Math.min(z0, z1);
+  var a1 = along ? Math.max(x0, x1) : Math.max(z0, z1);
+  var at = along ? z0 : x0;
+  var n = Math.max(1, Math.round((a1 - a0) / 1.6));
+  var st = (a1 - a0) / n;
+  function open(t) { return (gaps || []).some(function (g) { return t > g[0] + 0.01 && t < g[1] - 0.01; }); }
+  function put(p0, p1, y0, y1, th) {
+    if (along) b.block(flat(0x3f6f4a), p0, p1, at - th, at + th, y0, y1);
+    else b.block(flat(0x3f6f4a), at - th, at + th, p0, p1, y0, y1);
+  }
+  for (var i = 0; i <= n; i++) {
+    var t = a0 + i * st;
+    put(t - 0.04, t + 0.04, 0, 0.62, 0.04);
+    if (i < n && !open(t + st / 2)) {
+      put(t, t + st, 0.58, 0.62, 0.02);
+      put(t, t + st, 0.3, 0.33, 0.02);
+      put(t + 0.04, t + st - 0.04, 0.1, 0.55, 0.008);
+    }
+  }
+}
+
+// a trailer on the court backed against a dock, running len north from z
+function whTrailer(b, x, z, len) {
+  b.block(flat(0xf3f5f7), x - 0.65, x + 0.65, z - len, z, 0.3, 1.3);
+  b.block(flat(0xdfe3e8), x - 0.67, x + 0.67, z - len, z - len + 0.08, 0.3, 1.3);
+  b.block(flat(WH.band), x - 0.66, x + 0.66, z - len + 0.6, z - len + 1.0, 0.55, 0.75);
+  b.block(flat(0x2c3038), x - 0.6, x + 0.6, z - len + 0.2, z - len + 1.1, 0.05, 0.3);
+  b.block(flat(0x2c3038), x - 0.6, x + 0.6, z - 0.9, z - 0.2, 0.05, 0.3);
+  [-0.4, 0.4].forEach(function (o) { b.block(flat(0x6b7480), x + o - 0.04, x + o + 0.04, z - len + 2.2, z - len + 2.3, 0, 0.3); });
+}
+
+function whBox(b, x0, x1, z0, z1, h, c, roof) {
+  b.block(flat(c), x0, x1, z0, z1, 0.02, h);
+  b.block(flat(roof || WH.cap), x0 - 0.05, x1 + 0.05, z0 - 0.05, z1 + 0.05, h, h + 0.12);
+}
+
+// a post and beam shelter, open to the sky so the stock stays in view
 function whCanopy(b, x0, x1, z0, z1, h) {
   var n = 4;
   var step = (z1 - z0) / n;
@@ -3358,16 +3398,7 @@ function whCanopy(b, x0, x1, z0, z1, h) {
   });
   for (var j = 0; j <= n; j++) b.block(flat(0x4f5864), x0 - 0.2, x1 + 0.2, z0 + j * step - 0.07, z0 + j * step + 0.07, h - 0.14, h);
   [x0, x1].forEach(function (bx) { b.block(flat(0x4f5864), bx - 0.07, bx + 0.07, z0, z1, h - 0.14, h); });
-  for (var k = 0; k < n; k++) b.block(flat(0xc9d0d8), x0 - 0.3, x1 + 0.3, z0 + k * step + 0.1, z0 + k * step + 0.2, h, h + 0.04);
-}
-
-function whTrailer(b, x, z, len) {
-  b.block(flat(0xf3f5f7), x - 0.65, x + 0.65, z - len, z, 0.3, 1.3);
-  b.block(flat(0xdfe3e8), x - 0.67, x + 0.67, z - len, z - len + 0.08, 0.3, 1.3);
-  b.block(flat(WH.band), x - 0.66, x + 0.66, z - len + 0.6, z - len + 1.0, 0.55, 0.75);
-  b.block(flat(0x2c3038), x - 0.6, x + 0.6, z - len + 0.2, z - len + 1.1, 0.05, 0.3);
-  b.block(flat(0x2c3038), x - 0.6, x + 0.6, z - 0.9, z - 0.2, 0.05, 0.3);
-  [-0.4, 0.4].forEach(function (o) { b.block(flat(0x6b7480), x + o - 0.04, x + o + 0.04, z - len + 2.2, z - len + 2.3, 0, 0.3); });
+  for (var k = 0; k < n; k++) b.block(flat(0xc9d0d8), x0 - 0.2, x1 + 0.2, z0 + k * step + 0.1, z0 + k * step + 0.2, h, h + 0.04);
 }
 
 function buildWarehouse() {
@@ -3375,82 +3406,107 @@ function buildWarehouse() {
   var f = SH.front;
   var bk = SH.back;
   var sb = SH.sb;
-  var wg = SH.wing;
   var W = SH.warehouse;
+  var ct = W.court;
   var b = new Batch();
-  // paving: the apron in front, the drives at either side of the lot, the service road and the truck court
-  b.slab(flat(PAVE), -e - 1.6, wg + 1.2, f, SH.lot[0], 0, 0.02);
+  // paving: the whole site is concrete behind the lot, with asphalt for the court, the drives and the service road
+  b.slab(flat(WH.deck), -31, 31, sb - 0.3, f, 0.002, 0.012);
+  b.slab(flat(PAVE), -31, 31, f, SH.lot[0], 0, 0.02);
   [-1, 1].forEach(function (sd) {
-    b.slab(flat(ASPHALT), sd * SH.drive - 0.9, sd * SH.drive + 0.9, SH.aisle - 0.8, 10.5, 0.008, 0.02);
+    b.slab(flat(ASPHALT), sd * SH.drive - 0.9, sd * SH.drive + 0.9, SH.lot[0], 10.5, 0.008, 0.02);
     b.slab(flat(ASPHALT), sd * SH.drive - 0.9, sd * SH.drive + 0.9, SIDE_N, 10.5, 0.016, 0.01);
   });
-  b.slab(flat(ASPHALT), SH.road - 1.4, SH.road + 1.4, SH.yard - 1.5, 10.5, 0.008, 0.02);
-  b.slab(flat(ASPHALT), SH.road - 1.4, SH.road + 1.4, SIDE_N, 10.5, 0.016, 0.01);
-  b.slab(flat(ASPHALT), W.court[0], W.court[1], W.court[2], sb - 0.3, 0.008, 0.02);
-  b.slab(flat(0xcfc9bd), -e - 1.5, wg + 1.5, sb - 0.3, sb + 0.1, 0.004, 0.012);
-  // the court's markings: a bay in front of each dock
+  b.slab(flat(ASPHALT), SH.road - 1.0, SH.road + 1.0, ct[2], 10.5, 0.008, 0.02);
+  b.slab(flat(ASPHALT), SH.road - 1.0, SH.road + 1.0, SIDE_N, 10.5, 0.016, 0.01);
+  b.slab(flat(ASPHALT), ct[0], ct[1], ct[2], sb - 0.3, 0.008, 0.02);
+  // the court: a bay in front of each dock, the line the trucks turn on, and the fence closed all round with a gate for the road
   PLAN.docks.forEach(function (d) {
-    b.slab(flat(PAINT), d - 0.9, d - 0.84, sb - 5.2, sb - 0.7, 0.014, 0.006);
-    b.slab(flat(PAINT), d + 0.84, d + 0.9, sb - 5.2, sb - 0.7, 0.014, 0.006);
+    b.slab(flat(PAINT), d - 1.35, d - 1.29, sb - 5.2, sb - 0.7, 0.014, 0.006);
+    b.slab(flat(PAINT), d + 1.29, d + 1.35, sb - 5.2, sb - 0.7, 0.014, 0.006);
     b.slab(flat(0x8b8f99), d - 1.2, d + 1.2, sb - 0.6, sb - 0.3, 0.12, 0.12);
+    b.block(flat(0x1f2229), d - 1.0, d - 0.7, sb - 0.32, sb - 0.1, 0.12, 0.5);
+    b.block(flat(0x1f2229), d + 0.7, d + 1.0, sb - 0.32, sb - 0.1, 0.12, 0.5);
   });
-  // the fence round the court
-  var fz = W.court[2] + 0.1;
-  for (var fx = W.court[0] + 0.3; fx < W.court[1] - 1; fx += 1.6) {
-    b.block(flat(0x6b7480), fx - 0.04, fx + 0.04, fz - 0.04, fz + 0.04, 0, 0.6);
-    b.block(flat(0x9aa3ae), fx, fx + 1.6, fz - 0.015, fz + 0.015, 0.5, 0.54);
-    b.block(flat(0x9aa3ae), fx, fx + 1.6, fz - 0.015, fz + 0.015, 0.25, 0.29);
-  }
-  [W.court[0] + 0.1, W.court[1] - 0.1].forEach(function (fx2) {
-    for (var gz = W.court[2]; gz < sb - 1; gz += 1.6) {
-      b.block(flat(0x6b7480), fx2 - 0.04, fx2 + 0.04, gz - 0.04, gz + 0.04, 0, 0.6);
-      b.block(flat(0x9aa3ae), fx2 - 0.015, fx2 + 0.015, gz, gz + 1.6, 0.5, 0.54);
-    }
+  b.slab(flat(PAINT), -3, 3, SH.yard - 0.05, SH.yard + 0.05, 0.014, 0.006);
+  var gate = [SH.road - 1.2, SH.road + 1.2];
+  whFence(b, ct[0], ct[2], ct[1], ct[2]);
+  whFence(b, ct[0], ct[2], ct[0], sb - 0.3);
+  whFence(b, ct[1], ct[2], ct[1], sb - 0.3);
+  whFence(b, ct[0], sb - 0.3, -e - 0.3, sb - 0.3);
+  whFence(b, e + 0.3, sb - 0.3, ct[1], sb - 0.3, [gate]);
+  [gate[0], gate[1]].forEach(function (gx) {
+    b.block(flat(WH.blue), gx - 0.08, gx + 0.08, sb - 0.4, sb - 0.2, 0, 1.2);
+    b.block(flat(WH.band), gx - 0.1, gx + 0.1, sb - 0.42, sb - 0.18, 1.2, 1.3);
   });
-  // trailers backed up to the docks the delivery trucks do not use, and a row parked along the west side of the court
-  PLAN.docks.forEach(function (d, i) { if (i !== 2 && i !== 3) whTrailer(b, d, sb - 0.5, 4.2 + (i % 2) * 0.6); });
-  [0, 1, 2].forEach(function (i) { whTrailer(b, W.court[0] + 2.2 + i * 1.8, W.court[2] + 6.8, 6.2); });
-  [[0xc8412e, 0], [0x2f6fa8, 1], [0x4a8a4a, 2]].forEach(function (c) {
-    b.block(flat(c[0]), W.court[0] + 9.2 + c[1] * 2.1, W.court[0] + 11.1 + c[1] * 2.1, sb - 6.4, sb - 3.4, 0.05, 0.95);
-    b.block(flat(0x2c3038), W.court[0] + 9.2 + c[1] * 2.1, W.court[0] + 11.1 + c[1] * 2.1, sb - 6.4, sb - 3.4, 0.95, 1.0);
+  // trailers at the docks the delivery trucks do not use, a trailer park in the west of the court, containers in the east
+  PLAN.docks.forEach(function (d, i) { if (i !== 2 && i !== 3) whTrailer(b, d, sb - 0.5, 4.2 + (i % 3) * 0.3); });
+  for (var tx = -28; tx <= -12; tx += 1.8) whTrailer(b, tx, SH.yard + 2.0, 6.4);
+  [0xe8821a, 0x2f6fa8, 0xc8412e, 0x4a8a4a, 0xe8821a, 0x2f6fa8, 0xc8412e, 0x4a8a4a, 0xe8821a, 0x2f6fa8].forEach(function (c, i) {
+    var cx = 9 + i * 2.2;
+    b.block(flat(c), cx, cx + 1.9, ct[2] + 0.3, ct[2] + 3.3, 0.05, 0.95);
+    b.block(flat(0x2c3038), cx, cx + 1.9, ct[2] + 0.3, ct[2] + 3.3, 0.95, 1.0);
   });
-  // the lumber canopy over the service road
+  whBox(b, SH.road - 3.4, SH.road - 2.0, sb - 3.4, sb - 1.8, 0.9, 0xe9edf1, WH.blue);
+  [[-26, sb - 4], [-18, sb - 4], [14, sb - 4], [24, sb - 4]].forEach(function (p) { b.block(flat(0x4f5864), p[0] - 0.05, p[0] + 0.05, p[1] - 0.05, p[1] + 0.05, 0, 2.2); b.bulb(p[0], 2.25, p[1]); });
+  // the storage yard behind the garden, fenced
+  whFence(b, -31, sb - 0.3, -31, -17.2);
+  whFence(b, -31, -17.2, -e - 0.3, -17.2);
+  // the lumber canopy against the east wall
   var cn = W.canopy;
   whCanopy(b, cn[0], cn[1], cn[2], cn[3], 1.7);
-  // the entrance block: a blue plinth in front of the wall, the store's name laid on its top
-  b.block(flat(WH.blue), W.tower[0], W.tower[1], f + 0.05, W.tower[2], 0, 0.55);
-  b.block(flat(0xf4f2ea), W.tower[0] - 0.04, W.tower[1] + 0.04, f + 0.05, W.tower[2] + 0.04, 0.55, 0.6);
+  // the windbreak behind the court: pines in a regular row, and the neighbours' sheds at either side
+  var pines = ['flora/mk-pine-1-lo*0.4', 'flora/mk-pine-2-lo*0.4', 'flora/mk-pine-3-lo*0.4'];
+  var tb = new Batch();
+  for (var px = -30.5, pi = 0; px <= 30.6; px += 2.2, pi++) {
+    var ref = pines[pi % pines.length];
+    var pz = ct[2] - 0.7 - (pi % 2) * 0.5;
+    tb.model(ref, px, LAND.ground(px, pz) - 0.05 - lib.model(ref).box.y0, pz, pi * 2.1, 1.0 + (pi % 3) * 0.08);
+  }
+  root.add(tb.group());
+  [[-1, 0x9aa3ae], [1, 0xb9c0c8]].forEach(function (n) {
+    var x0 = n[0] * 34;
+    var x1 = n[0] * 41;
+    var nb2 = new Batch();
+    nb2.block(flat(n[1]), Math.min(x0, x1), Math.max(x0, x1), -24, -9, -2, 3.0);
+    nb2.block(flat(WH.cap), Math.min(x0, x1) - 0.1, Math.max(x0, x1) + 0.1, -24.1, -8.9, 3.0, 3.2);
+    for (var rz = -22; rz < -10; rz += 3.4) nb2.block(flat(0xe8821a), n[0] > 0 ? x0 - 0.04 : x0 + 0.04 - 0.1, n[0] > 0 ? x0 + 0.04 + 0.1 : x0 + 0.04, rz, rz + 2.4, 0, 2.2);
+    root.add(nb2.group());
+  });
   decor(SH.decor.out);
   root.add(b.group());
-  // the building: the walls on the side that faces the camera drop with the cutaway, the rest stay
+  // the building: the walls on the side that faces the camera drop with the cutaway; the front and the dock wall also
+  // squash when the camera is close, so they hide nothing in play
   var wb = new Batch();
   var eb = new Batch();
-  var gb = new Batch();
   var nb = new Batch();
-  whWallZ(wb, -e, bk, f, 1.0, [SH.westDoor]);
-  whWallZ(wb, -e, sb, bk, 1.0, []);
-  whWallZ(eb, e, bk, f, 1.0, [[SH.wingDoor.in[1], 0.9]]);
-  whWallZ(eb, e, sb, bk, 1.0, []);
-  whWallZ(gb, wg, sb, f, 1.0, []);
-  whWallX(nb, sb, -e, wg, 0.8, PLAN.docks.map(function (d) { return [d, 2]; }));
-  whWallX(nb, bk, -e, e, 0.5, PLAN.doors.map(function (d) { return [d, 1]; }));
-  whWallX(nb, f, -e, wg, 0.55, PLAN.entrances.map(function (en) { return [en.x, en.w]; }));
-  [[-e, f], [-e, sb], [e, f], [e, sb], [wg, f], [wg, sb]].forEach(function (c) { nb.block(flat(WH.cap), c[0] - 0.2, c[0] + 0.2, c[1] - 0.2, c[1] + 0.2, 0, 1.05); });
-  // the dock doors, rolled up over the openings
+  var fb = new Batch();
+  whWallZ(wb, -e, sb, f, 2.6, [W.westDoor]);
+  whWallZ(eb, e, sb, f, 2.6, []);
+  whWallX(nb, sb, -e, e, 2.4, PLAN.docks.map(function (d) { return [d, 2.4]; }));
+  whWallX(fb, f, -e, e, 1.7, PLAN.entrances.map(function (en) { return [en.x, en.w]; }));
+  [[-e, f], [e, f]].forEach(function (c) { fb.block(flat(WH.cap), c[0] - 0.2, c[0] + 0.2, c[1] - 0.2, c[1] + 0.2, 0, 1.9); });
+  [[-e, sb], [e, sb]].forEach(function (c) { nb.block(flat(WH.cap), c[0] - 0.2, c[0] + 0.2, c[1] - 0.2, c[1] + 0.2, 0, 2.6); });
   PLAN.docks.forEach(function (d) {
-    nb.block(flat(0xd5dae0), d - 0.95, d + 0.95, sb - 0.05, sb + 0.05, 0.6, 0.76);
-    [-1, 1].forEach(function (s) { nb.block(flat(WH.band), d + s * 1.0 - 0.05, d + s * 1.0 + 0.05, sb - 0.1, sb + 0.1, 0, 0.8); });
+    nb.block(flat(0xd5dae0), d - 1.2, d + 1.2, sb - 0.06, sb + 0.06, 1.95, 2.2);
+    [-1, 1].forEach(function (s) { nb.block(flat(WH.band), d + s * 1.25 - 0.06, d + s * 1.25 + 0.06, sb - 0.12, sb + 0.12, 0, 2.2); });
   });
+  var hb = new Batch();
+  // the line where the hall ends and the stockroom begins, with a mark at each stock door
+  hb.slab(flat(0xe8b923), -e, e, bk - 0.08, bk + 0.08, 0.03, 0.01);
+  PLAN.doors.forEach(function (d) { hb.slab(flat(WH.band), d - 0.5, d + 0.5, bk - 0.2, bk + 0.2, 0.034, 0.008); });
+  root.add(hb.group());
   var gw = new THREE.Group();
   gw.add(wb.group());
   var ge = new THREE.Group();
   ge.add(eb.group());
-  var gg = new THREE.Group();
-  gg.add(gb.group());
-  root.add(gw, ge, gg, nb.group());
-  outer.push({ g: gw, n: [-1, 0] }, { g: ge, n: [1, 0], both: 1 }, { g: gg, n: [1, 0] });
-  wash = new THREE.Mesh(new THREE.PlaneGeometry(wg + e, f - sb).rotateX(-Math.PI / 2), washMat);
-  wash.position.set((wg - e) / 2, 0.08, (f + sb) / 2);
+  var gn = new THREE.Group();
+  gn.add(nb.group());
+  var gf = new THREE.Group();
+  gf.add(fb.group());
+  root.add(gw, ge, gn, gf);
+  outer.push({ g: gw, n: [-1, 0] }, { g: ge, n: [1, 0], both: 1 }, { g: gn, n: [0, 0], close: 55 }, { g: gf, n: [0, 0], close: 90 });
+  wash = new THREE.Mesh(new THREE.PlaneGeometry(2 * e, f - sb).rotateX(-Math.PI / 2), washMat);
+  wash.position.set(0, 0.08, (f + sb) / 2);
   wash.renderOrder = 2;
   root.add(wash);
   var grounds = scatterNature(SH.nature.zones, SH.nature.clear, null, NATURE_SEED);
@@ -3458,241 +3514,49 @@ function buildWarehouse() {
   siteTrees = grounds.trees;
   PLAN.doors.forEach(function (d, i) { stockDoor(d, i); });
   whLot();
-  whTaxi();
   whDock();
-  whSign();
+  whTower();
+  whPylon();
   buildDoors();
 }
 
-// the store's name on the entrance block, painted on the roof of the plinth, and the pylon by the street
-function whSign() {
-  var W = SH.warehouse;
+// the entrance tower over the way in: two piers, a blue lintel with the store's name on its south face, and a canopy over the
+// glass doors. It squashes when the camera comes in, as it would hide the checkouts
+function whTower() {
+  var f = SH.front;
+  var g = new THREE.Group();
+  var tb = new Batch();
+  [-2.9, 2.9].forEach(function (px) { tb.block(flat(WH.blue), px - 0.45, px + 0.45, f + 0.05, f + 1.0, 0, 3.9); });
+  tb.block(flat(WH.blue), -3.6, 3.6, f + 0.05, f + 1.1, 2.3, 3.9);
+  tb.block(flat(0xf4f2ea), -3.7, 3.7, f + 0.05, f + 1.14, 3.9, 4.0);
+  tb.block(flat(0x1f3b78), -3.6, 3.6, f + 0.05, f + 1.7, 1.55, 1.65);
+  tb.block(flat(WH.band), -3.6, 3.6, f + 1.66, f + 1.72, 1.45, 1.65);
+  g.add(tb.group());
   var c = document.createElement('canvas');
-  c.width = 512;
-  c.height = 128;
+  c.width = 1024;
+  c.height = 256;
   var tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   var x = c.getContext('2d');
-  x.fillStyle = '#f4f2ea';
-  x.fillRect(0, 0, 512, 128);
   x.fillStyle = '#2f56a8';
+  x.fillRect(0, 0, 1024, 256);
+  x.fillStyle = '#f4f2ea';
+  x.fillRect(0, 232, 1024, 24);
   dir(x);
   x.textAlign = 'center';
   x.textBaseline = 'middle';
   var word = tl('sign.hardware_big');
-  fitFont(x, [word], 480, 84);
-  x.fillText(word, 256, 66, 480);
-  var m = new THREE.Mesh(new THREE.PlaneGeometry(W.tower[1] - W.tower[0], W.tower[2] - SH.front - 0.05).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial({ map: tex }));
-  m.position.set((W.tower[0] + W.tower[1]) / 2, 0.61, (SH.front + 0.05 + W.tower[2]) / 2);
-  root.add(m);
-  whPylon();
+  x.fillStyle = '#fff';
+  fitFont(x, [word], 940, 150);
+  x.fillText(word, 512, 116, 940);
+  var m = new THREE.Mesh(new THREE.PlaneGeometry(7.2, 1.6), new THREE.MeshBasicMaterial({ map: tex }));
+  m.position.set(0, 3.1, f + 1.15);
+  g.add(m);
+  root.add(g);
+  outer.push({ g: g, n: [0, 0], close: 85 });
 }
 
-// the lot as buildLot lays it out, with its bays and lamps taken from the shell's z range
-function whLot() {
-  var lv = levels(4);
-  var X0 = SH.lotX[0];
-  var X1 = SH.lotX[1];
-  var z0 = SH.lot[0];
-  var z1 = SH.lot[1];
-  var mid = (z0 + z1) / 2;
-  var rows = [[z0, z0 + 1.6, -1], [z1 - 1.6, z1, 1]];
-  lv[0].slab(flat(GRAVEL), X0, X1, z0, z1, 0.006, 0.02);
-  for (var fx = X0 + 0.6; fx < X1; fx += 1.15) {
-    if (SH.walks.some(function (w) { return Math.abs(fx - w) < 1.6; })) continue;
-    lv[0].add('roads/construction-fence', fx, z0 + 0.25, Math.PI / 2);
-    lv[0].add('roads/construction-fence', fx, z1 - 0.25, Math.PI / 2);
-  }
-  for (var fz = z0 + 0.85; fz < z1 - 0.4; fz += 1.15) {
-    lv[0].add('roads/construction-fence', X0 + 0.2, fz, 0);
-    lv[0].add('roads/construction-fence', X1 - 0.2, fz, 0);
-  }
-  lv[0].add('car/tractor-shovel', -3.5, mid - 0.8, 1.2);
-  lv[0].add('car/truck-flat', 3.2, mid - 0.5, -Math.PI / 2);
-  lv[0].add('car/box', 3.0, mid - 0.5, 0.1, 0.3);
-  lv[0].add('car/box', 3.5, mid - 0.5, -0.2, 0.3);
-  lv[0].add('roads/construction-light', -5.9, z0 + 0.3, 0);
-  lv[0].add('roads/construction-light', 5.9, z1 - 0.3, 0);
-  [[-6.6, z0 + 1.2], [-13.2, z1 - 1.1], [6.8, z1 - 1.0], [-7.4, mid + 0.5]].forEach(function (c) { lv[0].add('roads/construction-cone', c[0], c[1], 0); });
-  for (var l = 1; l <= 4; l++) {
-    lv[l].slab(flat(ASPHALT), X0, X1, z0, z1, 0.008, 0.02);
-    SH.walks.forEach(function (w) { lv[l].slab(flat(PAVE), w - 1.4, w + 1.4, z0, z1, 0.012, 0.02); });
-  }
-  var paint = flat(PAINT);
-  var near = Math.max(8, SH.edge * 0.5);
-  for (var hu = 1; hu <= 4; hu++) {
-    [-6.5, 6.5].forEach(function (x) {
-      lv[hu].slab(flat(0x3c63a8), x - 0.42, x + 0.42, z0 + 0.15, z0 + 1.45, 0.018, 0.008);
-      lv[hu].slab(paint, x - 0.12, x + 0.12, z0 + 0.55, z0 + 0.9, 0.026, 0.008);
-    });
-  }
-  var lines = {};
-  for (var bx = X0 + 0.5; bx < X1; bx++) {
-    if (SH.walks.some(function (w) { return Math.abs(bx - w) < 2; })) continue;
-    for (var r = 0; r < 2; r++) {
-      var rz = rows[r];
-      var unlock = Math.abs(bx) < near ? 1 + r : 3 + r;
-      bays.push({ x: bx, z: (rz[0] + rz[1]) / 2, nose: rz[2], lv: unlock, car: null });
-      [bx - 0.5, bx + 0.5].forEach(function (px) {
-        var key = px + ':' + r;
-        if (lines[key]) return;
-        lines[key] = 1;
-        for (var u = unlock; u <= 4; u++) lv[u].slab(paint, px - 0.03, px + 0.03, rz[0] + 0.1, rz[1] - 0.1, 0.02, 0.008);
-      });
-    }
-  }
-  SH.walks.forEach(function (w) {
-    for (var zl = 1; zl <= 4; zl++) for (var zs = -1.2; zs < 1.3; zs += 0.5) lv[zl].slab(paint, w + zs - 0.16, w + zs + 0.16, SH.aisle - 0.7, SH.aisle + 0.7, 0.024, 0.008);
-  });
-  [[1, -5.7, z0 - 0.1], [1, 5.7, z0 - 0.1], [3, -13.5, z0 - 0.1], [3, 13.5, z0 - 0.1], [4, -5.7, z1 + 0.2], [4, 5.7, z1 + 0.2], [4, -13.5, z1 + 0.2], [4, 13.5, z1 + 0.2]].forEach(function (p) {
-    for (var u = p[0]; u <= 4; u++) lamp(lv[u], 'roads/light-square', p[1], p[2], p[2] < mid ? Math.PI : 0);
-  });
-  SH.walks.forEach(function (w, wi) {
-    [[-1.22, z0 + 0.3], [1.22, z0 + 0.3], [-1.22, z1 - 0.3], [1.22, z1 - 0.3]].forEach(function (q, i) { lv[4].add('furn/pottedPlant', w + q[0], q[1], i + wi); });
-  });
-  var pl = finishPlace('lot', lv);
-  pl.pick = addPick('lot', 0, mid, X1 - X0, z1 - z0);
-}
-
-// the stockroom: racking in two rows with gaps at the stock doors and the docks, and pallets of boxes by each dock
-function whDock() {
-  var sb = new Batch();
-  var e = SH.edge;
-  var x = 1 - e;
-  PLAN.doors.concat([99]).forEach(function (d) {
-    whRackRow(sb, x, Math.min(e - 1, d - 2), SH.back - 2.6);
-    x = d + 2;
-  });
-  x = 1 - e;
-  PLAN.docks.concat([99]).forEach(function (d) {
-    whRackRow(sb, x, Math.min(e - 1, d - 1.4), SH.sb + 0.7);
-    x = d + 1.4;
-  });
-  var pz = SH.sb + 1.7;
-  PLAN.docks.forEach(function (d, i) {
-    [[d - 0.85, pz], [d + 0.85, pz + (i % 2 ? 0.2 : 0)]].forEach(function (q) { sb.take(fixture(['stock', q[0], q[1], 's', 'boxes'], 0).b); });
-    for (var k = 0; k < 5 + i; k++) sb.add(k % 3 ? 'furn/cardboardBoxClosed' : 'furn/cardboardBoxOpen', d + 0.3 + (k % 3) * 0.26, pz + 0.3 + (k >> 1) * 0.1, k * 0.7, (k >> 2) * 0.25);
-  });
-  root.add(sb.group());
-  decor(SH.decor.stock);
-  var baler = new THREE.Mesh(new THREE.BoxGeometry(1.2, 0.9, 0.7), flat(0x6b7387));
-  baler.position.set(e - 2.2, 0.45, SH.sb + 1.7);
-  baler.castShadow = true;
-  root.add(baler);
-  [-1, 1].forEach(function (sd) { root.add(mesh('furn/trashcan', e - 1.2, SH.sb + 1.7 + sd * 0.5, 0)); });
-  [0, 1].forEach(function (i) {
-    var t = mesh('car/delivery', PLAN.docks[2 + i], SH.sb - 1.95, Math.PI);
-    t.scale.setScalar(1.7);
-    root.add(t);
-  });
-  var lv = levels(10);
-  [[3, -4.0], [6, -3.3], [9, -2.6]].forEach(function (p) {
-    for (var i = 0; i < 6; i++) lv[p[0]].add(PARCEL, p[1] + (i % 2 - 0.5) * 0.3, pz + (i % 3 - 1) * 0.1, (i % 3 - 1) * 0.15, (i >> 1) * 0.1);
-  });
-  var pl = finishPlace('dock', lv);
-  pl.add = true;
-  pl.pick = addPick('dock', 0, SH.sb - 1.5, 2 * e - 4, 4);
-}
-
-// the garden center: a fenced gravel yard west of the building, its gate on the lot, with rows of nursery tables near the gate,
-// a greenhouse and a shade roof. The tables stand where shoppers stop, at the rows the shell names
-function buildNursery() {
-  var lv = levels(4);
-  var R = SH.garden.rect;
-  var x0 = R[0];
-  var x1 = R[1];
-  var z0 = R[2];
-  var z1 = R[3];
-  var gx = (x0 + x1) / 2;
-  var rows = [4.1, 2.7, 1.3].map(function (o) { return z0 + o; });
-  [[x0 + 0.6, z1 - 1.0], [x1 - 0.6, z1 - 1.0], [x0 + 0.6, z0 + 1.0]].forEach(function (p) { lv[0].add('roads/construction-cone', p[0], p[1], 0); });
-  lv[0].add('furn/bench', gx - 1.8, z1 - 0.6, Math.PI);
-  yardShell(lv, 0xb4a88e, 'board.h_garden');
-  lv[1].add('skate/pallet', x0 + 0.5, z1 - 0.4, 0.2);
-  for (var sb = 0; sb < 6; sb++) lv[1].add('food/bag', x0 + 0.5 + (sb % 2 - 0.5) * 0.2, z1 - 0.4 + (sb % 3 - 1) * 0.1, sb, 0.16 + (sb >> 1) * 0.06);
-  rows.forEach(function (rz, ri) {
-    [-1.08, 1.08].forEach(function (o, ci) {
-      lv[ri + 1].add(FLOWERS[(ri + ci) % 4], gx + o - 0.42, rz, 0);
-      lv[ri + 1].add(FLOWERS[(ri + ci + 2) % 4], gx + o + 0.42, rz, 0);
-    });
-  });
-  // the greenhouse in the west of the yard: a frame with glazed walls and benches of plants
-  var g = [x0 + 0.5, x0 + 3.6, z0 + 0.5, z0 + 3.2];
-  var fr = new Batch();
-  [[g[0], g[2]], [g[1], g[2]], [g[0], g[3]], [g[1], g[3]]].forEach(function (c) { fr.block(flat(0xe9edf1), c[0] - 0.06, c[0] + 0.06, c[1] - 0.06, c[1] + 0.06, 0, 0.9); });
-  fr.block(flat(0xe9edf1), g[0], g[1], g[2] - 0.04, g[2] + 0.04, 0.84, 0.9);
-  fr.block(flat(0xe9edf1), g[0], g[1], g[3] - 0.04, g[3] + 0.04, 0.84, 0.9);
-  fr.block(flat(0xe9edf1), g[0] - 0.04, g[0] + 0.04, g[2], g[3], 0.84, 0.9);
-  fr.block(flat(0xe9edf1), g[1] - 0.04, g[1] + 0.04, g[2], g[3], 0.84, 0.9);
-  fr.block(flat(0xe9edf1), (g[0] + g[1]) / 2 - 0.04, (g[0] + g[1]) / 2 + 0.04, g[2], g[3], 0.9, 1.05);
-  for (var tb = 0; tb < 3; tb++) {
-    fr.block(flat(0x8a6a44), g[0] + 0.5, g[1] - 0.5, g[2] + 0.5 + tb * 0.8, g[2] + 0.85 + tb * 0.8, 0.3, 0.38);
-    for (var pt = 0; pt < 4; pt++) fr.add(pt % 2 ? 'nature/flower_yellowA' : 'nature/flower_redA', g[0] + 0.8 + pt * 0.7, g[2] + 0.7 + tb * 0.8, pt, 0.38);
-  }
-  lv[2].take(fr);
-  var panes = new THREE.Group();
-  [g[2], g[3]].forEach(function (pz) {
-    var pm = new THREE.Mesh(new THREE.PlaneGeometry(g[1] - g[0], 0.8), glass);
-    pm.position.set((g[0] + g[1]) / 2, 0.45, pz);
-    panes.add(pm);
-  });
-  [g[0], g[1]].forEach(function (px) {
-    var pm = new THREE.Mesh(new THREE.PlaneGeometry(g[3] - g[2], 0.8).rotateY(Math.PI / 2), glass);
-    pm.position.set(px, 0.45, (g[2] + g[3]) / 2);
-    panes.add(pm);
-  });
-  // the shade roof over the tables near the gate, on posts with open slats
-  var zlo = Math.min.apply(null, rows) - 1.0;
-  var zhi = Math.max.apply(null, rows) + 1.0;
-  var sh = [gx - 2.4, gx + 2.4];
-  var sf = new Batch();
-  [[sh[0], zlo], [sh[1], zlo], [sh[0], zhi], [sh[1], zhi]].forEach(function (c) { sf.block(flat(0x6b7480), c[0] - 0.06, c[0] + 0.06, c[1] - 0.06, c[1] + 0.06, 0, 1.4); });
-  for (var sl = zlo; sl <= zhi + 0.01; sl += 0.9) sf.block(flat(0x2f6a3a), sh[0] - 0.2, sh[1] + 0.2, sl - 0.05, sl + 0.05, 1.4, 1.44);
-  lv[3].take(sf);
-  for (var t = 0; t < 6; t++) lv[3].add('furn/pottedPlant', x0 + 6.0 + t * 0.72, z0 + 0.7, t);
-  [[x0 + 0.4, z1 - 1.8], [x1 - 0.5, z1 - 1.8], [x0 + 0.4, z0 + 5.2]].forEach(function (p, i) { lv[4].add('nature/tree_small', p[0], p[1], i); });
-  lamp(lv[4], 'roads/light-square', x0 + 0.2, z0 + 0.3, Math.PI);
-  lamp(lv[4], 'roads/light-square', x1 - 0.2, z0 + 0.3, Math.PI);
-  var pl = finishYard(lv);
-  pl.items[2].g.add(panes);
-}
-
-
-function whRackRow(b, x0, x1, z) {
-  var n = Math.floor((x1 - x0) / 0.8);
-  if (n < 1) return;
-  var goods = [];
-  for (var i = 0; i < n; i++) goods.push([[BOX[i % 6], CARTON[(i + 1) % 5]], [BAG[(i + 2) % 6], BOX[(i + 3) % 6]]]);
-  b.take(fixture(['shelf', (x0 + x1) / 2, z, 's', goods, null, n], 0).b);
-}
-
-// the taxi stand on the curb at the shell's stand
-function whTaxi() {
-  var lv = levels(4);
-  var x = SH.stand;
-  var c = SH.curb;
-  for (var l = 1; l <= 4; l++) {
-    lv[l].add('roads/road-sign-street', x + 1.4, c + 0.1, Math.PI);
-    lv[l].slab(flat(0xf2c230), x - 1.3, x + 1.3, c + 0.35, c + 0.42, 0.02, 0.008);
-    lv[l].slab(flat(0xf2c230), x - 1.3, x - 1.23, c + 0.35, c + 1.75, 0.02, 0.008);
-    lv[l].slab(flat(0xf2c230), x + 1.23, x + 1.3, c + 0.35, c + 1.75, 0.02, 0.008);
-  }
-  for (var u = 2; u <= 4; u++) {
-    lv[u].add('furn/bench', x - 0.5, c - 0.25, Math.PI);
-    lv[u].add('furn/trashcan', x + 0.6, c - 0.25, 0);
-  }
-  for (var w = 3; w <= 4; w++) {
-    lv[w].add('furn/bench', x - 1.6, c - 0.25, Math.PI);
-    lamp(lv[w], 'roads/light-curved', x - 2.4, c - 0.35, Math.PI);
-  }
-  lv[4].add('sub/planter', x + 2.4, c - 0.25, 0);
-  lv[4].add('nature/flower_purpleA', x + 2.2, c - 0.25, 0, 0.18);
-  lv[4].add('nature/flower_yellowA', x + 2.6, c - 0.25, 0, 0.18);
-  var pl = finishPlace('taxi', lv);
-  pl.pick = addPick('taxi', x, c + 0.2, 3.4, 1.6);
-}
-
-// the pylon sign by the street, at the shell's spot
+// the pylon by the street, at the shell's spot
 function whPylon() {
   var g = new THREE.Group();
   var posts = [];
@@ -3720,6 +3584,197 @@ function whPylon() {
   sg.position.set(0, 1.12, 0.03);
   g.add(sg);
 }
+
+// the lot: four rows of bays on two aisles, green islands between the pairs with trees and lamps, one crossing to the tower, cart
+// corrals on the islands and a pickup lane painted orange at the east end of the first row
+function whLot() {
+  var lv = levels(4);
+  var X0 = SH.lotX[0];
+  var X1 = SH.lotX[1];
+  var z0 = SH.lot[0];
+  var z1 = SH.lot[1];
+  var mid = (z0 + z1) / 2;
+  var rows = SH.warehouse.bays;
+  var wk = SH.walks[0];
+  lv[0].slab(flat(GRAVEL), X0, X1, z0, z1, 0.006, 0.02);
+  for (var fx = X0 + 0.6; fx < X1; fx += 1.15) {
+    if (Math.abs(fx - wk) < 1.6) continue;
+    lv[0].add('roads/construction-fence', fx, z0 + 0.25, Math.PI / 2);
+    lv[0].add('roads/construction-fence', fx, z1 - 0.25, Math.PI / 2);
+  }
+  for (var fz = z0 + 0.85; fz < z1 - 0.4; fz += 1.15) {
+    lv[0].add('roads/construction-fence', X0 + 0.2, fz, 0);
+    lv[0].add('roads/construction-fence', X1 - 0.2, fz, 0);
+  }
+  lv[0].add('car/tractor-shovel', -3.5, mid - 0.8, 1.2);
+  lv[0].add('car/truck-flat', 3.2, mid - 0.5, -Math.PI / 2);
+  lv[0].add('car/box', 3.0, mid - 0.5, 0.1, 0.3);
+  lv[0].add('car/box', 3.5, mid - 0.5, -0.2, 0.3);
+  lv[0].add('roads/construction-light', -5.9, z0 + 0.3, 0);
+  lv[0].add('roads/construction-light', 5.9, z1 - 0.3, 0);
+  [[-6.6, z0 + 1.2], [-13.2, z1 - 1.1], [6.8, z1 - 1.0], [-7.4, mid + 0.5], [14.4, mid]].forEach(function (c) { lv[0].add('roads/construction-cone', c[0], c[1], 0); });
+  var isle = rows[1][1];
+  for (var l = 1; l <= 4; l++) {
+    lv[l].slab(flat(ASPHALT), X0, X1, z0, z1, 0.008, 0.02);
+    lv[l].slab(flat(PAVE), wk - 1.4, wk + 1.4, z0, z1, 0.012, 0.02);
+  }
+  var paint = flat(PAINT);
+  var green = flat(0x6fae4a);
+  // the islands: grass strips either side of the walk, from the second level; trees, corrals and lamps come later
+  for (var il = 2; il <= 4; il++) {
+    [[X0, wk - 1.4], [wk + 1.4, X1]].forEach(function (r) {
+      lv[il].block(flat(0xcfc9bd), r[0], r[1], isle, isle + 1.0, 0.0, 0.1);
+      lv[il].slab(green, r[0] + 0.1, r[1] - 0.1, isle + 0.05, isle + 0.95, 0.11, 0.02);
+    });
+  }
+  for (var ix = X0 + 3; ix < X1 - 1; ix += 5.5) {
+    if (Math.abs(ix - wk) < 3) continue;
+    lv[3].add(Math.round(ix) % 2 ? 'nature/tree_small' : 'nature/tree_fat', ix, isle + 0.5, ix, 0.1);
+  }
+  [-1, 1].forEach(function (sd) {
+    lv[2].add('pw/CartCorral_Outdoor_30', wk + sd * 3.6, isle + 0.5, Math.PI / 2, 0.1);
+    lv[2].add('pw/ShoppingCart_Nested_3_01', wk + sd * 3.6, isle + 0.5, 0, 0.1);
+  });
+  [-19, -10, 10, 19].forEach(function (lx) { for (var u = 4; u <= 4; u++) lamp(lv[u], 'roads/light-square', lx, isle + 0.5, Math.PI); });
+  [-21, -7, 7, 21].forEach(function (lx) { for (var u = 1; u <= 4; u++) lamp(lv[u], 'roads/light-square', lx, z0 - 0.1, Math.PI); });
+  for (var hu = 1; hu <= 4; hu++) {
+    [-4.6, 4.6].forEach(function (hx) {
+      lv[hu].slab(flat(0x3c63a8), hx - 0.42, hx + 0.42, z0 + 0.15, z0 + 1.45, 0.018, 0.008);
+      lv[hu].slab(paint, hx - 0.12, hx + 0.12, z0 + 0.55, z0 + 0.9, 0.026, 0.008);
+    });
+  }
+  lv[2].slab(flat(0xe8821a), 19, 25, z0 + 0.05, z0 + 1.55, 0.016, 0.006);
+  var near = 10;
+  var lines = {};
+  for (var bx = X0 + 0.5; bx < X1; bx++) {
+    if (Math.abs(bx - wk) < 2) continue;
+    for (var r = 0; r < rows.length; r++) {
+      var rz = rows[r];
+      var unlock = Math.min(4, (Math.abs(bx) < near ? 1 : 2) + r);
+      bays.push({ x: bx, z: (rz[0] + rz[1]) / 2, nose: rz[2], lv: unlock, car: null, aisle: rz[3] });
+      [bx - 0.5, bx + 0.5].forEach(function (px) {
+        var key = px + ':' + r;
+        if (lines[key]) return;
+        lines[key] = 1;
+        for (var u = unlock; u <= 4; u++) lv[u].slab(paint, px - 0.03, px + 0.03, rz[0] + 0.1, rz[1] - 0.1, 0.02, 0.008);
+      });
+    }
+  }
+  [rows[0][3], rows[2][3]].forEach(function (ai) {
+    for (var zl = 1; zl <= 4; zl++) for (var zs = -1.2; zs < 1.3; zs += 0.5) lv[zl].slab(paint, wk + zs - 0.16, wk + zs + 0.16, ai - 0.7, ai + 0.7, 0.024, 0.008);
+  });
+  var pl = finishPlace('lot', lv);
+  pl.pick = addPick('lot', 0, mid, X1 - X0, z1 - z0);
+}
+
+// the stockroom: pallets of boxes at each dock, one more pile at every level of the place, and the racking from the plan
+function whDock() {
+  var e = SH.edge;
+  var sb = new Batch();
+  decor(SH.decor.stock);
+  var pz = SH.sb + 1.7;
+  PLAN.docks.forEach(function (d, i) {
+    if (i === 2 || i === 3) return;
+    for (var k = 0; k < 4; k++) sb.add(k % 3 ? 'furn/cardboardBoxClosed' : 'furn/cardboardBoxOpen', d - 0.3 + (k % 2) * 0.4, pz + 0.3 + (k >> 1) * 0.3, k * 0.7, 0);
+  });
+  root.add(sb.group());
+  var lv = levels(10);
+  for (var l = 1; l <= 10; l++) {
+    var d = PLAN.docks[(l - 1) % PLAN.docks.length];
+    var round = Math.floor((l - 1) / PLAN.docks.length);
+    var x = d + (round ? 0.8 : -0.8);
+    lv[l].take(fixture(['stock', x, pz - 0.3, 's', 'boxes'], 0).b);
+    for (var i = 0; i < 3 + l; i++) lv[l].add(PARCEL, x + (i % 3 - 1) * 0.28, pz + 0.45 + (i >> 2) * 0.3, (i % 3 - 1) * 0.15, 0.55 + (i >> 1) * 0.1 + round * 0.05);
+  }
+  var pl = finishPlace('dock', lv);
+  pl.add = true;
+  pl.pick = addPick('dock', 0, SH.sb - 1.5, 2 * e - 4, 4);
+}
+
+// the garden center: a fenced gravel yard west of the building, its gate on the lot, rows of nursery tables near the gate, a
+// greenhouse at the back and a shade roof over the tables, with Lawn and Garden under its own shade roof behind
+function whYard(lv, slab, text) {
+  var R = SH.garden.rect;
+  var x0 = R[0];
+  var x1 = R[1];
+  var z0 = R[2];
+  var z1 = R[3];
+  var step = (x1 - x0) / 5;
+  lv[1].slab(flat(slab), x0, x1, z0, z1, 0.006, 0.02);
+  lv[1].slab(flat(PAVE), x0 + 2 * step, x0 + 3 * step, z1, SH.lot[0], 0.004, 0.02);
+  var fb = new Batch();
+  whFence(fb, x0, z0, x1, z0);
+  whFence(fb, x0, z0, x0, z1);
+  whFence(fb, x0, z1, x1, z1, [[x0 + 2 * step, x0 + 3 * step]]);
+  lv[1].take(fb);
+  var gx = x0 + 2.5 * step;
+  [-1, 1].forEach(function (o) { lv[1].block(flat(0x50566a), gx + o * step / 2 - 0.05, gx + o * step / 2 + 0.05, z1 - 0.05, z1 + 0.05, 0, 1.1); });
+  lv[1].block(flat(0x2f3446), gx - step / 2, gx + step / 2, z1 - 0.05, z1 + 0.03, 0.9, 1.2);
+  boardAtlas(lv[1], { text: text, x: gx, y: 1.05, z: z1 + 0.04, w: step - 0.04, h: 0.28 });
+}
+
+function buildNursery() {
+  var lv = levels(4);
+  var R = SH.garden.rect;
+  var x0 = R[0];
+  var x1 = R[1];
+  var z0 = R[2];
+  var z1 = R[3];
+  var gx = (x0 + x1) / 2;
+  var rows = [0.86, 2.26, 3.66].map(function (o) { return z1 - o; });
+  [[x0 + 0.6, z1 - 1.0], [x1 - 0.6, z1 - 1.0], [x0 + 0.6, z1 - 6.0]].forEach(function (p) { lv[0].add('roads/construction-cone', p[0], p[1], 0); });
+  lv[0].add('furn/bench', gx - 1.8, z1 - 0.6, Math.PI);
+  whYard(lv, 0xb4a88e, 'board.h_garden');
+  lv[1].add('skate/pallet', x0 + 0.5, z1 - 0.8, 0.2);
+  for (var sb = 0; sb < 6; sb++) lv[1].add('food/bag', x0 + 0.5 + (sb % 2 - 0.5) * 0.2, z1 - 0.8 + (sb % 3 - 1) * 0.1, sb, 0.16 + (sb >> 1) * 0.06);
+  rows.forEach(function (rz, ri) {
+    [-1.08, 1.08].forEach(function (o, ci) {
+      lv[ri + 1].add(FLOWERS[(ri + ci) % 4], gx + o - 0.42, rz, 0);
+      lv[ri + 1].add(FLOWERS[(ri + ci + 2) % 4], gx + o + 0.42, rz, 0);
+    });
+  });
+  // the greenhouse in the south-west corner, beside the gate: a frame with glazed walls and benches of plants
+  var g = [x0 + 0.5, x0 + 3.9, z1 - 4.2, z1 - 0.9];
+  var fr = new Batch();
+  [[g[0], g[2]], [g[1], g[2]], [g[0], g[3]], [g[1], g[3]]].forEach(function (c) { fr.block(flat(0xe9edf1), c[0] - 0.06, c[0] + 0.06, c[1] - 0.06, c[1] + 0.06, 0, 1.0); });
+  fr.block(flat(0xe9edf1), g[0], g[1], g[2] - 0.04, g[2] + 0.04, 0.94, 1.0);
+  fr.block(flat(0xe9edf1), g[0], g[1], g[3] - 0.04, g[3] + 0.04, 0.94, 1.0);
+  fr.block(flat(0xe9edf1), g[0] - 0.04, g[0] + 0.04, g[2], g[3], 0.94, 1.0);
+  fr.block(flat(0xe9edf1), g[1] - 0.04, g[1] + 0.04, g[2], g[3], 0.94, 1.0);
+  fr.block(flat(0xe9edf1), (g[0] + g[1]) / 2 - 0.04, (g[0] + g[1]) / 2 + 0.04, g[2], g[3], 1.0, 1.15);
+  for (var tb = 0; tb < 3; tb++) {
+    fr.block(flat(0x8a6a44), g[0] + 0.5, g[1] - 0.5, g[2] + 0.5 + tb * 0.8, g[2] + 0.85 + tb * 0.8, 0.3, 0.38);
+    for (var pt = 0; pt < 4; pt++) fr.add(pt % 2 ? 'nature/flower_yellowA' : 'nature/flower_redA', g[0] + 0.8 + pt * 0.7, g[2] + 0.7 + tb * 0.8, pt, 0.38);
+  }
+  lv[2].take(fr);
+  var panes = new THREE.Group();
+  [g[2], g[3]].forEach(function (pz) {
+    var pm = new THREE.Mesh(new THREE.PlaneGeometry(g[1] - g[0], 0.9), glass);
+    pm.position.set((g[0] + g[1]) / 2, 0.5, pz);
+    panes.add(pm);
+  });
+  [g[0], g[1]].forEach(function (px) {
+    var pm = new THREE.Mesh(new THREE.PlaneGeometry(g[3] - g[2], 0.9).rotateY(Math.PI / 2), glass);
+    pm.position.set(px, 0.5, (g[2] + g[3]) / 2);
+    panes.add(pm);
+  });
+  // the shade roof over the tables near the gate, on posts with open slats, kept inside the yard's fence
+  var zlo = Math.max(z0 + 0.3, Math.min.apply(null, rows) - 1.0);
+  var zhi = Math.min(z1 - 0.3, Math.max.apply(null, rows) + 1.0);
+  var sh = [gx - 2.4, gx + 2.4];
+  var sf = new Batch();
+  [[sh[0], zlo], [sh[1], zlo], [sh[0], zhi], [sh[1], zhi]].forEach(function (c) { sf.block(flat(0x6b7480), c[0] - 0.06, c[0] + 0.06, c[1] - 0.06, c[1] + 0.06, 0, 1.4); });
+  for (var sl = zlo; sl <= zhi + 0.01; sl += 0.9) sf.block(flat(0x2f6a3a), sh[0] - 0.2, sh[1] + 0.2, sl - 0.05, sl + 0.05, 1.4, 1.44);
+  lv[3].take(sf);
+  // Lawn and Garden stands under its own shade roof: a pale paver floor of its own, from the first level
+  for (var t = 0; t < 6; t++) lv[3].add('furn/pottedPlant', x0 + 0.9 + t * 0.72, z0 + 0.7, t);
+  [[x0 + 0.4, z1 - 5.4], [x1 - 0.5, z1 - 1.8]].forEach(function (p, i) { lv[4].add('nature/tree_small', p[0], p[1], i); });
+  lamp(lv[4], 'roads/light-square', x0 + 0.2, z0 + 0.3, Math.PI);
+  lamp(lv[4], 'roads/light-square', x1 - 0.2, z0 + 0.3, Math.PI);
+  var pl = finishYard(lv);
+  pl.items[2].g.add(panes);
+}
+
 var SHELLS = { box: buildBox, warehouse: buildWarehouse };
 
 // Trees, bushes, grass and flowers scattered over zones on a jittered grid; a zone is a rectangle with how many of each

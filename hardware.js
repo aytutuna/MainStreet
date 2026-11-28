@@ -291,8 +291,18 @@ var GOLD = '%=gold';
 
 var AREAS = {};
 
+// The hall's seven bays stand side by side, each 4.4 wide with an aisle between, from the tall racking at the back to the
+// front aisle; every department's pieces run front to back in three runs. Lawn and Garden has its bay in the garden center
+var BX = [-17.8, -12.6, -7.4, -2.2, 3.0, 8.2, 13.4];
+var BZ0 = -23.2;
+var BZF = -10.7;
+var LX = -25.0;
+var LZ0 = -16.8;
+var LZF = -8.6;
+var BAYC = { hand: 0x2f5fa8, paint: 0x1f8f6a, power: 0x6a3f9a, tires: 0xc9a227, oil: 0xb5651d, batt: 0xc0392b, storage: 0x6b4a32, lawn: 0xb9ad94 };
+
 // Hand tools: tool walls and benches along the back wall, a row of roller chests, a bench row with the small tools
-var ha0 = strip('s', -22.15, -7.75, [
+var ha0 = strip('b', BX[0] + 0.05, BZ0 + 0.4, [
   ['Tool wall', 'SM_Workbench_Backboard_01', { on: [['pw/SM_Hammer_Claw_01', -0.28, 0.05, 1.8, BT], ['pw/SM_Wrench_Combo_01', 0, 0.05, 2.4, BT], ['pw/SM_Pliers_01', 0.28, 0.05, 2.2, BT]] }],
   ['Wrench bench', 'SM_Workbench_Steel_01', { gap: 0.08, on: [['pw/SM_SocketSet_Case_01', -0.2, 0, 1], ['pw/SM_Ratchet_01', 0.2, 0.05, 2]] }],
   ['Saw bench', 'Workbench_Wood_01', { gap: 0.08, on: [['pw/SM_HandSaw_01', -0.22, 0, 1.4], ['pw/SM_Hacksaw_01', 0.24, 0.05, 1.4]] }],
@@ -301,14 +311,14 @@ var ha0 = strip('s', -22.15, -7.75, [
   ['Measuring bench', 'SM_Workbench_Steel_01', { gap: 0.08, on: [['pw/SM_TapeMeasure_01', -0.25, 0, 2.4], ['pw/SM_Level_Box_01', 0.12, 0.05, 1.6]] }],
   ['Clamp bench', 'Workbench_Wood_01', { gap: 0.08, on: [['pw/SM_Clamp_Bar_01', -0.2, 0, 1.7], ['pw/SM_Clamp_C_01', 0.2, 0, 2.4]] }]
 ]);
-var ha1 = strip('s', -20.25, -7.0, [
+var ha1 = strip('b', BX[0] + 1.75, BZ0 + 0.9, [
   ['Roller chest', 'ToolChest_Roller_01'],
   ['Chest with top box', 'ToolChest_Roller_01', { gap: 0.5, top: [['SM_ToolChest_Top_01']] }],
   ['Chest stack', 'SM_ToolChest_Stack_01', { gap: 0.5 }],
   ['Chest and drill', 'ToolChest_Roller_01', { gap: 0.5, on: [['pw/SM_Drill_Cordless_01', 0, 0, 2.2]] }],
   ['Tote island', 'SM_Tote_Stack_01', { gap: 0.5, n: 2 }]
 ], { mid: true, s: 2 });
-var ha2 = strip('s', -18.95, -7.4, [
+var ha2 = strip('k', BX[0] + 3.65, BZ0 + 0.6, [
   ['Sawhorse', 'SM_Sawhorse_Wood_01'],
   ['Display bench', 'Workbench_Wood_01', { gap: 0.4 }],
   ['Plier bench', 'SM_Workbench_Steel_01', { gap: 0.4 }]
@@ -318,23 +328,22 @@ var hand2 = [ha2[0], tools(ha2[0], 'Level and square', [['SM_Level_Box_01', 0, 0
   tools(ha2[1], 'Hex keys and pry bar', [['SM_HexKeys_01', -0.25, -0.08, 2.4], ['SM_PryBar_01', 0.15, -0.08, 1]]), ha2[2],
   tools(ha2[2], 'Pliers and cutters', [['SM_Pliers_01', -0.23, 0, 2], ['SM_Pliers_Locking_01', 0.0, 0, 1.8], ['SM_UtilityKnife_01', 0.27, 0, 2]])];
 AREAS.hand = {
-  cx: -4.5, cz: -19.7, vacant: [-8.0, -1.0, -22.2, -17.2], sign: [-4.5, -17.9, 1.9],
-  floor: [floor(-8.0, -1.0, -22.2, -17.2, 0x46566c)],
+  cx: BX[0] + 2.2, cz: (BZ0 + BZF) / 2, vacant: [BX[0], BX[0] + 4.4, BZ0, BZF], sign: [BX[0] + 2.2, BZF - 0.7, 1.9],
+  floor: [floor(BX[0], BX[0] + 4.4, BZ0, BZF, BAYC.hand)],
   ups: compose([
     ha0,
     ha1,
     hand2,
-    [SIGN, board('Hand tools board', 'board.h_hand', -2.3, -17.6, 1.1, 0.95), lights([[-5.5, -20.9], [-3.0, -20.9]]),
-      floorSet('Tool trolley', [pw('ToolChest_Roller_01', -7.7, -17.6, 's', { spots: 0 }), { m: 'pw/SM_ToolChest_Top_01', x: -7.7, z: -17.6, r: 0, y: 0.431, flat: 1 }]),
-      dais('Golden tool chest', 'SM_ToolChest_Stack_01', -1.7, -20.2, { k: 1.2 })],
-    [put('Shop mat', 'SM_FloorMat_01', -4.5, -17.75, 's', { spots: 0 }), put('Rolling stool', 'ShopStool_Rolling_01', -7.7, -20.7, 's', { spots: 0 }),
-      put('Steel bin', 'SM_TrashCan_Steel_01', -1.4, -17.6, 's', { spots: 0 }), put('Wet floor sign', 'WetFloorSign_01', -6.2, -17.6, 's', { spots: 0 })],
-    [staff('Tool clerk', -2.3, -18.8, 's'), HELP]
+    [SIGN, board('Hand tools board', 'board.h_hand', BX[0] + 3.7, BZF - 0.35, 1.1, 0.95), lights([[BX[0] + 1.0, BZ0 + 3.7], [BX[0] + 3.3, BZ0 + 7.7]]),
+      floorSet('Tool trolley', [pw('ToolChest_Roller_01', BX[0] + 0.55, BZF - 0.6, 'b', { spots: 0 }), { m: 'pw/SM_ToolChest_Top_01', x: BX[0] + 0.55, z: BZF - 0.6, r: 0, y: 0.431, flat: 1 }]),
+      dais('Golden tool chest', 'SM_ToolChest_Stack_01', BX[0] + 3.2, BZF - 2.4, { k: 1.2 })],
+    [put('Shop mat', 'SM_FloorMat_01', BX[0] + 2.2, BZF - 0.25, 's', { spots: 0 }), put('Rolling stool', 'ShopStool_Rolling_01', BX[0] + 0.6, BZF - 1.6, 's', { spots: 0 }), put('Steel bin', 'SM_TrashCan_Steel_01', BX[0] + 4.0, BZF - 0.3, 's', { spots: 0 }), put('Wet floor sign', 'WetFloorSign_01', BX[0] + 1.4, BZF - 0.3, 's', { spots: 0 })],
+    [staff('Tool clerk', BX[0] + 1.15, BZF - 1.8, 'b'), HELP]
   ])
 };
 
 // Paint and supplies: paint shelving on the back wall, mixing benches in the middle
-var pa0 = strip('s', -22.15, 0.4, [
+var pa0 = strip('b', BX[1] + 0.05, BZ0 + 0.4, [
   ['Paint shelf one', 'SM_Shelving_HD_Loaded_01'],
   ['Paint shelf two', 'SM_Shelving_HD_Loaded_01', { gap: 0.05 }],
   ['Mixing bench', 'Workbench_Wood_01', { gap: 0.3, on: [['pw/SM_PaintCan_Open_01', -0.25, 0, 2], ['pw/PaintCan_01', 0.0, 0, 2], ['pw/SM_PaintBrush_01', 0.28, 0, 2.2]] }],
@@ -343,14 +352,14 @@ var pa0 = strip('s', -22.15, 0.4, [
   ['Paint shelf four', 'SM_Shelving_HD_Loaded_01', { gap: 0.3 }],
   ['Brush bench', 'SM_Workbench_Steel_01', { gap: 0.3, on: [['pw/SM_PaintBrush_01', -0.22, 0, 2.2], ['pw/SM_PaintRoller_01', 0.15, 0, 1.8]] }]
 ]);
-var pa1 = strip('s', -20.25, 0.9, [
+var pa1 = strip('b', BX[1] + 1.75, BZ0 + 0.9, [
   ['Paint can table', 'Workbench_Wood_01', { on: [['pw/PaintCan_01', -0.28, 0, 1.8], ['pw/SM_PaintCan_Open_01', 0, 0, 1.8], ['pw/PaintCan_01', 0.28, 0, 1.8]] }],
   ['Tray sawhorse', 'SM_Sawhorse_Folding_01', { gap: 0.4, on: [['pw/SM_PaintTray_01', 0, 0, 1.4, 0.38]] }],
   ['Roller bench', 'SM_Workbench_Steel_01', { gap: 0.4, on: [['pw/SM_PaintRoller_01', -0.18, 0, 1.8], ['pw/SM_PaintBrush_01', 0.2, 0, 2.4]] }],
   ['Drop cloth totes', 'SM_Tote_Stack_01', { gap: 0.4, n: 2 }],
   ['Lumber trestle', 'SM_Sawhorse_Wood_01', { gap: 0.4, top: [['SM_Lumber_Stack_01', 0.45]] }]
 ], { mid: true, s: 2 });
-var pa2 = strip('s', -18.95, 1.0, [
+var pa2 = strip('k', BX[1] + 3.65, BZ0 + 0.6, [
   ['Caulk bench', 'Workbench_Wood_01'],
   ['Step ladder', 'SM_StepLadder_01', { gap: 0.4 }],
   ['Bucket bench', 'SM_Workbench_Steel_01', { gap: 0.4 }],
@@ -360,23 +369,22 @@ var paint2 = [pa2[0], tools(pa2[0], 'Caulk guns', [['SM_CaulkGun_01', -0.25, 0, 
   tools(pa2[2], 'Buckets', [['SM_Bucket_01', -0.15, 0, 1.2], ['SM_Bucket_01', 0.2, 0, 1.2]]), pa2[3],
   tools(pa2[3], 'Gloves and goggles', [['SM_WorkGloves_01', -0.25, 0, 1.8], ['SM_SafetyGlasses_01', 0, 0, 2], ['SM_EarMuffs_01', 0.25, 0, 1.8]])];
 AREAS.paint = {
-  cx: 4.05, cz: -19.7, vacant: [0.1, 8.0, -22.2, -17.2], sign: [4.05, -17.9, 1.9],
-  floor: [floor(0.1, 8.0, -22.2, -17.2, 0x2f6264)],
+  cx: BX[1] + 2.2, cz: (BZ0 + BZF) / 2, vacant: [BX[1], BX[1] + 4.4, BZ0, BZF], sign: [BX[1] + 2.2, BZF - 0.7, 1.9],
+  floor: [floor(BX[1], BX[1] + 4.4, BZ0, BZF, BAYC.paint)],
   ups: compose([
     pa0,
     pa1,
     paint2,
-    [SIGN, board('Paint board', 'board.h_paint', 6.4, -17.6, 1.1, 0.95), lights([[2.0, -20.9], [5.5, -20.9]]),
-      floorSet('Extra ladder', [pw('SM_StepLadder_01', 0.45, -19.2, 's', { spots: 0 })]),
-      plinth('Golden paint can', 'Workbench_Wood_01', 7.2, -20.2, 's', [['SM_PaintCan_Open_01', 0, 0, 3.4]])],
-    [put('Shop mat', 'SM_FloorMat_01', 4.0, -17.75, 's', { spots: 0 }), put('Rag can', 'SM_OilyRagCan_01', 7.6, -17.7, 's', { spots: 0 }),
-      put('Steel bin', 'SM_TrashCan_Steel_01', 0.5, -17.6, 's', { spots: 0 }), put('Wet floor sign', 'WetFloorSign_01', 2.6, -17.6, 's', { spots: 0 })],
-    [staff('Paint clerk', 6.7, -18.6, 's'), HELP]
+    [SIGN, board('Paint board', 'board.h_paint', BX[1] + 3.7, BZF - 0.35, 1.1, 0.95), lights([[BX[1] + 1.0, BZ0 + 3.7], [BX[1] + 3.3, BZ0 + 7.7]]),
+      floorSet('Extra ladder', [pw('SM_StepLadder_01', BX[1] + 0.5, BZF - 0.8, 's', { spots: 0 })]),
+      plinth('Golden paint can', 'Workbench_Wood_01', BX[1] + 3.3, BZF - 2.4, 's', [['SM_PaintCan_Open_01', 0, 0, 3.4]])],
+    [put('Shop mat', 'SM_FloorMat_01', BX[1] + 2.2, BZF - 0.25, 's', { spots: 0 }), put('Rag can', 'SM_OilyRagCan_01', BX[1] + 4.0, BZF - 0.3, 's', { spots: 0 }), put('Steel bin', 'SM_TrashCan_Steel_01', BX[1] + 0.4, BZF - 0.3, 's', { spots: 0 }), put('Wet floor sign', 'WetFloorSign_01', BX[1] + 1.4, BZF - 0.3, 's', { spots: 0 })],
+    [staff('Paint clerk', BX[1] + 1.15, BZF - 1.8, 'b'), HELP]
   ])
 };
 
 // Oil and fluids: shelves along the east wall, benches and drums in the middle
-var oi0 = strip('k', 14.7, -21.9, [
+var oi0 = strip('b', BX[4] + 0.05, BZ0 + 0.4, [
   ['Oil shelf one', 'SM_Shelving_HD_Loaded_01'],
   ['Oil shelf two', 'SM_Shelving_HD_Loaded_01', { gap: 0.05 }],
   ['Tote stack', 'SM_Tote_Stack_01', { gap: 0.3 }],
@@ -385,14 +393,14 @@ var oi0 = strip('k', 14.7, -21.9, [
   ['Oil shelf four', 'SM_Shelving_HD_Loaded_01', { gap: 0.3 }],
   ['Oil shelf five', 'SM_Shelving_HD_Loaded_01', { gap: 0.05 }]
 ]);
-var oi1 = strip('k', 12.5, -21.4, [
+var oi1 = strip('b', BX[4] + 1.75, BZ0 + 0.9, [
   ['Oil table', 'Workbench_Wood_01', { on: [['pw/OilJug_01', -0.28, 0, 2], ['pw/OilJug_01', 0, 0, 2], ['pw/OilBottle_01', 0.28, 0, 2.6]] }],
   ['Oil drain', 'SM_OilDrain_Upright_01', { gap: 0.4 }],
   ['Grease bench', 'SM_Workbench_Steel_01', { gap: 0.4, on: [['pw/SM_GreaseGun_01', -0.17, 0, 1.6], ['pw/SM_OilCan_Squirt_01', 0.2, 0, 2.2]] }],
   ['Jerry can pallet', 'Pallet_01', { gap: 0.4, on: [['pw/JerryCan_01', -0.24, 0, 1.1, 0.061], ['pw/JerryCan_01', 0.0, 0, 1.1, 0.061], ['pw/JerryCan_01', 0.24, 0, 1.1, 0.061]] }],
   ['Gas can pallet', 'Pallet_01', { gap: 0.4, on: [['pw/SM_GasCan_Plastic_01', -0.24, 0, 1.2, 0.061], ['pw/SM_GasCan_Plastic_01', 0, 0, 1.2, 0.061], ['pw/SM_GasCan_Plastic_01', 0.24, 0, 1.2, 0.061]] }]
 ], { mid: true, s: 2 });
-var oi2 = strip('k', 10.9, -21.5, [
+var oi2 = strip('k', BX[4] + 3.65, BZ0 + 0.6, [
   ['Spray bench', 'SM_Workbench_Steel_01'],
   ['Gas bench', 'Workbench_Wood_01', { gap: 0.4 }],
   ['Plastic crates', 'SM_Crate_Plastic_01', { gap: 0.4, n: 3 }],
@@ -402,23 +410,22 @@ var oil2 = [oi2[0], tools(oi2[0], 'Spray cans', [['SM_SprayCan_01', -0.22, 0, 2]
   tools(oi2[1], 'Gas cans', [['SM_GasCan_Plastic_01', -0.33, 0, 1.2], ['SM_GasCan_Plastic_01', 0.35, 0, 1.2]]),
   tools(oi2[1], 'Funnels and drain pan', [['SM_Funnel_01', -0.1, 0.02, 1.6], ['SM_OilDrainPan_01', 0.12, 0.02, 1]]), oi2[2], oi2[3]];
 AREAS.oil = {
-  cx: 12.2, cz: -17.8, vacant: [9.7, 14.7, -22.2, -13.4], sign: [12.2, -14.4, 1.9],
-  floor: [floor(9.7, 14.7, -22.2, -13.4, 0x56603a)],
+  cx: BX[4] + 2.2, cz: (BZ0 + BZF) / 2, vacant: [BX[4], BX[4] + 4.4, BZ0, BZF], sign: [BX[4] + 2.2, BZF - 0.7, 1.9],
+  floor: [floor(BX[4], BX[4] + 4.4, BZ0, BZF, BAYC.oil)],
   ups: compose([
     oi0,
     oi1,
     oil2,
-    [SIGN, board('Oil board', 'board.h_oil', 10.7, -14.0, 1.1, 0.95), lights([[12.0, -20.4], [12.0, -16.2]]),
-      floorSet('Shop fan', [pw('SM_FloorFan_Drum_01', 14.45, -15.3, 'k', { spots: 0 })]),
-      plinth('Golden oil jug', 'Workbench_Steel_01', 10.5, -16.0, 'k', [['OilJug_01', 0, 0, 3], ['OilBottle_01', 0, -0.28, 2.6], ['OilBottle_01', 0, 0.28, 2.6]])],
-    [put('Shop mat', 'SM_FloorMat_01', 12.0, -14.0, 'k', { spots: 0 }), put('Rag can', 'SM_OilyRagCan_01', 14.35, -14.3, 'k', { spots: 0 }),
-      put('Steel bin', 'SM_TrashCan_Steel_01', 10.0, -13.7, 'k', { spots: 0 }), put('Wet floor sign', 'WetFloorSign_01', 13.4, -14.0, 'k', { spots: 0 })],
-    [staff('Oil clerk', 13.4, -17.0, 'k'), HELP]
+    [SIGN, board('Oil board', 'board.h_oil', BX[4] + 3.7, BZF - 0.35, 1.1, 0.95), lights([[BX[4] + 1.0, BZ0 + 3.7], [BX[4] + 3.3, BZ0 + 7.7]]),
+      floorSet('Shop fan', [pw('SM_FloorFan_Drum_01', BX[4] + 0.7, BZF - 0.8, 'b', { spots: 0 })]),
+      plinth('Golden oil jug', 'Workbench_Steel_01', BX[4] + 3.3, BZF - 2.4, 'k', [['OilJug_01', 0, 0, 3], ['OilBottle_01', 0, -0.28, 2.6], ['OilBottle_01', 0, 0.28, 2.6]])],
+    [put('Shop mat', 'SM_FloorMat_01', BX[4] + 2.2, BZF - 0.25, 's', { spots: 0 }), put('Rag can', 'SM_OilyRagCan_01', BX[4] + 4.0, BZF - 0.3, 's', { spots: 0 }), put('Steel bin', 'SM_TrashCan_Steel_01', BX[4] + 0.4, BZF - 0.3, 's', { spots: 0 }), put('Wet floor sign', 'WetFloorSign_01', BX[4] + 1.4, BZF - 0.3, 's', { spots: 0 })],
+    [staff('Oil clerk', BX[4] + 1.15, BZF - 1.8, 'b'), HELP]
   ])
 };
 
 // Batteries and parts: shelves and cabinets on the east wall, battery benches, engines on stands
-var ba0 = strip('k', 14.7, -13.1, [
+var ba0 = strip('b', BX[5] + 0.05, BZ0 + 0.4, [
   ['Battery shelf one', 'SM_Shelving_HD_Loaded_01'],
   ['Battery shelf two', 'SM_Shelving_HD_Loaded_01', { gap: 0.05 }],
   ['Tall parts cabinet', 'GarageCab_Tall_05', { gap: 0.2 }],
@@ -427,14 +434,14 @@ var ba0 = strip('k', 14.7, -13.1, [
   ['Door cabinet', 'SM_GarageCab_Base_Door_10', { gap: 0.05 }],
   ['Parts totes', 'SM_Tote_Stack_01', { gap: 0.15 }]
 ]);
-var ba1 = strip('k', 12.6, -13.1, [
+var ba1 = strip('b', BX[5] + 1.75, BZ0 + 0.9, [
   ['Battery bench', 'Workbench_Wood_01', { on: [['pw/Battery_Car_01', -0.28, 0, 1.6], ['pw/Battery_Car_01', 0, 0, 1.6], ['pw/Battery_Car_01', 0.28, 0, 1.6]] }],
   ['Charger bench', 'SM_Workbench_Steel_01', { gap: 0.125, on: [['pw/SM_BatteryCharger_01', -0.2, 0, 1.2], ['pw/SM_JumperCables_01', 0.2, 0, 1.6]] }],
   ['Rotor bench', 'SM_Workbench_Steel_01', { gap: 0.125, on: [['pw/SM_BrakeRotor_01', -0.2, 0, 1.6], ['pw/SM_BrakeRotor_01', 0.2, 0, 1.6]] }],
   ['Muffler bench', 'SM_Workbench_Steel_01', { gap: 0.125, on: [['pw/SM_Muffler_01', 0, 0, 1.2]] }],
   ['Spring bench', 'SM_Workbench_Steel_01', { gap: 0.125, on: [['pw/SM_Strut_Spring_01', -0.2, 0, 2], ['pw/SM_Strut_Spring_01', 0.2, 0, 2]] }]
 ], { mid: true, s: 2 });
-var ba2 = strip('k', 10.9, -12.9, [
+var ba2 = strip('k', BX[5] + 3.65, BZ0 + 0.6, [
   ['Engine on stand', 'SM_Engine_OnStand_01'],
   ['Engine bench', 'SM_Workbench_Steel_01', { gap: 0.2 }],
   ['Engine stand', 'SM_EngineStand_01', { gap: 0.2 }],
@@ -444,23 +451,22 @@ var ba2 = strip('k', 10.9, -12.9, [
 var batt2 = [ba2[0], ba2[1], tools(ba2[1], 'V8 block', [['SM_EngineBlock_V8_01', 0, 0, 0.7]]), ba2[2], ba2[3], ba2[4],
   tools(ba2[1], 'Trouble lights', [['SM_TroubleLight_01', -0.28, 0, 0.8], ['SM_Flashlight_01', 0.27, 0, 2]])];
 AREAS.batt = {
-  cx: 12.2, cz: -10.9, vacant: [9.7, 14.7, -13.4, -8.4], sign: [12.2, -9.1, 1.9],
-  floor: [floor(9.7, 14.7, -13.4, -8.4, 0x5e3a3f)],
+  cx: BX[5] + 2.2, cz: (BZ0 + BZF) / 2, vacant: [BX[5], BX[5] + 4.4, BZ0, BZF], sign: [BX[5] + 2.2, BZF - 0.7, 1.9],
+  floor: [floor(BX[5], BX[5] + 4.4, BZ0, BZF, BAYC.batt)],
   ups: compose([
     ba0,
     ba1,
     batt2,
-    [SIGN, board('Parts board', 'board.h_batt', 10.6, -13.0, 1.1, 0.95), lights([[12.4, -12.2], [12.4, -9.6]]),
-      floorSet('Spare totes', [pw('SM_Tote_Stack_01', 10.15, -13.0, 'b', { spots: 0, n: 2 })]),
-      up(nm('Golden engine'), { sign: 'gold' }, pw('SM_EngineStand_01' + GOLD, 13.4, -9.0, 'k', { spots: 0 }), { m: 'pw/SM_EngineBlock_V8_01' + GOLD, x: 13.4, z: -9.0, r: TURN.k, k: 1, y: 0.445, flat: 1 })],
-    [put('Shop mat', 'SM_FloorMat_01', 12.0, -8.7, 'k', { spots: 0 }), put('Rolling stool', 'ShopStool_Rolling_01', 10.1, -9.0, 'k', { spots: 0 }),
-      put('Steel bin', 'SM_TrashCan_Steel_01', 14.3, -8.7, 'k', { spots: 0 }), put('Wet floor sign', 'WetFloorSign_01', 11.2, -8.7, 'k', { spots: 0 })],
-    [staff('Parts clerk', 13.5, -11.4, 'k'), HELP]
+    [SIGN, board('Parts board', 'board.h_batt', BX[5] + 3.7, BZF - 0.35, 1.1, 0.95), lights([[BX[5] + 1.0, BZ0 + 3.7], [BX[5] + 3.3, BZ0 + 7.7]]),
+      floorSet('Spare totes', [pw('SM_Tote_Stack_01', BX[5] + 0.7, BZF - 0.8, 'b', { spots: 0, n: 2 })]),
+      up(nm('Golden engine'), { sign: 'gold' }, pw('SM_EngineStand_01' + GOLD, BX[5] + 3.3, BZF - 2.4, 'k', { spots: 0 }), { m: 'pw/SM_EngineBlock_V8_01' + GOLD, x: BX[5] + 3.3, z: BZF - 2.4, r: TURN.k, k: 1, y: 0.445, flat: 1 })],
+    [put('Shop mat', 'SM_FloorMat_01', BX[5] + 2.2, BZF - 0.25, 's', { spots: 0 }), put('Rolling stool', 'ShopStool_Rolling_01', BX[5] + 0.6, BZF - 1.6, 's', { spots: 0 }), put('Steel bin', 'SM_TrashCan_Steel_01', BX[5] + 4.0, BZF - 0.3, 's', { spots: 0 }), put('Wet floor sign', 'WetFloorSign_01', BX[5] + 1.4, BZF - 0.3, 's', { spots: 0 })],
+    [staff('Parts clerk', BX[5] + 1.15, BZF - 1.8, 'b'), HELP]
   ])
 };
 
 // Lawn and garden: tool racks on the east wall, mowers and barrows in the middle
-var la0 = strip('k', 14.83, -8.1, [
+var la0 = strip('b', LX + 0.05, LZ0 + 0.4, [
   ['Garden tool rack', 'SM_GardenTools_Rack_01', { y: 0.15 }],
   ['Second tool rack', 'SM_GardenTools_Rack_01', { y: 0.15, gap: 0.05 }],
   ['Hose hangers', 'SM_HoseHanger_Garden_01', { y: 0.45, gap: 0.2, n: 2 }],
@@ -469,14 +475,14 @@ var la0 = strip('k', 14.83, -8.1, [
   ['Recycle bin', 'SM_RecycleBin_01', { gap: 0.2 }],
   ['Third tool rack', 'SM_GardenTools_Rack_01', { y: 0.15, gap: 0.2 }]
 ]);
-var la1 = strip('k', 12.2, -7.8, [
+var la1 = strip('b', LX + 1.75, LZ0 + 0.9, [
   ['Lawn mower', 'SM_LawnMower_01'],
   ['Wheelbarrow', 'SM_Wheelbarrow_01', { gap: 0.4 }],
   ['Hand truck', 'SM_HandTruck_01', { gap: 0.4 }],
   ['Second mower', 'SM_LawnMower_01', { gap: 0.4 }],
   ['Second wheelbarrow', 'SM_Wheelbarrow_01', { gap: 0.4 }]
 ], { mid: true, s: 2 });
-var la2 = strip('k', 10.6, -7.6, [
+var la2 = strip('k', LX + 3.65, LZ0 + 0.6, [
   ['Garden bench', 'Workbench_Wood_01'],
   ['Folding chairs', 'SM_FoldingChair_01', { gap: 0.4, n: 3 }],
   ['Coolers', 'SM_Cooler_01', { gap: 0.4, n: 2 }],
@@ -486,23 +492,22 @@ var la2 = strip('k', 10.6, -7.6, [
 var lawn2 = [la2[0], tools(la2[0], 'Rake and shovel', [['SM_Rake_01', 0, -0.08, 0.9, 0], ['SM_Shovel_01', 0, 0.08, 0.9, 0]]), la2[1], la2[2], la2[3], la2[4],
   tools(la2[2], 'Work lights', [['SM_Flashlight_01', -0.15, 0, 2], ['SM_Flashlight_01', 0.15, 0, 2]])];
 AREAS.lawn = {
-  cx: 12.2, cz: -4.9, vacant: [9.7, 14.85, -8.4, -1.4], sign: [12.2, -2.4, 1.9],
-  floor: [floor(9.7, 14.7, -8.4, -1.4, 0x3c5a6e)],
+  cx: LX + 2.2, cz: (LZ0 + LZF) / 2, vacant: [LX, LX + 4.4, LZ0, LZF], sign: [LX + 2.2, LZF - 0.7, 1.9],
+  floor: [floor(LX, LX + 4.4, LZ0, LZF, BAYC.lawn)],
   ups: compose([
     la0,
     la1,
     lawn2,
-    [SIGN, board('Lawn board', 'board.h_lawn', 10.5, -2.0, 1.1, 0.95), lights([[12.4, -6.4], [12.4, -3.6]]),
-      floorSet('Garden ladder', [pw('SM_StepLadder_01', 14.35, -2.8, 'k', { spots: 0 })]),
-      dais('Golden mower', 'SM_LawnMower_01', 13.3, -2.5, { n: 2, k: 1.2, face: 'k' })],
-    [put('Shop mat', 'SM_FloorMat_01', 12.0, -1.8, 'k', { spots: 0 }), put('Steel bin', 'SM_TrashCan_Steel_01', 14.3, -1.8, 'k', { spots: 0 }),
-      put('Broom', 'SM_Broom_Push_01', 10.1, -2.0, 'k', { spots: 0 }), put('Wet floor sign', 'WetFloorSign_01', 11.0, -1.8, 'k', { spots: 0 })],
-    [staff('Garden clerk', 13.5, -4.9, 'k'), HELP]
+    [SIGN, board('Lawn board', 'board.h_lawn', LX + 3.7, LZF - 0.35, 1.1, 0.95), lights([[LX + 1.0, LZ0 + 2.5], [LX + 3.3, LZ0 + 5.5]]),
+      floorSet('Garden ladder', [pw('SM_StepLadder_01', LX + 0.5, LZF - 0.8, 'k', { spots: 0 })]),
+      dais('Golden mower', 'SM_LawnMower_01', LX + 3.2, LZF - 2.4, { n: 2, k: 1.2, face: 'k' })],
+    [put('Shop mat', 'SM_FloorMat_01', LX + 2.2, LZF - 0.25, 's', { spots: 0 }), put('Steel bin', 'SM_TrashCan_Steel_01', LX + 4.0, LZF - 0.3, 's', { spots: 0 }), put('Broom', 'SM_Broom_Push_01', LX + 0.4, LZF - 0.3, 's', { spots: 0 }), put('Wet floor sign', 'WetFloorSign_01', LX + 1.4, LZF - 0.3, 's', { spots: 0 })],
+    [staff('Garden clerk', LX + 1.15, LZF - 1.8, 'b'), HELP]
   ])
 };
 
 // Power tools: benches and machines in rows across the middle
-var po0 = strip('s', -12.4, 1.6, [
+var po0 = strip('b', BX[2] + 0.05, BZ0 + 0.4, [
   ['Miter saw station', 'SM_MiterSaw_Stand_01'],
   ['Table saw', 'SM_TableSaw_01', { gap: 0.15 }],
   ['Band saw', 'SM_BandSaw_01', { gap: 0.15 }],
@@ -511,14 +516,14 @@ var po0 = strip('s', -12.4, 1.6, [
   ['Metal lathe', 'SM_Lathe_Metal_01', { gap: 0.15 }],
   ['Dust collector', 'SM_DustCollector_01', { gap: 0.15 }]
 ]);
-var po1 = strip('s', -10.5, 1.7, [
+var po1 = strip('b', BX[2] + 1.75, BZ0 + 0.9, [
   ['Drill bench', 'SM_Workbench_Steel_01', { on: [['pw/SM_Drill_Cordless_01', -0.2, 0, 2.2], ['pw/SM_Jigsaw_01', 0.2, 0, 2.2]] }],
   ['Saw bench', 'Workbench_Wood_01', { gap: 0.15, on: [['pw/SM_CircularSaw_01', -0.2, 0, 1.8], ['pw/SM_ChopSaw_01', 0.22, 0, 1.2]] }],
   ['Sander bench', 'SM_Workbench_Steel_01', { gap: 0.15, on: [['pw/SM_Sander_Orbital_01', -0.2, 0, 2.2], ['pw/SM_BeltSander_Bench_01', 0.2, 0, 1.2]] }],
   ['Grinder bench', 'Workbench_Wood_01', { gap: 0.15, on: [['pw/SM_AngleGrinder_01', -0.25, 0, 2], ['pw/SM_BenchGrinder_01', 0.2, 0, 1.4]] }],
   ['Air compressor', 'SM_Compressor_Pancake_01', { gap: 0.15 }]
 ], { mid: true, s: 2 });
-var po2 = strip('s', -8.5, 1.5, [
+var po2 = strip('k', BX[2] + 3.65, BZ0 + 0.6, [
   ['Generator', 'SM_Generator_Portable_01'],
   ['Pressure washer', 'SM_PressureWasher_01', { gap: 0.2 }],
   ['Shop vac', 'SM_ShopVac_Drum_01', { gap: 0.2 }],
@@ -528,23 +533,22 @@ var po2 = strip('s', -8.5, 1.5, [
   ['Drum fan', 'SM_FloorFan_Drum_01', { gap: 0.2 }]
 ], { mid: true });
 AREAS.power = {
-  cx: 4.05, cz: -8.6, vacant: [1.25, 6.9, -12.5, -4.7], sign: [4.0, -5.6, 1.9],
-  floor: [floor(1.25, 6.9, -12.5, -4.7, 0x504868)],
+  cx: BX[2] + 2.2, cz: (BZ0 + BZF) / 2, vacant: [BX[2], BX[2] + 4.4, BZ0, BZF], sign: [BX[2] + 2.2, BZF - 0.7, 1.9],
+  floor: [floor(BX[2], BX[2] + 4.4, BZ0, BZF, BAYC.power)],
   ups: compose([
     po0,
     po1,
     po2,
-    [SIGN, board('Power tool board', 'board.h_power', 2.0, -4.9, 1.1, 0.95), lights([[3.2, -11.2], [3.2, -7.2]]),
-      floorSet('Anvil', [pw('SM_Anvil_Stump_01', 6.5, -10.6, 's', { spots: 0 })]),
-      dais('Golden drill press', 'SM_DrillPress_Floor_01', 5.4, -6.2, { k: 1.2 })],
-    [put('Shop mat', 'SM_FloorMat_01', 4.0, -5.1, 's', { spots: 0 }), put('Steel bin', 'SM_TrashCan_Steel_01', 6.4, -5.1, 's', { spots: 0 }),
-      put('Rolling stool', 'ShopStool_Rolling_01', 1.8, -5.3, 's', { spots: 0 }), put('Wet floor sign', 'WetFloorSign_01', 2.8, -5.2, 's', { spots: 0 })],
-    [staff('Tool clerk', 5.9, -9.5, 'n'), HELP]
+    [SIGN, board('Power tool board', 'board.h_power', BX[2] + 3.7, BZF - 0.35, 1.1, 0.95), lights([[BX[2] + 1.0, BZ0 + 3.7], [BX[2] + 3.3, BZ0 + 7.7]]),
+      floorSet('Anvil', [pw('SM_Anvil_Stump_01', BX[2] + 0.6, BZF - 0.8, 's', { spots: 0 })]),
+      dais('Golden drill press', 'SM_DrillPress_Floor_01', BX[2] + 3.2, BZF - 2.4, { k: 1.2 })],
+    [put('Shop mat', 'SM_FloorMat_01', BX[2] + 2.2, BZF - 0.25, 's', { spots: 0 }), put('Steel bin', 'SM_TrashCan_Steel_01', BX[2] + 4.0, BZF - 0.3, 's', { spots: 0 }), put('Rolling stool', 'ShopStool_Rolling_01', BX[2] + 0.6, BZF - 1.6, 's', { spots: 0 }), put('Wet floor sign', 'WetFloorSign_01', BX[2] + 1.4, BZF - 0.3, 's', { spots: 0 })],
+    [staff('Tool clerk', BX[2] + 1.15, BZF - 1.8, 'b'), HELP]
   ])
 };
 
 // Tires and wheels: tire racks along the north edge, the changer and balancer in a row, jacks and stands
-var ti0 = strip('s', -12.9, -6.5, [
+var ti0 = strip('b', BX[3] + 0.05, BZ0 + 0.4, [
   ['Tire rack', 'TireRack_Wall_01'],
   ['Second tire rack', 'TireRack_Wall_01', { gap: 0.1 }],
   ['Tire stack', 'Tire_Stack_01', { gap: 0.2 }],
@@ -553,14 +557,14 @@ var ti0 = strip('s', -12.9, -6.5, [
   ['Second tire stack', 'Tire_Stack_01', { gap: 0.2 }],
   ['Steel wheel pallet', 'Pallet_01', { gap: 0.2, on: [['pw/SM_Wheel_Steel_01', -0.15, 0, 0.8, 0.061], ['pw/SM_Wheel_Steel_01', 0.15, 0, 0.8, 0.061]] }]
 ]);
-var ti1 = strip('s', -10.8, -6.4, [
+var ti1 = strip('b', BX[3] + 1.75, BZ0 + 0.9, [
   ['Tire changer', 'SM_TireChanger_01'],
   ['Wheel balancer', 'SM_WheelBalancer_01', { gap: 0.3 }],
   ['Island tire stacks', 'Tire_Stack_01', { gap: 0.3, n: 2 }],
   ['Rim bench', 'SM_Workbench_Steel_01', { gap: 0.3, on: [['pw/Rim_01', -0.2, 0, 1.2], ['pw/Rim_01', 0.2, 0, 1.2]] }],
   ['Wheel pallet', 'Pallet_01', { gap: 0.3, on: [['pw/Wheel_01', 0, 0, 1, 0.061]] }]
 ], { mid: true, s: 2 });
-var ti2 = strip('s', -8.6, -6.4, [
+var ti2 = strip('k', BX[3] + 3.65, BZ0 + 0.6, [
   ['Jack bench', 'SM_Workbench_Steel_01'],
   ['Floor jack', 'SM_FloorJack_01', { gap: 0.3 }],
   ['Jack stands', 'SM_JackStand_01', { gap: 0.3, n: 2 }],
@@ -570,23 +574,22 @@ var ti2 = strip('s', -8.6, -6.4, [
 var tire2 = [ti2[0], tools(ti2[0], 'Bottle jacks', [['SM_BottleJack_01', -0.25, 0, 2], ['SM_BottleJack_01', -0.03, 0, 2]]), ti2[1], ti2[2], ti2[3], ti2[4],
   tools(ti2[0], 'Lug wrenches', [['SM_LugWrench_Cross_01', 0.27, 0, 1]])];
 AREAS.tires = {
-  cx: -4.1, cz: -8.9, vacant: [-6.9, -1.25, -13.0, -4.7], sign: [-4.1, -5.4, 1.9],
-  floor: [floor(-6.9, -1.25, -13.0, -4.7, 'quarrybw')],
+  cx: BX[3] + 2.2, cz: (BZ0 + BZF) / 2, vacant: [BX[3], BX[3] + 4.4, BZ0, BZF], sign: [BX[3] + 2.2, BZF - 0.7, 1.9],
+  floor: [floor(BX[3], BX[3] + 4.4, BZ0, BZF, BAYC.tires)],
   ups: compose([
     ti0,
     ti1,
     tire2,
-    [SIGN, board('Tire board', 'board.h_tires', -6.0, -5.0, 1.1, 0.95), lights([[-4.6, -11.6], [-4.6, -7.4]]),
-      floorSet('Tire pile', [pw('Tire_Stack_01', -6.3, -6.4, 's', { spots: 0 })]),
-      up(nm('Golden tire'), { sign: 'gold' }, pw('Pallet_01', -2.4, -6.2, 's', { spots: 0 }), { m: 'pw/Tire_Stack_01' + GOLD, x: -2.4, z: -6.2, r: 0, k: 1.3, y: 0.061, flat: 1 })],
-    [put('Shop mat', 'SM_FloorMat_01', -4.1, -5.1, 's', { spots: 0 }), put('Steel bin', 'SM_TrashCan_Steel_01', -6.4, -5.1, 's', { spots: 0 }),
-      put('Parking stop', 'SM_ParkingStop_01', -4.1, -4.9, 's', { spots: 0 }), put('Wet floor sign', 'WetFloorSign_01', -2.0, -5.1, 's', { spots: 0 })],
-    [staff('Tire clerk', -2.0, -9.5, 'n'), HELP]
+    [SIGN, board('Tire board', 'board.h_tires', BX[3] + 3.7, BZF - 0.35, 1.1, 0.95), lights([[BX[3] + 1.0, BZ0 + 3.7], [BX[3] + 3.3, BZ0 + 7.7]]),
+      floorSet('Tire pile', [pw('Tire_Stack_01', BX[3] + 0.6, BZF - 0.8, 's', { spots: 0 })]),
+      up(nm('Golden tire'), { sign: 'gold' }, pw('Pallet_01', BX[3] + 3.2, BZF - 2.4, 's', { spots: 0 }), { m: 'pw/Tire_Stack_01' + GOLD, x: BX[3] + 3.2, z: BZF - 2.4, r: 0, k: 1.3, y: 0.061, flat: 1 })],
+    [put('Shop mat', 'SM_FloorMat_01', BX[3] + 2.2, BZF - 0.25, 's', { spots: 0 }), put('Steel bin', 'SM_TrashCan_Steel_01', BX[3] + 0.4, BZF - 0.3, 's', { spots: 0 }), put('Parking stop', 'SM_ParkingStop_01', BX[3] + 3.0, BZF - 0.12, 's', { spots: 0 }), put('Wet floor sign', 'WetFloorSign_01', BX[3] + 4.0, BZF - 0.3, 's', { spots: 0 })],
+    [staff('Tire clerk', BX[3] + 1.15, BZF - 1.8, 'b'), HELP]
   ])
 };
 
 // Storage and garage: cabinets and lockers along the west wall, cabinet islands and totes beside them
-var st0 = strip('b', -14.7, -14.4, [
+var st0 = strip('b', BX[6] + 0.05, BZ0 + 0.4, [
   ['Garage shelf one', 'SM_Shelving_HD_Loaded_01'],
   ['Garage shelf two', 'SM_Shelving_HD_Loaded_01', { gap: 0.8 }],
   ['Locker pair', 'Locker_Double_01', { gap: 0.8 }],
@@ -595,14 +598,14 @@ var st0 = strip('b', -14.7, -14.4, [
   ['Door cabinet', 'SM_GarageCab_Base_Door_10', { gap: 0.8 }],
   ['Parts bench', 'SM_Workbench_Backboard_01', { gap: 0.8, on: [['pw/PartsBin_01', -0.3, 0.05, 2.4, 0.45], ['pw/PartsBin_01', -0.1, 0.05, 2.4, 0.45], ['pw/PartsBin_01', 0.1, 0.05, 2.4, 0.45], ['pw/PartsBin_01', 0.3, 0.05, 2.4, 0.45]] }]
 ]);
-var st1 = strip('b', -12.3, -14.0, [
+var st1 = strip('b', BX[6] + 1.75, BZ0 + 0.9, [
   ['Door cabinet island', 'SM_GarageCab_Base_Door_10', { n: 2, top: [['SM_GarageCab_Top_20']] }],
   ['Drawer cabinet island', 'SM_GarageCab_Base_Drawers_05', { gap: 0.8, n: 4, top: [['SM_GarageCab_Top_20']] }],
   ['Steel workbench', 'SM_Workbench_Steel_01', { gap: 0.8 }],
   ['Wood workbench', 'Workbench_Wood_01', { gap: 0.8 }],
   ['Tote stacks', 'SM_Tote_Stack_01', { gap: 0.8, n: 3 }]
 ], { mid: true, s: 2 });
-var st2 = strip('b', -10.7, -13.9, [
+var st2 = strip('k', BX[6] + 3.65, BZ0 + 0.6, [
   ['Locker bank', 'Locker_Double_01', { n: 2 }],
   ['Plastic crates', 'SM_Crate_Plastic_01', { gap: 0.8, n: 3 }],
   ['Wood crates', 'SM_Crate_Wood_01', { gap: 0.8, n: 2 }],
@@ -612,18 +615,17 @@ var st2 = strip('b', -10.7, -13.9, [
   ['Folding chairs', 'SM_FoldingChair_01', { gap: 0.8, n: 2 }]
 ], { mid: true });
 AREAS.storage = {
-  cx: -12.2, cz: -7.5, vacant: [-14.7, -9.7, -14.8, -0.3], sign: [-12.2, -1.0, 1.9],
-  floor: [floor(-14.7, -9.7, -14.8, -0.3, 0x6b4a32)],
+  cx: BX[6] + 2.2, cz: (BZ0 + BZF) / 2, vacant: [BX[6], BX[6] + 4.4, BZ0, BZF], sign: [BX[6] + 2.2, BZF - 0.7, 1.9],
+  floor: [floor(BX[6], BX[6] + 4.4, BZ0, BZF, BAYC.storage)],
   ups: compose([
     st0,
     st1,
     st2,
-    [SIGN, board('Storage board', 'board.h_storage', -11.2, -0.8, 1.1, 0.95), lights([[-12.2, -9.0], [-12.2, -4.0]]),
-      floorSet('Sawhorses', [pw('SM_Sawhorse_Wood_01', -10.5, -1.6, 'b', { spots: 0, n: 2 }), { m: 'pw/SM_Lumber_Stack_01', x: -10.5, z: -1.6, r: Math.PI / 2, y: 0.38, flat: 1 }]),
-      dais('Golden cabinet', 'GarageCab_Tall_05', -10.6, -3.4, { k: 1.2 })],
-    [put('Shop mat', 'SM_FloorMat_01', -12.2, -0.7, 's', { spots: 0 }), put('Steel bin', 'SM_TrashCan_Steel_01', -14.3, -0.6, 's', { spots: 0 }),
-      put('Rag can', 'SM_OilyRagCan_01', -10.2, -0.7, 's', { spots: 0 }), put('Wet floor sign', 'WetFloorSign_01', -11.4, -0.8, 's', { spots: 0 })],
-    [staff('Garage clerk', -11.4, -7.5, 'b'), HELP]
+    [SIGN, board('Storage board', 'board.h_storage', BX[6] + 3.7, BZF - 0.35, 1.1, 0.95), lights([[BX[6] + 1.0, BZ0 + 3.7], [BX[6] + 3.3, BZ0 + 7.7]]),
+      floorSet('Sawhorses', [pw('SM_Sawhorse_Wood_01', BX[6] + 0.8, BZF - 0.8, 'b', { spots: 0, n: 2 }), { m: 'pw/SM_Lumber_Stack_01', x: BX[6] + 0.8, z: BZF - 0.8, r: Math.PI / 2, y: 0.38, flat: 1 }]),
+      dais('Golden cabinet', 'GarageCab_Tall_05', BX[6] + 3.2, BZF - 2.4, { k: 1.2 })],
+    [put('Shop mat', 'SM_FloorMat_01', BX[6] + 2.2, BZF - 0.25, 's', { spots: 0 }), put('Steel bin', 'SM_TrashCan_Steel_01', BX[6] + 0.4, BZF - 0.3, 's', { spots: 0 }), put('Rag can', 'SM_OilyRagCan_01', BX[6] + 4.0, BZF - 0.3, 's', { spots: 0 }), put('Wet floor sign', 'WetFloorSign_01', BX[6] + 1.4, BZF - 0.3, 's', { spots: 0 })],
+    [staff('Garage clerk', BX[6] + 1.15, BZF - 1.8, 'b'), HELP]
   ])
 };
 
@@ -665,57 +667,15 @@ var WING = {
   }
 };
 
-var room = KIT.room;
-var low = KIT.low;
 function flat(list) {
   return list.reduce(function (a, u) { return a.concat(u.piece); }, []);
 }
-var rets = strip('s', -2.8, 17.2, [
-  ['Returns shelf one', 'SM_Shelving_HD_Loaded_01', { s: 0 }], ['Returns shelf two', 'SM_Shelving_HD_Loaded_01', { s: 0, gap: 0.05 }],
-  ['Key cutting bench', 'SM_Workbench_Steel_01', { s: 0, gap: 0.3 }], ['Returns cabinet', 'SM_GarageCab_Base_Door_10', { s: 0, gap: 0.1 }]
-]);
-var lumber = strip('b', 15.4, -24.1, [
-  ['Stock shelf one', 'SM_Shelving_HD_Loaded_01', { s: 0 }], ['Stock shelf two', 'SM_Shelving_HD_Loaded_01', { s: 0 }], ['Stock shelf three', 'SM_Shelving_HD_Loaded_01', { s: 0 }],
-  ['Stock shelf four', 'SM_Shelving_HD_Loaded_01', { s: 0 }], ['Stock cabinet', 'GarageCab_Tall_05', { s: 0 }], ['Stock shelf five', 'SM_Shelving_HD_Loaded_01', { s: 0 }]
-]);
-var DECOR = {
-  front: cat([
-    { patch: rbox(-10.9, -8.1, 0.9, 1.95, 0.25), finish: 0x5a5f69 },
-    { patch: rbox(8.1, 10.9, 0.9, 1.95, 0.25), finish: 0x5a5f69 },
-    { text: 'board.h_order', x: 0, z: -1.35, r: 0, y: 1.75, w: 2.0, h: 0.5, post: true },
-    KIT.tx('board.h_welcome_hardware', -7.6, 1.0, 1.0, 0.95),
-    KIT.tx('board.h_welcome_auto', 11.7, 0.25, 1.0, 0.95),
-    pw('Tire_Stack_01', -2.9, 1.95, 's', { spots: 0 }), pw('Tire_Stack_01', 2.9, 1.95, 's', { spots: 0 }),
-    { m: 'furn/bench', x: -0.9, z: 2.0, r: Math.PI, k: 1.5 }, { m: 'furn/bench', x: 0.9, z: 2.0, r: Math.PI, k: 1.5 },
-    pw('VendingMachine_Drink_01', 3.75, 2.0, 'n', { spots: 0 }), pw('VendingMachine_Drink_01', -3.75, 2.0, 'n', { spots: 0 }),
-    pw('SM_Sign_AFrame_Blank_01', -8.3, 0.6, 's', { spots: 0 }), pw('SM_Sign_AFrame_Blank_01', 8.3, 0.6, 's', { spots: 0 })
-  ]),
-  stock: [],
-  out: [],
-  side: [],
-  wing: cat(
-    [room(15.3, 21.5, -2.9, 2.2, 0x6b707a), room(15.3, 21.5, -7.9, -3.1, 0x4d525c), room(15.3, 21.5, -13.9, -8.1, 'boards'), room(15.3, 21.5, -24.3, -14.1, 0x8a8e96)],
-    low(15.3, 15.9, -3.1, -2.9), low(17.1, 21.5, -3.1, -2.9), low(15.3, 21.5, -8.1, -7.9), low(15.3, 15.9, -14.1, -13.9), low(17.1, 21.5, -14.1, -13.9),
-    flat(rets),
-    [pw('PalletJack_01', 20.6, -0.9, 's', { spots: 0 }), pw('Pallet_01', 18.4, 0.3, 's', { spots: 0 }), pw('PalletLoad_Cases_01', 18.4, 0.3, 's', { spots: 0 }),
-      pw('SM_TrashBin_Wheeled_01', 21.0, -2.3, 's', { spots: 0 })],
-    flat(lumber),
-    [pw('SM_Lumber_Stack_01', 18.6, -22.8, 's', { spots: 0 }), pw('SM_Lumber_Stack_01', 18.6, -22.0, 's', { spots: 0 }), pw('Pallet_01', 20.4, -21.5, 's', { spots: 0 }),
-      pw('PalletLoad_Water_01', 20.4, -21.5, 's', { spots: 0 }), pw('SM_Crate_Wood_01', 17.4, -20.1, 's', { spots: 0, n: 2 })]
-  )
-};
+var room = KIT.room;
+var DOORS = [-8, -2.7, 2.7, 8];
+var DOCKS = [-9.6, -6.4, -3.2, 0, 3.2, 6.4, 9.6];
+var FRONT_Z = -4;
 
-// what each Checkouts level adds besides tills, as in plan.js
-var FRONT = [
-  [2, 'pw/SM_Wheelbarrow_01', -13.6, 1.8, 0], [2, 'pw/SM_Wheelbarrow_01', -7.0, 1.8, 0], [2, 'pw/SM_Wheelbarrow_01', 5.0, 1.8, 0], [2, 'pw/SM_Wheelbarrow_01', 12.0, 1.8, 0],
-  [4, 'pw/SM_HandTruck_01', 13.4, 2.0, Math.PI], [4, 'pw/SM_HandTruck_01', 14.0, 2.0, Math.PI],
-  [8, 'pw/TrashRecycle_Station_01', -14.3, 1.95, Math.PI], [8, 'pw/Tire_Stack_01', -13.6, 1.95, Math.PI], [8, 'pw/SM_Sign_AFrame_Blank_01', -13.0, 1.95, Math.PI], [8, 'pw/NewspaperRack_01', -12.5, 1.95, Math.PI],
-  [10, 'pw/DiningBench_01', -6.1, 1.95, Math.PI], [10, 'pw/SM_Sawhorse_Wood_01', -7.0, 1.95, 0], [10, 'pw/Planter_Tall_01', -5.15, 1.95, 0]
-];
-
-
-// The warehouse is 36 wide and 21 deep, with the west wall at x -18 and the garden center beyond it: the departments above
-// were laid out in the supercenter's hall, so each is moved to its place in the aisles of the shed
+// the welding corner and the break room sit at the two ends of the stockroom, in the strip behind the hall
 var seen = [];
 function shift(e, dx, dz) {
   if (Array.isArray(e)) {
@@ -733,77 +693,94 @@ function shift(e, dx, dz) {
   if (e.rect) e.rect = [e.rect[0] + dx, e.rect[1] + dx, e.rect[2] + dz, e.rect[3] + dz];
   if (e.piece) e.piece.forEach(function (q) { shift(q, dx, dz); });
   if (e.ups) e.ups.forEach(function (q) { shift(q, dx, dz); });
-  if (e.floor) e.floor.forEach(function (q) { shift(q, dx, dz); });
 }
-function moveArea(a, dx, dz) {
-  shift(a, dx, dz);
-  a.cx += dx;
-  a.cz += dz;
-  a.vacant = [a.vacant[0] + dx, a.vacant[1] + dx, a.vacant[2] + dz, a.vacant[3] + dz];
-  a.sign = [a.sign[0] + dx, a.sign[1] + dz, a.sign[2]];
-}
-moveArea(AREAS.storage, -3.1, -2.1);
-moveArea(AREAS.oil, -21.4, 5.3);
-moveArea(AREAS.batt, -21.4, 6.4);
-moveArea(AREAS.hand, 2.4, 5.3);
-moveArea(AREAS.paint, -5.7, 11.5);
-moveArea(AREAS.tires, 10.5, -3.9);
-moveArea(AREAS.power, 9.15, -4.4);
-// Lawn and Garden stands in the garden center, against the building's west wall
-moveArea(AREAS.lawn, -33.2, 3.4);
-Object.keys(WING).forEach(function (id) { shift(WING[id], 3, 0); });
-shift(DECOR.wing, 3, 0);
+shift(WING.rest, -3.7, -23.0);
+shift(WING.lounge, -33.1, -17.3);
 
-var DOORS = [-13, -4.5, 4.5, 13];
-var DOCKS = [-14, -9.5, -5, 5, 9.5, 14];
-// racking as tall as the hall along the back wall, open at the stock doors
-var racks = [];
+var DECOR = {
+  front: [],
+  stock: [],
+  out: [],
+  side: [],
+  wing: [room(11.6, 17.8, -31.0, -26.0, 0x4d525c), room(-17.8, -11.6, -31.3, -25.3, 'boards')]
+};
+
+// tall racking across the back of the hall, open at the stock doors, and the front end: mats at the way in, benches, pallet
+// displays in the corners and a yellow line along the aisle
+var backRacks = [];
 for (var rx = -16.9; rx < 17; rx += 1.85) {
-  if (DOORS.every(function (d) { return Math.abs(rx - d) > 2.1; })) racks.push({ m: 'pw/SM_Shelving_HD_Loaded_01', x: rx, z: -18.15, r: 0, k: 2 });
+  if (DOORS.every(function (d) { return Math.abs(rx - d) > 2.1; })) backRacks.push({ m: 'pw/SM_Shelving_HD_Loaded_01', x: rx, z: -24.6, r: 0, k: 2 });
 }
-DECOR.front = cat(DECOR.front, racks, [
-  room(-17.4, 17.4, -2.4, -2.3, 0xe8b923),
-  pw('Pallet_01', -4.2, -4.4, 's', { spots: 0 }), pw('PalletLoad_Cases_01', -4.2, -4.4, 's', { spots: 0 }), pw('Tire_Stack_01', -2.4, -4.5, 's', { spots: 0 }),
-  pw('SM_Sawhorse_Wood_01', 0.0, -4.5, 's', { spots: 0 }), pw('SM_Sawhorse_Wood_01', 1.2, -4.5, 's', { spots: 0 }), { m: 'pw/SM_Lumber_Stack_01', x: 0.6, z: -4.5, r: 0, y: 0.38, flat: 1 },
-  pw('PalletJack_01', 4.6, -5.0, 's', { spots: 0 }), pw('Pallet_01', 6.2, -4.6, 's', { spots: 0 }), pw('PalletLoad_Water_01', 6.2, -4.6, 's', { spots: 0 }),
-  pw('PropaneCage_01', 8.7, -4.5, 's', { spots: 0 }),
-  pw('SM_Sawhorse_Wood_01', 11.2, -5.6, 's', { spots: 0, n: 2 }), { m: 'pw/SM_Lumber_Stack_01', x: 11.2, z: -5.6, r: 0, y: 0.38, flat: 1 },
-  pw('Pallet_01', 14.4, -5.0, 's', { spots: 0 }), pw('PalletLoad_Cases_01', 14.4, -5.0, 's', { spots: 0 }), pw('SM_HandTruck_01', 16.2, -4.6, 's', { spots: 0 }),
-  pw('Pallet_01', 12.6, -7.6, 's', { spots: 0 }), pw('PalletLoad_Water_01', 12.6, -7.6, 's', { spots: 0 })
+DECOR.front = cat(backRacks, [
+  { patch: rbox(-1.6, 1.6, FRONT_Z - 1.2, FRONT_Z - 0.2, 0.25), finish: 0x5a5f69 },
+  { text: 'board.h_order', x: -5.4, z: -7.95, r: 0, y: 1.75, w: 2.0, h: 0.5, post: true },
+  pw('Tire_Stack_01', -3.6, FRONT_Z - 0.7, 's', { spots: 0 }), pw('Tire_Stack_01', 3.6, FRONT_Z - 0.7, 's', { spots: 0 }),
+  { m: 'furn/bench', x: -4.8, z: FRONT_Z - 0.5, r: Math.PI, k: 1.5 }, { m: 'furn/bench', x: 4.8, z: FRONT_Z - 0.5, r: Math.PI, k: 1.5 },
+  pw('VendingMachine_Drink_01', 6.2, FRONT_Z - 0.6, 'n', { spots: 0 }), pw('VendingMachine_Drink_01', -6.2, FRONT_Z - 0.6, 'n', { spots: 0 }),
+  pw('SM_Sign_AFrame_Blank_01', -2.9, FRONT_Z - 1.4, 's', { spots: 0 }), pw('SM_Sign_AFrame_Blank_01', 2.9, FRONT_Z - 1.4, 's', { spots: 0 }),
+  room(-17.4, 17.4, -10.45, -10.35, 0xe8b923),
+  pw('Pallet_01', -16.2, -8.6, 's', { spots: 0 }), pw('PalletLoad_Cases_01', -16.2, -8.6, 's', { spots: 0 }), pw('Tire_Stack_01', -14.6, -8.8, 's', { spots: 0 }),
+  pw('Pallet_01', 15.8, -9.0, 's', { spots: 0 }), pw('PalletLoad_Water_01', 15.8, -9.0, 's', { spots: 0 }), pw('SM_HandTruck_01', 17.0, -8.4, 's', { spots: 0 })
 ]);
-// the lumber canopy: stacks along both sides of the service road, and a loader at the end
+
+// the stockroom: two double rows of tall racking, forklifts in the aisle by the docks and the receiving sign
+var stockRacks = [];
+[-27.0, -27.8].forEach(function (rz, i) {
+  for (var sx = -10.6; sx < 11; sx += 1.85) stockRacks.push({ m: 'pw/SM_Shelving_HD_Loaded_01', x: sx, z: rz, r: i ? Math.PI : 0, k: 2 });
+});
+DECOR.stock = cat(stockRacks, [
+  { m: 'car/tractor-shovel', x: -7.4, z: -29.6, r: 1.3, k: 1 }, { m: 'car/tractor-shovel', x: 6.2, z: -29.4, r: -1.6, k: 1 },
+  { text: 'board.h_receiving', x: 0, z: -29.0, r: 0, y: 0.9, w: 2.2, h: 0.5, post: true },
+  pw('PalletJack_01', -4.6, -29.4, 's', { spots: 0 }), pw('Pallet_01', 3.4, -29.2, 's', { spots: 0 }), pw('PalletLoad_Cases_01', 3.4, -29.2, 's', { spots: 0 })
+]);
+
+// outside: lumber stacks either side of the lane under the canopy against the east wall, the storage yard behind the garden
 var lumberOut = [];
-[25.5, 26.3, 29.3, 30.1].forEach(function (lx) {
-  for (var lz = -13.2; lz < -2.8; lz += 1.4) {
+[19.4, 20.2, 23.6, 24.4].forEach(function (lx) {
+  for (var lz = -21.2; lz < -9.8; lz += 1.4) {
     for (var ly = 0; ly < 3; ly++) lumberOut.push({ m: 'pw/SM_Lumber_Stack_01', x: lx, z: lz, r: Math.PI / 2, y: ly * 0.18, flat: 1 });
   }
 });
-DECOR.out = cat(lumberOut, [{ m: 'car/tractor-shovel', x: 29.2, z: -15.6, r: 0.4, k: 1 }, pw('Pallet_01', 25.6, -15.0, 's', { spots: 0 }), pw('PalletLoad_Water_01', 25.6, -15.0, 's', { spots: 0 }),
-  pw('SM_Dumpster_01', -22.0, -26.5, 's', { spots: 0 })]);
+DECOR.out = cat(lumberOut, [
+  { text: 'board.h_trucks', x: 16.5, z: -35.2, r: 0, y: 1.05, w: 2.6, h: 0.8, post: true },
+  { text: 'board.h_lumber', x: 22.0, z: -8.5, r: 0, y: 2.0, w: 3.4, h: 0.9, post: true },
+  { m: 'car/tractor-shovel', x: 22.0, z: -22.4, r: 3.14, k: 1 },
+  pw('Pallet_01', 28.2, -12.0, 's', { spots: 0 }), pw('PalletLoad_Water_01', 28.2, -12.0, 's', { spots: 0 }), pw('Pallet_01', 28.2, -14.0, 's', { spots: 0 }), pw('PalletLoad_Cases_01', 28.2, -14.0, 's', { spots: 0 }),
+  pw('PropaneCage_01', -28.6, -20.0, 's', { spots: 0 }), pw('PropaneCage_01', -26.6, -20.0, 's', { spots: 0 }), pw('PropaneCage_01', -24.6, -20.0, 's', { spots: 0 }),
+  pw('SM_Dumpster_01', -20.4, -29.6, 'b', { spots: 0 }),
+  { box: [-29.6, -26.0, -29.8, -27.0, 0, 1.0], c: 0x4a8a4a }, { box: [-29.7, -25.9, -29.9, -26.9, 1.0, 1.15], c: 0x2f5f33 },
+  { box: [-24.8, -21.2, -29.8, -27.0, 0, 1.0], c: 0xc8412e }, { box: [-24.9, -21.1, -29.9, -26.9, 1.0, 1.15], c: 0x8f2f20 },
+  pw('Pallet_01', -22.6, -23.4, 's', { spots: 0 }), pw('PalletLoad_Cases_01', -22.6, -23.4, 's', { spots: 0 }), pw('Pallet_01', -27.4, -24.4, 's', { spots: 0 }), pw('PalletLoad_Water_01', -27.4, -24.4, 's', { spots: 0 })
+]);
+
+// what each Checkouts level adds besides tills, as in plan.js
+var FRONT = [
+  [2, 'pw/SM_Wheelbarrow_01', -13.6, FRONT_Z - 0.7, 0], [2, 'pw/SM_Wheelbarrow_01', -11.0, FRONT_Z - 0.7, 0], [2, 'pw/SM_Wheelbarrow_01', 10.6, FRONT_Z - 0.7, 0], [2, 'pw/SM_Wheelbarrow_01', 13.2, FRONT_Z - 0.7, 0],
+  [4, 'pw/SM_HandTruck_01', 15.4, FRONT_Z - 0.5, Math.PI], [4, 'pw/SM_HandTruck_01', 16.0, FRONT_Z - 0.5, Math.PI],
+  [8, 'pw/TrashRecycle_Station_01', -16.6, FRONT_Z - 0.55, Math.PI], [8, 'pw/Tire_Stack_01', -15.8, FRONT_Z - 0.55, Math.PI], [8, 'pw/SM_Sign_AFrame_Blank_01', -15.0, FRONT_Z - 0.55, Math.PI], [8, 'pw/NewspaperRack_01', -14.2, FRONT_Z - 0.55, Math.PI],
+  [10, 'pw/DiningBench_01', -8.4, FRONT_Z - 0.55, Math.PI], [10, 'pw/SM_Sawhorse_Wood_01', 8.6, FRONT_Z - 0.55, 0], [10, 'pw/Planter_Tall_01', 11.0, FRONT_Z - 0.55, 0]
+];
 
 var SHELL_HW = {
   kind: 'warehouse',
-  front: 2.5, back: -18.5, edge: 18, wing: 24.8, sb: -24.5, lane: -19.1,
-  nav: { grid: [-30, -18.5, 220, 84], walls: [[-18.5, -17.5, -19, 3], [17.5, 18.5, -19, 3], [24.3, 25.3, -19, 3]], back: [-19, 19, 99], front: [-19, 26, 26],
-    gaps: [[17.2, 18.8, 0.55, 1.45], [-18.8, -17.2, -1.6, -0.4]] },
-  lot: [4, 9.6], lotX: [-18.2, 18.2], walks: [-9.5, 9.5], aisle: 6.8, drive: 19.2, road: 27.8, curb: 10.2, yard: -33,
+  front: FRONT_Z, back: -25, edge: 18, wing: 18.4, sb: -31.5, lane: -25.6,
+  nav: { grid: [-31, -25, 200, 86], walls: [[-18.5, -17.5, -26, -3.5], [17.5, 18.5, -26, -3.5]], back: [-19, 19, 99], front: [-19, 19.5, 19.5],
+    gaps: [[-18.8, -17.2, -8.2, -7.0]] },
+  lot: [-2.2, 9.6], lotX: [-26, 26], walks: [0], aisle: 0.5, drive: 27.6, road: 30, curb: 10.2, yard: -38,
   stand: 0, busX: 6.5,
-  spots: { lot: [0, 6.8], taxi: [0, 10], dock: [0, -26.5] },
-  tags: { hall: [0, 1.3, 1.0], lot: [-4, 0.8, 6.8], taxi: [0, 1.2, 10.2], dock: [0, 1.0, -26.8] },
-  garden: { rect: [-30.8, -18.3, -10.5, 2.86], gate: -24.55, till: [-23.0, 3.4], lane: -21.0 },
-  warehouse: { court: [-30.5, 30.5, -39.6], canopy: [25.0, 30.6, -13.5, -2.5], tower: [-4.2, 4.2, 4.0], pylon: [22.2, 8.8] },
-  westDoor: [-1.0, 1.2],
-  wingDoor: { out: [17.2, 1], in: [18.6, 1] },
+  spots: { lot: [0, 3.5], taxi: [0, 10], dock: [0, -30.5] },
+  tags: { hall: [0, 1.3, -5.2], lot: [-4, 0.8, 3.5], taxi: [0, 1.2, 10.2], dock: [0, 1.0, -30.8] },
+  garden: { rect: [-30.5, -19.4, -17, -3.0], gate: -24.95, till: [-23.5, -2.4], lane: -29.2 },
+  wingDoor: { out: [17.2, -8], in: [18.6, -8], bar: false },
+  warehouse: { court: [-30.5, 30.5, -42.2], canopy: [18.6, 25.2, -22, -9], pylon: [-14, 3.7], westDoor: [-7.6, 1.2], bays: [[-2.2, -0.6, -1, 0.5], [1.6, 3.2, 1, 0.5], [4.2, 5.8, -1, 6.9], [8.0, 9.6, 1, 6.9]] },
+  site: [[-31.5, 31.5, -43.5, 9.4], [31.5, 43, -26, -6], [-43, -31.5, -26, -6]],
   bounds: [-31, 31, -41, 16], zoom: [8, 150], fit: 36, turn: Math.PI / 4,
-  light: { target: [0, -12], at: [-19, 23, 9], box: [-34, 34, 34, -34] },
+  light: { target: [0, -18], at: [-19, 23, 9], box: [-34, 34, 36, -36] },
   nature: {
     zones: [
-      { r: [20.6, 25.8, 3.8, 9.4], tr: ['col', 'oak'], t: 3, b: 10, g: 12, f: 8, k: 1.5 },
-      { r: [29.4, 31, 3.8, 9.4], tr: [], t: 0, b: 10, g: 12, f: 8, k: 0 },
-      { r: [-30.8, -22.4, 3.8, 9.4], tr: ['col', 'oak'], t: 3, b: 10, g: 12, f: 8, k: 1.5 },
-      { r: [-31, 31, -43, -40.6], tr: ['pine', 'col'], t: 8, b: 0, g: 0, f: 0, k: 0 }
+      { r: [-31, -30.2, -30, -4], tr: [], t: 0, b: 6, g: 6, f: 4, k: 0 }
     ],
-    clear: [[20.4, 22.1, 8.0, 9.6], [-22, -20, 3.8, 9.4]]
+    clear: []
   },
   decor: { out: DECOR.out, stock: DECOR.stock }
 };
@@ -811,9 +788,11 @@ var SHELL_HW = {
 export var HARDWARE = Object.assign({}, PLAN, {
   type: 'hardware',
   shell: SHELL_HW,
-  home: { x: -2, z: -9, w: 20 },
-  hall: [-18, 18, -18.5, 2.5], stock: [-18, 18, -24.5, -18.5], doors: DOORS, docks: DOCKS,
-  idle: [-15, -11, -8, -2, 2, 8, 11, 15].map(function (x) { return [x, -19.8]; }),
+  home: { x: -2, z: -11, w: 24 },
+  hall: [-18, 18, -25, -4], stock: [-18, 18, -31.5, -25], doors: DOORS, docks: DOCKS,
+  idle: [-9.5, -7, -4, -1.5, 1.5, 4, 7, 9.5].map(function (x) { return [x, -26.2]; }),
+  bank: { x: -9.1, z: -6.0, cross: -8.8, exit: -5.2, span: 9.1, gap: [-2, 2] },
+  desk: { x: 11.55, z: -5.6, n: 2 },
   areas: AREAS,
   order: Object.keys(AREAS),
   wing: WING,
@@ -821,14 +800,11 @@ export var HARDWARE = Object.assign({}, PLAN, {
   front: FRONT,
   yard: true,
   floor: [
-    { r: [-18, 18, -18.5, 2.5], finish: 0x8f949d },
-    { r: [-18, 18, -24.5, -18.5], finish: 0x7f838c },
-    { r: [18, 24.8, -24.5, 2.5], finish: 0x7f838c }
+    { r: [-18, 18, -25, -4], finish: 0x8f949d },
+    { r: [-18, 18, -31.5, -25], finish: 0x7f838c }
   ],
   tint: { wall: 0xc9d1de },
-  entrances: PLAN.entrances.map(function (en, i) {
-    return Object.assign({}, en, { name: i ? 'sign.h_auto' : 'sign.h_hardware' });
-  }),
+  entrances: [{ x: 0, w: 4, name: 'sign.h_hardware', basket: [-1.15, FRONT_Z - 0.7], greeter: [-1.75, FRONT_Z - 0.75, Math.PI / 2] }],
   laneM: [['pw/SM_GarageCab_Base_Door_10', -0.15, -0.85, -Math.PI / 2], ['pw/SM_GarageCab_Base_Door_10', -0.15, -0.35, -Math.PI / 2], ['pw/SM_GarageCab_Base_Door_10', -0.15, 0.15, -Math.PI / 2],
     ['pw/SM_GarageCab_Top_20', -0.15, -0.6, -Math.PI / 2, 0.44], ['pw/SM_GarageCab_Top_10', -0.15, 0.15, -Math.PI / 2, 0.44], ['pw/Register_Classic_01', -0.15, 0.2, -Math.PI / 2, 0.46]],
   deskBoard: 'board.h_service',
@@ -836,5 +812,5 @@ export var HARDWARE = Object.assign({}, PLAN, {
   bankFloor: 0x5a5f69,
   carry: { bag: ['pw/SM_ToolBag_01*1.4', 0.03], basket: ['pw/SM_Tote_Lidded_01*0.8', 0.07], plant: ['pw/SM_Tire_01*0.8', 0.12] },
   models: ['pw/SM_GarageCab_Base_Door_10', 'pw/SM_GarageCab_Top_20', 'pw/SM_GarageCab_Top_10', 'pw/Register_Classic_01', 'pw/SM_ToolBag_01', 'pw/SM_Tote_Lidded_01', 'pw/SM_Tire_01',
-    'pw/SM_CarLift_2Post_01', 'pw/SM_CarLift_Scissor_01', 'pw/SM_TireChanger_01', 'pw/SM_Compressor_Pancake_01', 'pw/SM_JackStand_01', 'pw/Tire_Stack_01', 'car/sedan', 'roads/construction-cone']
+    'pw/Tire_Stack_01', 'car/sedan', 'roads/construction-cone', 'flora/mk-pine-1-lo*0.4', 'flora/mk-pine-2-lo*0.4', 'flora/mk-pine-3-lo*0.4']
 });
