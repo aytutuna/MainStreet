@@ -175,6 +175,28 @@ final class GameViewController: UIViewController, WKNavigationDelegate, WKUIDele
         loadGame()
     }
 
+    // An iPhone app in an iPad window gets the window controls drawn over its top-left corner, which the web view's
+    // safe area does not know about. The page reads --wc as a top inset.
+    private var controlsInset: CGFloat = 0
+
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+        guard #available(iOS 26.0, *) else { return }
+        let top = view.edgeInsets(for: .safeArea(cornerAdaptation: .vertical)).top
+        if top != controlsInset {
+            controlsInset = top
+            sendControlsInset()
+        }
+    }
+
+    private func sendControlsInset() {
+        webView.evaluateJavaScript("document.documentElement.style.setProperty('--wc', '\(controlsInset)px')")
+    }
+
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        if controlsInset > 0 { sendControlsInset() }
+    }
+
     private var reloads: [Date] = []
 
     private func loadGame() {
