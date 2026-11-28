@@ -2550,7 +2550,7 @@ function lane(hall, li, lv, x) {
 function kiosk(hall, ki, lv, x) {
   var zc = PLAN.bank.z;
   hall.lv[lv] = hall.lv[lv] || new Batch();
-  hall.lv[lv].add('pw/SelfCheckout_Kiosk_01', x, zc, Math.PI / 2);
+  (PLAN.kioskM || [['pw/SelfCheckout_Kiosk_01', 0, 0, Math.PI / 2]]).forEach(function (q) { hall.lv[lv].add(q[0], x + q[1], zc + q[2], q[3], q[4]); });
   hall.solids.push({ r: [x - 0.2, x + 0.2, zc - 0.35, zc + 0.35], lv: lv });
   return { k: 'self', x: x + 0.55, z: zc, till: [x, 0.7, zc] };
 }
@@ -2755,14 +2755,15 @@ function buildFront() {
   var li = 0;
   var ki = 0;
   // the first till stands at the east end, by the grocery entrance
-  var cx = bk.x + TILLS.reduce(function (w, t) { return w + (t.k === 'lane' ? 1.9 : 1.3); }, 0);
+  var TW = PLAN.tillW || { lane: 1.9, self: 1.3 };
+  var cx = bk.x + TILLS.reduce(function (w, t) { return w + TW[t.k]; }, 0);
   TILLS.forEach(function (t) {
-    var tw = t.k === 'lane' ? 1.9 : 1.3;
+    var tw = TW[t.k];
     cx -= tw;
     // the floor of the bank grows with its tills
     hall.lv[t.lv] = hall.lv[t.lv] || new Batch();
     hall.lv[t.lv].geom(patch(square([[cx, bk.z - 1.75], [cx + tw, bk.z + 0.85]])), finishMat(PLAN.bankFloor || 0xc4cad8), 0.045);
-    hall.tills.push(t.k === 'lane' ? lane(hall, li++, t.lv, cx + 0.95) : kiosk(hall, ki++, t.lv, cx + 0.35));
+    hall.tills.push(t.k === 'lane' ? lane(hall, li++, t.lv, cx + tw - 0.95) : kiosk(hall, ki++, t.lv, cx + 0.35));
   });
   hall.tills.push(gardenTill);
   hall.staff.push(gardenTill.cashier);
