@@ -2322,7 +2322,7 @@ function vacantSite(s) {
     for (var i = 0; i < n; i++) {
       var x = e[0] + (e[2] - e[0]) * (i + 0.5) / n;
       var z = e[1] + (e[3] - e[1]) * (i + 0.5) / n;
-      if (x < -14.4 || x > 14.4 || z < SH.back + 0.3 || sharedWithLater(s, x, z)) continue;
+      if (x < 0.6 - SH.edge || x > SH.edge - 0.6 || z < SH.back + 0.3 || sharedWithLater(s, x, z)) continue;
       var hx = e[4] ? 0.04 : 0.38;
       var hz = e[4] ? 0.38 : 0.04;
       b.block(panel, x - hx, x + hx, z - hz, z + hz, 0.02, 0.4);
@@ -3054,8 +3054,8 @@ function buildWing() {
   // the bar and sign over the doorway in the x 15 wall follow that wall's cutaway
   var dw = new THREE.Group();
   var lb = new Batch();
-  lb.block(flat(0x7f8597), 14.7, 15.3, 0.5, 1.5, 0.82, 1.0);
-  dw.add(lb.group(), boardFace({ text: PLAN.wingBoard || 'board.service_restrooms', x: 14.68, z: 1.0, y: 0.9, w: 1.1, h: 0.3, r: -Math.PI / 2 }));
+  lb.block(flat(0x7f8597), SH.edge - 0.3, SH.edge + 0.3, 0.5, 1.5, 0.82, 1.0);
+  dw.add(lb.group(), boardFace({ text: PLAN.wingBoard || 'board.service_restrooms', x: SH.edge - 0.32, z: 1.0, y: 0.9, w: 1.1, h: 0.3, r: -Math.PI / 2 }));
   root.add(dw);
   outer.push({ g: dw, n: [1, 0], both: 1, hide: 1 });
   wingIds().forEach(function (id) {
@@ -5433,8 +5433,8 @@ function roomVisit(pts) {
   var v = spots[Math.floor(Math.random() * spots.length)];
   var n = pts.length;
   // the basket stays outside: it goes down at the doorway and comes back up when the shopper is out again
-  if (!walkTo(pts, 14.2, 1)) return;
-  pts.push({ x: 15.6, z: 1, drop: true });
+  if (!walkTo(pts, SH.edge - 0.8, 1)) return;
+  pts.push({ x: SH.edge + 0.6, z: 1, drop: true });
   if (!walkTo(pts, v[0], v[1])) {
     pts.length = n;
     return;
@@ -5443,8 +5443,8 @@ function roomVisit(pts) {
   at.wait = 2 + Math.random() * 1.5;
   at.act = 'idle';
   at.face = v[2];
-  walkTo(pts, 15.6, 1);
-  pts.push({ x: 14.2, z: 1, basket: true });
+  walkTo(pts, SH.edge + 0.6, 1);
+  pts.push({ x: SH.edge - 0.8, z: 1, basket: true });
 }
 
 // the walk from an entrance to a basket, round one or two areas and down to the front aisle, where the shopper
@@ -6960,6 +6960,7 @@ function buildType(key) {
     SHELLS[SH.kind]();
     buildAreas();
     if (PLAN.patio) buildPatio();
+    else if (PLAN.yard === 'nursery') buildNursery();
     else if (PLAN.yard) buildBay();
     else buildGarden();
     buildFront();
