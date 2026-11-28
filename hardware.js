@@ -750,7 +750,7 @@ moveArea(AREAS.paint, -5.7, 11.5);
 moveArea(AREAS.tires, 10.5, -3.9);
 moveArea(AREAS.power, 9.15, -4.4);
 // Lawn and Garden stands in the garden center, against the building's west wall
-moveArea(AREAS.lawn, -33.2, -1.6);
+moveArea(AREAS.lawn, -33.2, 3.4);
 Object.keys(WING).forEach(function (id) { shift(WING[id], 3, 0); });
 shift(DECOR.wing, 3, 0);
 
@@ -790,21 +790,18 @@ var SHELL_HW = {
   stand: 0, busX: 6.5,
   spots: { lot: [0, 6.8], taxi: [0, 10], dock: [0, -26.5] },
   tags: { hall: [0, 1.3, 1.0], lot: [-4, 0.8, 6.8], taxi: [0, 1.2, 10.2], dock: [0, 1.0, -26.8] },
-  garden: { rect: [-29.8, -18.3, -10.5, 2.86], gate: -24.05, till: [-22.4, 3.4], lane: -21.0, rows: [2.0, 0.6, -0.8] },
-  warehouse: { court: [-30.5, 30.5, -39.6], canopy: [25.0, 30.6, -13.5, -2.5], tower: [-4.2, 4.2, 4.0] },
+  garden: { rect: [-30.8, -18.3, -10.5, 2.86], gate: -24.55, till: [-23.0, 3.4], lane: -21.0 },
+  warehouse: { court: [-30.5, 30.5, -39.6], canopy: [25.0, 30.6, -13.5, -2.5], tower: [-4.2, 4.2, 4.0], pylon: [22.2, 8.8] },
   westDoor: [-1.0, 1.2],
-  bounds: [-31, 31, -41, 16], zoom: [8, 80], fit: 36, turn: Math.PI / 4,
+  wingDoor: { out: [17.2, 1], in: [18.6, 1] },
+  bounds: [-31, 31, -41, 16], zoom: [8, 150], fit: 36, turn: Math.PI / 4,
   light: { target: [0, -12], at: [-19, 23, 9], box: [-34, 34, 34, -34] },
   nature: {
     zones: [
       { r: [20.6, 25.8, 3.8, 9.4], tr: ['col', 'oak'], t: 3, b: 10, g: 12, f: 8, k: 1.5 },
       { r: [29.4, 31, 3.8, 9.4], tr: [], t: 0, b: 10, g: 12, f: 8, k: 0 },
       { r: [-30.8, -22.4, 3.8, 9.4], tr: ['col', 'oak'], t: 3, b: 10, g: 12, f: 8, k: 1.5 },
-      { r: [-31, 31, -43, -40.6], tr: ['pine', 'col'], t: 8, b: 0, g: 0, f: 0, k: 0 },
-      { r: [31.2, 40, -41, 9.4], tr: ['pine', 'oak', 'col'], t: 20, b: 8, g: 0, f: 0, k: 0 },
-      { r: [40, 48, -41, 9.4], tr: ['col', 'lol', 'oak', 'pine'], t: 20, b: 8, g: 0, f: 0, k: 0 },
-      { r: [-40, -31.2, -41, 9.4], tr: ['oak', 'pine', 'lol'], t: 20, b: 8, g: 0, f: 0, k: 0 },
-      { r: [-48, -40, -41, 9.4], tr: ['col', 'lol', 'oak', 'pine'], t: 20, b: 8, g: 0, f: 0, k: 0 }
+      { r: [-31, 31, -43, -40.6], tr: ['pine', 'col'], t: 8, b: 0, g: 0, f: 0, k: 0 }
     ],
     clear: [[20.4, 22.1, 8.0, 9.6], [-22, -20, 3.8, 9.4]]
   },
@@ -814,7 +811,7 @@ var SHELL_HW = {
 export var HARDWARE = Object.assign({}, PLAN, {
   type: 'hardware',
   shell: SHELL_HW,
-  home: { x: -2, z: -10, w: 26 },
+  home: { x: -2, z: -9, w: 20 },
   hall: [-18, 18, -18.5, 2.5], stock: [-18, 18, -24.5, -18.5], doors: DOORS, docks: DOCKS,
   idle: [-15, -11, -8, -2, 2, 8, 11, 15].map(function (x) { return [x, -19.8]; }),
   areas: AREAS,

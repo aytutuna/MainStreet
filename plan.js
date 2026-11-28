@@ -28,6 +28,8 @@
 //                  houses across it are the world's); shell.decor.out and .stock are the outside's and the stockroom's pieces
 // The street (z 10 to 14), the houses beyond it and the country are shared, and the ground is flat only inside land.js FLAT,
 // so a site has to fit inside it.
+// A type starts from KIT.copy(PLAN.shell) and replaces whatever differs wholesale: a changed nav, garden, nature, decor, light,
+// spots or tags is a whole new object or list, never a field edited in place, since the supercenter's must stay as it is.
 
 // the Pipework kit is drawn at this size against the shop kit's people (store.js SCALE)
 export var PW = 0.5;
@@ -1319,6 +1321,17 @@ export var NATURE = {
   flower: ['flora/flower-2-clump*0.7', 'flora/flower-3-clump*0.7', 'flora/flower-4-clump*0.7', 'flora/flower-5-clump*0.7'],
   fern: ['flora/fern-1*0.15'],
   rock: ['flora/kk-rock-1-a*0.5', 'flora/kk-rock-1-e*0.35', 'flora/kk-rock-3-a*0.4'],
+  // the woods beyond the lot's drives and behind the yard: world, scattered once after the zones of the store the world was
+  // drawn for
+  outer: {
+    zones: [
+      // beyond the service road and the west drive, then behind the yard
+      { r: [27.4, 40, -41, 9.4], tr: ['pine', 'oak', 'col'], t: 20, b: 8, g: 0, f: 0, k: 0 },
+      { r: [40, 48, -41, 9.4], tr: ['col', 'lol', 'oak', 'pine'], t: 20, b: 8, g: 0, f: 0, k: 0 },
+      { r: [-40, -27.3, -41, 9.4], tr: ['oak', 'pine', 'lol'], t: 20, b: 8, g: 0, f: 0, k: 0 },
+      { r: [-48, -40, -41, 9.4], tr: ['col', 'lol', 'oak', 'pine'], t: 20, b: 8, g: 0, f: 0, k: 0 }
+    ]
+  },
   // the street and the houses across it belong to the world, not to a building; they are scattered after the zones of the
   // store the world was drawn for, so the random sequence stays as it was
   town: {
@@ -1359,6 +1372,8 @@ export var SHELL = {
   // what people and cars cannot cross: the walkable grid (its corner x, z and the cells across and down; a cell is 0.25), the
   // walls (x0, x1, z0, z1), the back wall's reach [from, to, end marker] and the front's, and the gaps carved through them
   // (the doorway into the wing)
+  // the doorway into the wing shoppers carry nothing through: the spot outside it and the spot just inside
+  wingDoor: { out: [14.2, 1], in: [15.6, 1] },
   nav: { grid: [-15, -22.5, 148, 100], walls: [[-16, -14.7, -23, 3], [14.7, 15.3, -23, 3], [21.5, 22.4, -23, 3]], back: [-16, 16, 16.5], front: [-16, 17.5, 22.4], gaps: [[14.3, 15.9, 0.55, 1.45]] },
   // the lot between the front and the sidewalk: its z range, the walkways' x, the aisle behind the bays, the drives' x,
   // the service road's x, where the drives and the service road meet the street, and the yard line trucks turn on
@@ -1388,12 +1403,7 @@ export var SHELL = {
       { r: [-22.4, -16.6, -28.5, -20.8], tr: ['pine', 'oak'], t: 4, b: 0, g: 0, f: 0, k: 0 },
       { r: [-27.3, -19.6, -40.5, -28.9], tr: ['pine', 'col'], t: 4, b: 0, g: 0, f: 0, k: 0 },
       // between the wing's hedge and the service road
-      { r: [22.0, 22.35, -28, 2.2], tr: [], t: 0, b: 0, g: 20, f: 40, k: 0 },
-      // beyond the service road and the west drive, then behind the yard
-      { r: [27.4, 40, -41, 9.4], tr: ['pine', 'oak', 'col'], t: 20, b: 8, g: 0, f: 0, k: 0 },
-      { r: [40, 48, -41, 9.4], tr: ['col', 'lol', 'oak', 'pine'], t: 20, b: 8, g: 0, f: 0, k: 0 },
-      { r: [-40, -27.3, -41, 9.4], tr: ['oak', 'pine', 'lol'], t: 20, b: 8, g: 0, f: 0, k: 0 },
-      { r: [-48, -40, -41, 9.4], tr: ['col', 'lol', 'oak', 'pine'], t: 20, b: 8, g: 0, f: 0, k: 0 }
+      { r: [22.0, 22.35, -28, 2.2], tr: [], t: 0, b: 0, g: 20, f: 40, k: 0 }
     ],
     // the garden center and the pylon sign by the street
     clear: [[-20.6, -15, -2.5, 3.1], [20.4, 22.1, 8.0, 9.6]]
@@ -1402,5 +1412,16 @@ export var SHELL = {
 SHELL.decor = { out: DECOR.out, stock: DECOR.stock };
 PLAN.shell = SHELL;
 
+// a copy that shares no array or object with the original, for a shell a type starts from the supercenter's
+function copy(v) {
+  if (Array.isArray(v)) return v.map(copy);
+  if (v && typeof v === 'object') {
+    var o = {};
+    Object.keys(v).forEach(function (k) { o[k] = copy(v[k]); });
+    return o;
+  }
+  return v;
+}
+
 // the helpers other store types lay out their plans with
-export var KIT = { up: up, pw: pw, m: m, on: on, mat: mat, wp: wp, room: room, low: low, hi: hi, det: det, cab: cab, rbox: rbox, tx: tx, lights: lights, SIGN: SIGN, HELP: HELP, pack: pack, rug: rug, cat: cat, bd: bd, clerk: clerk };
+export var KIT = { copy: copy, up: up, pw: pw, m: m, on: on, mat: mat, wp: wp, room: room, low: low, hi: hi, det: det, cab: cab, rbox: rbox, tx: tx, lights: lights, SIGN: SIGN, HELP: HELP, pack: pack, rug: rug, cat: cat, bd: bd, clerk: clerk };
