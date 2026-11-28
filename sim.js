@@ -104,6 +104,23 @@ PLACES.forEach(function (p) {
   }
 });
 
+// A place keeps its levels and prices in every store type but is worded by the type: pl on a type gives a place's name, the
+// department it comes after, and its pieces and items in the type's words. The supercenter's wording is the default, and
+// the words of the store on screen are the ones a place holds
+var PL0 = {};
+PLACES.forEach(function (p) { PL0[p.id] = { name: p.name, after: p.after, next: p.next, it: p.items.map(function (x) { return x.name; }) }; });
+
+function typeTexts() {
+  var t = kind();
+  PLACES.forEach(function (p) {
+    var o = t.pl && t.pl[p.id] || PL0[p.id];
+    p.name = o.name;
+    p.after = o.after;
+    p.next = o.next;
+    p.items.forEach(function (x, j) { x.name = o.it[j]; });
+  });
+}
+
 var S = fresh();
 
 function fresh() {
@@ -1390,8 +1407,17 @@ function goTo(g, id, j) {
   g.j = j;
   return g;
 }
+// the store a goal about a department or place reads: the first of the chain whose type has it, so the numbers are the same
+// whichever store is on screen
+function homeIndex(id) {
+  for (var i = 0; i < S.cs.length; i++) {
+    var t = TY[S.cs[i].t];
+    if (t.di[id] !== undefined || t.pd[id]) return i;
+  }
+  return S.cur;
+}
 function gLv(id, n, gems, x2) {
-  return goTo(gl(n === 1 ? tl('goal.open', { dept: BZ[id].name }) : tl('goal.dept_level', { dept: BZ[id].name, n: n }), gems, n, function () { return lv(id); }, x2), id);
+  return goTo(gl(n === 1 ? tl('goal.open', { dept: BZ[id].name }) : tl('goal.dept_level', { dept: BZ[id].name, n: n }), gems, n, function () { var e = S.cs[homeIndex(id)].b[id]; return e ? e.l : 0; }, x2), id);
 }
 function gEarn(n, gems, x2) {
   return gl(tl('goal.earn', { amount: short(n, 1) }), gems, n, function () { return S.all; }, x2);
@@ -1400,11 +1426,11 @@ function gServe(n, gems, x2) {
   return gl(tl('goal.serve', { n: n }), gems, n, function () { return S.st.srv; }, x2);
 }
 function gPl(id, n, t, gems) {
-  return goTo(gl(t, gems, n, function () { return S.pl[id]; }), id);
+  return goTo(gl(t, gems, n, function () { return S.cs[homeIndex(id)].pl[id] || 0; }), id);
 }
 // a goal on one item of a place, since the place's level also counts its other items
 function gIt(id, j, n, t, gems) {
-  return goTo(gl(t, gems, n, function () { return S.pi[id][j]; }), id, j);
+  return goTo(gl(t, gems, n, function () { return S.cs[homeIndex(id)].pi[id][j] || 0; }), id, j);
 }
 // a goal added with the stockroom
 function nw(g) {
@@ -1445,6 +1471,8 @@ function goals() {
   return S.goal.map(function (i) {
     var g = GOALS[i];
     var v = Math.min(g.n, g.f());
+    // a goal that was done stays done
+    if (v >= g.n) S.gd[i] = 1;
     return { i: i, t: g.t, n: g.n, v: v, done: v >= g.n || !!S.gd[i], gems: g.g, x2: g.x2, to: g.to, j: g.j };
   });
 }
@@ -1533,7 +1561,8 @@ function startBiz(t) {
 
 // the type the next store of the chain is
 function nextType() {
-  return TYPES[Math.min(nStores(), TYPES.length - 1)];
+  var real = TYPES.filter(function (t) { return !t.test; });
+  return real[Math.min(nStores(), real.length - 1)];
 }
 
 // the store on screen becomes store i of the chain; the others go on earning by the model
@@ -1548,6 +1577,7 @@ function view(i) {
   S.pl = r.pl;
   S.pi = r.pi;
   S.ms = r.ms;
+  typeTexts();
   // the floor starts over for the new store; a rush, a gift and the VIP timer go on
   clearFloor();
   // the new store's steady income is what a rush that goes on is measured against
@@ -2405,6 +2435,7 @@ function testIncome(hours) {
 function fillStore() {
   BIZ.forEach(function (z) { if (built(z.id)) S.b[z.id] = atLevel(z.id, ITEMS[z.id].of.length); });
   PLACES.forEach(function (p) {
+    if (!kind().pd[p.id]) return;
     S.pi[p.id] = atPlace(p.id, p.of.length);
     S.pl[p.id] = p.of.length;
   });

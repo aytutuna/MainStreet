@@ -736,15 +736,16 @@ function perMin(v) {
   return r ? fmtn(r) : v > 0 ? '<' + fmtn(0.1) : '0';
 }
 
-// how many of the departments are open, which is also the one that opens next
+// how many of the store's departments are open, which is also the one that opens next
 function nextDept() {
-  for (var i = 0; i < BIZ.length; i++) if (!has(BIZ[i].id)) return i;
-  return BIZ.length;
+  var t = kind().depts;
+  for (var i = 0; i < t.length; i++) if (!has(t[i])) return i;
+  return t.length;
 }
 
 // a department two or more places past the next one to open keeps its price to itself
 function far(id) {
-  return BZ[id].i - nextDept() >= 2;
+  return kind().di[id] - nextDept() >= 2;
 }
 
 // a button's price, or why it cannot be bought: locked, or too dear for now
@@ -1020,7 +1021,7 @@ function upRow(r) {
   if (!e) {
     var u = cost(id, 1);
     set(k, 'lv', r.lv, 'textContent', '');
-    set(k, 'ms', r.ms, 'textContent', avail(id) ? tl('card.in_basket', { name: upName(id, 0) }) : far(id) ? tl('card.opens_later') : tl('card.open_first', { name: BIZ[BZ[id].i - 1].name }));
+    set(k, 'ms', r.ms, 'textContent', avail(id) ? tl('card.in_basket', { name: upName(id, 0) }) : far(id) ? tl('card.opens_later') : tl('card.open_first', { name: BZ[kind().depts[kind().di[id] - 1]].name }));
     if (set(k, 'nxk', r.nx, 'title', avail(id) ? upName(id, 0) : '')) {
       if (avail(id)) r.nx.src = upIcon(id, 0);
       else r.nx.removeAttribute('src');
@@ -1046,15 +1047,29 @@ function upRow(r) {
 
 function buildList() {
   var list = $('list');
+  typeTexts();
   BIZ.forEach(function (b) {
     rows[b.id] = makeRow(b.id);
-    rows[b.id].el.hidden = !built(b.id);
     list.appendChild(rows[b.id].el);
-    PLACES.forEach(function (p) {
-      if (p.after !== b.id) return;
-      rows[p.id] = makeRow(p.id);
-      list.appendChild(rows[p.id].el);
-    });
+  });
+  orderList();
+}
+
+// the list holds the departments of the store on screen in the order they open, each followed by the places that come after
+// it, worded as the store's type words them; what the type does not have is hidden
+function orderList() {
+  var t = kind();
+  var list = $('list');
+  BIZ.forEach(function (b) { rows[b.id].el.hidden = !built(b.id); });
+  PLACES.forEach(function (p) {
+    if (rows[p.id]) rows[p.id].el.remove();
+    rows[p.id] = makeRow(p.id);
+    rows[p.id].el.hidden = !t.pd[p.id];
+    list.appendChild(rows[p.id].el);
+  });
+  t.depts.forEach(function (id) {
+    list.appendChild(rows[id].el);
+    PLACES.forEach(function (p) { if (t.pd[p.id] && p.after === id) list.appendChild(rows[p.id].el); });
   });
 }
 
@@ -1496,7 +1511,7 @@ function updateMeters() {
   var f = flow();
   var more = isFinite(st) ? perMin(st) : '-';
   meter('st-in', v[0], k, tl('stats.per_min', { v: perMin(inr) }), tl(v[0] < 0.8 ? 'stats.in.low' : 'stats.in.ok'),
-    tl('stats.in.more', { walk: perMin(f.walk), car: perMin(f.car), taxi: perMin(f.taxi) }));
+    kind().pd.taxi ? tl('stats.in.more', { walk: perMin(f.walk), car: perMin(f.car), taxi: perMin(f.taxi) }) : tl('dplace.stats_in_more', { walk: perMin(f.walk), car: perMin(f.car) }));
   meter('st-tills', v[1], k, tl('stats.per_min', { v: perMin(cap) }), tl(v[1] < 0.8 ? 'stats.tills.low' : 'stats.tills.ok'),
     tl('stats.tills.more', { cap: perMin(cap), come: perMin(inr) }));
   meter('st-shelf', v[2], k, tl('stats.per_min', { v: more }), tl(v[2] < 0.8 ? 'stats.shelf.low' : 'stats.shelf.ok'),
@@ -1710,6 +1725,8 @@ function goalTo(g) {
   var id = g.to;
   if (!id) return;
   sfx('tap');
+  // a goal about something this store's type lacks is shown in the store that has it
+  if (id !== 'sell' && homeIndex(id) !== S.cur) showStore(homeIndex(id));
   if (id === 'sell') openSell();
   else if (BZ[id] ? !avail(id) : !has(PL[id].after)) openSheet(id);
   else openPlace(id, g.j);
@@ -1760,8 +1777,8 @@ function updateGoals() {
 }
 
 function updateOpen() {
-  if (sheetOpen) BIZ.forEach(function (b) { upRow(rows[b.id]); });
-  if (sheetOpen) PLACES.forEach(function (p) { upRow(rows[p.id]); });
+  if (sheetOpen) BIZ.forEach(function (b) { if (built(b.id)) upRow(rows[b.id]); });
+  if (sheetOpen) PLACES.forEach(function (p) { if (kind().pd[p.id]) upRow(rows[p.id]); });
   if (cardRow && cardRow.kind !== (room(cardId) ? 'room' : undefined)) showCard(cardId);
   else if (cardRow) upRow(cardRow);
   if (!$('boost').hidden) paintBoost();
@@ -2178,7 +2195,8 @@ function afterLoad() {
   goalUntil = 0;
   closeCard(true);
   closeSheet(true);
-  BIZ.forEach(function (b) { if (rows[b.id]) rows[b.id].el.hidden = !built(b.id); });
+  typeTexts();
+  orderList();
   View.refresh();
   View.focusNow();
   updateBest();
@@ -3021,6 +3039,8 @@ function begin(fromCloud) {
   var wait = setInterval(function () {
     if (!View.ready()) return;
     clearInterval(wait);
+    typeTexts();
+    orderList();
     View.refresh();
     if (rush) View.rush(rush.kind);
     updateBest();

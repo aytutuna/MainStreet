@@ -26,6 +26,8 @@ const holes = s => (s.match(/\{\w+\}/g) || []).sort().join(' ');
 const tags = s => (s.match(/<\/?\w+>/g) || []).join('');
 const breaks = s => s.split('\n').length;
 const en = load('en');
+// The chain's store types are worded in English until their text is final (P4.8), so all their keys are pending in every language.
+const CHAIN = /^(dept\.(grill|fry|soda|pizza|coffee|salad|takeout|dining)$|item\.(grill|fry|soda|pizza|coffee|salad|takeout|dining)\.|dplace\.|piece\.dn_|sign\.(diner|d_)|board\.(patio|d_))/;
 
 function check(code) {
   const l = langs.find(x => x.code === code);
@@ -82,7 +84,7 @@ for (const code of codes) {
 // A text that is still English in every language was added without being translated; the per-language check only sees missing keys.
 if (args.includes('--all')) {
   const all = codes.map(load);
-  const same = Object.keys(en).filter(k => /\p{L}{3}/u.test(JSON.stringify(en[k]).replace(/\{\w+\}/g, ''))
+  const same = Object.keys(en).filter(k => !CHAIN.test(k) && /\p{L}{3}/u.test(JSON.stringify(en[k]).replace(/\{\w+\}/g, ''))
     && !/^(native\.|intro\.|boost\.night\.|ads\.night|app\.title$|reg\.vip\.name$|cloud\.(sign_in|taken_title|taken_line|play_here)$|menu\.remind_(on|off|denied)$)/.test(k) && all.every(t => t && JSON.stringify(t[k]) === JSON.stringify(en[k])));
   for (const k of same) console.log(`untranslated in every language: ${k}`);
   if (same.length) bad++;
@@ -170,7 +172,7 @@ for (const code of codes.filter(c => !Array.isArray(check(c)))) {
     const v = JSON.stringify(t[k]);
     if (v !== JSON.stringify(en[k]) || !/\p{L}{3}/u.test(v.replace(/\{\w+\}/g, '')) || SAME.has(en[k]) || NAMES.test(k) || /^(native\.|app\.title$|reg\.vip\.name$|cloud\.sign_in$)/.test(k)) continue;
     if (listed(SAME_WORD, k, code)) continue;
-    if (listed(PENDING, k, code)) { held++; continue; }
+    if (listed(PENDING, k, code) || CHAIN.test(k)) { held++; continue; }
     console.log(`same as English in ${code}: ${k}`);
     bad++;
   }
