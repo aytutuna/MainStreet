@@ -674,7 +674,7 @@ var rets = strip('s', -2.8, 17.2, [
   ['Returns shelf one', 'SM_Shelving_HD_Loaded_01', { s: 0 }], ['Returns shelf two', 'SM_Shelving_HD_Loaded_01', { s: 0, gap: 0.05 }],
   ['Key cutting bench', 'SM_Workbench_Steel_01', { s: 0, gap: 0.3 }], ['Returns cabinet', 'SM_GarageCab_Base_Door_10', { s: 0, gap: 0.1 }]
 ]);
-var lumber = strip('b', 15.4, -27.6, [
+var lumber = strip('b', 15.4, -24.1, [
   ['Stock shelf one', 'SM_Shelving_HD_Loaded_01', { s: 0 }], ['Stock shelf two', 'SM_Shelving_HD_Loaded_01', { s: 0 }], ['Stock shelf three', 'SM_Shelving_HD_Loaded_01', { s: 0 }],
   ['Stock shelf four', 'SM_Shelving_HD_Loaded_01', { s: 0 }], ['Stock cabinet', 'GarageCab_Tall_05', { s: 0 }], ['Stock shelf five', 'SM_Shelving_HD_Loaded_01', { s: 0 }]
 ]);
@@ -688,29 +688,20 @@ var DECOR = {
     pw('Tire_Stack_01', -2.9, 1.95, 's', { spots: 0 }), pw('Tire_Stack_01', 2.9, 1.95, 's', { spots: 0 }),
     { m: 'furn/bench', x: -0.9, z: 2.0, r: Math.PI, k: 1.5 }, { m: 'furn/bench', x: 0.9, z: 2.0, r: Math.PI, k: 1.5 },
     pw('VendingMachine_Drink_01', 3.75, 2.0, 'n', { spots: 0 }), pw('VendingMachine_Drink_01', -3.75, 2.0, 'n', { spots: 0 }),
-    pw('SM_Sign_AFrame_Blank_01', -8.3, 0.6, 's', { spots: 0 }), pw('SM_Sign_AFrame_Blank_01', 8.3, 0.6, 's', { spots: 0 }),
-    // a pallet display and a lumber stand where the middle of the floor was bare, and a safety line down the aisle
-    room(-14.0, 9.4, -16.35, -16.2, 0xe8b923),
-    pw('Pallet_01', -5.8, -14.4, 's', { spots: 0 }), pw('PalletLoad_Cases_01', -5.8, -14.4, 's', { spots: 0 }), pw('Tire_Stack_01', -3.2, -14.6, 's', { spots: 0 }),
-    pw('SM_Sawhorse_Wood_01', 3.4, -14.6, 's', { spots: 0 }), pw('SM_Sawhorse_Wood_01', 4.6, -14.6, 's', { spots: 0 }), { m: 'pw/SM_Lumber_Stack_01', x: 4.0, z: -14.6, r: 0, y: 0.38, flat: 1 },
-    pw('Pallet_01', 6.6, -14.6, 's', { spots: 0 }), pw('PalletLoad_Water_01', 6.6, -14.6, 's', { spots: 0 })
+    pw('SM_Sign_AFrame_Blank_01', -8.3, 0.6, 's', { spots: 0 }), pw('SM_Sign_AFrame_Blank_01', 8.3, 0.6, 's', { spots: 0 })
   ]),
   stock: [],
   out: [],
-  side: cat(
-    [pw('SM_Dumpster_01', -18.6, -22.0, 'b', { spots: 0 }), pw('Pallet_01', -17.0, -21.0, 's', { spots: 0 }), pw('PalletLoad_Cases_01', -17.0, -21.0, 's', { spots: 0 }),
-      pw('SM_Lumber_Stack_01', -18.2, -12.6, 's', { spots: 0 }), pw('PropaneCage_01', -16.8, -13.6, 's', { spots: 0 }),
-      KIT.tx('board.h_deliveries', -19.2, -19.5, 1.5, 1.1)]
-  ),
+  side: [],
   wing: cat(
-    [room(15.3, 21.5, -2.9, 2.2, 0x6b707a), room(15.3, 21.5, -7.9, -3.1, 0x4d525c), room(15.3, 21.5, -13.9, -8.1, 'boards'), room(15.3, 21.5, -28.2, -14.1, 0x8a8e96)],
+    [room(15.3, 21.5, -2.9, 2.2, 0x6b707a), room(15.3, 21.5, -7.9, -3.1, 0x4d525c), room(15.3, 21.5, -13.9, -8.1, 'boards'), room(15.3, 21.5, -24.3, -14.1, 0x8a8e96)],
     low(15.3, 15.9, -3.1, -2.9), low(17.1, 21.5, -3.1, -2.9), low(15.3, 21.5, -8.1, -7.9), low(15.3, 15.9, -14.1, -13.9), low(17.1, 21.5, -14.1, -13.9),
     flat(rets),
     [pw('PalletJack_01', 20.6, -0.9, 's', { spots: 0 }), pw('Pallet_01', 18.4, 0.3, 's', { spots: 0 }), pw('PalletLoad_Cases_01', 18.4, 0.3, 's', { spots: 0 }),
       pw('SM_TrashBin_Wheeled_01', 21.0, -2.3, 's', { spots: 0 })],
     flat(lumber),
-    [pw('SM_Lumber_Stack_01', 18.6, -26.3, 's', { spots: 0 }), pw('SM_Lumber_Stack_01', 18.6, -25.5, 's', { spots: 0 }), pw('Pallet_01', 20.4, -25.0, 's', { spots: 0 }),
-      pw('PalletLoad_Water_01', 20.4, -25.0, 's', { spots: 0 }), pw('SM_Crate_Wood_01', 17.4, -23.6, 's', { spots: 0, n: 2 })]
+    [pw('SM_Lumber_Stack_01', 18.6, -22.8, 's', { spots: 0 }), pw('SM_Lumber_Stack_01', 18.6, -22.0, 's', { spots: 0 }), pw('Pallet_01', 20.4, -21.5, 's', { spots: 0 }),
+      pw('PalletLoad_Water_01', 20.4, -21.5, 's', { spots: 0 }), pw('SM_Crate_Wood_01', 17.4, -20.1, 's', { spots: 0, n: 2 })]
   )
 };
 
@@ -722,10 +713,110 @@ var FRONT = [
   [10, 'pw/DiningBench_01', -6.1, 1.95, Math.PI], [10, 'pw/SM_Sawhorse_Wood_01', -7.0, 1.95, 0], [10, 'pw/Planter_Tall_01', -5.15, 1.95, 0]
 ];
 
+
+// The warehouse is 36 wide and 21 deep, with the west wall at x -18 and the garden center beyond it: the departments above
+// were laid out in the supercenter's hall, so each is moved to its place in the aisles of the shed
+var seen = [];
+function shift(e, dx, dz) {
+  if (Array.isArray(e)) {
+    if (typeof e[0] !== 'string') e.forEach(function (q) { shift(q, dx, dz); });
+    return;
+  }
+  if (!e || typeof e !== 'object' || seen.indexOf(e) >= 0) return;
+  seen.push(e);
+  if (typeof e.x === 'number') e.x += dx;
+  if (typeof e.z === 'number') e.z += dz;
+  if (e.box) e.box = [e.box[0] + dx, e.box[1] + dx, e.box[2] + dz, e.box[3] + dz, e.box[4], e.box[5]];
+  ['patch', 'poly'].forEach(function (k) { if (e[k]) e[k] = e[k].map(function (q) { return [q[0] + dx, q[1] + dz]; }); });
+  if (e.staff) e.staff = [e.staff[0] + dx, e.staff[1] + dz].concat(e.staff.slice(2));
+  if (e.lights) e.lights = e.lights.map(function (q) { return [q[0] + dx, q[1] + dz]; });
+  if (e.rect) e.rect = [e.rect[0] + dx, e.rect[1] + dx, e.rect[2] + dz, e.rect[3] + dz];
+  if (e.piece) e.piece.forEach(function (q) { shift(q, dx, dz); });
+  if (e.ups) e.ups.forEach(function (q) { shift(q, dx, dz); });
+  if (e.floor) e.floor.forEach(function (q) { shift(q, dx, dz); });
+}
+function moveArea(a, dx, dz) {
+  shift(a, dx, dz);
+  a.cx += dx;
+  a.cz += dz;
+  a.vacant = [a.vacant[0] + dx, a.vacant[1] + dx, a.vacant[2] + dz, a.vacant[3] + dz];
+  a.sign = [a.sign[0] + dx, a.sign[1] + dz, a.sign[2]];
+}
+moveArea(AREAS.storage, -3.1, -2.1);
+moveArea(AREAS.oil, -21.4, 5.3);
+moveArea(AREAS.batt, -21.4, 6.4);
+moveArea(AREAS.hand, 2.4, 5.3);
+moveArea(AREAS.paint, -5.7, 11.5);
+moveArea(AREAS.tires, 10.5, -3.9);
+moveArea(AREAS.power, 9.15, -4.4);
+// Lawn and Garden stands in the garden center, against the building's west wall
+moveArea(AREAS.lawn, -33.2, -1.6);
+Object.keys(WING).forEach(function (id) { shift(WING[id], 3, 0); });
+shift(DECOR.wing, 3, 0);
+
+var DOORS = [-13, -4.5, 4.5, 13];
+var DOCKS = [-14, -9.5, -5, 5, 9.5, 14];
+// racking as tall as the hall along the back wall, open at the stock doors
+var racks = [];
+for (var rx = -16.9; rx < 17; rx += 1.85) {
+  if (DOORS.every(function (d) { return Math.abs(rx - d) > 2.1; })) racks.push({ m: 'pw/SM_Shelving_HD_Loaded_01', x: rx, z: -18.15, r: 0, k: 2 });
+}
+DECOR.front = cat(DECOR.front, racks, [
+  room(-17.4, 17.4, -2.4, -2.3, 0xe8b923),
+  pw('Pallet_01', -4.2, -4.4, 's', { spots: 0 }), pw('PalletLoad_Cases_01', -4.2, -4.4, 's', { spots: 0 }), pw('Tire_Stack_01', -2.4, -4.5, 's', { spots: 0 }),
+  pw('SM_Sawhorse_Wood_01', 0.0, -4.5, 's', { spots: 0 }), pw('SM_Sawhorse_Wood_01', 1.2, -4.5, 's', { spots: 0 }), { m: 'pw/SM_Lumber_Stack_01', x: 0.6, z: -4.5, r: 0, y: 0.38, flat: 1 },
+  pw('PalletJack_01', 4.6, -5.0, 's', { spots: 0 }), pw('Pallet_01', 6.2, -4.6, 's', { spots: 0 }), pw('PalletLoad_Water_01', 6.2, -4.6, 's', { spots: 0 }),
+  pw('PropaneCage_01', 8.7, -4.5, 's', { spots: 0 }),
+  pw('SM_Sawhorse_Wood_01', 11.2, -5.6, 's', { spots: 0, n: 2 }), { m: 'pw/SM_Lumber_Stack_01', x: 11.2, z: -5.6, r: 0, y: 0.38, flat: 1 },
+  pw('Pallet_01', 14.4, -5.0, 's', { spots: 0 }), pw('PalletLoad_Cases_01', 14.4, -5.0, 's', { spots: 0 }), pw('SM_HandTruck_01', 16.2, -4.6, 's', { spots: 0 }),
+  pw('Pallet_01', 12.6, -7.6, 's', { spots: 0 }), pw('PalletLoad_Water_01', 12.6, -7.6, 's', { spots: 0 })
+]);
+// the lumber canopy: stacks along both sides of the service road, and a loader at the end
+var lumberOut = [];
+[25.5, 26.3, 29.3, 30.1].forEach(function (lx) {
+  for (var lz = -13.2; lz < -2.8; lz += 1.4) {
+    for (var ly = 0; ly < 3; ly++) lumberOut.push({ m: 'pw/SM_Lumber_Stack_01', x: lx, z: lz, r: Math.PI / 2, y: ly * 0.18, flat: 1 });
+  }
+});
+DECOR.out = cat(lumberOut, [{ m: 'car/tractor-shovel', x: 29.2, z: -15.6, r: 0.4, k: 1 }, pw('Pallet_01', 25.6, -15.0, 's', { spots: 0 }), pw('PalletLoad_Water_01', 25.6, -15.0, 's', { spots: 0 }),
+  pw('SM_Dumpster_01', -22.0, -26.5, 's', { spots: 0 })]);
+
+var SHELL_HW = {
+  kind: 'warehouse',
+  front: 2.5, back: -18.5, edge: 18, wing: 24.8, sb: -24.5, lane: -19.1,
+  nav: { grid: [-30, -18.5, 220, 84], walls: [[-18.5, -17.5, -19, 3], [17.5, 18.5, -19, 3], [24.3, 25.3, -19, 3]], back: [-19, 19, 99], front: [-19, 26, 26],
+    gaps: [[17.2, 18.8, 0.55, 1.45], [-18.8, -17.2, -1.6, -0.4]] },
+  lot: [4, 9.6], lotX: [-18.2, 18.2], walks: [-9.5, 9.5], aisle: 6.8, drive: 19.2, road: 27.8, curb: 10.2, yard: -33,
+  stand: 0, busX: 6.5,
+  spots: { lot: [0, 6.8], taxi: [0, 10], dock: [0, -26.5] },
+  tags: { hall: [0, 1.3, 1.0], lot: [-4, 0.8, 6.8], taxi: [0, 1.2, 10.2], dock: [0, 1.0, -26.8] },
+  garden: { rect: [-29.8, -18.3, -10.5, 2.86], gate: -24.05, till: [-22.4, 3.4], lane: -21.0, rows: [2.0, 0.6, -0.8] },
+  warehouse: { court: [-30.5, 30.5, -39.6], canopy: [25.0, 30.6, -13.5, -2.5], tower: [-4.2, 4.2, 4.0] },
+  westDoor: [-1.0, 1.2],
+  bounds: [-31, 31, -41, 16], zoom: [8, 80], fit: 36, turn: Math.PI / 4,
+  light: { target: [0, -12], at: [-19, 23, 9], box: [-34, 34, 34, -34] },
+  nature: {
+    zones: [
+      { r: [20.6, 25.8, 3.8, 9.4], tr: ['col', 'oak'], t: 3, b: 10, g: 12, f: 8, k: 1.5 },
+      { r: [29.4, 31, 3.8, 9.4], tr: [], t: 0, b: 10, g: 12, f: 8, k: 0 },
+      { r: [-30.8, -22.4, 3.8, 9.4], tr: ['col', 'oak'], t: 3, b: 10, g: 12, f: 8, k: 1.5 },
+      { r: [-31, 31, -43, -40.6], tr: ['pine', 'col'], t: 8, b: 0, g: 0, f: 0, k: 0 },
+      { r: [31.2, 40, -41, 9.4], tr: ['pine', 'oak', 'col'], t: 20, b: 8, g: 0, f: 0, k: 0 },
+      { r: [40, 48, -41, 9.4], tr: ['col', 'lol', 'oak', 'pine'], t: 20, b: 8, g: 0, f: 0, k: 0 },
+      { r: [-40, -31.2, -41, 9.4], tr: ['oak', 'pine', 'lol'], t: 20, b: 8, g: 0, f: 0, k: 0 },
+      { r: [-48, -40, -41, 9.4], tr: ['col', 'lol', 'oak', 'pine'], t: 20, b: 8, g: 0, f: 0, k: 0 }
+    ],
+    clear: [[20.4, 22.1, 8.0, 9.6], [-22, -20, 3.8, 9.4]]
+  },
+  decor: { out: DECOR.out, stock: DECOR.stock }
+};
+
 export var HARDWARE = Object.assign({}, PLAN, {
   type: 'hardware',
-  shell: Object.assign({}, PLAN.shell),
-  home: { x: -4.5, z: -18.5 },
+  shell: SHELL_HW,
+  home: { x: -2, z: -10, w: 26 },
+  hall: [-18, 18, -18.5, 2.5], stock: [-18, 18, -24.5, -18.5], doors: DOORS, docks: DOCKS,
+  idle: [-15, -11, -8, -2, 2, 8, 11, 15].map(function (x) { return [x, -19.8]; }),
   areas: AREAS,
   order: Object.keys(AREAS),
   wing: WING,
@@ -733,9 +824,9 @@ export var HARDWARE = Object.assign({}, PLAN, {
   front: FRONT,
   yard: true,
   floor: [
-    { r: [-15, 15, -22.5, 2.5], finish: 0x8f949d },
-    { r: [-15, 15, -28.5, -22.5], finish: 0x7f838c },
-    { r: [15, 22, -28.5, 2.5], finish: 0x7f838c }
+    { r: [-18, 18, -18.5, 2.5], finish: 0x8f949d },
+    { r: [-18, 18, -24.5, -18.5], finish: 0x7f838c },
+    { r: [18, 24.8, -24.5, 2.5], finish: 0x7f838c }
   ],
   tint: { wall: 0xc9d1de },
   entrances: PLAN.entrances.map(function (en, i) {
