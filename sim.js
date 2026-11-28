@@ -6,8 +6,9 @@ var FROM_KEY = 'mainstreet.chain.from';
 var OLD_KEYS = ['mainstreet.v10', 'mainstreet.v9', 'mainstreet.v8', 'mainstreet.v7', 'mainstreet.v6', 'mainstreet.v5', 'mainstreet.v4', 'mainstreet.v3', 'mainstreet.v2', 'mainstreet.v1', 'mainstreet.won'];
 var MAX_AWAY = 8 * 3600;
 var START_CASH = 5;
-// stars in the store on screen that open the next store of the chain; a stand-in until the pacing work (P3.5) sets the gate
+// stars the newest store needs before the next one opens: OPEN_AT for the second store, OPEN_STEP more for each store after
 var OPEN_AT = 16;
+var OPEN_STEP = 2;
 var MAX_STORES = 30;
 var HALL_BOOST = 0.1;
 var X2_COST = 20;
@@ -1515,7 +1516,7 @@ function rating() {
 }
 
 function gate() {
-  return Math.min(STAR_AT.length * kind().depts.length, OPEN_AT);
+  return Math.min(STAR_AT.length * kind().depts.length, OPEN_AT + OPEN_STEP * (nStores() - 1));
 }
 
 // the next store opens on the progress of the newest one, whichever store is on screen
