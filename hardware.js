@@ -724,6 +724,7 @@ var FRONT = [
 
 export var HARDWARE = Object.assign({}, PLAN, {
   type: 'hardware',
+  shell: Object.assign({}, PLAN.shell),
   home: { x: -4.5, z: -18.5 },
   areas: AREAS,
   order: Object.keys(AREAS),

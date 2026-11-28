@@ -8,6 +8,26 @@
 //   { patch: [[x, z]...], finish }                             a floor patch: a colour, 'wood', 'carpet' or 'vinyl'
 //   { m, x, z, r, pw: { n, stock, spots, on } }                a Pipework model (see pw() below)
 //   { sign: 1 | 'gold' }  { staff: [x, z, face] }  { helper: 1 }  { lights: [[x, z]...] }
+//
+// A store type's plan is this object's shape: home, hall, stock, doors, docks, entrances, tireBay, bank, front, desk, idle,
+// decor, wing, areas, order, and the shell that says what building the interior stands in. store.js builds the shell and
+// the interior into one group per type, and routes shoppers, cars, buses, stockers, deliveries and the camera by it:
+//   shell.kind     the builder in store.js (SHELLS); 'box' is the supercenter's building with a glass front, a stockroom and an
+//                  east wing. A type with a different building adds a builder and names it here
+//   shell.front, back, edge, wing, sb    the glass front, the wall between sales floor and stockroom, the half width, the wing's
+//                  outer wall, the stockroom's back wall; lane is where stockers walk behind the stock doors
+//   shell.lot, lotX, walks, aisle, drive, road, curb, yard    the lot's z and x range, the walkways' x, the aisle behind the
+//                  bays, the drives' and the service road's x, where they meet the street, and the line trucks turn on
+//   shell.stand, busX, spots, tags    the taxi stand's and the bus stop's x on the street; framing spots and tag anchors of
+//                  the sales floor, the lot, the taxi stand and the dock
+//   shell.garden   the yard beside the building: rect, gate, till and the lane shoppers walk up to it
+//   shell.nav      walls, back wall reach, front reach and gaps that people and cars cannot cross
+//   shell.bounds, zoom, fit, turn, light    the camera's range, how far in and out it goes, the width the whole-store view fits, how far it turns,
+//                  and the sun's target, place and shadow box; home.w is the width the start view fits
+//   shell.nature   the zones of trees, bushes and flowers round the building and the spots left bare (the street and the
+//                  houses across it are the world's); shell.decor.out and .stock are the outside's and the stockroom's pieces
+// The street (z 10 to 14), the houses beyond it and the country are shared, and the ground is flat only inside land.js FLAT,
+// so a site has to fit inside it.
 
 // the Pipework kit is drawn at this size against the shop kit's people (store.js SCALE)
 export var PW = 0.5;
@@ -1244,7 +1264,7 @@ export var PLAN = {
     { x: 9.5, w: 3, name: 'sign.grocery', basket: [8.35, 1.8], greeter: [7.75, 1.75, Math.PI / 2] }],
   tireBay: { z: -17, w: 3 },
   // the checkout bank runs from bank.x, its counters on bank.z; shoppers cross the front aisle at cross
-  bank: { x: -6.75, z: 0.5, cross: -2.3, exit: 1.3 },
+  bank: { x: -6.75, z: 0.5, cross: -2.3, exit: 1.3, span: 6.4 },
   // what each Checkouts level adds besides tills: [level, model, x, z, turn], carts as a row of five
   front: [[2, 'carts', -14.0, 1.9], [2, 'carts', -7.0, 1.9], [2, 'carts', 5.0, 1.9], [2, 'carts', 11.6, 1.9],
     [4, 'pw/TrashRecycle_Station_01', 13.4, 2.1, Math.PI], [4, 'pw/TrashRecycle_Station_01', 14.0, 2.1, Math.PI],
@@ -1299,45 +1319,88 @@ export var NATURE = {
   flower: ['flora/flower-2-clump*0.7', 'flora/flower-3-clump*0.7', 'flora/flower-4-clump*0.7', 'flora/flower-5-clump*0.7'],
   fern: ['flora/fern-1*0.15'],
   rock: ['flora/kk-rock-1-a*0.5', 'flora/kk-rock-1-e*0.35', 'flora/kk-rock-3-a*0.4'],
-  zones: [
-    // the lawns at the front corners, either side of the lot's drives
-    { r: [19.2, 22.7, 4.3, 9.4], tr: ['col', 'oak'], t: 3, b: 11, g: 12, f: 8, k: 1.5 },
-    { r: [-22.4, -19.2, 3.3, 9.4], tr: ['col', 'oak'], t: 3, b: 11, g: 12, f: 8, k: 1.5 },
-    { r: [17.2, 19.2, 4.3, 6.0], tr: [], t: 0, b: 12, g: 12, f: 8, k: 0 },
-    { r: [-19.2, -17.2, 4.3, 6.0], tr: [], t: 0, b: 12, g: 12, f: 8, k: 0 },
-    // along the west side, round the garden center and the tire bay
-    { r: [-22.4, -16.6, -13.4, -2.7], tr: ['oak', 'lol'], t: 3, b: 12, g: 0, f: 0, k: 0 },
-    { r: [-22.4, -20.7, -2.5, 3.1], tr: [], t: 0, b: 12, g: 10, f: 8, k: 0 },
-    { r: [-22.4, -16.6, -28.5, -20.8], tr: ['pine', 'oak'], t: 4, b: 0, g: 0, f: 0, k: 0 },
-    { r: [-27.3, -19.6, -40.5, -28.9], tr: ['pine', 'col'], t: 4, b: 0, g: 0, f: 0, k: 0 },
-    // between the wing's hedge and the service road
-    { r: [22.0, 22.35, -28, 2.2], tr: [], t: 0, b: 0, g: 20, f: 40, k: 0 },
-    // beyond the service road and the west drive, then behind the yard
-    { r: [27.4, 40, -41, 9.4], tr: ['pine', 'oak', 'col'], t: 20, b: 8, g: 0, f: 0, k: 0 },
-    { r: [40, 48, -41, 9.4], tr: ['col', 'lol', 'oak', 'pine'], t: 20, b: 8, g: 0, f: 0, k: 0 },
-    { r: [-40, -27.3, -41, 9.4], tr: ['oak', 'pine', 'lol'], t: 20, b: 8, g: 0, f: 0, k: 0 },
-    { r: [-48, -40, -41, 9.4], tr: ['col', 'lol', 'oak', 'pine'], t: 20, b: 8, g: 0, f: 0, k: 0 },
-    // across the street: flower strips along the sidewalks, back gardens, and woods beyond the side streets
-    { r: [-35, 35, 14.5, 15.2], tr: [], t: 0, b: 14, g: 0, f: 30, k: 0 },
-    { r: [-35, 35, 19.6, 22.6], tr: ['oak', 'lol', 'maple'], t: 3, b: 10, g: 6, f: 8, k: 0 },
-    { r: [-35, 35, 23.3, 24.8], tr: [], t: 0, b: 10, g: 0, f: 6, k: 0 },
-    { r: [-35, 35, 29.8, 30.6], tr: [], t: 0, b: 14, g: 0, f: 30, k: 0 },
-    { r: [-35, 35, 35.4, 36.2], tr: [], t: 0, b: 14, g: 0, f: 30, k: 0 },
-    { r: [-35, 35, 41.4, 44], tr: ['oak', 'lol', 'pine'], t: 6, b: 8, g: 0, f: 0, k: 0 },
-    { r: [35, 36.6, 14.5, 30.6], tr: [], t: 0, b: 12, g: 0, f: 10, k: 0 },
-    { r: [-36.6, -35, 14.5, 30.6], tr: [], t: 0, b: 12, g: 0, f: 10, k: 0 },
-    { r: [41.4, 48, 14.6, 44], tr: ['oak', 'col', 'pine'], t: 16, b: 8, g: 0, f: 0, k: 0 },
-    { r: [-48, -41.4, 14.6, 44], tr: ['oak', 'col', 'pine'], t: 16, b: 8, g: 0, f: 0, k: 0 }
-  ],
-  // the garden center and the pylon sign by the street, then each house and its drive
-  clear: [[-20.6, -15, -2.5, 3.1], [20.4, 22.1, 8.0, 9.6],
-    [HOMES.side - 2.4, HOMES.side + 2.4, 13.5, HOMES.street + 2.4], [-HOMES.side - 2.4, -HOMES.side + 2.4, 13.5, HOMES.street + 2.4],
-    [-HOMES.side, HOMES.side, HOMES.street - 2.4, HOMES.street + 2.4]].concat(HOMES.lots.reduce(function (a, l) {
-    return a.concat([[l.x - 2.5, l.x + 2.5, l.z - 2.5, l.z + 2.5], [l.dx - 0.8, l.dx + 0.8, Math.min(l.z, l.walk) - 0.2, Math.max(l.z, l.walk) + 0.2]]);
-  }, [])),
-  // street trees where two lots meet away from their drives
-  singles: [-21, -7, 7, 21].reduce(function (a, x) { return a.concat([['street', x, 14.85], ['street', x, 30.2], ['street', x, 35.8]]); }, [])
+  // the street and the houses across it belong to the world, not to a building; they are scattered after the zones of the
+  // store the world was drawn for, so the random sequence stays as it was
+  town: {
+    zones: [
+      // across the street: flower strips along the sidewalks, back gardens, and woods beyond the side streets
+      { r: [-35, 35, 14.5, 15.2], tr: [], t: 0, b: 14, g: 0, f: 30, k: 0 },
+      { r: [-35, 35, 19.6, 22.6], tr: ['oak', 'lol', 'maple'], t: 3, b: 10, g: 6, f: 8, k: 0 },
+      { r: [-35, 35, 23.3, 24.8], tr: [], t: 0, b: 10, g: 0, f: 6, k: 0 },
+      { r: [-35, 35, 29.8, 30.6], tr: [], t: 0, b: 14, g: 0, f: 30, k: 0 },
+      { r: [-35, 35, 35.4, 36.2], tr: [], t: 0, b: 14, g: 0, f: 30, k: 0 },
+      { r: [-35, 35, 41.4, 44], tr: ['oak', 'lol', 'pine'], t: 6, b: 8, g: 0, f: 0, k: 0 },
+      { r: [35, 36.6, 14.5, 30.6], tr: [], t: 0, b: 12, g: 0, f: 10, k: 0 },
+      { r: [-36.6, -35, 14.5, 30.6], tr: [], t: 0, b: 12, g: 0, f: 10, k: 0 },
+      { r: [41.4, 48, 14.6, 44], tr: ['oak', 'col', 'pine'], t: 16, b: 8, g: 0, f: 0, k: 0 },
+      { r: [-48, -41.4, 14.6, 44], tr: ['oak', 'col', 'pine'], t: 16, b: 8, g: 0, f: 0, k: 0 }
+    ],
+    // each house and its drive
+    clear: [[HOMES.side - 2.4, HOMES.side + 2.4, 13.5, HOMES.street + 2.4], [-HOMES.side - 2.4, -HOMES.side + 2.4, 13.5, HOMES.street + 2.4],
+      [-HOMES.side, HOMES.side, HOMES.street - 2.4, HOMES.street + 2.4]].concat(HOMES.lots.reduce(function (a, l) {
+      return a.concat([[l.x - 2.5, l.x + 2.5, l.z - 2.5, l.z + 2.5], [l.dx - 0.8, l.dx + 0.8, Math.min(l.z, l.walk) - 0.2, Math.max(l.z, l.walk) + 0.2]]);
+    }, [])),
+    // street trees where two lots meet away from their drives
+    singles: [-21, -7, 7, 21].reduce(function (a, x) { return a.concat([['street', x, 14.85], ['street', x, 30.2], ['street', x, 35.8]]); }, [])
+  }
 };
+
+// The building and its site, which a store type draws round its interior (see the note above PLAN in store.js for every
+// field). Positions are world coordinates. The street across the front, the houses beyond it and the country are shared
+// by every type; the building, its lot, the yard behind it and the scenery round them belong to the plan.
+var GX = -7.5;
+export var SHELL = {
+  kind: 'box',
+  // the glass front, the wall between the sales floor and the stockroom, the half width of the building, the east wing's
+  // outer wall and the stockroom's back wall
+  front: 2.5, back: -22.5, edge: 15, wing: 21.8, sb: -28.5,
+  // where stockers walk behind the stock doors
+  lane: -23.1,
+  // what people and cars cannot cross: the walkable grid (its corner x, z and the cells across and down; a cell is 0.25), the
+  // walls (x0, x1, z0, z1), the back wall's reach [from, to, end marker] and the front's, and the gaps carved through them
+  // (the doorway into the wing)
+  nav: { grid: [-15, -22.5, 148, 100], walls: [[-16, -14.7, -23, 3], [14.7, 15.3, -23, 3], [21.5, 22.4, -23, 3]], back: [-16, 16, 16.5], front: [-16, 17.5, 22.4], gaps: [[14.3, 15.9, 0.55, 1.45]] },
+  // the lot between the front and the sidewalk: its z range, the walkways' x, the aisle behind the bays, the drives' x,
+  // the service road's x, where the drives and the service road meet the street, and the yard line trucks turn on
+  lot: [4, 9.6], lotX: [-17, 17], walks: [-9.5, 9.5], aisle: 6.8, drive: 18, road: 24.8, curb: 10.2, yard: -37,
+  // the taxi stand and the bus stop on the street, where the stand's, the lot's and the dock's tags and framing sit
+  stand: 0, busX: 6.5,
+  spots: { lot: [0, 6.8], taxi: [0, 10], dock: [0, -25] },
+  tags: { hall: [0, 1.3, 1.0], lot: [-4, 0.8, 6.8], taxi: [0, 1.2, 10.2], dock: [0, 1.0, -25.5] },
+  // the yard beside the building where a garden, patio or bay stands: its rectangle, the gate's x, the till and the lane
+  // shoppers walk up to the gate
+  garden: { rect: [-12.75 + GX, -7.8 + GX, -2.1, 2.86], gate: -10.475 + GX, till: [-9.2 + GX, 3.4], lane: -11.6 + GX },
+  // the camera: what the middle of the view may reach, how far in and out it goes, the width the whole-store view fits, how
+  // far it turns (everything faces the doors, so no more than an eighth either way), and the sun's target, place and shadow box
+  bounds: [-30, 32, -42, 16], zoom: [8, 80], fit: 32, turn: Math.PI / 4,
+  light: { target: [0, -9], at: [-19, 23, 9], box: [-28, 28, 29, -29] },
+  // the grass round the building: zones scattered with trees, bushes, flowers and rocks, and spots left bare
+  nature: {
+    zones: [
+      // the lawns at the front corners, either side of the lot's drives
+      { r: [19.2, 22.7, 4.3, 9.4], tr: ['col', 'oak'], t: 3, b: 11, g: 12, f: 8, k: 1.5 },
+      { r: [-22.4, -19.2, 3.3, 9.4], tr: ['col', 'oak'], t: 3, b: 11, g: 12, f: 8, k: 1.5 },
+      { r: [17.2, 19.2, 4.3, 6.0], tr: [], t: 0, b: 12, g: 12, f: 8, k: 0 },
+      { r: [-19.2, -17.2, 4.3, 6.0], tr: [], t: 0, b: 12, g: 12, f: 8, k: 0 },
+      // along the west side, round the garden center and the tire bay
+      { r: [-22.4, -16.6, -13.4, -2.7], tr: ['oak', 'lol'], t: 3, b: 12, g: 0, f: 0, k: 0 },
+      { r: [-22.4, -20.7, -2.5, 3.1], tr: [], t: 0, b: 12, g: 10, f: 8, k: 0 },
+      { r: [-22.4, -16.6, -28.5, -20.8], tr: ['pine', 'oak'], t: 4, b: 0, g: 0, f: 0, k: 0 },
+      { r: [-27.3, -19.6, -40.5, -28.9], tr: ['pine', 'col'], t: 4, b: 0, g: 0, f: 0, k: 0 },
+      // between the wing's hedge and the service road
+      { r: [22.0, 22.35, -28, 2.2], tr: [], t: 0, b: 0, g: 20, f: 40, k: 0 },
+      // beyond the service road and the west drive, then behind the yard
+      { r: [27.4, 40, -41, 9.4], tr: ['pine', 'oak', 'col'], t: 20, b: 8, g: 0, f: 0, k: 0 },
+      { r: [40, 48, -41, 9.4], tr: ['col', 'lol', 'oak', 'pine'], t: 20, b: 8, g: 0, f: 0, k: 0 },
+      { r: [-40, -27.3, -41, 9.4], tr: ['oak', 'pine', 'lol'], t: 20, b: 8, g: 0, f: 0, k: 0 },
+      { r: [-48, -40, -41, 9.4], tr: ['col', 'lol', 'oak', 'pine'], t: 20, b: 8, g: 0, f: 0, k: 0 }
+    ],
+    // the garden center and the pylon sign by the street
+    clear: [[-20.6, -15, -2.5, 3.1], [20.4, 22.1, 8.0, 9.6]]
+  }
+};
+SHELL.decor = { out: DECOR.out, stock: DECOR.stock };
+PLAN.shell = SHELL;
 
 // the helpers other store types lay out their plans with
 export var KIT = { up: up, pw: pw, m: m, on: on, mat: mat, wp: wp, room: room, low: low, hi: hi, det: det, cab: cab, rbox: rbox, tx: tx, lights: lights, SIGN: SIGN, HELP: HELP, pack: pack, rug: rug, cat: cat, bd: bd, clerk: clerk };

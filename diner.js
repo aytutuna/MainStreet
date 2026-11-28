@@ -585,6 +585,7 @@ var FRONT = [
 
 export var DINER = Object.assign({}, PLAN, {
   type: 'diner',
+  shell: Object.assign({}, PLAN.shell),
   home: { x: -3, z: -17 },
   areas: AREAS,
   order: Object.keys(AREAS),
