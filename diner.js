@@ -685,6 +685,7 @@ export var DINER = Object.assign({}, PLAN, {
   attM: 'pw/HostStand_01',
   deskM: 'pw/SM_ServerStation_01',
   deskBoard: 'board.d_pickup',
+  deskBoardZ: 0.1,
   wingBoard: 'board.d_kitchen',
   bankFloor: 0xe9dcc4,
   carry: { bag: ['pw/SM_TakeoutBag_01*1.4', 0.03], basket: ['pw/SM_TrayStack_01*0.8', 0.07], plant: ['pw/SM_Cup_Paper_Stack_01*1.3', 0.12] },

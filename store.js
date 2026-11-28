@@ -2793,7 +2793,7 @@ function buildFront() {
     }
     desk.add(dm);
   }
-  desk.add(board({ text: PLAN.deskBoard || 'board.courtesy', x: PLAN.desk.x + (PLAN.desk.n - 1) / 2, z: bz + 0.1, y: 1.7, w: 1.6, h: 0.45, post: true }));
+  desk.add(board({ text: PLAN.deskBoard || 'board.courtesy', x: PLAN.desk.x + (PLAN.desk.n - 1) / 2, z: PLAN.deskBoardZ === undefined ? bz + 0.1 : PLAN.deskBoardZ, y: 1.7, w: 1.6, h: 0.45, post: true }));
   desk.visible = false;
   root.add(desk);
   hall.items.push({ g: desk, lv: 7 });
