@@ -7,6 +7,7 @@ import { DINER } from './diner.js';
 import { HARDWARE } from './hardware.js';
 import * as LAND from './land.js';
 import { buildWalls } from './walls.js';
+import { buildDinerWalls } from './dinerwalls.js';
 
 var BASE = 'assets/models/';
 var TILT = 52 * Math.PI / 180;
@@ -2758,22 +2759,22 @@ function buildFront() {
     cx -= tw;
     // the floor of the bank grows with its tills
     hall.lv[t.lv] = hall.lv[t.lv] || new Batch();
-    hall.lv[t.lv].geom(patch(square([[cx, -1.25], [cx + tw, 1.35]])), finishMat(PLAN.bankFloor || 0xc4cad8), 0.045);
+    hall.lv[t.lv].geom(patch(square([[cx, bk.z - 1.75], [cx + tw, bk.z + 0.85]])), finishMat(PLAN.bankFloor || 0xc4cad8), 0.045);
     hall.tills.push(t.k === 'lane' ? lane(hall, li++, t.lv, cx + 0.95) : kiosk(hall, ki++, t.lv, cx + 0.35));
   });
   hall.tills.push(gardenTill);
   hall.staff.push(gardenTill.cashier);
   // the attendant who watches the self checkouts, and the service desk by the grocery entrance
   var att = crew('shop/character-employee', 'idle');
-  att.obj.position.set(-7.0, 0, 0.3);
+  att.obj.position.set(bk.x - 0.25, 0, bk.z - 0.2);
   att.obj.rotation.y = Math.PI / 2;
   att.obj.visible = false;
   root.add(att.obj);
   hall.items.push({ g: att.obj, lv: 3 });
   hall.staff.push(att);
-  hall.solids.push({ r: [-7.2, -6.6, 0.1, 0.5], lv: 3 });
+  hall.solids.push({ r: [bk.x - 0.45, bk.x + 0.15, bk.z - 0.4, bk.z], lv: 3 });
   hall.lv[3] = hall.lv[3] || new Batch();
-  hall.lv[3].add(PLAN.attM || 'pw/SelfCheckout_Attendant_01', -6.72, 0.3, -Math.PI / 2);
+  hall.lv[3].add(PLAN.attM || 'pw/SelfCheckout_Attendant_01', bk.x + 0.03, bk.z - 0.2, -Math.PI / 2);
   var desk = new THREE.Group();
   for (var di = 0; di < PLAN.desk.n; di++) {
     var dm = mesh(PLAN.deskM || 'pw/ServiceDesk_20', PLAN.desk.x + di * 1.0, PLAN.desk.z, Math.PI);
@@ -2808,7 +2809,7 @@ function buildFront() {
     hall.items.push({ g: g, lv: +lv });
   });
   places.hall = hall;
-  addPick('hall', 0, 0.5, SH.edge * 2, 3.2);
+  addPick('hall', 0, PLAN.bank.z, SH.edge * 2, 3.2);
   decor(PLAN.decor.front, true);
 }
 
@@ -2953,9 +2954,10 @@ function buildGarden() {
 // window where an order is paid, with round tables and their chairs in rows either side of the path
 function buildPatio() {
   var lv = levels(4);
-  [[-10.2, 1.2], [-11.2, -1.0], [-9.6, -0.2]].forEach(function (p, i) { lv[0].add(i % 2 ? 'nature/flower_yellowA' : 'nature/flower_redA', p[0] + DX, p[1], i); });
-  lv[0].add('furn/bench', -10.4 + DX, 0.4, -Math.PI / 2);
-  lv[0].add('furn/bench', -10.4 + DX, 2.2, -Math.PI / 2);
+  var dx = SH.garden.rect[0] + 12.75;
+  [[-10.2, 1.2], [-11.2, -1.0], [-9.6, -0.2]].forEach(function (p, i) { lv[0].add(i % 2 ? 'nature/flower_yellowA' : 'nature/flower_redA', p[0] + dx, p[1], i); });
+  lv[0].add('furn/bench', -10.4 + dx, 0.4, -Math.PI / 2);
+  lv[0].add('furn/bench', -10.4 + dx, 2.2, -Math.PI / 2);
   var x0 = SH.garden.rect[0];
   var x1 = SH.garden.rect[1];
   var z0 = SH.garden.rect[2];
@@ -2968,7 +2970,7 @@ function buildPatio() {
     lv[l].add('pw/Chair_Metal_Cafe_01', x, z + 0.4, Math.PI);
   }
   [[1, 2.0], [2, 0.6], [3, -0.8]].forEach(function (r) {
-    [-11.55 + DX, -9.4 + DX].forEach(function (x) { set(r[0], x, r[1]); });
+    [-11.55 + dx, -9.4 + dx].forEach(function (x) { set(r[0], x, r[1]); });
   });
   [[x0 + 0.35, 1.2], [x1 - 0.35, 1.2], [x0 + 0.35, -1.5], [x1 - 0.35, -1.5]].forEach(function (p) { lv[3].add('pw/SM_Patio_Heater_01', p[0], p[1], 0); });
   [[x0 + 0.3, 2.5], [x1 - 0.3, 2.5]].forEach(function (p) { lv[4].add('pw/Planter_Tall_01', p[0], p[1], 0); });
@@ -3056,8 +3058,10 @@ function buildWing() {
   var lb = new Batch();
   lb.block(flat(0x7f8597), 14.7, 15.3, 0.5, 1.5, 0.82, 1.0);
   dw.add(lb.group(), boardFace({ text: PLAN.wingBoard || 'board.service_restrooms', x: 14.68, z: 1.0, y: 0.9, w: 1.1, h: 0.3, r: -Math.PI / 2 }));
-  root.add(dw);
-  outer.push({ g: dw, n: [1, 0], both: 1, hide: 1 });
+  if (SH.nav.gaps.length) {
+    root.add(dw);
+    outer.push({ g: dw, n: [1, 0], both: 1, hide: 1 });
+  }
   wingIds().forEach(function (id) {
     var r = PLAN.wing[id];
     var cx = (r.rect[0] + r.rect[1]) / 2;
@@ -3104,7 +3108,7 @@ function buildPylon() {
   board.position.y = 2.0;
   board.castShadow = true;
   g.add(board);
-  g.position.set(21.2, 0, 8.8);
+  g.position.set(SH.pylon ? SH.pylon[0] : 21.2, 0, SH.pylon ? SH.pylon[1] : 8.8);
   root.add(g);
   pylon = { c: c, tex: tex, mat: mat, big: null, posts: posts, board: board };
   var sg = new THREE.Mesh(openBoard(), openSign.faces);
@@ -3314,7 +3318,7 @@ function buildBox() {
   buildShell();
   buildDoors();
 }
-var SHELLS = { box: buildBox };
+var SHELLS = { box: buildBox, diner: buildDiner };
 
 // Trees, bushes, grass and flowers scattered over zones on a jittered grid; a zone is a rectangle with how many of each
 // kind to scatter per 100 square units, and spots in clear are left bare. The scatter is the same every time for the same
@@ -5161,9 +5165,10 @@ function carStep(c, dt) {
 // the driver is back: reverse out of the bay and leave by the west exit
 function leaveBay(c) {
   var b = c.bay;
+  var ex = SH.exit === undefined ? -SH.drive : SH.exit;
   c.parked = false;
-  c.path = [{ x: b.x, z: b.z }, { x: b.x, z: SH.aisle, rev: true }, { x: b.x - 0.6, z: SH.aisle }, { x: -SH.drive + 0.6, z: SH.aisle }, { x: -SH.drive, z: SH.aisle + 0.4 },
-    { x: -SH.drive, z: SH.curb }, { x: -SH.drive - 0.6, z: LANE_W, lane: -1 }, { x: -STREET, z: LANE_W, lane: -1 }];
+  c.path = [{ x: b.x, z: b.z }, { x: b.x, z: SH.aisle, rev: true }, { x: b.x - 0.6, z: SH.aisle }, { x: ex + 0.6, z: SH.aisle }, { x: ex, z: SH.aisle + 0.4 },
+    { x: ex, z: SH.curb }, { x: ex - 0.6, z: LANE_W, lane: -1 }, { x: -STREET, z: LANE_W, lane: -1 }];
   c.i = 1;
   c.speed = 0;
   c.out = 1;
@@ -6932,6 +6937,142 @@ function useSite(st) {
     saleFlash.position.copy(wash.position);
     saleFlash.position.y = 0.12;
   }
+}
+
+// The diner's building and site: a long low rounded shell with an annex behind it, the lot in front with a drive-up lane
+// down its east side, the pylon by the street, and the fenced yard behind the annex where the deliveries come. Everything
+// is placed from the shell's own numbers, none of the box's literals
+function dinerFence(b, x0, z0, x1, z1) {
+  var along = Math.abs(x1 - x0) > Math.abs(z1 - z0);
+  var n = Math.round(along ? Math.abs(x1 - x0) : Math.abs(z1 - z0));
+  for (var i = 0; i < n; i++) {
+    var t = (i + 0.5) / n;
+    b.add('forest/fence', x0 + (x1 - x0) * t, z0 + (z1 - z0) * t, along ? 0 : Math.PI / 2);
+  }
+}
+
+function buildDiner() {
+  var F = SH.front;
+  var b = new Batch();
+  var pave = flat(PAVE);
+  var asph = flat(ASPHALT);
+  var conc = flat(0xcfc9bd);
+  var yard = SH.yardRect;
+  var L0 = SH.drive - 1.2;
+  var L1 = SH.drive + 1.2;
+  b.slab(pave, SH.garden.rect[0] - 1, L0, F, SH.lot[0], 0, 0.02);
+  // the pad at the pass window
+  b.slab(flat(0xe4dccb), SH.edge, L0, SH.window[0], SH.window[1], 0.004, 0.02);
+  // the drive-up lane along the east side, out to the service road, and the service road to the yard
+  b.slab(asph, L0, L1, -9.6, 10.5, 0.008, 0.02);
+  b.slab(asph, L1, SH.road + 1.2, -9.6, -7.2, 0.008, 0.02);
+  b.slab(asph, SH.road - 1.2, SH.road + 1.2, SH.yard - 3, 10.5, 0.008, 0.02);
+  b.slab(asph, yard[1], SH.road - 1.2, SH.yard - 2, SH.yard + 2, 0.008, 0.02);
+  var paint = flat(PAINT);
+  b.slab(paint, L0 + 0.1, L1 - 0.1, -4.9, -4.84, 0.02, 0.008);
+  for (var dz = 9; dz > -8; dz -= 2) b.slab(paint, SH.drive - 0.03, SH.drive + 0.03, dz, dz - 0.8, 0.02, 0.008);
+  // the yard behind: a slab with the annex's dock aprons, a fence with the gate for the trucks, and a corner for the bins
+  b.slab(conc, yard[0], yard[1], yard[2], SH.back, 0.006, 0.02);
+  PLAN.docks.forEach(function (d) { b.slab(flat(0x8b8f99), d - 1.2, d + 1.2, SH.sb - 0.6, SH.sb - 0.3, 0.12, 0.12); });
+  var gate = SH.yardGate;
+  dinerFence(b, yard[0], yard[2], yard[1], yard[2]);
+  dinerFence(b, yard[0], SH.back - 0.8, yard[0], yard[2]);
+  dinerFence(b, yard[1], SH.back - 0.8, yard[1], gate[1]);
+  dinerFence(b, yard[1], gate[0], yard[1], yard[2]);
+  [gate[0], gate[1]].forEach(function (z) { b.block(flat(0x50566a), yard[1] - 0.06, yard[1] + 0.06, z - 0.06, z + 0.06, 0, 1.0); });
+  // kerbed beds with a hedge along the lane and the lot's west side
+  var bed = flat(0x6b5a45);
+  b.slab(bed, L0 - 0.2, L0, SH.lot[1] + 0.8, 10.5, 0.1, 0.1);
+  decor(SH.decor.out);
+  root.add(b.group());
+  var grounds = scatterNature(SH.nature.zones, SH.nature.clear, null, NATURE_SEED);
+  plantNature(grounds, root);
+  siteTrees = grounds.trees;
+  wash = new THREE.Mesh(new THREE.PlaneGeometry(SH.edge * 2, F - SH.sb).rotateX(-Math.PI / 2), washMat);
+  wash.position.set(0, 0.08, (F + SH.sb) / 2);
+  wash.renderOrder = 2;
+  root.add(wash);
+  buildDinerLot();
+  buildDinerDock();
+  buildPylon();
+  var walls = buildDinerWalls({ root: root, outer: outer, renderer: renderer, hw: SH.edge, front: F, back: SH.back, sb: SH.sb, ax: SH.annex, r: SH.corner,
+    entrances: PLAN.entrances, doors: PLAN.doors, docks: PLAN.docks });
+  lookG.wall.push.apply(lookG.wall, walls.wall);
+  lookG.trim.push.apply(lookG.trim, walls.trim);
+  wallsLit = walls;
+  PLAN.doors.forEach(function (d) { stockDoor(d); });
+  buildDoors();
+}
+
+// the lot in front of the diner, as the supercenter's has it: bare ground and a few cones, then asphalt, bays, lamps and
+// the walkway crossings, one level at a time. The bays and walkways come from the shell
+function buildDinerLot() {
+  var lv = levels(4);
+  var X0 = SH.lotX[0];
+  var X1 = SH.lotX[1];
+  var z0 = SH.lot[0];
+  var z1 = SH.lot[1];
+  lv[0].slab(flat(GRAVEL), X0, X1, z0, z1, 0.006, 0.02);
+  [[X0 + 1.5, z0 + 1.4], [X1 - 1.5, z0 + 1.4], [X0 + 2.5, z1 - 1.2], [X1 - 3, z1 - 1.2], [0, z0 + 2.7]].forEach(function (c) { lv[0].add('roads/construction-cone', c[0], c[1], 0); });
+  for (var l = 1; l <= 4; l++) {
+    lv[l].slab(flat(ASPHALT), X0, X1, z0, z1, 0.008, 0.02);
+    SH.walks.forEach(function (w) { lv[l].slab(flat(PAVE), w - 1.4, w + 1.4, z0, z1, 0.012, 0.02); });
+  }
+  var paint = flat(PAINT);
+  var rows = [[z0 + 0.2, z0 + 1.8, -1], [z1 - 1.6, z1, 1]];
+  for (var hu = 1; hu <= 4; hu++) {
+    [-6.5, 6.5].forEach(function (hx) {
+      lv[hu].slab(flat(0x3c63a8), hx - 0.42, hx + 0.42, rows[0][0] + 0.15, rows[0][1] - 0.15, 0.018, 0.008);
+      lv[hu].slab(paint, hx - 0.12, hx + 0.12, rows[0][0] + 0.55, rows[0][0] + 0.9, 0.026, 0.008);
+    });
+  }
+  var lines = {};
+  for (var bx = X0 + 0.5; bx < X1; bx++) {
+    if (SH.walks.some(function (w) { return Math.abs(bx - w) < 2; })) continue;
+    for (var r = 0; r < 2; r++) {
+      var rz = rows[r];
+      var unlock = Math.abs(bx) < 6 ? 1 + r : 3 + r;
+      bays.push({ x: bx, z: (rz[0] + rz[1]) / 2, nose: rz[2], lv: unlock, car: null });
+      [bx - 0.5, bx + 0.5].forEach(function (px) {
+        var key = px + ':' + r;
+        if (lines[key]) return;
+        lines[key] = 1;
+        for (var u = unlock; u <= 4; u++) lv[u].slab(paint, px - 0.03, px + 0.03, rz[0] + 0.1, rz[1] - 0.1, 0.02, 0.008);
+      });
+    }
+  }
+  SH.walks.forEach(function (w) {
+    for (var zl = 1; zl <= 4; zl++) for (var zs = -1.2; zs < 1.3; zs += 0.5) lv[zl].slab(paint, w + zs - 0.16, w + zs + 0.16, SH.aisle - 0.7, SH.aisle + 0.7, 0.024, 0.008);
+  });
+  [[1, -5.7, z0 + 0.1], [1, 5.7, z0 + 0.1], [3, -11, z0 + 0.1], [3, 9.5, z0 + 0.1], [4, -5.7, z1 + 0.2], [4, 5.7, z1 + 0.2], [4, -11, z1 + 0.2], [4, 9.5, z1 + 0.2]].forEach(function (p) {
+    for (var u = p[0]; u <= 4; u++) lamp(lv[u], 'roads/light-square', p[1], p[2], p[2] < 5 ? Math.PI : 0);
+  });
+  // a kerbed bed with a hedge along the street edge of the lot, broken at the walkways
+  for (var hx = X0 + 0.5; hx < X1; hx += 1) {
+    if (SH.walks.some(function (w) { return Math.abs(hx - w) < 2; })) continue;
+    if (Math.floor(hx) % 2) lv[4].add('nature/plant_bush', hx, z1 + 0.3, hx * 1.7);
+  }
+  var pl = finishPlace('lot', lv);
+  pl.pick = addPick('lot', (X0 + X1) / 2, (z0 + z1) / 2, X1 - X0, z1 - z0);
+}
+
+// the delivery door of the annex and the docks: stock on the dollies each level, a truck backed up to the first two
+function buildDinerDock() {
+  decor(SH.decor.stock);
+  var docks = PLAN.docks;
+  [0, 1].forEach(function (i) {
+    var t = mesh('car/delivery', docks[i], SH.sb - 1.95, Math.PI);
+    t.scale.setScalar(1.7);
+    root.add(t);
+  });
+  var lv = levels(10);
+  [[3, -1], [6, 0], [9, 1]].forEach(function (p) {
+    for (var i = 0; i < 6; i++) lv[p[0]].add(PARCEL, docks[2] + p[1] * 0.4 + (i % 2 - 0.5) * 0.3, SH.sb + 0.6 + (i % 3 - 1) * 0.1, (i % 3 - 1) * 0.15, (i >> 1) * 0.1);
+  });
+  var pl = finishPlace('dock', lv);
+  pl.add = true;
+  var y = SH.yardRect;
+  pl.pick = addPick('dock', (y[0] + y[1]) / 2, (y[2] + SH.sb) / 2, y[1] - y[0], SH.sb - y[2]);
 }
 
 function buildType(key) {

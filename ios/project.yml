@@ -63,6 +63,8 @@ targets:
         buildPhase: resources
       - path: ../walls.js
         buildPhase: resources
+      - path: ../dinerwalls.js
+        buildPhase: resources
       - path: ../shop.js
         buildPhase: resources
       - path: ../ui.js
