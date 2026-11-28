@@ -274,5 +274,12 @@ check('the night buttons stayed on another card', el('intro-night').hidden);
   check('the rush ad was given back for a rush that started', used.rush === 1);
 }
 
+// hold is only a card, the sheet or a box, so hints, the goal bar and toasts never stop a gift, a rush or the VIP
+check('hold counts something besides a card, the sheet or a box', /hold = !started\(\) \|\| !!cardId \|\| sheetOpen \|\| veilUp\(\);/.test(src));
+ctx.cardId = null;
+ctx.sheetOpen = false;
+VEILS.forEach(v => { el(v).hidden = true; });
+check('something is covering the store with nothing open', run('covered()') === false);
+
 if (failed) process.exit(1);
 console.log('queue ok');
